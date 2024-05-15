@@ -1,0 +1,22 @@
+{
+  "name": "package.json",
+  "version": "1.0.0",
+  "description": "Your one stop for all things 19 twink in WoW.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/19pvp/19pvp.github.io.git"
+  },
+  "author": "Pitter & Clement",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/19pvp/19pvp.github.io/issues"
+  },
+  "homepage": "https://github.com/19pvp/19pvp.github.io#readme",
+  "devDependencies": {
+    "@biomejs/biome": "1.7.3"
+  }
+}
