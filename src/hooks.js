@@ -31,6 +31,7 @@ export const useFetch = (url, fetchOpts, inputs = [url]) => {
   const [state, setState] = useState({ pending: true })
   // biome-ignore lint/correctness/useExhaustiveDependencies: dependencies defined by the caller
   useEffect(() => {
+    if (url == null) return
     const controller = new AbortController()
     const opts = { ...fetchOpts, signal: controller.signal }
     fetchBody(url, opts).then((nextState) => {
