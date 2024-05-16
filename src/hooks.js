@@ -28,7 +28,7 @@ export const useFetchJSON = (...args) => {
 }
 
 export const useFetch = (url, fetchOpts, inputs = [url]) => {
-  const [state, setState] = useState({ pending: true })
+  const [state, setState] = useState({ isLoading: true })
   // biome-ignore lint/correctness/useExhaustiveDependencies: dependencies defined by the caller
   useEffect(() => {
     if (url == null) return
@@ -37,7 +37,7 @@ export const useFetch = (url, fetchOpts, inputs = [url]) => {
     fetchBody(url, opts).then((nextState) => {
       controller.signal.aborted || setState(nextState)
     })
-    state.pending || setState({ pending: true })
+    state.isLoading || setState({ ...state, isFetching: true })
     return () => controller.abort()
   }, inputs)
 
