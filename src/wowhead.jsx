@@ -11,7 +11,7 @@ export const Item = ({ id }) => {
   return (
     <div>
       <img
-        src={`//wow.zamimg.com/images/wow/icons/medium/${item.data.icon}.jpg`}
+        src={`https://wow.zamimg.com/images/wow/icons/medium/${item.data.icon}.jpg`}
         alt="item-icon"
       />
       <div>
