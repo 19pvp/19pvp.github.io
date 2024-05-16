@@ -11,12 +11,11 @@ const injectedCode = () => {
   new EventSource('/esbuild')
     .addEventListener('change', () => location.reload())
 }
+
 const ctx = await esbuild.context({
   ...config,
   sourcemap: true,
-  banner: {
-    js: String(injectedCode).slice('() => '.length),
-  },
+  banner: { js: String(injectedCode).slice('() => '.length) },
 })
 
 await ctx.watch()
