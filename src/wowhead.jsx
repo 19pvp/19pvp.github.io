@@ -6,7 +6,7 @@ export const Item = ({ id }) => {
   const item = useFetchJSON(
     `https://nether.wowhead.com/tooltip/item/${id}?dataEnv=11&locale=0`,
   )
-  if (item.pending) return <div>Loading...</div>
+  if (item.isLoading) return <div>Loading...</div>
   if (item.error) return <div>Error: {item.error.message}</div>
   return (
     <div>
