@@ -4,7 +4,9 @@ const fetchBody = async (url, fetchOpts) => {
   const state = {}
   try {
     state.response = await fetch(url, fetchOpts)
-    state.body = await state.response.text()
+    if (state.response.status !== 204) {
+      state.body = await state.response.text()
+    }
     state.error = state.response.ok
       ? undefined
       : Error(state.response.statusText)
@@ -34,6 +36,7 @@ export const useFetch = (url, fetchOpts, inputs = [url]) => {
     fetchBody(url, opts).then((nextState) => {
       controller.signal.aborted || setState(nextState)
     })
+    state.pending || setState({ pending: true })
     return () => controller.abort()
   }, inputs)
 
