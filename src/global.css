@@ -1,0 +1,23 @@
+body, html {
+  background: black;
+}
+
+.POOR { color: #9d9d9d }
+.COMMON { color: #ffffff }
+.UNCOMMON { color: #1eff00 }
+.RARE { color: #0070dd }
+.EPIC { color: #a335ee }
+.LEGENDARY { color: #ff8000 }
+.ARTIFACT { color: #e6cc80 }
+.HEIRLOOM { color: #00ccff }
+.WOW_TOKEN { color: #00ccff }
+
+.POOR,
+.COMMON,
+.UNCOMMON,
+.RARE,
+.EPIC,
+.LEGENDARY,
+.ARTIFACT,
+.HEIRLOOM,
+.WOW_TOKEN { text-shadow: 0 1px 2px #000 }
