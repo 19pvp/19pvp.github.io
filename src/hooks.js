@@ -7,9 +7,9 @@ const fetchBody = async (url, fetchOpts) => {
     if (state.response.status !== 204) {
       state.body = await state.response.text()
     }
-    state.error = state.response.ok
-      ? undefined
-      : Error(state.response.statusText)
+    if (!state.response.ok) {
+      state.error = Error(state.response.statusText)
+    }
   } catch (error) {
     state.error = error
   }

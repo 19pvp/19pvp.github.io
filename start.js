@@ -15,6 +15,9 @@ const injectedCode = () => {
 const ctx = await esbuild.context({
   ...config,
   sourcemap: true,
+  minify: false,
+  splitting: false,
+  treeShaking: true,
   banner: { js: String(injectedCode).slice('() => '.length) },
 })
 
