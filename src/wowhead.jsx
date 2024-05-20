@@ -1,6 +1,5 @@
 import { h } from 'preact'
 import { useFetchJSON } from './hooks.js'
-import * as style from './wowhead.module.css'
 
 const ITEM_URL = 'https://19pvp.github.io/data/items'
 // TODO: persist in localstorage?
