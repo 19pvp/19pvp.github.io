@@ -26,7 +26,7 @@ export const ClassButtons = () => {
       {bisSetRequest?.data && (
         <div>
           {bisSetRequest.data.map((item) => (
-            <Item key={item.ID} id={item.ID} itemData={item} />
+            <Item id={item.ID} />
           ))}
         </div>
       )}
