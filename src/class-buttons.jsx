@@ -2,7 +2,7 @@ import { h } from 'preact'
 import { useState, useEffect } from 'preact/hooks'
 import { wowClasses } from './wow-classes.js'
 import { useSheet } from './hooks.js'
-import { Item } from './item.jsx'
+import { Build } from './build.jsx'
 import { Link, useUrl, withParams } from './router.jsx'
 import * as style from './class-button.module.css'
 
@@ -38,16 +38,7 @@ export const ClassButtons = () => {
         ))}
       </div>
       {bisSetRequest?.data && (
-        <div class="flex flex-col gap-2 w-[520px]">
-          {bisSetRequest.data.map(item => (
-            <Item
-              id={item.ID}
-              wowclass={selectedClass}
-              rand={item['Random Enchant']}
-              enchant={item['Enchant ID']}
-            />
-          ))}
-        </div>
+        <Build build={bisSetRequest.data} name={bisBuild?.['Build Name']}/>
       )}
     </div>
   )
