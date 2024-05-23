@@ -26,7 +26,12 @@ export const ClassButtons = () => {
       {bisSetRequest?.data && (
         <div>
           {bisSetRequest.data.map((item) => (
-            <Item id={item.ID} />
+            <Item
+              id={item.ID}
+              wowclass={selectedClass}
+              rand={item['Random Enchant']}
+              enchant={item['Enchant ID']}
+            />
           ))}
         </div>
       )}

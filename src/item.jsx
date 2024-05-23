@@ -77,7 +77,7 @@ export const Item = ({ id, rand, slot, enchant, wowclass }) => {
     mergeStats([item.rand?.[rand]?.stats, item.stats, ench?.stats]),
   )
 
-  const statBlackList = statsBlacklists[wowclass.toUpperCase()] || []
+  const statBlackList = statsBlacklists[wowclass?.toUpperCase()] || []
   return (
     <div
       class="
