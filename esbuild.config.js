@@ -6,4 +6,5 @@ export const config = {
   jsxImportSource: 'preact',
   jsx: 'transform',
   jsxFactory: 'h',
+  loader: { '.svg': 'dataurl', '.png': 'dataurl' },
 }
