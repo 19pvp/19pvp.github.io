@@ -1,0 +1,55 @@
+:root {
+  --pad: 2px;
+  --size: 75px;
+  --b: calc(var(--size) / 15);
+}
+.classButton {
+  background-image: url(./classes.svg);
+  background-size: calc(400% - (var(--pad) * 8));
+  width: var(--size);
+  height: var(--size);
+  border-radius: 45px;
+  background-clip: content-box;
+  box-sizing: content-box;
+  padding: var(--pad);
+  border: var(--b) solid transparent;
+  box-shadow: 0 0 var(--b) var(--b) black inset;
+  display: block;
+}
+
+.DEATHKNIGHT { color: #c41e3a } /* Red */
+.DEMONHUNTER { color: #a330c9 } /* Dark Magenta */
+.DRUID { color: #ff7c0a } /* Orange */
+.HUNTER { color: #aad372 } /* Pistachio */
+.MAGE { color: #3fc7eb } /* Light Blue */
+.MONK { color: #00ff98 } /* Spring Green */
+.PALADIN { color: #f48cba } /* Pink */
+.PRIEST { color: #ffffff } /* White* */
+.ROGUE { color: #fff468 } /* Yellow* */
+.SHAMAN { color: #0070dd } /* Blue */
+.WARLOCK { color: #8788ee } /* Purple */
+.WARRIOR { color: #c69b6d } /* Tan */
+.WARRIOR, .DRUID, .MONK, .MAGE { background-position-y: calc(var(--pad) * 1 + 0%) }
+.PALADIN, .HUNTER, .ROGUE, .PRIEST { background-position-y: calc(var(--pad) * 0 + 50%) }
+.DEATHKNIGHT, .SHAMAN, .WARLOCK, .DEMONHUNTER { background-position-y: calc(var(--pad) * -1 + 100%) }
+.WARRIOR, .DEATHKNIGHT, .PALADIN { background-position-x: calc(var(--pad) * 1 + 0%) }
+.DRUID, .HUNTER, .SHAMAN { background-position-x: calc(var(--pad) * (1 / 3) + (100% / 3)) }
+.WARLOCK, .MONK, .ROGUE { background-position-x: calc(var(--pad) * (-1 / 3) + (100% / 3 * 2)) }
+.MAGE, .PRIEST, .DEMONHUNTER { background-position-x: calc(var(--pad) * -1 + 100%) }
+
+.classButton:hover,
+.classButton:focus,
+.classButton:active {
+  border-color: black;
+  outline: 2px solid currentcolor;
+  outline-offset: -4px;
+}
+.classButton.active {
+  border-color: currentColor;
+  box-shadow: 0 0 2px 2px black inset;
+  outline: 3px solid black;
+  outline-offset: 0px;
+  pointer-events: disabled;
+  cursor: default;
+}
+

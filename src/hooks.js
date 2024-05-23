@@ -65,3 +65,7 @@ export const useFetch = (url, fetchOpts, inputs = [url]) => {
 
   return state
 }
+
+const sheetsDocumentId = '1ViaaK-QNOP-8SW3vyHQJGsbH3ItTVF7mqBsQJIK2cyQ'
+export const useSheet = (sheetName) =>
+  useFetchJSON(sheetName && `https://opensheet.elk.sh/${sheetsDocumentId}/${sheetName}`)
