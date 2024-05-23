@@ -1,0 +1,18 @@
+.QUEST,
+.VENDOR,
+.DUNGEON,
+.DROP,
+.HORDE,
+.CRAFT,
+.ALLIANCE {
+  width: 32px;
+  height: 32px;
+}
+
+.QUEST { background-image: url(./icons/quest.png) }
+.VENDOR { background-image: url(./icons/vendor.png) }
+.CRAFT { background-image: url(./icons/craft.png) }
+.DUNGEON { background-image: url(./icons/dungeon.png) }
+.DROP { background-image: url(./icons/drop.png) }
+.HORDE { background-image: url(./icons/horde.png) }
+.ALLIANCE { background-image: url(./icons/alliance.png) }
