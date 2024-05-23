@@ -2,7 +2,7 @@ import { h } from 'preact'
 import { useState, useEffect } from 'preact/hooks'
 import { wowClasses } from './wow-classes'
 import { useFetchJSON } from './hooks'
-import { Item } from './wowhead.jsx'
+import { Item } from './item.jsx'
 
 export const ClassButtons = () => {
   const [selectedClass, setSelectedClass] = useState(null)
