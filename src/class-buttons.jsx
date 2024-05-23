@@ -5,24 +5,12 @@ import { useFetchJSON } from './hooks'
 
 export const ClassButtons = () => {
   const [selectedClass, setSelectedClass] = useState(null)
-  const [gear, setGear] = useState(null) 
-  const { data } = useFetchJSON(`https://opensheet.elk.sh/1ViaaK-QNOP-8SW3vyHQJGsbH3ItTVF7mqBsQJIK2cyQ/Build+List`)
+  const buildRequest = useFetchJSON(`https://opensheet.elk.sh/1ViaaK-QNOP-8SW3vyHQJGsbH3ItTVF7mqBsQJIK2cyQ/Build+List`)
+  const builds = buildRequest.data
+  const matchingBuilds = builds?.filter(build => build['Build Name'].startsWith(selectedClass))
+  const bisBuild = matchingBuilds?.find(build => build['Build Name'].endsWith(' (BiS)'))
+  const bisSetRequest = useFetchJSON(bisBuild?.['Build Name'] && `https://opensheet.elk.sh/1ViaaK-QNOP-8SW3vyHQJGsbH3ItTVF7mqBsQJIK2cyQ/${encodeURIComponent(bisBuild['Build Name'])}/`)
 
-  // useEffect(()=> {
-  //   console.log(gear)
-  // }, [selectedClass]) 
-  // This is just for debugging, uncomment to see we are indeed getting the right urls.
-
-  const handleClick = (className) => {
-    setSelectedClass(className)
-    const matchingBuilds = data?.filter(item => item['Build Name'].startsWith(className))
-    const bisBuild = matchingBuilds?.find(item => item['Build Name'].endsWith(' (BiS)'))
-    // Not the cleanest solution but this is what I came up with.
-    setGear(`https://opensheet.elk.sh/1ViaaK-QNOP-8SW3vyHQJGsbH3ItTVF7mqBsQJIK2cyQ/${encodeURIComponent(bisBuild['Build Name'])}/`)
-  /* obviously we dont want to setGear to a url, but 
-  I am having trouble using the useFetchJSON hook without errors here, 
-  I need some help on this step. I AM SO CLOSE */
-  }
 
   return (
     <div className="flex flex-wrap justify-center space-x-4">
@@ -30,12 +18,14 @@ export const ClassButtons = () => {
         <button
           key={className}
           className="class-button px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50"
-          onClick={() => handleClick(className)}
+          onClick={() => setSelectedClass(className)}
         >
           {className}
         </button>
       ))}
+      <h1 className="text-white">
+        {bisSetRequest?.data ? JSON.stringify(bisSetRequest.data) : 'Loading...'}
+      </h1>
     </div>
   )
 }
-
