@@ -2,6 +2,7 @@ import { h } from 'preact'
 import { useState, useEffect } from 'preact/hooks'
 import { wowClasses } from './wow-classes'
 import { useFetchJSON } from './hooks'
+import { Item } from './wowhead.jsx'
 
 export const ClassButtons = () => {
   const [selectedClass, setSelectedClass] = useState(null)
@@ -10,7 +11,6 @@ export const ClassButtons = () => {
   const matchingBuilds = builds?.filter(build => build['Build Name'].startsWith(selectedClass))
   const bisBuild = matchingBuilds?.find(build => build['Build Name'].endsWith(' (BiS)'))
   const bisSetRequest = useFetchJSON(bisBuild?.['Build Name'] && `https://opensheet.elk.sh/1ViaaK-QNOP-8SW3vyHQJGsbH3ItTVF7mqBsQJIK2cyQ/${encodeURIComponent(bisBuild['Build Name'])}/`)
-
 
   return (
     <div className="flex flex-wrap justify-center space-x-4">
@@ -23,9 +23,13 @@ export const ClassButtons = () => {
           {className}
         </button>
       ))}
-      <h1 className="text-white">
-        {bisSetRequest?.data ? JSON.stringify(bisSetRequest.data) : 'Loading...'}
-      </h1>
+      {bisSetRequest?.data && (
+        <div>
+          {bisSetRequest.data.map((item) => (
+            <Item key={item.ID} id={item.ID} itemData={item} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
