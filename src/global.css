@@ -1,6 +1,4 @@
-body, html {
-  background: black;
-}
+body, html { background: black }
 
 .POOR { color: #9d9d9d }
 .COMMON { color: #ffffff }
@@ -11,13 +9,5 @@ body, html {
 .ARTIFACT { color: #e6cc80 }
 .HEIRLOOM { color: #00ccff }
 .WOW_TOKEN { color: #00ccff }
-
-.POOR,
-.COMMON,
-.UNCOMMON,
-.RARE,
-.EPIC,
-.LEGENDARY,
-.ARTIFACT,
-.HEIRLOOM,
-.WOW_TOKEN { text-shadow: 0 1px 2px #000 }
+.POOR, .COMMON, .UNCOMMON, .RARE, .EPIC,
+.LEGENDARY, .ARTIFACT, .HEIRLOOM, .WOW_TOKEN { text-shadow: 0 1px 2px #000 }
