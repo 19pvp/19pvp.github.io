@@ -22,7 +22,7 @@ export const ClassButtons = () => {
   const builds = buildRequest.data
   const bisBuild = builds?.find(build => {
     const name = build['Build Name'].toUpperCase()
-    return name.startsWith(selectedClass) && name.endsWith('(BIS)')
+    return name === (selectedClass)
   })
   const bisSetRequest = useSheet(bisBuild?.['Build Name'])
 
