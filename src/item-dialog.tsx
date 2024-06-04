@@ -28,7 +28,7 @@ const getItemSourceLink = (item?: ItemData) => {
   return `${wowheadUrl}${item.source.toLowerCase()}=${item.sourceId}`
 }
 
-export const ItemDialog = ({ children }: { children?: h.JSX.Element }) => {
+export const ItemDialog = ({ children }: { children?: h.JSX.Element | null }) => {
   const url = useUrl()
   const [ref, setRef] = useState<HTMLDialogElement | null>(null)
   useEffect(() => {
@@ -41,7 +41,6 @@ export const ItemDialog = ({ children }: { children?: h.JSX.Element }) => {
   const itemId = Number(url.hash.split('#detail-item-')[1])
   const itemRequest = useItem(itemId)
   const item = itemRequest.data
-  console.log(item)
 
   const source =
     item?.source === 'DROP' && item?.bind === 'Binds when picked up'

@@ -122,5 +122,3 @@ for (const [className, build] of Object.entries(cachedBuildsData)) {
     body: JSON.stringify(build),
   })
 }
-
-console.log(cache)
