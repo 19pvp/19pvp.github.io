@@ -1,0 +1,27 @@
+.svg {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  transform: rotate(-140deg);
+}
+
+.drawArrow {
+  fill: none;
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation-duration: 2s;
+  animation-fill-mode: forwards;
+  animation-timing-function: ease-out;
+  animation-name: draw;
+}
+
+.tail1 { animation-delay: 0.5s }
+.tail2 { animation-delay: 0.7s }
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

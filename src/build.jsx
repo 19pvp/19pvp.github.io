@@ -1,3 +1,4 @@
+import { h, Fragment } from 'preact'
 import { Item } from './item.tsx'
 
 const inventory = Object.entries({

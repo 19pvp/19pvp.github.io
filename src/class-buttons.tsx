@@ -5,6 +5,7 @@ import { Build } from './build.jsx'
 import { Link, useUrl, withParams } from './router.tsx'
 import type { ItemData } from './item.tsx'
 import * as style from './class-button.module.css'
+import { SelectAClass } from './select-a-class.tsx'
 
 type ClassButtonParams = {
   wowClass: keyof typeof wowClasses
@@ -43,7 +44,6 @@ export const ClassButtons = () => {
   // Melee recap: AP / Crit / Hit / Expertise / Haste
   // Spell recap: MP / Spell Power / Crit / Hit / Haste
 
-
   // TODO: allow to switch equiped items
   return (
     <>
@@ -57,7 +57,11 @@ export const ClassButtons = () => {
           />
         ))}
       </div>
-      <Build key={selectedClass} build={buildItems} name={selectedClass} />
+      {selectedClass && selectedClass in wowClasses ? (
+        <Build key={selectedClass} build={buildItems} name={selectedClass} />
+      ) : (
+        <SelectAClass />
+      )}
     </>
   )
 }
