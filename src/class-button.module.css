@@ -17,18 +17,6 @@
   display: block;
 }
 
-.DEATHKNIGHT { color: #c41e3a } /* Red */
-.DEMONHUNTER { color: #a330c9 } /* Dark Magenta */
-.DRUID { color: #ff7c0a } /* Orange */
-.HUNTER { color: #aad372 } /* Pistachio */
-.MAGE { color: #3fc7eb } /* Light Blue */
-.MONK { color: #00ff98 } /* Spring Green */
-.PALADIN { color: #f48cba } /* Pink */
-.PRIEST { color: #ffffff } /* White* */
-.ROGUE { color: #fff468 } /* Yellow* */
-.SHAMAN { color: #0070dd } /* Blue */
-.WARLOCK { color: #8788ee } /* Purple */
-.WARRIOR { color: #c69b6d } /* Tan */
 .WARRIOR, .DRUID, .MONK, .MAGE { background-position-y: calc(var(--pad) * 1 + 0%) }
 .PALADIN, .HUNTER, .ROGUE, .PRIEST { background-position-y: calc(var(--pad) * 0 + 50%) }
 .DEATHKNIGHT, .SHAMAN, .WARLOCK, .DEMONHUNTER { background-position-y: calc(var(--pad) * -1 + 100%) }

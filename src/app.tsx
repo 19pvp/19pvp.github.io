@@ -1,6 +1,7 @@
 import { h } from 'preact'
-import { ClassButtons } from './class-buttons.jsx'
+import { ClassButtons } from './class-buttons.tsx'
 import { ToolTip } from './tooltip.jsx'
+import { LoadingIndicator } from './loading-indicator.jsx'
 import "preact/debug"
 
 export const App = () => {
@@ -8,6 +9,7 @@ export const App = () => {
     <div>
       <ClassButtons />
       <ToolTip />
+      <LoadingIndicator />
     </div>
   )
 }

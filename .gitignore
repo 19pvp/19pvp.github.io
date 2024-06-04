@@ -129,5 +129,21 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-build/*
-!build/index.html
+# Vite stuff
+public/*
+!public/index.html
+pnpm-debug.log*
+node_modules
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
