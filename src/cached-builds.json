@@ -1,0 +1,653 @@
+{
+  "Druid": [
+    { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
+    { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
+    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Back",
+      "ID": "45626",
+      "Name": "Spidersilk Drape",
+      "Enchant ID": "38891",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "596"
+    },
+    {
+      "Slot": "Chest",
+      "ID": "48691",
+      "Name": "Tattered Dreadmist Robe",
+      "Enchant ID": "38865"
+    },
+    {
+      "Slot": "Wrists",
+      "ID": "1974",
+      "Name": "Mindthrust Bracers",
+      "Enchant ID": "38882"
+    },
+    {
+      "Slot": "Two Hand",
+      "ID": "42947",
+      "Name": "Dignified Headmaster's Charge",
+      "Enchant ID": "38884",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+    },
+    {
+      "Slot": "Hands",
+      "ID": "5970",
+      "Name": "Serpent Gloves",
+      "Enchant ID": "38886"
+    },
+    {
+      "Slot": "Waist",
+      "ID": "51968",
+      "Name": "Enumerated Wrap",
+      "Enchant ID": "",
+      "Random Enchant": "of the Sun",
+      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+    },
+    {
+      "Slot": "Legs",
+      "ID": "66011",
+      "Name": "Godfrey's Britches",
+      "Enchant ID": "2313"
+    },
+    {
+      "Slot": "Feet",
+      "ID": "4320",
+      "Name": "Spidersilk Boots",
+      "Enchant ID": "38837"
+    },
+    { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
+    { "Slot": "Finger", "ID": "24120", "Name": "Seal of Argas" },
+    { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
+    {
+      "Slot": "Trinket",
+      "ID": "44098",
+      "Name": "Inherited Insignia of the Alliance"
+    },
+    { "Slot": "Ranged", "ID": "5243", "Name": "Firebelcher" }
+  ],
+  "Hunter": [
+    { "Slot": "Head", "ID": "61937", "Name": "Stained Shadowcraft Cap" },
+    { "Slot": "Neck", "ID": "20444", "Name": "Sentinel's Medallion" },
+    { "Slot": "Shoulders", "ID": "42950", "Name": "Champion Herod's Shoulder" },
+    {
+      "Slot": "Back",
+      "ID": "51994",
+      "Name": "Tumultuous Cloak",
+      "Enchant ID": "38893",
+      "Random Enchant": "of the Bandit",
+      "Random Enchant ID": "-40: +4 Agility / +4 Stamina / +4 Critical Strike Rating",
+      "Comments": "596"
+    },
+    {
+      "Slot": "Chest",
+      "ID": "48677",
+      "Name": "Champion's Deathdealer Breastplate",
+      "Enchant ID": "38865"
+    },
+    {
+      "Slot": "Wrists",
+      "ID": "3230",
+      "Name": "Black Wolf Bracers",
+      "Enchant ID": "38855"
+    },
+    {
+      "Slot": "Hands",
+      "ID": "53412",
+      "Name": "Gloves of Unmitigated Badassery"
+    },
+    {
+      "Slot": "Hands",
+      "ID": "10413",
+      "Name": "Gloves of the Fang",
+      "Enchant ID": "38890",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+    },
+    {
+      "Slot": "Waist",
+      "ID": "51964",
+      "Name": "Vigorous Belt",
+      "Enchant ID": "",
+      "Random Enchant": "of the Bandit",
+      "Random Enchant ID": "-40: +5 Agility / +5 Stamina / +5 Critical Strike Rating"
+    },
+    { "Slot": "Waist", "ID": "6468", "Name": "Deviate Scale Belt" },
+    {
+      "Slot": "Legs",
+      "ID": "5199",
+      "Name": "Smelting Pants",
+      "Enchant ID": "2313"
+    },
+    {
+      "Slot": "Feet",
+      "ID": "65961",
+      "Name": "Cobrahn's Boots",
+      "Enchant ID": "38837"
+    },
+    { "Slot": "Finger", "ID": "24118", "Name": "Signet of Argas" },
+    { "Slot": "Finger", "ID": "60905", "Name": "Ello's Band" },
+    { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
+    {
+      "Slot": "Trinket",
+      "ID": "44098",
+      "Name": "Inherited Insignia of the Alliance"
+    },
+    {
+      "Slot": "Ranged",
+      "ID": "44093",
+      "Name": "Upgraded Dwarven Hand Cannon",
+      "Enchant ID": "4406"
+    },
+    {
+      "Slot": "Two Hand",
+      "ID": "872",
+      "Name": "Rockslicer",
+      "Enchant ID": "38896"
+    }
+  ],
+  "Mage": [
+    { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
+    { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
+    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Back",
+      "ID": "45626",
+      "Name": "Spidersilk Drape",
+      "Enchant ID": "38891",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "596"
+    },
+    {
+      "Slot": "Chest",
+      "ID": "48691",
+      "Name": "Tattered Dreadmist Robe",
+      "Enchant ID": "38865"
+    },
+    {
+      "Slot": "Wrists",
+      "ID": "1974",
+      "Name": "Mindthrust Bracers",
+      "Enchant ID": "38855"
+    },
+    {
+      "Slot": "Two Hand",
+      "ID": "42947",
+      "Name": "Dignified Headmaster's Charge",
+      "Enchant ID": "38884",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+    },
+    {
+      "Slot": "Hands",
+      "ID": "5970",
+      "Name": "Serpent Gloves",
+      "Enchant ID": "38889"
+    },
+    {
+      "Slot": "Waist",
+      "ID": "51968",
+      "Name": "Enumerated Wrap",
+      "Enchant ID": "",
+      "Random Enchant": "of the Sun",
+      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+    },
+    {
+      "Slot": "Legs",
+      "ID": "66011",
+      "Name": "Godfrey's Britches",
+      "Enchant ID": "2313"
+    },
+    {
+      "Slot": "Feet",
+      "ID": "53428",
+      "Name": "Merger Boots",
+      "Enchant ID": "38837"
+    },
+    { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
+    { "Slot": "Finger", "ID": "65715", "Name": "Stillwater's Signet" },
+    { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
+    {
+      "Slot": "Trinket",
+      "ID": "44098",
+      "Name": "Inherited Insignia of the Alliance"
+    },
+    { "Slot": "Ranged", "ID": "56713", "Name": "Durak's Wand" }
+  ],
+  "Paladin": [
+    { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
+    { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
+    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Back",
+      "ID": "45626",
+      "Name": "Spidersilk Drape",
+      "Enchant ID": "38891",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "596"
+    },
+    {
+      "Slot": "Chest",
+      "ID": "48691",
+      "Name": "Tattered Dreadmist Robe",
+      "Enchant ID": "38865"
+    },
+    {
+      "Slot": "Wrists",
+      "ID": "1974",
+      "Name": "Mindthrust Bracers",
+      "Enchant ID": "38882"
+    },
+    {
+      "Slot": "Two Hand",
+      "ID": "42947",
+      "Name": "Dignified Headmaster's Charge",
+      "Enchant ID": "38884",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+    },
+    {
+      "Slot": "Hands",
+      "ID": "5970",
+      "Name": "Serpent Gloves",
+      "Enchant ID": "38886"
+    },
+    {
+      "Slot": "Waist",
+      "ID": "51968",
+      "Name": "Enumerated Wrap",
+      "Enchant ID": "",
+      "Random Enchant": "of the Sun",
+      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+    },
+    {
+      "Slot": "Legs",
+      "ID": "66011",
+      "Name": "Godfrey's Britches",
+      "Enchant ID": "2313"
+    },
+    {
+      "Slot": "Feet",
+      "ID": "4320",
+      "Name": "Spidersilk Boots",
+      "Enchant ID": "38837"
+    },
+    { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
+    { "Slot": "Finger", "ID": "24120", "Name": "Seal of Argas" },
+    { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
+    {
+      "Slot": "Trinket",
+      "ID": "44098",
+      "Name": "Inherited Insignia of the Alliance"
+    },
+    { "Slot": "Ranged", "ID": "5243", "Name": "Firebelcher" }
+  ],
+  "Priest": [
+    { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
+    { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
+    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Back",
+      "ID": "45626",
+      "Name": "Spidersilk Drape",
+      "Enchant ID": "38891",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "596"
+    },
+    {
+      "Slot": "Chest",
+      "ID": "48691",
+      "Name": "Tattered Dreadmist Robe",
+      "Enchant ID": "38865"
+    },
+    {
+      "Slot": "Wrists",
+      "ID": "1974",
+      "Name": "Mindthrust Bracers",
+      "Enchant ID": "38882"
+    },
+    {
+      "Slot": "Two Hand",
+      "ID": "42947",
+      "Name": "Dignified Headmaster's Charge",
+      "Enchant ID": "38884",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+    },
+    {
+      "Slot": "Hands",
+      "ID": "5970",
+      "Name": "Serpent Gloves",
+      "Enchant ID": "38886"
+    },
+    {
+      "Slot": "Waist",
+      "ID": "51968",
+      "Name": "Enumerated Wrap",
+      "Enchant ID": "",
+      "Random Enchant": "of the Sun",
+      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+    },
+    {
+      "Slot": "Legs",
+      "ID": "66011",
+      "Name": "Godfrey's Britches",
+      "Enchant ID": "2313"
+    },
+    {
+      "Slot": "Feet",
+      "ID": "4320",
+      "Name": "Spidersilk Boots",
+      "Enchant ID": "38837"
+    },
+    { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
+    { "Slot": "Finger", "ID": "24120", "Name": "Seal of Argas" },
+    { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
+    {
+      "Slot": "Trinket",
+      "ID": "44098",
+      "Name": "Inherited Insignia of the Alliance"
+    },
+    { "Slot": "Ranged", "ID": "5243", "Name": "Firebelcher" }
+  ],
+  "Rogue": [
+    { "Slot": "Head", "ID": "61937", "Name": "Stained Shadowcraft Cap" },
+    { "Slot": "Neck", "ID": "20442", "Name": "Scout's Medallion" },
+    {
+      "Slot": "Shoulders",
+      "ID": "42952",
+      "Name": "Stained Shadowcraft Spaulders"
+    },
+    {
+      "Slot": "Back",
+      "ID": "51994",
+      "Name": "Tumultuous Cloak",
+      "Enchant ID": "38893",
+      "Random Enchant": "of the Bandit",
+      "Random Enchant ID": "-40: +4 Agility / +4 Stamina / +4 Critical Strike Rating",
+      "Comments": "596"
+    },
+    {
+      "Slot": "Chest",
+      "ID": "48689",
+      "Name": "Stained Shadowcraft Tunic",
+      "Enchant ID": "38865"
+    },
+    {
+      "Slot": "Wrists",
+      "ID": "3230",
+      "Name": "Black Wolf Bracers",
+      "Enchant ID": "38855"
+    },
+    {
+      "Slot": "Hands",
+      "ID": "2167",
+      "Name": "Foreman's Gloves",
+      "Enchant ID": "38890",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+    },
+    {
+      "Slot": "Waist",
+      "ID": "51964",
+      "Name": "Vigorous Belt",
+      "Enchant ID": "",
+      "Random Enchant": "of the Bandit",
+      "Random Enchant ID": "-40: +5 Agility / +5 Stamina / +5 Critical Strike Rating"
+    },
+    {
+      "Slot": "Legs",
+      "ID": "5199",
+      "Name": "Smelting Pants",
+      "Enchant ID": "2313"
+    },
+    {
+      "Slot": "Feet",
+      "ID": "1121",
+      "Name": "Feet of the Lynx",
+      "Enchant ID": "38837"
+    },
+    { "Slot": "Finger", "ID": "24118", "Name": "Signet of Argas" },
+    { "Slot": "Finger", "ID": "24118", "Name": "Signet of Argas" },
+    { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
+    {
+      "Slot": "Trinket",
+      "ID": "44097",
+      "Name": "Inherited Insignia of the Horde"
+    },
+    {
+      "Slot": "One Hand",
+      "ID": "1482",
+      "Name": "Shadowfang",
+      "Enchant ID": "38880"
+    },
+    {
+      "Slot": "One Hand",
+      "ID": "1482",
+      "Name": "Shadowfang",
+      "Enchant ID": "38880"
+    },
+    { "Slot": "Thrown", "ID": "65695", "Name": "Sludge-Caked Throwing Knives" }
+  ],
+  "Shaman": [
+    { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
+    { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
+    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Back",
+      "ID": "45626",
+      "Name": "Spidersilk Drape",
+      "Enchant ID": "38891",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "596"
+    },
+    {
+      "Slot": "Chest",
+      "ID": "48691",
+      "Name": "Tattered Dreadmist Robe",
+      "Enchant ID": "38865"
+    },
+    {
+      "Slot": "Wrists",
+      "ID": "1974",
+      "Name": "Mindthrust Bracers",
+      "Enchant ID": "38882"
+    },
+    {
+      "Slot": "Two Hand",
+      "ID": "42947",
+      "Name": "Dignified Headmaster's Charge",
+      "Enchant ID": "38884",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+    },
+    {
+      "Slot": "Hands",
+      "ID": "5970",
+      "Name": "Serpent Gloves",
+      "Enchant ID": "38886"
+    },
+    {
+      "Slot": "Waist",
+      "ID": "51968",
+      "Name": "Enumerated Wrap",
+      "Enchant ID": "",
+      "Random Enchant": "of the Sun",
+      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+    },
+    {
+      "Slot": "Legs",
+      "ID": "66011",
+      "Name": "Godfrey's Britches",
+      "Enchant ID": "2313"
+    },
+    {
+      "Slot": "Feet",
+      "ID": "4320",
+      "Name": "Spidersilk Boots",
+      "Enchant ID": "38837"
+    },
+    { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
+    { "Slot": "Finger", "ID": "24120", "Name": "Seal of Argas" },
+    { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
+    {
+      "Slot": "Trinket",
+      "ID": "44098",
+      "Name": "Inherited Insignia of the Alliance"
+    },
+    { "Slot": "Ranged", "ID": "5243", "Name": "Firebelcher" }
+  ],
+  "Warlock": [
+    { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
+    { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
+    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Back",
+      "ID": "45626",
+      "Name": "Spidersilk Drape",
+      "Enchant ID": "38891",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "596"
+    },
+    {
+      "Slot": "Chest",
+      "ID": "48691",
+      "Name": "Tattered Dreadmist Robe",
+      "Enchant ID": "38865"
+    },
+    {
+      "Slot": "Wrists",
+      "ID": "1974",
+      "Name": "Mindthrust Bracers",
+      "Enchant ID": "38882"
+    },
+    {
+      "Slot": "Two Hand",
+      "ID": "42947",
+      "Name": "Dignified Headmaster's Charge",
+      "Enchant ID": "38884",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+    },
+    {
+      "Slot": "Hands",
+      "ID": "5970",
+      "Name": "Serpent Gloves",
+      "Enchant ID": "38886"
+    },
+    {
+      "Slot": "Waist",
+      "ID": "51968",
+      "Name": "Enumerated Wrap",
+      "Enchant ID": "",
+      "Random Enchant": "of the Sun",
+      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+    },
+    {
+      "Slot": "Legs",
+      "ID": "66011",
+      "Name": "Godfrey's Britches",
+      "Enchant ID": "2313"
+    },
+    {
+      "Slot": "Feet",
+      "ID": "4320",
+      "Name": "Spidersilk Boots",
+      "Enchant ID": "38837"
+    },
+    { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
+    { "Slot": "Finger", "ID": "24120", "Name": "Seal of Argas" },
+    { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
+    {
+      "Slot": "Trinket",
+      "ID": "44098",
+      "Name": "Inherited Insignia of the Alliance"
+    },
+    { "Slot": "Ranged", "ID": "5243", "Name": "Firebelcher" }
+  ],
+  "Warrior": [
+    { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
+    { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
+    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Back",
+      "ID": "45626",
+      "Name": "Spidersilk Drape",
+      "Enchant ID": "38891",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "596"
+    },
+    {
+      "Slot": "Chest",
+      "ID": "48691",
+      "Name": "Tattered Dreadmist Robe",
+      "Enchant ID": "38865"
+    },
+    {
+      "Slot": "Wrists",
+      "ID": "1974",
+      "Name": "Mindthrust Bracers",
+      "Enchant ID": "38882"
+    },
+    {
+      "Slot": "Two Hand",
+      "ID": "42947",
+      "Name": "Dignified Headmaster's Charge",
+      "Enchant ID": "38884",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+    },
+    {
+      "Slot": "Hands",
+      "ID": "5970",
+      "Name": "Serpent Gloves",
+      "Enchant ID": "38886"
+    },
+    {
+      "Slot": "Waist",
+      "ID": "51968",
+      "Name": "Enumerated Wrap",
+      "Enchant ID": "",
+      "Random Enchant": "of the Sun",
+      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+    },
+    {
+      "Slot": "Legs",
+      "ID": "66011",
+      "Name": "Godfrey's Britches",
+      "Enchant ID": "2313"
+    },
+    {
+      "Slot": "Feet",
+      "ID": "4320",
+      "Name": "Spidersilk Boots",
+      "Enchant ID": "38837"
+    },
+    { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
+    { "Slot": "Finger", "ID": "24120", "Name": "Seal of Argas" },
+    { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
+    {
+      "Slot": "Trinket",
+      "ID": "44098",
+      "Name": "Inherited Insignia of the Alliance"
+    },
+    { "Slot": "Ranged", "ID": "5243", "Name": "Firebelcher" }
+  ]
+}
