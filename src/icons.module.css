@@ -13,6 +13,13 @@
 .VENDOR { background-image: url(./icons/vendor.png) }
 .CRAFT { background-image: url(./icons/craft.png) }
 .DUNGEON { background-image: url(./icons/dungeon.png) }
-.DROP { background-image: url(./icons/drop.png) }
+.DROP { background-image: url(./icons/drop.png ) }
 .HORDE { background-image: url(./icons/horde.png) }
 .ALLIANCE { background-image: url(./icons/alliance.png) }
+.icon {
+  background-image: image-set(
+    url("./icons/sprite.avif") type("image/avif"),
+    url("./icons/sprite.webp") type("image/webp"),
+    url("./icons/sprite.jpg") type("image/jpeg")
+  );
+}

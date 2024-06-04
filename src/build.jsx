@@ -38,11 +38,11 @@ const leftSide = inv => inv.side === 'left'
 const rightSide = inv => inv.side === 'right'
 const slotToItem = slot => (
   <Item
-    key={slot.name}
+    key={`${slot.name}-${slot.wowClass}`}
     slot={slot.icon}
     name={slot.name}
     wowClass={slot.wowClass}
-    {...(slot.unavailable || slot.item)}
+    {...slot.item}
   />
 )
 
@@ -68,11 +68,9 @@ export const Build = ({ build, name }) => {
     slots.push(slot)
   }
 
-  slotsByInventoryType['Off Hand'].unavailable =
-    slotsByInventoryType['Main Hand'].item?.type === 'two hand'
-
-  slotsByInventoryType.Ranged.unavailable =
-    wowClass === 'PALADIN' || wowClass === 'SHAMAN'
+  if (slotsByInventoryType['Main Hand'].item?.type === 'two hand') {
+    slotsByInventoryType['Off Hand'].item = undefined
+  }
 
   return (
     <>

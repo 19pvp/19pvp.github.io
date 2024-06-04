@@ -21,6 +21,7 @@ const ClassButton = ({ wowClass, url, color }: ClassButtonParams) => {
       class={[style.classButton, style[wowClass], active].join(' ')}
       style={{ color }}
       href={withParams(url, { class: wowClass })}
+      title={wowClass}
     ></Link>
   )
 }

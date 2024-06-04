@@ -4,45 +4,52 @@ import { useState, useMemo } from 'preact/hooks'
 import { useEvent, useWindowSize, useFetchJSON } from './hooks.ts'
 import type { ItemData } from './item.tsx'
 import * as style from './icons.module.css'
+import { getIconStyle } from './icon.ts'
+
 
 const MISSING_EVENT = { x: 0, y: 0, target: document.body }
 const DATA_URL = 'https://19pvp.github.io/data/'
-
 
 const capWord = (word: string) =>
   `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}`
 const capitalize = (str: string) => str.split('_').map(capWord).join(' ')
 
-const ToolTipContent = ({ target }: { target: EventTarget | HTMLElement | null }) => {
-  const [tip, rand] = isElem(isElem(target)?.closest('[data-tip]'))?.dataset.tip?.split(':') || []
+const ToolTipContent = ({
+  target,
+}: {
+  target: EventTarget | HTMLElement | null
+}) => {
+  const [tip, rand] = useMemo(
+    () =>
+      isElem(isElem(target)?.closest('[data-tip]'))?.dataset.tip?.split(':') ||
+      [],
+    [target],
+  )
   const dataRequest = useFetchJSON<ItemData>(tip && `${DATA_URL}${tip}.json`)
   const { data } = dataRequest
-  if (!tip || !data || dataRequest.isFetching || dataRequest.isLoading)
+  if (!tip || !data || dataRequest.isFetching || dataRequest.isLoading) {
     return null
+  }
   const source =
     data.source === 'DROP' && data.bind === 'Binds when picked up'
       ? 'DUNGEON'
       : 'DROP'
+
   return (
     <>
       <div>
         <div
-          class={`w-[56px] h-[56px] ${data.quality}`}
-          style={{
-            border: `1px solid currentcolor`,
-            // TODO: use tile image if possible
-            backgroundImage: `url(https://wow.zamimg.com/images/wow/icons/large/${data.icon}.jpg)`,
-          }}
+          class={`w-[58px] h-[58px] ${data.quality} ${style.icon}`}
+          style={{ border: `1px solid currentcolor`, ...getIconStyle(data) }}
         />
       </div>
       <div
         class={`${data.quality} bg-zinc-800 p-1`}
-        style={{
-          width: '400px',
-          border: `1px solid currentcolor`,
-        }}
+        style={{ width: '400px', border: `1px solid currentcolor` }}
       >
-        <div class="font-bold">{data.name} {rand}</div>
+        <div class="font-bold">
+          {data.name} {rand}
+        </div>
         {data.itemLevel && (
           <div class="text-amber-300 flex justify-between">
             <div>
@@ -120,7 +127,6 @@ const ToolTipContent = ({ target }: { target: EventTarget | HTMLElement | null }
 
 const isElem = (elem: unknown) =>
   elem instanceof HTMLElement ? elem : undefined
-
 
 export const ToolTip = () => {
   const [ref, setRef] = useState<HTMLDivElement | null>(null)

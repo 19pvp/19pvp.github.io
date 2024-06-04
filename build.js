@@ -70,15 +70,10 @@ const run = (cmd, args) => new Deno.Command(cmd, { args }).output()
 // All the images are already downloaded from
 // https://github.com/Gethe/wow-ui-textures/archive/refs/heads/live.zip
 // it's needed to lowercase all the icons names first
-const icons = [...new Set(items.map(item => item.icon))]
+const icons = [...new Set(items.map(item => item.icon))].sort()
 
 const itemsJSON = JSON.stringify(
-  Object.fromEntries(
-    items.map(item => [
-      item.id,
-      { ...item, iconIndex: icons.indexOf(item.icon) },
-    ]),
-  ),
+  Object.fromEntries(items.map(item => [item.id, item])),
 )
 
 await Deno.writeTextFile('src/cached-items.json', itemsJSON)

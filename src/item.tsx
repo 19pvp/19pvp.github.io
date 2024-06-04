@@ -90,9 +90,11 @@ export type ItemData = {
     text: string
   }
   icon: string
+  iconIndex?: number
   source: Source
   class: 'CONSUMABLE' | 'WEAPON' | 'ARMOR'
   subclass?: Subclasses
+  sourceId?: number
   sourceType?: SourceType
   sourceZone?: SourceType
   sourceName?: string
@@ -149,7 +151,7 @@ const formatEnchantName = (ench: ItemData) => {
   return nameParts[nameParts.length > 1 ? 1 : 0]
 }
 
-const useItem = (id?: number) =>
+export const useItem = (id?: number) =>
   useFetchJSON<ItemData>(
     id == null ? null : `https://19pvp.github.io/data/items/${id}.json`,
   )
@@ -210,6 +212,7 @@ export const Item = ({
           'linear-gradient(to right, rgb(39 39 42 / var(--tw-bg-opacity)), transparent 5px)',
           'linear-gradient(to top, rgb(39 39 42 / var(--tw-bg-opacity)), transparent 5px)',
           'linear-gradient(to bottom, rgb(39 39 42 / var(--tw-bg-opacity)), transparent 5px)',
+          // TODO use image-set and 
           `url(https://wow.zamimg.com/images/wow/icons/large/${item.icon}.jpg)`,
         ].join(', '),
       }}

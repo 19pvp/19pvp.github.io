@@ -18,8 +18,7 @@
     "stats": { "Critical Strike Rating": 7, "Agility": 7 },
     "source": "DROP",
     "sourceZone": "The Deadmines",
-    "sourceZoneType": "Dungeon",
-    "iconIndex": 32
+    "sourceZoneType": "Dungeon"
   },
   "1121": {
     "id": 1121,
@@ -35,8 +34,7 @@
     "subclass": "LEATHER",
     "type": "FEET",
     "stats": { "Agility": 8, "Stamina": 5 },
-    "source": "DROP",
-    "iconIndex": 40
+    "source": "DROP"
   },
   "1156": {
     "id": 1156,
@@ -54,8 +52,7 @@
     "stats": { "Hit Rating": 3, "Intellect": 5 },
     "source": "DROP",
     "sourceZone": "The Deadmines",
-    "sourceZoneType": "Dungeon",
-    "iconIndex": 13
+    "sourceZoneType": "Dungeon"
   },
   "1482": {
     "id": 1482,
@@ -83,8 +80,7 @@
       "icon": "spell_shadow_shadowbolt",
       "name": "Shadow Bolt",
       "text": "Sends a shadowy bolt at the enemy causing 30 Shadow damage."
-    },
-    "iconIndex": 42
+    }
   },
   "1974": {
     "id": 1974,
@@ -102,8 +98,7 @@
     "stats": { "Stamina": 3, "Intellect": 4, "Spirit": 3 },
     "source": "DROP",
     "sourceZone": "Shadowfang Keep",
-    "sourceZoneType": "Dungeon",
-    "iconIndex": 6
+    "sourceZoneType": "Dungeon"
   },
   "2167": {
     "id": 2167,
@@ -124,8 +119,7 @@
     "sourceName": "Foreman Thistlenettle",
     "sourceZone": "Westfall",
     "sourceZoneType": "Zone",
-    "sourceType": "NPC",
-    "iconIndex": 39
+    "sourceType": "NPC"
   },
   "2313": {
     "id": 2313,
@@ -154,8 +148,7 @@
       "description": "Reinforced (+16 Armor)",
       "id": 16,
       "types": ["CHEST", "LEGS", "FEET", "HANDS"]
-    },
-    "iconIndex": 11
+    }
   },
   "3230": {
     "id": 3230,
@@ -173,8 +166,7 @@
     "stats": { "Critical Strike Rating": 3, "Agility": 3, "Stamina": 4 },
     "source": "DROP",
     "sourceZone": "Shadowfang Keep",
-    "sourceZoneType": "Dungeon",
-    "iconIndex": 6
+    "sourceZoneType": "Dungeon"
   },
   "4320": {
     "id": 4320,
@@ -193,8 +185,7 @@
     "source": "CRAFT",
     "sourceId": 3855,
     "sourceName": "Tailoring",
-    "sourceType": "SPELL",
-    "iconIndex": 12
+    "sourceType": "SPELL"
   },
   "4406": {
     "id": 4406,
@@ -222,8 +213,7 @@
       "description": "Scope (+2 Damage)",
       "id": 32,
       "types": ["RANGED"]
-    },
-    "iconIndex": 31
+    }
   },
   "5199": {
     "id": 5199,
@@ -241,8 +231,7 @@
     "stats": { "Critical Strike Rating": 4, "Agility": 8, "Stamina": 4 },
     "source": "DROP",
     "sourceZone": "The Deadmines",
-    "sourceZoneType": "Dungeon",
-    "iconIndex": 27
+    "sourceZoneType": "Dungeon"
   },
   "5243": {
     "id": 5243,
@@ -266,8 +255,7 @@
     "sourceName": "Deviate Faerie Dragon",
     "sourceZone": "Wailing Caverns",
     "sourceZoneType": "Dungeon",
-    "sourceType": "NPC",
-    "iconIndex": 17
+    "sourceType": "NPC"
   },
   "5970": {
     "id": 5970,
@@ -288,8 +276,7 @@
     "sourceName": "Lord Serpentis",
     "sourceZone": "Wailing Caverns",
     "sourceZoneType": "Dungeon",
-    "sourceType": "NPC",
-    "iconIndex": 8
+    "sourceType": "NPC"
   },
   "6468": {
     "id": 6468,
@@ -308,8 +295,7 @@
     "source": "CRAFT",
     "sourceId": 7955,
     "sourceName": "Leatherworking",
-    "sourceType": "SPELL",
-    "iconIndex": 26
+    "sourceType": "SPELL"
   },
   "10413": {
     "id": 10413,
@@ -330,8 +316,7 @@
     "sourceName": "Druid of the Fang",
     "sourceZone": "Wailing Caverns",
     "sourceZoneType": "Dungeon",
-    "sourceType": "NPC",
-    "iconIndex": 24
+    "sourceType": "NPC"
   },
   "19024": {
     "id": 19024,
@@ -356,8 +341,7 @@
       "icon": "spell_holy_devotionaura",
       "name": "Aura of Protection",
       "text": "Absorbs 750 to 1250 damage. Lasts 20 sec. (15 Min Cooldown)"
-    },
-    "iconIndex": 15
+    }
   },
   "20442": {
     "id": 20442,
@@ -379,8 +363,7 @@
     "sourceName": "Kelm Hargunth",
     "sourceZone": "Northern Barrens",
     "sourceZoneType": "Zone",
-    "sourceType": "NPC",
-    "iconIndex": 36
+    "sourceType": "NPC"
   },
   "20444": {
     "id": 20444,
@@ -402,8 +385,7 @@
     "sourceName": "Illiyana Moonblaze",
     "sourceZone": "Ashenvale",
     "sourceZoneType": "Zone",
-    "sourceType": "NPC",
-    "iconIndex": 19
+    "sourceType": "NPC"
   },
   "21933": {
     "id": 21933,
@@ -422,8 +404,7 @@
     "source": "CRAFT",
     "sourceId": 26927,
     "sourceName": "Jewelcrafting",
-    "sourceType": "SPELL",
-    "iconIndex": 1
+    "sourceType": "SPELL"
   },
   "24118": {
     "id": 24118,
@@ -441,8 +422,7 @@
     "stats": { "Agility": 6, "Stamina": 3 },
     "source": "QUEST",
     "sourceZone": "Ashenvale",
-    "sourceZoneType": "Zone",
-    "iconIndex": 14
+    "sourceZoneType": "Zone"
   },
   "24120": {
     "id": 24120,
@@ -460,8 +440,7 @@
     "stats": { "Stamina": 5, "Intellect": 6 },
     "source": "QUEST",
     "sourceZone": "Ashenvale",
-    "sourceZoneType": "Zone",
-    "iconIndex": 14
+    "sourceZoneType": "Zone"
   },
   "38837": {
     "id": 38837,
@@ -488,8 +467,7 @@
       "description": "Minor Speed Increase",
       "id": 911,
       "types": ["FEET"]
-    },
-    "iconIndex": 4
+    }
   },
   "38855": {
     "id": 38855,
@@ -512,8 +490,7 @@
       "name": "Enchant Bracer - Superior Stamina",
       "text": "Permanently enchant bracers to increase Stamina by 9."
     },
-    "enchant": { "description": "+9 Stamina", "id": 1886, "types": ["WRISTS"] },
-    "iconIndex": 4
+    "enchant": { "description": "+9 Stamina", "id": 1886, "types": ["WRISTS"] }
   },
   "38865": {
     "id": 38865,
@@ -542,12 +519,7 @@
       "name": "Enchant Chest - Greater Stats",
       "text": "Permanently enchant chest armor to increase all stats by 4."
     },
-    "enchant": {
-      "description": "+4 All Stats",
-      "id": 1891,
-      "types": ["CHEST"]
-    },
-    "iconIndex": 4
+    "enchant": { "description": "+4 All Stats", "id": 1891, "types": ["CHEST"] }
   },
   "38880": {
     "id": 38880,
@@ -574,8 +546,7 @@
       "description": "+15 Agility",
       "id": 2564,
       "types": ["MAIN_HAND", "ONE_HAND", "TWO_HAND"]
-    },
-    "iconIndex": 4
+    }
   },
   "38882": {
     "id": 38882,
@@ -602,8 +573,7 @@
       "description": "+15 Spell Power",
       "id": 2650,
       "types": ["WRISTS"]
-    },
-    "iconIndex": 4
+    }
   },
   "38884": {
     "id": 38884,
@@ -630,8 +600,7 @@
       "description": "+22 Intellect",
       "id": 2568,
       "types": ["MAIN_HAND", "ONE_HAND", "TWO_HAND"]
-    },
-    "iconIndex": 4
+    }
   },
   "38886": {
     "id": 38886,
@@ -658,8 +627,7 @@
       "description": "+20 Shadow Spell Power",
       "id": 2614,
       "types": ["HANDS"]
-    },
-    "iconIndex": 4
+    }
   },
   "38889": {
     "id": 38889,
@@ -686,8 +654,7 @@
       "description": "+16 Spell Power",
       "id": 2617,
       "types": ["HANDS"]
-    },
-    "iconIndex": 4
+    }
   },
   "38890": {
     "id": 38890,
@@ -710,8 +677,7 @@
       "name": "Enchant Gloves - Superior Agility",
       "text": "Permanently enchant gloves to increase Agility by 15."
     },
-    "enchant": { "description": "+15 Agility", "id": 2564, "types": ["HANDS"] },
-    "iconIndex": 4
+    "enchant": { "description": "+15 Agility", "id": 2564, "types": ["HANDS"] }
   },
   "38891": {
     "id": 38891,
@@ -738,8 +704,7 @@
       "description": "+15 Fire Resistance",
       "id": 2619,
       "types": ["BACK"]
-    },
-    "iconIndex": 4
+    }
   },
   "38893": {
     "id": 38893,
@@ -766,8 +731,7 @@
       "description": "+8 Agility and +8 Dodge Rating",
       "id": 910,
       "types": ["BACK"]
-    },
-    "iconIndex": 4
+    }
   },
   "38896": {
     "id": 38896,
@@ -794,8 +758,7 @@
       "description": "+25 Agility",
       "id": 2646,
       "types": ["TWO_HAND"]
-    },
-    "iconIndex": 4
+    }
   },
   "42947": {
     "id": 42947,
@@ -819,8 +782,7 @@
       "Stamina": 9,
       "Intellect": 7
     },
-    "source": "VENDOR",
-    "iconIndex": 7
+    "source": "VENDOR"
   },
   "42950": {
     "id": 42950,
@@ -836,8 +798,7 @@
     "subclass": "MAIL",
     "type": "SHOULDERS",
     "stats": { "Critical Strike Rating": 5, "Agility": 5, "Stamina": 7 },
-    "source": "VENDOR",
-    "iconIndex": 20
+    "source": "VENDOR"
   },
   "42952": {
     "id": 42952,
@@ -853,8 +814,7 @@
     "subclass": "LEATHER",
     "type": "SHOULDERS",
     "stats": { "Hit Rating": 4, "Agility": 7, "Stamina": 4 },
-    "source": "VENDOR",
-    "iconIndex": 37
+    "source": "VENDOR"
   },
   "42985": {
     "id": 42985,
@@ -870,8 +830,7 @@
     "subclass": "CLOTH",
     "type": "SHOULDERS",
     "stats": { "Critical Strike Rating": 5, "Stamina": 7, "Intellect": 5 },
-    "source": "VENDOR",
-    "iconIndex": 2
+    "source": "VENDOR"
   },
   "44093": {
     "id": 44093,
@@ -892,8 +851,7 @@
     "stats": { "Critical Strike Rating": 9, "Resilience": 4, "Agility": 5 },
     "source": "VENDOR",
     "sourceZone": "Wintergrasp",
-    "sourceZoneType": "Zone",
-    "iconIndex": 30
+    "sourceZoneType": "Zone"
   },
   "44097": {
     "id": 44097,
@@ -922,8 +880,7 @@
       "icon": "spell_holy_dispelmagic",
       "name": "PvP Trinket",
       "text": "Removes all movement impairing effects and all effects which cause loss of control of your character. (5 Min Cooldown)"
-    },
-    "iconIndex": 41
+    }
   },
   "44098": {
     "id": 44098,
@@ -949,8 +906,7 @@
       "icon": "spell_holy_dispelmagic",
       "name": "PvP Trinket",
       "text": "Removes all movement impairing effects and all effects which cause loss of control of your character. (5 Min Cooldown)"
-    },
-    "iconIndex": 16
+    }
   },
   "45626": {
     "id": 45626,
@@ -969,8 +925,7 @@
     "source": "CRAFT",
     "sourceId": 63742,
     "sourceName": "Tailoring",
-    "sourceType": "SPELL",
-    "iconIndex": 3
+    "sourceType": "SPELL"
   },
   "48677": {
     "id": 48677,
@@ -986,8 +941,7 @@
     "subclass": "MAIL",
     "type": "CHEST",
     "stats": { "Critical Strike Rating": 6, "Agility": 6, "Stamina": 10 },
-    "source": "VENDOR",
-    "iconIndex": 22
+    "source": "VENDOR"
   },
   "48689": {
     "id": 48689,
@@ -1003,8 +957,7 @@
     "subclass": "LEATHER",
     "type": "CHEST",
     "stats": { "Hit Rating": 6, "Agility": 6, "Stamina": 10 },
-    "source": "VENDOR",
-    "iconIndex": 38
+    "source": "VENDOR"
   },
   "48691": {
     "id": 48691,
@@ -1020,8 +973,7 @@
     "subclass": "CLOTH",
     "type": "CHEST",
     "stats": { "Critical Strike Rating": 6, "Stamina": 10, "Intellect": 6 },
-    "source": "VENDOR",
-    "iconIndex": 5
+    "source": "VENDOR"
   },
   "51964": {
     "id": 51964,
@@ -1065,8 +1017,7 @@
     "source": "DROP",
     "sourceId": 51999,
     "sourceName": "Satchel of Helpful Goods",
-    "sourceType": "ITEM",
-    "iconIndex": 25
+    "sourceType": "ITEM"
   },
   "51968": {
     "id": 51968,
@@ -1111,8 +1062,7 @@
     "source": "DROP",
     "sourceId": 51999,
     "sourceName": "Satchel of Helpful Goods",
-    "sourceType": "ITEM",
-    "iconIndex": 9
+    "sourceType": "ITEM"
   },
   "51994": {
     "id": 51994,
@@ -1177,8 +1127,7 @@
     "source": "DROP",
     "sourceId": 51999,
     "sourceName": "Satchel of Helpful Goods",
-    "sourceType": "ITEM",
-    "iconIndex": 21
+    "sourceType": "ITEM"
   },
   "53412": {
     "id": 53412,
@@ -1198,8 +1147,7 @@
     "source": "QUEST",
     "sourceId": 14464,
     "sourceName": "Lightning Strike Assassination",
-    "sourceType": "QUEST",
-    "iconIndex": 23
+    "sourceType": "QUEST"
   },
   "53428": {
     "id": 53428,
@@ -1219,8 +1167,7 @@
     "source": "QUEST",
     "sourceId": 24449,
     "sourceName": "Shore Leave",
-    "sourceType": "QUEST",
-    "iconIndex": 33
+    "sourceType": "QUEST"
   },
   "56713": {
     "id": 56713,
@@ -1243,8 +1190,7 @@
     "source": "QUEST",
     "sourceId": 13798,
     "sourceName": "Rain of Destruction",
-    "sourceType": "QUEST",
-    "iconIndex": 35
+    "sourceType": "QUEST"
   },
   "60905": {
     "id": 60905,
@@ -1264,8 +1210,7 @@
     "source": "QUEST",
     "sourceId": 26727,
     "sourceName": "The Embalmer's Revenge",
-    "sourceType": "QUEST",
-    "iconIndex": 29
+    "sourceType": "QUEST"
   },
   "61937": {
     "id": 61937,
@@ -1286,8 +1231,7 @@
       "Agility": 20,
       "Stamina": 28
     },
-    "source": "VENDOR",
-    "iconIndex": 18
+    "source": "VENDOR"
   },
   "61958": {
     "id": 61958,
@@ -1308,8 +1252,7 @@
       "Stamina": 10,
       "Intellect": 6
     },
-    "source": "VENDOR",
-    "iconIndex": 0
+    "source": "VENDOR"
   },
   "65695": {
     "id": 65695,
@@ -1332,8 +1275,7 @@
     "source": "QUEST",
     "sourceId": 28209,
     "sourceName": "Freedom for Lydon",
-    "sourceType": "QUEST",
-    "iconIndex": 43
+    "sourceType": "QUEST"
   },
   "65715": {
     "id": 65715,
@@ -1353,8 +1295,7 @@
     "source": "QUEST",
     "sourceId": 28237,
     "sourceName": "A Blight Upon the Land",
-    "sourceType": "QUEST",
-    "iconIndex": 34
+    "sourceType": "QUEST"
   },
   "65961": {
     "id": 65961,
@@ -1373,8 +1314,7 @@
     "source": "QUEST",
     "sourceId": 26870,
     "sourceName": "Cleansing the Caverns",
-    "sourceType": "QUEST",
-    "iconIndex": 28
+    "sourceType": "QUEST"
   },
   "66011": {
     "id": 66011,
@@ -1394,7 +1334,6 @@
     "source": "QUEST",
     "sourceId": 27998,
     "sourceName": "Sweet, Merciless Revenge",
-    "sourceType": "QUEST",
-    "iconIndex": 10
+    "sourceType": "QUEST"
   }
 }

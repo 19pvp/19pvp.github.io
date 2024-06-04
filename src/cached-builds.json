@@ -66,8 +66,7 @@
       "Slot": "Trinket",
       "ID": "44098",
       "Name": "Inherited Insignia of the Alliance"
-    },
-    { "Slot": "Ranged", "ID": "5243", "Name": "Firebelcher" }
+    }
   ],
   "Hunter": [
     { "Slot": "Head", "ID": "61937", "Name": "Stained Shadowcraft Cap" },
@@ -287,8 +286,7 @@
       "Slot": "Trinket",
       "ID": "44098",
       "Name": "Inherited Insignia of the Alliance"
-    },
-    { "Slot": "Ranged", "ID": "5243", "Name": "Firebelcher" }
+    }
   ],
   "Priest": [
     { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
@@ -507,8 +505,7 @@
       "Slot": "Trinket",
       "ID": "44098",
       "Name": "Inherited Insignia of the Alliance"
-    },
-    { "Slot": "Ranged", "ID": "5243", "Name": "Firebelcher" }
+    }
   ],
   "Warlock": [
     { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
