@@ -8,22 +8,7 @@ import { nanoEvent } from './nano-event.js'
 // - No path matching is done here just a hook and a trigger
 
 const urlEvent = nanoEvent(new URL(location.href))
-const navigatingEvent = nanoEvent({ start: Date.now(), end: Date.now() })
 export const useUrl = urlEvent.use
-export const useNavigating = navigatingEvent.use
-
-// Not available on safari :/
-if (typeof requestIdleCallback === 'function') {
-  urlEvent.register(() => {
-    const start = Date.now()
-    console.log('Nav start', { start })
-    navigatingEvent.trigger({ start, end: 0 })
-    requestIdleCallback(() => {
-      console.log('Nav start', { end: Date.now() })
-      navigatingEvent.trigger({ start, end: Date.now() })
-    })
-  })
-}
 
 const dispatchNavigation = () => {
   // If the path did change, we update the local state and trigger the change
