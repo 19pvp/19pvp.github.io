@@ -1,6 +1,6 @@
 import { h } from 'preact'
 import { useFetchJSON } from './hooks.js'
-import { wowClasses } from './wow-classes.js'
+import { wowClasses } from './wow-classes.ts'
 
 type Quality =
   | 'POOR'
@@ -153,7 +153,7 @@ const formatEnchantName = (ench: ItemData) => {
 
 export const useItem = (id?: number) =>
   useFetchJSON<ItemData>(
-    id == null ? null : `https://19pvp.github.io/data/items/${id}.json`,
+    id && id > 0 ? `https://19pvp.github.io/data/items/${id}.json` : null,
   )
 
 // TODO: Show source ?
