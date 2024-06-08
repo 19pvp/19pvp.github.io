@@ -70,10 +70,27 @@ const run = (cmd, args) => new Deno.Command(cmd, { args }).output()
 // All the images are already downloaded from
 // https://github.com/Gethe/wow-ui-textures/archive/refs/heads/live.zip
 // it's needed to lowercase all the icons names first
-const icons = [...new Set(items.map(item => item.icon))].sort()
+const icons = [
+  ...[...new Set(items.map(item => `ICONS/${item.icon}.png`))].sort(),
+  'PaperDoll/UI-PaperDoll-Slot-Chest.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Feet.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Finger.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Hands.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Head.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Legs.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-MainHand.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Neck.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Ranged.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Relic.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-SecondaryHand.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Shoulder.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Trinket.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Waist.PNG',
+  'PaperDoll/UI-PaperDoll-Slot-Wrists.PNG',
+]
 
 const itemsJSON = JSON.stringify(
-  Object.fromEntries(items.map(item => [item.id, item])),
+  Object.fromEntries(items.map(item => [item.id, item]).filter(entry => entry[0])),
 )
 
 await Deno.writeTextFile('src/cached-items.json', itemsJSON)
@@ -87,7 +104,7 @@ await run('biome', [
 
 for (const icon of icons) {
   await run('convert', [
-    `/home/cdenis/Downloads/wow-ui-textures-live/ICONS/${icon}.png`,
+    `/home/cdenis/Downloads/wow-ui-textures-live/${icon}`,
     ...['-shave', '3x3', '+repage'],
     ...['-fill', 'black'],
     ...['-draw', 'color 0,0 point'],
@@ -117,12 +134,12 @@ for (const icon of icons) {
     ...['-draw', 'color 56,56 point'],
     ...['-draw', 'color 56,57 point'],
     ...['-draw', 'color 55,57 point'],
-    `src/icons/${icon}.png`,
+    `src/icons/${icon}`,
   ])
 }
 
 await run('convert', [
-  ...icons.map(name => `src/icons/${name}.png`),
+  ...icons.map(name => `src/icons/${name}`),
   '-append',
   'src/icons/sprite.png',
 ])

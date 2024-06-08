@@ -1,0 +1,15 @@
+.iconWrapper:before {
+  content: ' ';
+  position: relative;
+  display: block;
+  height: 68px;
+  width: 68px;
+  flex-shrink: 0;
+  top: 0;
+  left: 0;
+  background-image:
+    linear-gradient(to right, transparent 40px, rgb(39 39 42 / var(--tw-bg-opacity)) 65px),
+    linear-gradient(to right, rgb(39 39 42 / var(--tw-bg-opacity)), transparent 5px),
+    linear-gradient(to top, rgb(39 39 42 / var(--tw-bg-opacity)), transparent 5px),
+    linear-gradient(to bottom, rgb(39 39 42 / var(--tw-bg-opacity)), transparent 5px)
+}

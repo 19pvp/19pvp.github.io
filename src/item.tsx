@@ -1,6 +1,8 @@
 import { h } from 'preact'
 import { useFetchJSON } from './hooks.js'
 import { wowClasses } from './wow-classes.ts'
+import { getIconStyle } from './icon.ts'
+import * as style from './item.module.css'
 
 type Quality =
   | 'POOR'
@@ -195,33 +197,26 @@ export const Item = ({
   )
 
   const excludeStats = wowClasses[wowClass]?.excludeStats || []
+  const iconExtraStyle = getIconStyle(item, 65)
   return (
     <div
-      class="
+      class={`
         flex gap-1
-        p-2 pl-[68px]
         rounded-md overflow-hidden
+        items-center
         bg-zinc-800 bg-contain bg-no-repeat bg-left
         text-zinc-200
         border-zinc-700 border-solid border-4
         w-full
-      "
-      style={{
-        backgroundImage: [
-          'linear-gradient(to right, transparent 40px, rgb(39 39 42 / var(--tw-bg-opacity)) 65px)',
-          'linear-gradient(to right, rgb(39 39 42 / var(--tw-bg-opacity)), transparent 5px)',
-          'linear-gradient(to top, rgb(39 39 42 / var(--tw-bg-opacity)), transparent 5px)',
-          'linear-gradient(to bottom, rgb(39 39 42 / var(--tw-bg-opacity)), transparent 5px)',
-          // TODO use image-set and 
-          `url(https://wow.zamimg.com/images/wow/icons/large/${item.icon}.jpg)`,
-        ].join(', '),
-      }}
+        ${style.iconWrapper}
+      `}
+      style={{ ...iconExtraStyle, backgroundSize: '65px' }}
     >
       <div>
         <span class="font-bold text-ellipsis overflow-hidden whitespace-nowrap">
           <a
             href={`#detail-item-${item.id}`}
-            data-tip={item.id && `items/${item.id}:${rand||''}`}
+            data-tip={item.id && `items/${item.id}:${rand || ''}`}
             class={item.quality}
           >
             {item.name} {rand}

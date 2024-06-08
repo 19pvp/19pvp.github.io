@@ -1,33 +1,37 @@
 {
   "Druid": [
-    { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
+    { "Slot": "Head", "ID": "19972", "Name": "Lucky Fishing Hat" },
     { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
-    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Shoulders",
+      "ID": "44105",
+      "Name": "Lasting Feralheart Spaulders"
+    },
     {
       "Slot": "Back",
-      "ID": "45626",
-      "Name": "Spidersilk Drape",
+      "ID": "51994",
+      "Name": "Tumultuous Cloak",
       "Enchant ID": "38891",
-      "Random Enchant": "",
-      "Random Enchant ID": "",
+      "Random Enchant": "of Stamina",
+      "Random Enchant ID": "184: +8 Stamina",
       "Comments": "596"
     },
     {
-      "Slot": "Chest",
-      "ID": "48691",
-      "Name": "Tattered Dreadmist Robe",
-      "Enchant ID": "38865"
+      "Slot": "Wrists",
+      "ID": "52616",
+      "Name": "Bracers of the Ancient Grove",
+      "Enchant ID": "38855"
     },
     {
-      "Slot": "Wrists",
-      "ID": "1974",
-      "Name": "Mindthrust Bracers",
-      "Enchant ID": "38882"
+      "Slot": "Chest",
+      "ID": "48689",
+      "Name": "Stained Shadowcraft Tunic",
+      "Enchant ID": "38866"
     },
     {
       "Slot": "Two Hand",
-      "ID": "42947",
-      "Name": "Dignified Headmaster's Charge",
+      "ID": "48718",
+      "Name": "Repurposed Lava Dredger",
       "Enchant ID": "38884",
       "Random Enchant": "",
       "Random Enchant ID": "",
@@ -35,23 +39,23 @@
     },
     {
       "Slot": "Hands",
-      "ID": "5970",
-      "Name": "Serpent Gloves",
-      "Enchant ID": "38886"
+      "ID": "10401",
+      "Name": "Blackened Defias Gloves",
+      "Enchant ID": "38889"
     },
     {
       "Slot": "Waist",
-      "ID": "51968",
-      "Name": "Enumerated Wrap",
+      "ID": "51964",
+      "Name": "Vigorous Belt",
       "Enchant ID": "",
-      "Random Enchant": "of the Sun",
-      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+      "Random Enchant": "of the Monkey",
+      "Random Enchant ID": "599: +6 Agility / +6 Stamina"
     },
     {
       "Slot": "Legs",
-      "ID": "66011",
-      "Name": "Godfrey's Britches",
-      "Enchant ID": "2313"
+      "ID": "5958",
+      "Name": "Fine Leather Pants",
+      "Enchant ID": "4265"
     },
     {
       "Slot": "Feet",
@@ -59,7 +63,7 @@
       "Name": "Spidersilk Boots",
       "Enchant ID": "38837"
     },
-    { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
+    { "Slot": "Finger", "ID": "60905", "Name": "Ello's Band" },
     { "Slot": "Finger", "ID": "24120", "Name": "Seal of Argas" },
     { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
     {
@@ -133,7 +137,7 @@
     { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
     {
       "Slot": "Trinket",
-      "ID": "44098",
+      "ID": "44097",
       "Name": "Inherited Insignia of the Alliance"
     },
     {
@@ -214,18 +218,22 @@
     { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
     {
       "Slot": "Trinket",
-      "ID": "44098",
-      "Name": "Inherited Insignia of the Alliance"
+      "ID": "44097",
+      "Name": "Inherited Insignia of the Horde"
     },
     { "Slot": "Ranged", "ID": "56713", "Name": "Durak's Wand" }
   ],
   "Paladin": [
     { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
     { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
-    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Shoulders",
+      "ID": "42951",
+      "Name": "Mystical Pauldrons of Elements"
+    },
     {
       "Slot": "Back",
-      "ID": "45626",
+      "ID": "51994",
       "Name": "Spidersilk Drape",
       "Enchant ID": "38891",
       "Random Enchant": "",
@@ -234,38 +242,32 @@
     },
     {
       "Slot": "Chest",
-      "ID": "48691",
-      "Name": "Tattered Dreadmist Robe",
+      "ID": "48683",
+      "Name": "Mystical Vest of Elements",
       "Enchant ID": "38865"
     },
     {
       "Slot": "Wrists",
-      "ID": "1974",
-      "Name": "Mindthrust Bracers",
-      "Enchant ID": "38882"
-    },
-    {
-      "Slot": "Two Hand",
-      "ID": "42947",
-      "Name": "Dignified Headmaster's Charge",
-      "Enchant ID": "38884",
-      "Random Enchant": "",
-      "Random Enchant ID": "",
-      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
+      "ID": "59575",
+      "Name": "Uninsured Bracers",
+      "Enchant ID": "38852"
     },
     {
       "Slot": "Hands",
       "ID": "5970",
       "Name": "Serpent Gloves",
-      "Enchant ID": "38886"
+      "Enchant ID": "38889",
+      "Random Enchant": "",
+      "Random Enchant ID": "",
+      "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
     },
     {
       "Slot": "Waist",
-      "ID": "51968",
-      "Name": "Enumerated Wrap",
+      "ID": "51978",
+      "Name": "Earthbound Girdle",
       "Enchant ID": "",
-      "Random Enchant": "of the Sun",
-      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+      "Random Enchant": "of the Sorcerer",
+      "Random Enchant ID": "-36: +5 Stamina / +5 Intellect / +5 Haste"
     },
     {
       "Slot": "Legs",
@@ -275,17 +277,29 @@
     },
     {
       "Slot": "Feet",
-      "ID": "4320",
-      "Name": "Spidersilk Boots",
+      "ID": "53428",
+      "Name": "Merger Boots",
       "Enchant ID": "38837"
     },
     { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
-    { "Slot": "Finger", "ID": "24120", "Name": "Seal of Argas" },
+    { "Slot": "Finger", "ID": "65715", "Name": "Stillwater's Signet" },
     { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
     {
       "Slot": "Trinket",
-      "ID": "44098",
-      "Name": "Inherited Insignia of the Alliance"
+      "ID": "44097",
+      "Name": "Inherited Insignia of the Horde"
+    },
+    {
+      "Slot": "Main Hand",
+      "ID": "42948",
+      "Name": "Devout Aurastone Hammer",
+      "Enchant ID": "38884"
+    },
+    {
+      "Slot": "Shield",
+      "ID": "53443",
+      "Name": "Shield of Talrendis Point",
+      "Enchant ID": "38860"
     }
   ],
   "Priest": [
@@ -294,11 +308,11 @@
     { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
     {
       "Slot": "Back",
-      "ID": "45626",
-      "Name": "Spidersilk Drape",
-      "Enchant ID": "38891",
-      "Random Enchant": "",
-      "Random Enchant ID": "",
+      "ID": "51994",
+      "Name": "Tumultuous Cloak",
+      "Enchant ID": "38795",
+      "Random Enchant": "of the Sorcerer",
+      "Random Enchant ID": "-36: +4 Stamina / +4 Intellect / +4 Haste",
       "Comments": "596"
     },
     {
@@ -326,7 +340,7 @@
       "Slot": "Hands",
       "ID": "5970",
       "Name": "Serpent Gloves",
-      "Enchant ID": "38886"
+      "Enchant ID": "38889"
     },
     {
       "Slot": "Waist",
@@ -417,7 +431,7 @@
       "Enchant ID": "38837"
     },
     { "Slot": "Finger", "ID": "24118", "Name": "Signet of Argas" },
-    { "Slot": "Finger", "ID": "24118", "Name": "Signet of Argas" },
+    { "Slot": "Finger", "ID": "20429", "Name": "Legionnaire's Band" },
     { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
     {
       "Slot": "Trinket",
@@ -426,85 +440,95 @@
     },
     {
       "Slot": "One Hand",
-      "ID": "1482",
-      "Name": "Shadowfang",
+      "ID": "48716",
+      "Name": "Venerable Mass of McGowan",
       "Enchant ID": "38880"
     },
     {
       "Slot": "One Hand",
-      "ID": "1482",
-      "Name": "Shadowfang",
+      "ID": "48716",
+      "Name": "Venerable Mass of McGowan",
       "Enchant ID": "38880"
     },
     { "Slot": "Thrown", "ID": "65695", "Name": "Sludge-Caked Throwing Knives" }
   ],
   "Shaman": [
-    { "Slot": "Head", "ID": "61958", "Name": "Tattered Dreadmist Mask" },
+    { "Slot": "Head", "ID": "19972", "Name": "Lucky Fishing Hat" },
     { "Slot": "Neck", "ID": "21933", "Name": "Thick Bronze Necklace" },
-    { "Slot": "Shoulders", "ID": "42985", "Name": "Tattered Dreadmist Mantle" },
+    {
+      "Slot": "Shoulders",
+      "ID": "44102",
+      "Name": "Aged Pauldrons of The Five Thunders"
+    },
     {
       "Slot": "Back",
-      "ID": "45626",
-      "Name": "Spidersilk Drape",
+      "ID": "51994",
+      "Name": "Tumultuous Cloak",
       "Enchant ID": "38891",
-      "Random Enchant": "",
-      "Random Enchant ID": "",
+      "Random Enchant": "of Stamina",
+      "Random Enchant ID": "184: +8 Stamina",
       "Comments": "596"
     },
     {
       "Slot": "Chest",
-      "ID": "48691",
-      "Name": "Tattered Dreadmist Robe",
-      "Enchant ID": "38865"
+      "ID": "48689",
+      "Name": "Stained Shadowcraft Tunic",
+      "Enchant ID": "38866"
     },
     {
       "Slot": "Wrists",
-      "ID": "1974",
-      "Name": "Mindthrust Bracers",
-      "Enchant ID": "38882"
+      "ID": "52616",
+      "Name": "Bracers of the Ancient Grove",
+      "Enchant ID": "38855"
     },
     {
-      "Slot": "Two Hand",
-      "ID": "42947",
-      "Name": "Dignified Headmaster's Charge",
-      "Enchant ID": "38884",
+      "Slot": "Hands",
+      "ID": "10401",
+      "Name": "Blackened Defias Gloves",
+      "Enchant ID": "38889",
       "Random Enchant": "",
       "Random Enchant ID": "",
       "Comments": "Consider Gloves of the Fang while you farm Foreman's Gloves."
     },
     {
-      "Slot": "Hands",
-      "ID": "5970",
-      "Name": "Serpent Gloves",
-      "Enchant ID": "38886"
-    },
-    {
       "Slot": "Waist",
-      "ID": "51968",
-      "Name": "Enumerated Wrap",
+      "ID": "51964",
+      "Name": "Vigorous Belt",
       "Enchant ID": "",
-      "Random Enchant": "of the Sun",
-      "Random Enchant ID": "-58: +5 Critical Strike Rating / +5 Stamina / +5 Intellect"
+      "Random Enchant": "of the Monkey",
+      "Random Enchant ID": "599: +6 Agility / +6 Stamina"
     },
     {
       "Slot": "Legs",
-      "ID": "66011",
-      "Name": "Godfrey's Britches",
-      "Enchant ID": "2313"
+      "ID": "5958",
+      "Name": "Fine Leather Pants",
+      "Enchant ID": "4265"
     },
     {
       "Slot": "Feet",
       "ID": "4320",
       "Name": "Spidersilk Boots",
-      "Enchant ID": "38837"
+      "Enchant ID": "38862"
     },
-    { "Slot": "Finger", "ID": "1156", "Name": "Lavishly Jeweled Ring" },
+    { "Slot": "Finger", "ID": "60905", "Name": "Ello's Band" },
     { "Slot": "Finger", "ID": "24120", "Name": "Seal of Argas" },
     { "Slot": "Trinket", "ID": "19024", "Name": "Arena Grand Master" },
     {
       "Slot": "Trinket",
       "ID": "44098",
       "Name": "Inherited Insignia of the Alliance"
+    },
+    {
+      "Slot": "Main Hand",
+      "ID": "44094",
+      "Name": "The Blessed Hammer of Grace",
+      "Enchant ID": "38884"
+    },
+    {
+      "Slot": "Shield",
+      "ID": "5443",
+      "Name": "Gold-Plated Buckler",
+      "Enchant ID": "38860"
     }
   ],
   "Warlock": [
