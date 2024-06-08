@@ -44,7 +44,7 @@ const ToolTipContent = ({
         />
       </div>
       <div
-        class={`${data.quality} bg-zinc-800 p-1`}
+        class={`${data.quality} bg-zinc-900 p-1`}
         style={{ width: '400px', border: `1px solid currentcolor` }}
       >
         <div class="font-bold">

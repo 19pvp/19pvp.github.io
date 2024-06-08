@@ -62,9 +62,9 @@ export const ItemDialog = ({ children }: { children?: h.JSX.Element | null }) =>
           w-full
           max-w-[520px]
           rounded-md overflow-hidden
-          bg-zinc-800 bg-contain bg-no-repeat bg-left
+          bg-zinc-900 bg-contain bg-no-repeat bg-left
           text-zinc-200
-          border-zinc-700 border-solid border-4"
+          border-zinc-800 border-solid border-4"
         method="dialog"
       >
         <h3 class={`text-center text-xl m-0 ${item?.quality}`}>{item?.name}</h3>

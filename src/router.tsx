@@ -36,11 +36,11 @@ interface LinkProps extends h.JSX.HTMLAttributes<HTMLAnchorElement> {
   onClick?: (event: h.JSX.TargetedMouseEvent<HTMLAnchorElement>) => void
 }
 
-export const Link = ({ href, onClick, ...props }: LinkProps) => (
+export const Link = ({ href, onMouseDown, onClick, ...props }: LinkProps) => (
   <a
     href={href}
-    onClick={event => {
-      onClick?.(event)
+    onMouseDown={event => {
+      onMouseDown?.(event)
       // We don't want to skip if it's a special click
       // that would break the default browser behaviour
       const shouldSkip =
@@ -55,6 +55,10 @@ export const Link = ({ href, onClick, ...props }: LinkProps) => (
       // In the normal case we handle the routing internally
       event.preventDefault()
       navigate(href)
+    }}
+    onClick={event => {
+      onClick?.(event)
+      event.preventDefault()
     }}
     {...props}
   />
