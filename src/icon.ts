@@ -1,5 +1,8 @@
 import cachedItems from './cached-items.json'
-import type { ItemData } from './item'
+import type { ItemData } from './item.tsx'
+import avif from './icons/sprite.avif'
+import webp from './icons/sprite.webp'
+import jpeg from './icons/sprite.jpeg'
 
 const cachedIcons = [
   ...[
@@ -23,9 +26,9 @@ const cachedIcons = [
 ]
 
 const iconImageSet = `image-set(${[
-  'url("/src/icons/sprite.avif") type("image/avif")',
-  'url("/src/icons/sprite.webp") type("image/webp")',
-  'url("/src/icons/sprite.jpg") type("image/jpeg")',
+  `url("${avif}") type("image/avif")`,
+  `url("${webp}") type("image/webp")`,
+  `url("${jpeg}") type("image/jpeg")`,
 ].join(', ')})`
 
 const indexToStyle = (iconIndex: number, width = 58) => ({

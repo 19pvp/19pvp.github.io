@@ -16,10 +16,3 @@
 .DROP { background-image: url(./icons/drop.png ) }
 .HORDE { background-image: url(./icons/horde.png) }
 .ALLIANCE { background-image: url(./icons/alliance.png) }
-.icon {
-  background-image: image-set(
-    url("./icons/sprite.avif") type("image/avif"),
-    url("./icons/sprite.webp") type("image/webp"),
-    url("./icons/sprite.jpg") type("image/jpeg")
-  );
-}

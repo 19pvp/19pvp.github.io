@@ -69,7 +69,7 @@ export const ItemDialog = ({ children }: { children?: h.JSX.Element | null }) =>
       >
         <h3 class={`text-center text-xl m-0 ${item?.quality}`}>{item?.name}</h3>
         <div
-          class={`w-[58px] h-[58px] ${item?.quality} ${style.icon} m-auto my-4`}
+          class={`w-[58px] h-[58px] ${item?.quality} m-auto my-4`}
           style={{ border: `1px solid currentcolor`, ...getIconStyle(item) }}
         ></div>
         {item?.itemLevel && (

@@ -2,7 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* set the UI element to dark mode to match the dark theme */
+:root { color-scheme: dark }
+
 body, html { background: black }
+
+/* force scrollbar to avoid shifting the view */
+body { overflow-y: scroll }
 
 .POOR { color: #9d9d9d }
 .COMMON { color: #ffffff }

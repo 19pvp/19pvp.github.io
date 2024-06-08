@@ -39,7 +39,7 @@ const ToolTipContent = ({
     <>
       <div>
         <div
-          class={`w-[58px] h-[58px] ${data.quality} ${style.icon}`}
+          class={`w-[58px] h-[58px] ${data.quality}`}
           style={{ border: `1px solid currentcolor`, ...getIconStyle(data) }}
         />
       </div>
