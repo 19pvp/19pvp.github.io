@@ -1,0 +1,10 @@
+{
+  "fmt": {
+    "singleQuote": true,
+    "lineWidth": 120,
+    "semiColons": false
+  },
+  "tasks": {
+    "refresh-db": "deno run --allow-net tasks/refresh_db.ts"
+  }
+}
