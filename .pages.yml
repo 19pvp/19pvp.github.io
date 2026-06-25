@@ -1,0 +1,15 @@
+media:
+  input: media
+  output: /media
+content:
+  - name: config
+    label: Configuration
+    type: file
+    path: config.json
+    fields:
+      - name: allowed_zones
+        label: Allowed Zones ID
+        type: code
+        options:
+          format: yml
+        description: This the list of the ZoneID or AreaID, use .gps to find them ingame.
