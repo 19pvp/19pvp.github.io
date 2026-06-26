@@ -2,22 +2,22 @@ import { parse, stringify } from 'jsr:@std/yaml'
 
 const targets = {
   ale: {
-    conf: 'mod_ale.conf',
-    json: 'ale.json',
+    conf: 'config/mod_ale.conf',
+    json: 'config/ale.json',
     label: 'ALE Config',
     reload: 'reload ale',
     url: 'https://raw.githubusercontent.com/azerothcore/mod-ale/refs/heads/master/conf/mod_ale.conf.dist',
   },
   playerbots: {
-    conf: 'playerbots.conf',
-    json: 'playerbots.json',
+    conf: 'config/playerbots.conf',
+    json: 'config/playerbots.json',
     label: 'Playerbots Config',
     reload: 'reload config',
     url: 'https://raw.githubusercontent.com/mod-playerbots/mod-playerbots/refs/heads/master/conf/playerbots.conf.dist',
   },
   worldserver: {
-    conf: 'worldserver.conf',
-    json: 'worldserver.json',
+    conf: 'config/worldserver.conf',
+    json: 'config/worldserver.json',
     label: 'WorldServer Config',
     reload: 'reload config',
     url:
@@ -107,6 +107,7 @@ const defaults = (conf: ReturnType<typeof parseConf>) =>
 const writeJson = async (name: TargetName) => {
   const t = targets[name]
   const conf = parseConf(await fetchText(t.url))
+  await Deno.mkdir('config', { recursive: true })
   await Deno.writeTextFile(t.json, `${JSON.stringify(defaults(conf), null, 2)}\n`)
   console.log(`Wrote ${t.json}`)
 }
@@ -114,6 +115,7 @@ const writeJson = async (name: TargetName) => {
 const writeConf = async (name: TargetName, output: string = targets[name].conf) => {
   const values = JSON.parse(await Deno.readTextFile(targets[name].json)) as Record<string, unknown>
   const conf = Object.entries(values).map(([key, value]) => `${key} = ${String(value)}`).join('\n') + '\n'
+  await Deno.mkdir('config', { recursive: true })
   await Deno.writeTextFile(output, conf)
   console.log(`Wrote ${output}`)
 }

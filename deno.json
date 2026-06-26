@@ -5,7 +5,15 @@
     "semiColons": false
   },
   "tasks": {
-    "refresh-db": "deno run --allow-net tasks/refresh_db.ts"
+    "refresh-db": "deno run --allow-net tasks/refresh_db.ts",
+    "config:json:ale": "deno run --allow-net --allow-write tasks/config.ts json ale",
+    "config:json:playerbots": "deno run --allow-net --allow-write tasks/config.ts json playerbots",
+    "config:json:worldserver": "deno run --allow-net --allow-write tasks/config.ts json worldserver",
+    "config:pages": "deno run --allow-net --allow-read --allow-write tasks/config.ts pages",
+    "config:conf:ale": "deno run --allow-read --allow-write tasks/config.ts conf ale",
+    "config:conf:playerbots": "deno run --allow-read --allow-write tasks/config.ts conf playerbots",
+    "config:conf:worldserver": "deno run --allow-read --allow-write tasks/config.ts conf worldserver",
+    "config:watch": "deno run --allow-read --allow-write --allow-env --allow-net tasks/config.ts watch"
   },
   "imports": {
     "@std/yaml": "jsr:@std/yaml@^1.1.1"

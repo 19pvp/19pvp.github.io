@@ -16,7 +16,7 @@ content:
   - name: worldserver
     label: WorldServer Config
     type: file
-    path: worldserver.json
+    path: config/worldserver.json
     fields:
       - name: RealmID
         label: Realm ID
@@ -4717,7 +4717,7 @@ content:
   - name: ale
     label: ALE Config
     type: file
-    path: ale.json
+    path: config/ale.json
     fields:
       - name: ALE.Enabled
         label: ALE Enabled
@@ -4773,7 +4773,7 @@ content:
   - name: playerbots
     label: Playerbots Config
     type: file
-    path: playerbots.json
+    path: config/playerbots.json
     fields:
       - name: AiPlayerbot.Enabled
         label: Ai Playerbot Enabled
