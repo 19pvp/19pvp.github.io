@@ -1,0 +1,14 @@
+{
+  "ALE.Enabled": "true",
+  "ALE.TraceBack": "false",
+  "ALE.ScriptPath": "\"lua_scripts\"",
+  "ALE.PlayerAnnounceReload": "false",
+  "ALE.RequirePaths": "\"\"",
+  "ALE.RequireCPaths": "\"\"",
+  "ALE.AutoReload": "false",
+  "ALE.AutoReloadInterval": "1",
+  "ALE.BytecodeCache": "true",
+  "Appender.ALELog": "2,5,0,ALE.log,w",
+  "Appender.ALEConsole": "1,4,0,\"0 9 0 3 5 0\"",
+  "Logger.ALE": "4,ALELog ALEConsole"
+}

@@ -6,5 +6,8 @@
   },
   "tasks": {
     "refresh-db": "deno run --allow-net tasks/refresh_db.ts"
+  },
+  "imports": {
+    "@std/yaml": "jsr:@std/yaml@^1.1.1"
   }
 }
