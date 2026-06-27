@@ -28,7 +28,7 @@
     "config:conf:playerbots": "deno run --allow-read --allow-write tasks/config.ts conf playerbots",
     "config:conf:worldserver": "deno run --allow-read --allow-write tasks/config.ts conf worldserver",
     "config:watch": "deno run --allow-read --allow-write --allow-env --allow-net tasks/config.ts watch",
-    "logs": "deno run --allow-net --allow-read --allow-run service/logs.js"
+    "server": "deno serve --allow-net --allow-read --allow-write --allow-run service/server.ts"
   },
   "imports": {
     "@std/yaml": "jsr:@std/yaml@^1.1.1"
