@@ -6,6 +6,20 @@
   },
   "tasks": {
     "refresh-db": "deno run --allow-net tasks/refresh_db.ts",
+    "conf:all": {
+      "dependencies": [
+        "config:conf:ale",
+        "config:conf:playerbots",
+        "config:conf:worldserver"
+      ]
+    },
+    "json:all": {
+      "dependencies": [
+        "config:json:ale",
+        "config:json:playerbots",
+        "config:json:worldserver"
+      ]
+    },
     "config:json:ale": "deno run --allow-net --allow-write tasks/config.ts json ale",
     "config:json:playerbots": "deno run --allow-net --allow-write tasks/config.ts json playerbots",
     "config:json:worldserver": "deno run --allow-net --allow-write tasks/config.ts json worldserver",
@@ -13,7 +27,8 @@
     "config:conf:ale": "deno run --allow-read --allow-write tasks/config.ts conf ale",
     "config:conf:playerbots": "deno run --allow-read --allow-write tasks/config.ts conf playerbots",
     "config:conf:worldserver": "deno run --allow-read --allow-write tasks/config.ts conf worldserver",
-    "config:watch": "deno run --allow-read --allow-write --allow-env --allow-net tasks/config.ts watch"
+    "config:watch": "deno run --allow-read --allow-write --allow-env --allow-net tasks/config.ts watch",
+    "logs": "deno run --allow-net --allow-read --allow-run service/logs.js"
   },
   "imports": {
     "@std/yaml": "jsr:@std/yaml@^1.1.1"

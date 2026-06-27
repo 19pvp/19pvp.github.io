@@ -32,12 +32,12 @@ const [command, targetArg, outputArg] = Deno.args
 
 const target = (name = targetArg) => {
   if (name && name in targets) return targets[name as TargetName]
-  throw new Error(`Expected target: ${names.join('|')}`)
+  throw Error(`Expected target: ${names.join('|')}`)
 }
 
 const fetchText = async (url: string) => {
   const res = await fetch(url)
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`)
+  if (!res.ok) throw Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`)
   return await res.text()
 }
 
@@ -152,10 +152,10 @@ const readIfExists = async (path: string) => {
 }
 
 const reload = async (name: TargetName) => {
-  if (!Deno.env.get('PASSWORD')) throw new Error('PASSWORD is required for SOAP reloads')
+  if (!Deno.env.get('PASSWORD')) throw Error('PASSWORD is required for SOAP reloads')
   const { ac } = await import('../service/soap.js')
   const result = await ac`${targets[name].reload}`
-  if (!('success' in result)) throw new Error(`${name} reload failed: ${JSON.stringify(result)}`)
+  if (!('success' in result)) throw Error(`${name} reload failed: ${JSON.stringify(result)}`)
   console.log(`${name} reloaded with .${targets[name].reload}`)
 }
 
@@ -208,7 +208,7 @@ if (command === 'json') {
 } else if (command === 'watch') {
   await watch()
 } else {
-  throw new Error(
+  throw Error(
     'Usage: deno run --allow-net --allow-read --allow-write --allow-env tasks/config.ts json|fields|pages|conf|watch [target] [output]',
   )
 }

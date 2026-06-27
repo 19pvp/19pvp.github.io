@@ -1,0 +1,32 @@
+name: Sync main to mirror
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check token
+        run: |
+          if [ -z "${{ secrets.MIRROR_TOKEN }}" ]; then
+            echo "❌ MIRROR_TOKEN is EMPTY"
+            exit 1
+          else
+            echo "✅ MIRROR_TOKEN is set"
+          fi
+
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to mirror
+        env:
+          TOKEN: ${{ secrets.MIRROR_TOKEN }}
+        run: |
+          git remote add mirror https://x-access-token:${TOKEN}@github.com/devazuka/19pvp.git
+          git push --force mirror main
