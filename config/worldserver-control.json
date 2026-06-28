@@ -1,0 +1,9 @@
+{
+  "command": "worldserver",
+  "args": [
+    "-c",
+    "config/worldserver.conf"
+  ],
+  "cwd": ".",
+  "pidFile": "config/worldserver.pid"
+}
