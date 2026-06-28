@@ -1,31 +1,65 @@
-import { sql } from './db.js'
+import { sql, type SqlRow } from './db.ts'
 
 // tables
 const worldId = Number(Deno.env.get('WORLD_ID')) || 1
 
-const ONCE = {}
-const ON = {}
-export const wowEvents = { on: {}, once: {} }
-for (const type of [
-  'COMMAND', // { player, target?, map, x, y, z, o, command }
-  'LOGIN', // { id } -- playerId
-  'LOGOUT', // { id } -- playerId
-  'STARTUP',
-  'SHUTDOWN',
-  'QUEUE_STATE',
-  'BATTLEGROUND_JOIN',
-  'BATTLEGROUND_LEAVE',
-  'BATTLEGROUND_START',
-  'BATTLEGROUND_END',
-  'PLAYER_LOCATION',
-  'PVP_KILL', // { player, victim, map, x, y, z }
-  'LUCKY_FISHING_HAT_OBTAINED', // { player }
-  'ARENA_GRAND_MASTER_OBTAINED', // { player }
-  'GENERAL_CHANNEL_MESSAGE',
-]) {
+type WowEventType =
+  | 'COMMAND'
+  | 'LOGIN'
+  | 'LOGOUT'
+  | 'STARTUP'
+  | 'SHUTDOWN'
+  | 'QUEUE_STATE'
+  | 'BATTLEGROUND_JOIN'
+  | 'BATTLEGROUND_LEAVE'
+  | 'BATTLEGROUND_START'
+  | 'BATTLEGROUND_END'
+  | 'PLAYER_LOCATION'
+  | 'PVP_KILL'
+  | 'LUCKY_FISHING_HAT_OBTAINED'
+  | 'ARENA_GRAND_MASTER_OBTAINED'
+  | 'GENERAL_CHANNEL_MESSAGE'
+
+type WebEvent = SqlRow & {
+  id: number
+  type: WowEventType
+  at: Date | number
+  data?: string | Record<string, unknown>
+  start?: Date | number
+  elapsed?: number
+  purged?: boolean
+}
+
+type EventHandler = (event: WebEvent) => void | Promise<void>
+
+const ONCE: Partial<Record<WowEventType, Set<EventHandler>>> = {}
+const ON: Partial<Record<WowEventType, Set<EventHandler>>> = {}
+export const wowEvents: {
+  on: Partial<Record<WowEventType, (fn: EventHandler) => Set<EventHandler>>>
+  once: Partial<Record<WowEventType, () => Promise<WebEvent>>>
+} = { on: {}, once: {} }
+for (
+  const type of [
+    'COMMAND', // { player, target?, map, x, y, z, o, command }
+    'LOGIN', // { id } -- playerId
+    'LOGOUT', // { id } -- playerId
+    'STARTUP',
+    'SHUTDOWN',
+    'QUEUE_STATE',
+    'BATTLEGROUND_JOIN',
+    'BATTLEGROUND_LEAVE',
+    'BATTLEGROUND_START',
+    'BATTLEGROUND_END',
+    'PLAYER_LOCATION',
+    'PVP_KILL', // { player, victim, map, x, y, z }
+    'LUCKY_FISHING_HAT_OBTAINED', // { player }
+    'ARENA_GRAND_MASTER_OBTAINED', // { player }
+    'GENERAL_CHANNEL_MESSAGE',
+  ] as const
+) {
   const on = (ON[type] = new Set())
   const once = (ONCE[type] = new Set())
-  const next = (fn) => once.add(fn)
+  const next = (fn: EventHandler) => once.add(fn)
   wowEvents.on[type] = (fn) => on.add(fn)
   wowEvents.once[type] = () => new Promise(next)
 }
@@ -51,7 +85,7 @@ LIKE acore_auth.web_events;
 try {
   await sql`ALTER TABLE acore_auth.web_events ADD INDEX web_events_archive_idx (end, at);`
 } catch (err) {
-  if (!/Duplicate key name|already exists/i.test(err.message)) throw err
+  if (!(err instanceof Error) || !/Duplicate key name|already exists/i.test(err.message)) throw err
 }
 
 try {
@@ -72,12 +106,14 @@ try {
   END;
   `
 } catch (err) {
-  console.warn('Unable to create acore_auth.archive_web_events. Enable event_scheduler and grant EVENT privilege if automatic archiving is needed.')
+  console.warn(
+    'Unable to create acore_auth.archive_web_events. Enable event_scheduler and grant EVENT privilege if automatic archiving is needed.',
+  )
   console.warn(err)
 }
 
 // Those events are not preserved in the database
-const purgedEvents = new Set([
+const purgedEvents = new Set<string>([
   'GENERAL_CHANNEL_MESSAGE',
   'PLAYER_LOCATION',
   'BATTLEGROUND_QUEUE',
@@ -86,11 +122,11 @@ const purgedEvents = new Set([
   'ARENA_END',
 ])
 
-const handleSingleEvent = async event => {
+const handleSingleEvent = async (event: WebEvent) => {
   try {
     event.start = Date.now()
-    event.data = event.data ? JSON.parse(event.data) : {}
-    event.at = event.at.getTime()
+    event.data = typeof event.data === 'string' && event.data ? JSON.parse(event.data) : {}
+    event.at = event.at instanceof Date ? event.at.getTime() : event.at
     const on = ON[event.type]
     if (on) {
       for (const fn of on) await fn(event)
@@ -112,7 +148,7 @@ async function handleNewEvents() {
     SELECT * FROM acore_auth.web_events WHERE start IS NULL AND world=${worldId}
   `
 
-  for (const event of events) {
+  for (const event of events as WebEvent[]) {
     try {
       await sql`UPDATE acore_auth.web_events SET start=NOW(3) WHERE id=${event.id}`
       await handleSingleEvent(event)
@@ -122,7 +158,7 @@ async function handleNewEvents() {
       } else {
         await sql`UPDATE acore_auth.web_events SET end=NOW(3) WHERE id=${event.id}`
       }
-      event.elapsed = (Date.now() - event.start) / 1000
+      event.elapsed = (Date.now() - Number(event.start)) / 1000
       console.log('acore_auth.web_events:', event)
     } catch (err) {
       console.error(err)
@@ -136,14 +172,14 @@ export async function handleInitialStateEvents() {
     SELECT * FROM acore_auth.web_events
     WHERE type = "STARTUP" AND world=${worldId}
     ORDER BY at DESC LIMIT 1
-  `
+  ` as WebEvent[]
   const start = startup?.at || Math.floor(Date.now() / 1000)
   const events = await sql`
     SELECT * FROM acore_auth.web_events WHERE world=${worldId} AND at > ${start}
   `
 
   startup && (await handleSingleEvent(startup))
-  for (const event of events) {
+  for (const event of events as WebEvent[]) {
     await handleSingleEvent(event)
   }
   handleNewEvents()

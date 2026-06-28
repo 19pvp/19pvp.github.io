@@ -1,6 +1,8 @@
 # Coding Style
 
-- Prefer modern JavaScript and Deno features when they make code shorter or clearer: `using`, async iteration, static JSON imports with `with { type: 'json' }`, static binary imports, `Uint8Array.prototype.toHex()`, `Uint8Array.fromHex()`, and similar current APIs.
+- Prefer modern JavaScript and Deno features when they make code shorter or clearer: `using`, async iteration, static
+  JSON imports with `with { type: 'json' }`, static binary imports, `Uint8Array.prototype.toHex()`,
+  `Uint8Array.fromHex()`, and similar current APIs.
 - Keep things simple. Do not add options, configuration, environment variables, modularity, or abstraction until asked.
 - Hardcode values when that is enough for the current task.
 - Conciseness is key. Less code is better.

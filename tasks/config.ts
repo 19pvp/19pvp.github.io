@@ -1,4 +1,4 @@
-import { parse, stringify } from 'jsr:@std/yaml'
+import { parse, stringify } from '@std/yaml'
 
 const targets = {
   ale: {

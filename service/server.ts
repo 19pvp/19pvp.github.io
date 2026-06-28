@@ -19,7 +19,7 @@ const worldserverLogFile = () => {
   return `${logsDir.replace(/[\\/]$/, '')}/${file}`
 }
 
-const pidExists = async (pid: number) => {
+const pidExists = (pid: number) => {
   if (!pid) return false
 
   try {
