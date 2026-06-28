@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>19 PvP Logs</title>
+    <style>
+    :root {
+      color-scheme: dark;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    }
+
+    body {
+      margin: 0;
+      background: #101112;
+      color: #e6e1d8;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      display: grid;
+      grid-template-columns: auto auto auto auto auto 1fr auto auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      background: #191b1d;
+      border-bottom: 1px solid #303236;
+    }
+
+    strong {
+      font: 600 13px/1.2 system-ui, sans-serif;
+      color: #f2c879;
+    }
+
+    input,
+    button {
+      height: 34px;
+      box-sizing: border-box;
+      border: 1px solid #41444a;
+      background: #0c0d0e;
+      color: #f3f0ea;
+    }
+
+    input {
+      min-width: 120px;
+      padding: 0 10px;
+    }
+
+    button {
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    main {
+      padding: 10px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .error {
+      color: #ff8a8a;
+    }
+
+    @media (max-width: 720px) {
+      header {
+        grid-template-columns: 1fr auto auto;
+      }
+
+      strong,
+      input {
+        grid-column: 1 / -1;
+      }
+    }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong id="path">Server logs</strong>
+      <button id="status">Status</button>
+      <button id="start">Start</button>
+      <button id="stop">Stop</button>
+      <button id="kill">Kill</button>
+      <input id="query" placeholder="Search with rg">
+      <button id="search">Search</button>
+      <button id="live">Live</button>
+      <button id="clear">Clear</button>
+    </header>
+    <main id="output"></main>
+    <script type="module">
+    const api = 'https://19pvp.devazuka.com'
+    const output = document.querySelector('#output')
+    const query = document.querySelector('#query')
+    const path = document.querySelector('#path')
+    let source
+
+    const append = (line, className = '') => {
+      const row = document.createElement('div')
+      row.textContent = line
+      if (className) row.className = className
+      output.append(row)
+      scrollTo(0, document.body.scrollHeight)
+    }
+
+    const live = () => {
+      source?.close()
+      output.textContent = ''
+      source = new EventSource(`${api}/logs/events`)
+      source.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        append(data.error || data.line, data.error ? 'error' : '')
+      }
+      source.onerror = () => append('Log stream disconnected', 'error')
+    }
+
+    document.querySelector('#search').onclick = async () => {
+      source?.close()
+      output.textContent = ''
+      const lines = await fetch(`${api}/logs/search?q=${encodeURIComponent(query.value)}`).then((res) => res.json())
+      lines.forEach((line) => append(line))
+    }
+
+    const action = async (name) => {
+      const method = name === 'status' ? 'GET' : 'POST'
+      const result = await fetch(`${api}/worldserver/${name}`, { method }).then((res) => res.json())
+      append(`${name}: ${JSON.stringify(result)}`)
+    }
+
+    document.querySelector('#live').onclick = live
+    document.querySelector('#clear').onclick = () => output.textContent = ''
+    document.querySelector('#status').onclick = () => action('status')
+    document.querySelector('#start').onclick = () => action('start')
+    document.querySelector('#stop').onclick = () => action('stop')
+    document.querySelector('#kill').onclick = () => action('kill')
+    query.onkeydown = (event) => event.key === 'Enter' && document.querySelector('#search').click()
+
+    fetch(`${api}/logs/info`)
+      .then((res) => res.json())
+      .then((info) => path.textContent = info.path || 'Server logs')
+      .catch(() => path.textContent = 'Server logs')
+
+    live()
+    </script>
+  </body>
+</html>
