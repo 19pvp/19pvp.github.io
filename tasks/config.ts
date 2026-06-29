@@ -1,5 +1,6 @@
 import { parse, stringify } from '@std/yaml'
 import controlConfig from '../config/worldserver-control.json' with { type: 'json' }
+import worldserverConfig from '../config/worldserver.json' with { type: 'json' }
 
 const targets = {
   ale: {
@@ -32,6 +33,17 @@ const names = Object.keys(targets) as TargetName[]
 const [command, targetArg, outputArg] = Deno.args
 const projectPath = (path: string) =>
   path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(path) ? path : `${import.meta.dirname}/../${path}`
+
+const unquote = (value: unknown) => String(value || '').replace(/^"|"$/g, '')
+
+const databaseName = (info: unknown) => {
+  const parts = unquote(info).split(';')
+  const name = parts[4]
+  if (!name || !/^[A-Za-z0-9_]+$/.test(name)) throw Error(`Invalid database info: ${String(info)}`)
+  return name
+}
+
+const characterDatabase = () => databaseName(worldserverConfig.CharacterDatabaseInfo)
 
 const target = (name = targetArg) => {
   if (name && name in targets) return targets[name as TargetName]
@@ -139,6 +151,66 @@ const installConf = async () => {
   }
 }
 
+const ensureDefaultGuild = async () => {
+  if (!Deno.env.get('PASSWORD')) {
+    console.log('PASSWORD missing; skipped default guild install')
+    return
+  }
+
+  const { sqlRaw } = await import('../service/db.ts')
+  const db = characterDatabase()
+  const guildName = Deno.env.get('DEFAULT_GUILD_NAME') || '19 PvP'
+  const [existing] = await sqlRaw(`SELECT COUNT(*) AS count FROM ${db}.guild`)
+  if (Number(existing.count)) {
+    console.log('Guild table is not empty; skipped default guild install')
+    return
+  }
+
+  const [leader] = await sqlRaw(`SELECT guid FROM ${db}.characters ORDER BY guid LIMIT 1`)
+  const leaderGuid = Number(leader?.guid)
+  if (!leaderGuid) {
+    console.log('No characters found; skipped default guild install')
+    return
+  }
+
+  const guildId = 1
+  await sqlRaw(
+    `
+    INSERT INTO ${db}.guild
+      (guildid, name, leaderguid, EmblemStyle, EmblemColor, BorderStyle, BorderColor, BackgroundColor, info, motd, createdate, BankMoney)
+    VALUES
+      (?, ?, ?, 0, 0, 0, 0, 0, '', '', UNIX_TIMESTAMP(), 0)
+  `,
+    [guildId, guildName, leaderGuid],
+  )
+
+  await sqlRaw(
+    `
+    INSERT INTO ${db}.guild_rank
+      (guildid, rid, rname, rights, BankMoneyPerDay)
+    VALUES
+      (?, 0, 'Guild Master', 8358321, 0),
+      (?, 1, 'Officer', 1041904, 0),
+      (?, 2, 'Veteran', 1041904, 0),
+      (?, 3, 'Member', 1041904, 0),
+      (?, 4, 'Initiate', 1041904, 0)
+  `,
+    [guildId, guildId, guildId, guildId, guildId],
+  )
+
+  await sqlRaw(
+    `
+    INSERT INTO ${db}.guild_member
+      (guildid, guid, rank, pnote, offnote)
+    VALUES
+      (?, ?, 0, '', '')
+  `,
+    [guildId, leaderGuid],
+  )
+
+  console.log(`Created default guild "${guildName}" with leader ${leaderGuid}`)
+}
+
 const updatePages = async () => {
   const page = parse(await Deno.readTextFile('.pages.yml')) as { content?: Array<Record<string, unknown>> }
   page.content ||= []
@@ -226,6 +298,7 @@ if (command === 'json') {
   await writeConf(targetArg as TargetName, outputArg)
 } else if (command === 'install') {
   await installConf()
+  await ensureDefaultGuild()
 } else if (command === 'watch') {
   await watch()
 } else {

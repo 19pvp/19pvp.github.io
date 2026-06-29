@@ -23,6 +23,10 @@ export type SqlRow = Record<string, unknown>
 
 export const sql = async (template: TemplateStringsArray, ...args: SqlValue[]): Promise<SqlRow[]> => {
   const query = template.join('?').trim()
+  return await sqlRaw(query, args)
+}
+
+export const sqlRaw = async (query: string, args: SqlValue[] = []): Promise<SqlRow[]> => {
   try {
     const result = query.slice(0, 6).toUpperCase() === 'SELECT'
       ? await db.query(query, args)

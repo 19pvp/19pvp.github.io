@@ -19,7 +19,13 @@ const emitEvent = (event: unknown) => {
   eventHistory.push(event)
   eventHistory.splice(0, Math.max(0, eventHistory.length - 100))
 
-  for (const client of eventClients) client.enqueue(sse(event))
+  for (const client of [...eventClients]) {
+    try {
+      client.enqueue(sse(event))
+    } catch {
+      eventClients.delete(client)
+    }
+  }
 }
 
 const projectPath = (path: string) =>
@@ -91,6 +97,8 @@ export const logSearch = async (req: Request) => {
 
 export const logEvents = () => {
   let watcher: Deno.FsWatcher | undefined
+  let heartbeat: ReturnType<typeof setInterval> | undefined
+  let poller: ReturnType<typeof setInterval> | undefined
   let streamController: EventController | undefined
 
   return new Response(
@@ -102,6 +110,7 @@ export const logEvents = () => {
 
         const files = logFiles()
         const positions = new Map<string, number>()
+        const logDirs = [...new Set(Object.values(files).map((path) => path.slice(0, path.lastIndexOf('/'))))]
 
         const sendTail = async (name: string, path: string) => {
           for (const line of await readTail(path)) controller.enqueue(sse({ type: 'log', file: name, path, line }))
@@ -142,25 +151,38 @@ export const logEvents = () => {
 
         for (const [name, path] of Object.entries(files)) await sendTail(name, path)
 
-        watcher = Deno.watchFs(Object.values(files))
-        ;(async () => {
-          try {
-            for await (const event of watcher) {
-              const changed = new Set(event.paths)
+        const sendAllUpdates = () => {
+          for (const [name, path] of Object.entries(files)) sendUpdates(name, path)
+        }
 
-              for (const [name, path] of Object.entries(files)) {
-                if (changed.has(path)) await sendUpdates(name, path)
+        heartbeat = setInterval(() => controller.enqueue(sse({ type: 'heartbeat', at: Date.now() })), 15000)
+        poller = setInterval(sendAllUpdates, 1000)
+
+        try {
+          watcher = Deno.watchFs(logDirs)
+          ;(async () => {
+            try {
+              for await (const event of watcher) {
+                const changed = new Set(event.paths)
+
+                for (const [name, path] of Object.entries(files)) {
+                  if (changed.has(path)) await sendUpdates(name, path)
+                }
+              }
+            } catch (err) {
+              if (!(err instanceof Deno.errors.BadResource)) {
+                controller.enqueue(sse({ type: 'watcher', error: String(err) }))
               }
             }
-          } catch (err) {
-            if (!(err instanceof Deno.errors.BadResource)) {
-              controller.enqueue(sse({ type: 'watcher', error: String(err) }))
-            }
-          }
-        })()
+          })()
+        } catch (err) {
+          controller.enqueue(sse({ type: 'watcher', error: String(err), fallback: 'poll' }))
+        }
       },
       cancel() {
         if (streamController) eventClients.delete(streamController)
+        if (heartbeat) clearInterval(heartbeat)
+        if (poller) clearInterval(poller)
         watcher?.close()
       },
     }),
