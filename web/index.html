@@ -16,17 +16,19 @@
       color: #e6e1d8;
     }
 
-    header {
-      position: sticky;
-      top: 0;
+    footer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
       z-index: 10;
       display: grid;
-      grid-template-columns: auto auto auto auto auto 1fr auto auto auto;
+      grid-template-columns: auto auto auto auto auto 1fr auto auto auto auto;
       gap: 8px;
       align-items: center;
       padding: 10px;
       background: #191b1d;
-      border-bottom: 1px solid #303236;
+      border-top: 1px solid #303236;
     }
 
     strong {
@@ -70,7 +72,7 @@
     }
 
     main {
-      padding: 16px 10px 120px;
+      padding: 12px 10px 96px;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       font-size: 13px;
@@ -143,7 +145,7 @@
       position: fixed;
       left: 0;
       right: 0;
-      bottom: 72px;
+      bottom: 88px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -213,7 +215,7 @@
     }
 
     @media (max-width: 720px) {
-      header {
+      footer {
         grid-template-columns: 1fr auto auto;
       }
 
@@ -225,7 +227,9 @@
     </style>
   </head>
   <body>
-    <header>
+    <main id="output"></main>
+    <div id="idle" class="idle-spacer" hidden></div>
+    <footer>
       <strong id="path">Server logs</strong>
       <button id="status">Status</button>
       <button id="start">Start</button>
@@ -233,6 +237,7 @@
       <button id="kill">Kill</button>
       <input id="query" placeholder="Search with rg">
       <button id="search">Search</button>
+      <button id="raw">Open file</button>
       <button id="live">Live</button>
       <button id="clear">Clear</button>
       <nav id="tabs">
@@ -242,23 +247,26 @@
         <button data-log="playerbots">Playerbots</button>
         <button data-log="service">Service</button>
       </nav>
-    </header>
-    <main id="output"></main>
-    <div id="idle" class="idle-spacer" hidden></div>
+    </footer>
     <script type="module">
     const api = 'https://19pvp.devazuka.com'
     const output = document.querySelector('#output')
     const idleSpacer = document.querySelector('#idle')
     const query = document.querySelector('#query')
+    const raw = document.querySelector('#raw')
     const path = document.querySelector('#path')
     const tabs = document.querySelector('#tabs')
     const ansiHighlights = new Map()
     const supportsHighlights = Boolean(globalThis.CSS?.highlights && globalThis.Highlight && globalThis.Range)
     const idleAfterMs = 30_000
+    const maxRows = 1_000
+    const maxBatch = 100
     const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
     let source
     let currentLog = new URL(location.href).searchParams.get('log') || 'all'
     let lastLogAt = 0
+    let pending = []
+    let pendingFrame = 0
 
     const clearAnsiHighlights = () => {
       if (!supportsHighlights) return
@@ -374,7 +382,13 @@
       }
     }
 
-    const append = (line, className = '') => {
+    const pruneRows = () => {
+      while (output.childElementCount > maxRows) output.firstElementChild?.remove()
+    }
+
+    const isNearBottom = () => window.innerHeight + scrollY >= document.body.scrollHeight - 80
+
+    const appendNow = (line, className = '') => {
       idleSpacer.hidden = true
       lastLogAt = Date.now()
       const row = document.createElement('div')
@@ -384,7 +398,32 @@
       row.dataset.tag = tag
       renderAnsi(row, line)
       output.append(row)
-      if (document.activeElement !== query) scrollTo(0, document.body.scrollHeight)
+      pruneRows()
+    }
+
+    const flushPending = () => {
+      pendingFrame = 0
+      const shouldStick = document.activeElement !== query && isNearBottom()
+      const batch = pending.splice(0, maxBatch)
+      for (const [line, className] of batch) appendNow(line, className)
+      if (shouldStick) scrollTo(0, document.body.scrollHeight)
+      if (pending.length) pendingFrame = requestAnimationFrame(flushPending)
+    }
+
+    const append = (line, className = '') => {
+      pending.push([line, className])
+      if (pending.length > maxRows) pending = pending.slice(-maxRows)
+      if (!pendingFrame) pendingFrame = requestAnimationFrame(flushPending)
+    }
+
+    const resetOutput = () => {
+      pending = []
+      if (pendingFrame) cancelAnimationFrame(pendingFrame)
+      pendingFrame = 0
+      output.textContent = ''
+      clearAnsiHighlights()
+      lastLogAt = 0
+      idleSpacer.hidden = true
     }
 
     const formatElapsed = (elapsedMs) => {
@@ -432,10 +471,7 @@
     }
 
     const fetchTail = async () => {
-      output.textContent = ''
-      clearAnsiHighlights()
-      lastLogAt = 0
-      idleSpacer.hidden = true
+      resetOutput()
       const lines = await fetch(`${api}/logs/tail?log=${encodeURIComponent(currentLog)}`).then((res) => res.json())
       lines.forEach((line) => appendEvent(line))
     }
@@ -465,10 +501,7 @@
 
     document.querySelector('#search').onclick = async () => {
       source?.close()
-      output.textContent = ''
-      clearAnsiHighlights()
-      lastLogAt = 0
-      idleSpacer.hidden = true
+      resetOutput()
       const lines = await fetch(
         `${api}/logs/search?q=${encodeURIComponent(query.value)}&log=${encodeURIComponent(currentLog)}`,
       )
@@ -483,11 +516,12 @@
     }
 
     document.querySelector('#live').onclick = live
+    raw.onclick = () => {
+      const log = currentLog === 'all' || currentLog === 'service' ? 'server' : currentLog
+      open(`${api}/logs/file?log=${encodeURIComponent(log)}`, '_blank', 'noopener')
+    }
     document.querySelector('#clear').onclick = () => {
-      output.textContent = ''
-      clearAnsiHighlights()
-      lastLogAt = 0
-      idleSpacer.hidden = true
+      resetOutput()
     }
     tabs.onclick = (event) => {
       const button = event.target.closest('button[data-log]')

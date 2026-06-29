@@ -1,17 +1,13 @@
 import worldserverConfig from '../config/worldserver.json' with { type: 'json' }
 import controlConfig from '../config/worldserver-control.json' with { type: 'json' }
-import { cors, json, normalizePath, parentDir, projectPath, sse, unquote } from './utils.ts'
+import { cors, json, projectPath, sse, unquote } from './utils.ts'
 
 type EventController = ReadableStreamDefaultController<Uint8Array>
 const eventClients = new Set<EventController>()
-const eventHistory: unknown[] = []
 const serviceJournalQuery = `_PID=${Deno.pid}`
 let serviceJournalProcess: Deno.ChildProcess | undefined
 
 const emitEvent = (event: unknown) => {
-  eventHistory.push(event)
-  eventHistory.splice(0, Math.max(0, eventHistory.length - 100))
-
   for (const client of [...eventClients]) {
     try {
       client.enqueue(sse(event))
@@ -42,11 +38,9 @@ const worldserverLogFile = () => logFiles().server
 
 emitEvent({ type: 'api', action: 'started', at: Date.now(), message: 'API server started' })
 
-const stripAnsi = (line: string) => line.replace(/\x1b\[[0-9;]*m/g, '')
-
 const isLogLine = (line: string) => {
-  const text = stripAnsi(line).trim()
-  return text !== '' && text !== '>'
+  const text = line.trim()
+  return text !== ''
 }
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
@@ -137,6 +131,26 @@ const sendEventLine = (file: string, path: string, line: string, stream?: 'stdou
 
 export const logInfo = () => json({ path: worldserverLogFile(), files: logFiles() })
 
+export const logFile = async (req: Request) => {
+  const log = new URL(req.url).searchParams.get('log') || 'server'
+  const files = logFiles()
+  const path = log in files && log !== 'service' && log !== 'all' ? files[log as keyof typeof files] : files.server
+
+  try {
+    const file = await Deno.open(path)
+    return new Response(file.readable, {
+      headers: {
+        ...cors,
+        'content-type': 'text/plain; charset=utf-8',
+        'content-disposition': `inline; filename="${path.split(/[\\/]/).pop() || 'log.txt'}"`,
+      },
+    })
+  } catch (err) {
+    if (err instanceof Deno.errors.NotFound) return json({ error: 'Log file not found', path }, { status: 404 })
+    throw err
+  }
+}
+
 const selectedLogFiles = (log: string | null) => {
   const files = logFiles()
   if (!log || log === 'all') return Object.entries(files).filter(([name]) => name !== 'service')
@@ -200,15 +214,13 @@ export const logSearch = async (req: Request) => {
 }
 
 export const logEvents = () => {
-  let watcher: Deno.FsWatcher | undefined
   let heartbeat: ReturnType<typeof setInterval> | undefined
-  let poller: ReturnType<typeof setInterval> | undefined
   let streamController: EventController | undefined
   let closed = false
 
   return new Response(
     new ReadableStream<Uint8Array>({
-      async start(controller) {
+      start(controller) {
         streamController = controller
         eventClients.add(controller)
 
@@ -223,81 +235,7 @@ export const logEvents = () => {
           }
         }
 
-        for (const event of eventHistory) send(event)
-
-        const files = logFiles()
-        const fileEntries = Object.entries(files).filter(([name]) => name !== 'service')
-        const positions = new Map<string, number>()
-        const logDirs = [...new Set(fileEntries.map(([, path]) => parentDir(path)))]
-        const logPaths = new Set(fileEntries.map(([, path]) => normalizePath(path)))
-
-        const sendUpdates = async (name: string, path: string) => {
-          try {
-            using file = await Deno.open(path)
-            const { size } = await file.stat()
-            let position = positions.get(path) || 0
-
-            if (size < position) position = 0
-            if (size === position) return
-
-            await file.seek(position, Deno.SeekMode.Start)
-            const buffer = new Uint8Array(size - position)
-            const count = await file.read(buffer)
-            positions.set(path, size)
-
-            if (count) {
-              const text = new TextDecoder().decode(buffer.slice(0, count))
-              for (const line of text.split(/\r?\n/).filter(isLogLine)) {
-                send({ type: 'log', file: name, path, line })
-              }
-            }
-          } catch (err) {
-            if (!(err instanceof Deno.errors.NotFound)) {
-              send({ type: 'log', file: name, path, error: String(err) })
-            }
-          }
-        }
-
-        for (const path of Object.values(files)) {
-          try {
-            positions.set(path, (await Deno.stat(path)).size)
-          } catch {
-            positions.set(path, 0)
-          }
-        }
-
-        let updating = false
-        const sendAllUpdates = async () => {
-          if (updating) return
-          updating = true
-
-          try {
-            for (const [name, path] of fileEntries) await sendUpdates(name, path)
-          } finally {
-            updating = false
-          }
-        }
-
         heartbeat = setInterval(() => send({ type: 'heartbeat', at: Date.now() }), 15000)
-        poller = setInterval(() => sendAllUpdates(), 1000)
-
-        try {
-          watcher = Deno.watchFs(logDirs)
-          ;(async () => {
-            try {
-              for await (const event of watcher) {
-                if (event.paths.some((path) => logPaths.has(normalizePath(path)))) await sendAllUpdates()
-              }
-            } catch (err) {
-              if (!(err instanceof Deno.errors.BadResource)) {
-                send({ type: 'watcher', error: String(err) })
-              }
-            }
-          })()
-        } catch (err) {
-          send({ type: 'watcher', error: String(err), fallback: 'poll' })
-        }
-
         ;(async () => {
           try {
             serviceJournalProcess = new Deno.Command('journalctl', {
@@ -337,8 +275,6 @@ export const logEvents = () => {
         closed = true
         if (streamController) eventClients.delete(streamController)
         if (heartbeat) clearInterval(heartbeat)
-        if (poller) clearInterval(poller)
-        watcher?.close()
         serviceJournalProcess?.kill('SIGTERM')
       },
     }),
@@ -449,6 +385,7 @@ export default {
 
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
       if (url.pathname === '/logs/info') return logInfo()
+      if (url.pathname === '/logs/file') return await logFile(req)
       if (url.pathname === '/logs/tail') return await logTail(req)
       if (url.pathname === '/logs/events') return logEvents()
       if (url.pathname === '/logs/search') return await logSearch(req)
