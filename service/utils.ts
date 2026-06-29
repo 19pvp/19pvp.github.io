@@ -1,7 +1,7 @@
 export const cors = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, OPTIONS',
-  'access-control-allow-headers': 'content-type',
+  'access-control-allow-headers': 'content-type,last-event-id',
 }
 
 const encoder = new TextEncoder()
@@ -14,7 +14,8 @@ export const json = (data: unknown, init?: ResponseInit) =>
     headers: { ...cors, ...init?.headers },
   })
 
-export const sse = (data: unknown) => encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+export const sse = (data: unknown, id?: string | number) =>
+  encoder.encode(`${id === undefined ? '' : `id: ${id}\n`}data: ${JSON.stringify(data)}\n\n`)
 
 export const isAbsolutePath = (path: string) => path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(path)
 

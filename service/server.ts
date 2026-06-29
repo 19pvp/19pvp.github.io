@@ -85,7 +85,9 @@ const journalctl = (
   options: { lines?: number | 'all'; follow?: boolean; grep?: string } = {},
 ) => new JournalLines(sourceArgs, options)
 
-const readJournal = async (args: string[], lines: number | 'all' = 1000) => {
+const defaultLogLines = 10_000
+
+const readJournal = async (args: string[], lines: number | 'all' = defaultLogLines) => {
   try {
     using output = journalctl(args, { lines })
     const entries = []
@@ -97,7 +99,11 @@ const readJournal = async (args: string[], lines: number | 'all' = 1000) => {
   }
 }
 
-const journalEntries = async (log: string | null, lines: number | 'all' = 1000, run: string | null = null) => {
+const journalEntries = async (
+  log: string | null,
+  lines: number | 'all' = defaultLogLines,
+  run: string | null = null,
+) => {
   const entries = []
   for (const source of await journalSources(log, run)) {
     for (const line of await readJournal(source.args, lines)) {
@@ -111,6 +117,7 @@ const streamJournalSource = async (
   source: { args: string[]; file: string; path: string },
   options: {
     follow: boolean
+    lines: number | 'all'
     isClosed: () => boolean
     resources: Set<JournalLines>
     send: (event: unknown) => void
@@ -119,7 +126,7 @@ const streamJournalSource = async (
   try {
     using lines = journalctl(source.args, {
       follow: options.follow,
-      lines: options.follow ? 1000 : 'all',
+      lines: options.lines,
     })
     options.resources.add(lines)
 
@@ -217,9 +224,11 @@ export const logEvents = (req: Request) => {
   const log = url.searchParams.get('log')
   const run = url.searchParams.get('run')
   const follow = !run || run === 'current'
+  const initialLines = follow && req.headers.get('last-event-id') ? 0 : follow ? defaultLogLines : 'all'
   let heartbeat: ReturnType<typeof setInterval> | undefined
   const resources = new Set<JournalLines>()
   let closed = false
+  let eventId = Date.now()
 
   return new Response(
     new ReadableStream<Uint8Array>({
@@ -228,7 +237,7 @@ export const logEvents = (req: Request) => {
           if (closed) return
 
           try {
-            controller.enqueue(sse(event))
+            controller.enqueue(sse(event, ++eventId))
           } catch {
             closed = true
           }
@@ -239,7 +248,7 @@ export const logEvents = (req: Request) => {
         journalSources(log, run)
           .then((sources) => {
             for (const source of sources) {
-              void streamJournalSource(source, { follow, isClosed: () => closed, resources, send })
+              void streamJournalSource(source, { follow, lines: initialLines, isClosed: () => closed, resources, send })
             }
           })
           .catch((err) => send({ type: 'watcher', error: String(err), source: 'journalctl' }))
