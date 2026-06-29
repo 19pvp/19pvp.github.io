@@ -2,8 +2,17 @@
   "command": "worldserver",
   "args": [
     "-c",
-    "config/worldserver.conf"
+    "core/env/dist/etc/worldserver.conf"
   ],
   "cwd": ".",
-  "pidFile": "config/worldserver.pid"
+  "pidFile": "core/env/dist/bin/world.pid",
+  "files": {
+    "worldserverConf": "core/env/dist/etc/worldserver.conf",
+    "aleConf": "core/env/dist/etc/modules/mod_ale.conf",
+    "playerbotsConf": "core/env/dist/etc/modules/playerbots.conf",
+    "errorLog": "core/env/dist/bin/Error.log",
+    "serverLog": "core/env/dist/bin/Server.log",
+    "playerbotsLog": "core/env/dist/bin/Playerbots.log",
+    "pidFile": "core/env/dist/bin/world.pid"
+  }
 }

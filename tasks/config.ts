@@ -1,4 +1,5 @@
 import { parse, stringify } from '@std/yaml'
+import controlConfig from '../config/worldserver-control.json' with { type: 'json' }
 
 const targets = {
   ale: {
@@ -29,6 +30,8 @@ type TargetName = keyof typeof targets
 
 const names = Object.keys(targets) as TargetName[]
 const [command, targetArg, outputArg] = Deno.args
+const projectPath = (path: string) =>
+  path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(path) ? path : `${import.meta.dirname}/../${path}`
 
 const target = (name = targetArg) => {
   if (name && name in targets) return targets[name as TargetName]
@@ -120,6 +123,22 @@ const writeConf = async (name: TargetName, output: string = targets[name].conf) 
   console.log(`Wrote ${output}`)
 }
 
+const installConf = async () => {
+  const destinations = {
+    ale: controlConfig.files.aleConf,
+    playerbots: controlConfig.files.playerbotsConf,
+    worldserver: controlConfig.files.worldserverConf,
+  } satisfies Record<TargetName, string>
+
+  for (const name of names) {
+    await writeConf(name)
+    const destination = projectPath(destinations[name])
+    await Deno.mkdir(destination.slice(0, destination.lastIndexOf('/')), { recursive: true })
+    await Deno.copyFile(targets[name].conf, destination)
+    console.log(`Installed ${targets[name].conf} -> ${destination}`)
+  }
+}
+
 const updatePages = async () => {
   const page = parse(await Deno.readTextFile('.pages.yml')) as { content?: Array<Record<string, unknown>> }
   page.content ||= []
@@ -153,7 +172,7 @@ const readIfExists = async (path: string) => {
 
 const reload = async (name: TargetName) => {
   if (!Deno.env.get('PASSWORD')) throw Error('PASSWORD is required for SOAP reloads')
-  const { ac } = await import('../service/soap.js')
+  const { ac } = await import('../service/soap.ts')
   const result = await ac`${targets[name].reload}`
   if (!('success' in result)) throw Error(`${name} reload failed: ${JSON.stringify(result)}`)
   console.log(`${name} reloaded with .${targets[name].reload}`)
@@ -205,10 +224,12 @@ if (command === 'json') {
   await updatePages()
 } else if (command === 'conf') {
   await writeConf(targetArg as TargetName, outputArg)
+} else if (command === 'install') {
+  await installConf()
 } else if (command === 'watch') {
   await watch()
 } else {
   throw Error(
-    'Usage: deno run --allow-net --allow-read --allow-write --allow-env tasks/config.ts json|fields|pages|conf|watch [target] [output]',
+    'Usage: deno run --allow-net --allow-read --allow-write --allow-env tasks/config.ts json|fields|pages|conf|install|watch [target] [output]',
   )
 }

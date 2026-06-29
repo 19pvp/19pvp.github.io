@@ -104,13 +104,20 @@
       scrollTo(0, document.body.scrollHeight)
     }
 
+    const eventLine = (data) => {
+      if (data.error) return data.error
+      if (data.line) return data.file ? `[${data.file}] ${data.line}` : data.line
+      if (data.message) return data.message
+      return JSON.stringify(data)
+    }
+
     const live = () => {
       source?.close()
       output.textContent = ''
       source = new EventSource(`${api}/logs/events`)
       source.onmessage = (event) => {
         const data = JSON.parse(event.data)
-        append(data.error || data.line, data.error ? 'error' : '')
+        append(eventLine(data), data.error ? 'error' : '')
       }
       source.onerror = () => append('Log stream disconnected', 'error')
     }
