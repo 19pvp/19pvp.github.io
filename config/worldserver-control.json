@@ -1,5 +1,5 @@
 {
-  "command": "worldserver",
+  "command": "core/env/dist/bin/worldserver",
   "args": [
     "-c",
     "core/env/dist/etc/worldserver.conf"

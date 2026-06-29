@@ -22,6 +22,7 @@ const emitEvent = (event: unknown) => {
 }
 
 const controlPidFile = () => projectPath(controlConfig.pidFile)
+const controlCommand = () => projectPath(controlConfig.command)
 
 const defaultWorldserverLogFile = () => {
   const logsDir = unquote(worldserverConfig.LogsDir) || '.'
@@ -218,22 +219,12 @@ export const logEvents = () => {
         for (const event of eventHistory) send(event)
 
         const files = logFiles()
+        const fileEntries = Object.entries(files).filter(([name]) => name !== 'service')
         const positions = new Map<string, number>()
-        const logDirs = [...new Set(Object.values(files).map(parentDir))]
-        const logPaths = new Set(Object.values(files).map(normalizePath))
+        const logDirs = [...new Set(fileEntries.map(([, path]) => parentDir(path)))]
+        const logPaths = new Set(fileEntries.map(([, path]) => normalizePath(path)))
 
         const sendUpdates = async (name: string, path: string) => {
-          if (name === 'service') {
-            try {
-              for (const line of await readJournalTail(serviceJournalQuery, 1)) {
-                send({ type: 'log', file: name, path, line })
-              }
-            } catch (err) {
-              send({ type: 'log', file: name, path, error: String(err) })
-            }
-            return
-          }
-
           try {
             using file = await Deno.open(path)
             const { size } = await file.stat()
@@ -274,7 +265,7 @@ export const logEvents = () => {
           updating = true
 
           try {
-            for (const [name, path] of Object.entries(files)) await sendUpdates(name, path)
+            for (const [name, path] of fileEntries) await sendUpdates(name, path)
           } finally {
             updating = false
           }
@@ -376,7 +367,7 @@ export const worldserverStart = async () => {
 
   emitEvent({ type: 'worldserver', action: 'starting', at: Date.now(), message: 'Worldserver starting' })
 
-  const child = new Deno.Command(controlConfig.command, {
+  const child = new Deno.Command(controlCommand(), {
     args: controlConfig.args,
     cwd: projectPath(controlConfig.cwd),
     stdout: 'piped',
