@@ -1,9 +1,6 @@
 {
   "command": "core/env/dist/bin/worldserver",
-  "args": [
-    "-c",
-    "core/env/dist/etc/worldserver.conf"
-  ],
+  "args": [],
   "cwd": "core/env/dist/bin/",
   "pidFile": "core/env/dist/bin/world.pid",
   "files": {
