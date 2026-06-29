@@ -10,16 +10,29 @@
 import { red } from '@std/fmt/colors'
 import { Client, configLogger } from 'mysql'
 
-await configLogger({ enable: false })
-export const db = await new Client().connect({
-  hostname: Deno.env.get('HOSTNAME'),
-  username: 'system',
-  poolSize: 3, // connection limit
-  password: Deno.env.get('PASSWORD'),
-})
-
 export type SqlValue = string | number | bigint | boolean | Date | null | undefined
 export type SqlRow = Record<string, unknown>
+
+let db: Client | undefined
+
+const requiredEnv = (name: string) => {
+  const value = Deno.env.get(name)
+  if (!value) throw Error(`${name} is required for database access`)
+  return value
+}
+
+const database = async () => {
+  if (db) return db
+
+  await configLogger({ enable: false })
+  db = await new Client().connect({
+    hostname: requiredEnv('HOSTNAME'),
+    username: Deno.env.get('DB_USER') || 'system',
+    poolSize: Number(Deno.env.get('DB_POOL_SIZE')) || 3,
+    password: requiredEnv('PASSWORD'),
+  })
+  return db
+}
 
 export const sql = async (template: TemplateStringsArray, ...args: SqlValue[]): Promise<SqlRow[]> => {
   const query = template.join('?').trim()
@@ -27,13 +40,14 @@ export const sql = async (template: TemplateStringsArray, ...args: SqlValue[]): 
 }
 
 export const sqlRaw = async (query: string, args: SqlValue[] = []): Promise<SqlRow[]> => {
+  const sql = query.trim()
+  const db = await database()
+
   try {
-    const result = query.slice(0, 6).toUpperCase() === 'SELECT'
-      ? await db.query(query, args)
-      : await db.execute(query, args)
+    const result = sql.slice(0, 6).toUpperCase() === 'SELECT' ? await db.query(sql, args) : await db.execute(sql, args)
     return result as SqlRow[]
   } catch (err) {
-    console.log(red(query), args)
+    console.log(red(sql), args)
     throw err
   }
 }

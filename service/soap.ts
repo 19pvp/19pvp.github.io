@@ -1,7 +1,20 @@
-const password = (Deno.env.get('PASSWORD') || '').slice(0, 16)
-const soapPort = Deno.env.get('SOAP_PORT') || '7878'
+import worldserverConfig from '../config/worldserver.json' with { type: 'json' }
+import { unquote } from './utils.ts'
 
-const authorization = `Basic ${btoa(`system:${password}`)}`
+type SoapFault = {
+  code: string
+  message: string
+}
+
+type SoapResult = string[] | SoapFault
+
+export type SoapResponse =
+  | { success: true; output: SoapResult }
+  | { error: number; output: unknown }
+
+const password = () => (Deno.env.get('PASSWORD') || '').slice(0, 16)
+const soapHost = () => Deno.env.get('SOAP_HOST') || unquote(worldserverConfig['SOAP.IP']) || '127.0.0.1'
+const soapPort = () => Deno.env.get('SOAP_PORT') || worldserverConfig['SOAP.Port'] || '7878'
 
 const makeSoapBody = (command: string) => `
 <?xml version="1.0" encoding="utf-8"?>
@@ -42,8 +55,6 @@ const decodeEntity = (_: string, entity: string) => {
   )
 }
 
-const ignoreError = () => ''
-
 const parseSoapTag = (text: string, tag: string) => {
   const start = text.indexOf(`<${tag}>`)
   const end = text.lastIndexOf(`</${tag}>`)
@@ -53,23 +64,28 @@ const parseSoapTag = (text: string, tag: string) => {
     .replace(/&([^;]+);/g, decodeEntity)
 }
 
-const parseSoap = (text: string) => {
+const parseSoap = (text: string): SoapResult => {
   const result = parseSoapTag(text, 'result')
   if (result) return result.split('\r\n').filter(Boolean)
-  const faultcode = parseSoapTag(text, 'faultcode') || 'No Code'
-  const faultstring = parseSoapTag(text, 'faultstring') || 'No message'
-  return { code: faultcode, message: faultstring }
+  return {
+    code: parseSoapTag(text, 'faultcode') || 'No Code',
+    message: parseSoapTag(text, 'faultstring') || 'No message',
+  }
 }
 
-export const ac = async (strings: TemplateStringsArray, ...values: unknown[]) => {
+export const ac = async (strings: TemplateStringsArray, ...values: unknown[]): Promise<SoapResponse> => {
+  const pass = password()
+  if (!pass) return { error: 401, output: 'PASSWORD is required for SOAP requests' }
+
   try {
-    const res = await fetch(`http://127.0.0.1:${soapPort}`, {
+    const res = await fetch(`http://${soapHost()}:${soapPort()}`, {
       method: 'POST',
-      headers: { authorization },
+      headers: { authorization: `Basic ${btoa(`system:${pass}`)}` },
       signal: AbortSignal.timeout(2000),
       body: makeSoapBody(String.raw(strings, ...values)),
     })
-    const output = await res.text().then(parseSoap, ignoreError)
+    const text = await res.text().catch(() => '')
+    const output = text ? parseSoap(text) : { code: 'No Body', message: 'SOAP response body could not be read' }
     return res.ok ? { success: true, output } : { error: res.status, output }
   } catch (err) {
     return { error: 600, output: err }

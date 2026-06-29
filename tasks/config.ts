@@ -174,18 +174,20 @@ const ensureDefaultGuild = async () => {
   }
 
   const guildId = 1
-  await sqlRaw(
-    `
+  await sqlRaw('START TRANSACTION')
+  try {
+    await sqlRaw(
+      `
     INSERT INTO ${db}.guild
       (guildid, name, leaderguid, EmblemStyle, EmblemColor, BorderStyle, BorderColor, BackgroundColor, info, motd, createdate, BankMoney)
     VALUES
       (?, ?, ?, 0, 0, 0, 0, 0, '', '', UNIX_TIMESTAMP(), 0)
   `,
-    [guildId, guildName, leaderGuid],
-  )
+      [guildId, guildName, leaderGuid],
+    )
 
-  await sqlRaw(
-    `
+    await sqlRaw(
+      `
     INSERT INTO ${db}.guild_rank
       (guildid, rid, rname, rights, BankMoneyPerDay)
     VALUES
@@ -195,18 +197,23 @@ const ensureDefaultGuild = async () => {
       (?, 3, 'Member', 1041904, 0),
       (?, 4, 'Initiate', 1041904, 0)
   `,
-    [guildId, guildId, guildId, guildId, guildId],
-  )
+      [guildId, guildId, guildId, guildId, guildId],
+    )
 
-  await sqlRaw(
-    `
+    await sqlRaw(
+      `
     INSERT INTO ${db}.guild_member
       (guildid, guid, rank, pnote, offnote)
     VALUES
       (?, ?, 0, '', '')
   `,
-    [guildId, leaderGuid],
-  )
+      [guildId, leaderGuid],
+    )
+    await sqlRaw('COMMIT')
+  } catch (err) {
+    await sqlRaw('ROLLBACK').catch(() => {})
+    throw err
+  }
 
   console.log(`Created default guild "${guildName}" with leader ${leaderGuid}`)
 }
