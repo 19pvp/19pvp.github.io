@@ -42,10 +42,55 @@ const journalArgs = (
   ...sourceArgs,
 ]
 
+class JournalLines implements AsyncIterable<string>, Disposable {
+  #closed = false
+  #process: Deno.ChildProcess
+  #lines: ReadableStream<string>
+
+  constructor(
+    sourceArgs: string[],
+    options: { lines?: number | 'all'; follow?: boolean; grep?: string } = {},
+  ) {
+    this.#process = new Deno.Command('journalctl', {
+      args: journalArgs(sourceArgs, options),
+      stdout: 'piped',
+      stderr: 'null',
+    }).spawn()
+    this.#lines = this.#process.stdout
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TextLineStream())
+  }
+
+  close() {
+    if (this.#closed) return
+    this.#closed = true
+    try {
+      this.#process.kill('SIGTERM')
+    } catch {
+      // Process already exited.
+    }
+  }
+
+  [Symbol.dispose]() {
+    this.close()
+  }
+
+  [Symbol.asyncIterator]() {
+    return this.#lines[Symbol.asyncIterator]()
+  }
+}
+
+const journalctl = (
+  sourceArgs: string[],
+  options: { lines?: number | 'all'; follow?: boolean; grep?: string } = {},
+) => new JournalLines(sourceArgs, options)
+
 const readJournal = async (args: string[], lines: number | 'all' = 1000) => {
   try {
-    const stdout = await runCommand('journalctl', journalArgs(args, { lines }))
-    return stdout ? stdout.split(/\r?\n/) : []
+    using output = journalctl(args, { lines })
+    const entries = []
+    for await (const line of output) entries.push(line)
+    return entries
   } catch (err) {
     if (err instanceof Deno.errors.NotFound) return []
     throw err
@@ -62,30 +107,35 @@ const journalEntries = async (log: string | null, lines: number | 'all' = 1000, 
   return entries
 }
 
-const streamJournal = (
-  args: string[],
-  follow: boolean,
-  onLine: (line: string) => void,
-  isClosed: () => boolean,
+const streamJournalSource = async (
+  source: { args: string[]; file: string; path: string },
+  options: {
+    follow: boolean
+    isClosed: () => boolean
+    resources: Set<JournalLines>
+    send: (event: unknown) => void
+  },
 ) => {
-  const process = new Deno.Command('journalctl', {
-    args: journalArgs(args, follow ? { follow: true, lines: 1000 } : { lines: 'all' }),
-    stdout: 'piped',
-    stderr: 'null',
-  }).spawn()
+  try {
+    using lines = journalctl(source.args, {
+      follow: options.follow,
+      lines: options.follow ? 1000 : 'all',
+    })
+    options.resources.add(lines)
 
-  const done = (async () => {
-    const lines = process.stdout
-      .pipeThrough(new TextDecoderStream())
-      .pipeThrough(new TextLineStream())
-
-    for await (const line of lines) {
-      if (isClosed()) break
-      onLine(line)
+    try {
+      for await (const line of lines) {
+        if (options.isClosed()) break
+        options.send({ type: 'log', file: source.file, path: source.path, line })
+      }
+    } finally {
+      options.resources.delete(lines)
     }
-  })()
-
-  return { process, done }
+  } catch (err) {
+    if (!options.isClosed() && !(err instanceof Deno.errors.NotFound)) {
+      options.send({ type: 'watcher', error: String(err), source: 'journalctl' })
+    }
+  }
 }
 
 export const logInfo = () =>
@@ -168,7 +218,7 @@ export const logEvents = (req: Request) => {
   const run = url.searchParams.get('run')
   const follow = !run || run === 'current'
   let heartbeat: ReturnType<typeof setInterval> | undefined
-  const processes: Deno.ChildProcess[] = []
+  const resources = new Set<JournalLines>()
   let closed = false
 
   return new Response(
@@ -189,18 +239,7 @@ export const logEvents = (req: Request) => {
         journalSources(log, run)
           .then((sources) => {
             for (const source of sources) {
-              const stream = streamJournal(
-                source.args,
-                follow,
-                (line) => send({ type: 'log', file: source.file, path: source.path, line }),
-                () => closed,
-              )
-              processes.push(stream.process)
-              stream.done.catch((err) => {
-                if (!closed && !(err instanceof Deno.errors.NotFound)) {
-                  send({ type: 'watcher', error: String(err), source: 'journalctl' })
-                }
-              })
+              void streamJournalSource(source, { follow, isClosed: () => closed, resources, send })
             }
           })
           .catch((err) => send({ type: 'watcher', error: String(err), source: 'journalctl' }))
@@ -208,7 +247,8 @@ export const logEvents = (req: Request) => {
       cancel() {
         closed = true
         if (heartbeat) clearInterval(heartbeat)
-        for (const process of processes) process.kill('SIGTERM')
+        for (const resource of resources) resource[Symbol.dispose]()
+        resources.clear()
       },
     }),
     {

@@ -2,7 +2,9 @@
   "version": "5",
   "specifiers": {
     "jsr:@std/async@^1.0.14": "1.4.0",
+    "jsr:@std/bytes@^1.0.6": "1.0.6",
     "jsr:@std/fmt@^1.0.8": "1.0.8",
+    "jsr:@std/streams@^1.1.1": "1.1.1",
     "jsr:@std/yaml@*": "1.1.1",
     "jsr:@std/yaml@^1.1.1": "1.1.1"
   },
@@ -10,8 +12,17 @@
     "@std/async@1.4.0": {
       "integrity": "4d70b008634f571cff9b554090d628c76141c32613aae0ff283fd5fa23d0c379"
     },
+    "@std/bytes@1.0.6": {
+      "integrity": "f6ac6adbd8ccd99314045f5703e23af0a68d7f7e58364b47d2c7f408aeb5820a"
+    },
     "@std/fmt@1.0.8": {
       "integrity": "71e1fc498787e4434d213647a6e43e794af4fd393ef8f52062246e06f7e372b7"
+    },
+    "@std/streams@1.1.1": {
+      "integrity": "92556d350e537e9dce527a6d08f6f15be3ff65e656079dea69d15252187c7613",
+      "dependencies": [
+        "jsr:@std/bytes"
+      ]
     },
     "@std/yaml@1.1.1": {
       "integrity": "a57665ecf3d17b926380593a56625d8a10cc7281802f1e993b5ebc94a48e71f8"
@@ -83,6 +94,7 @@
     "dependencies": [
       "jsr:@std/async@^1.0.14",
       "jsr:@std/fmt@^1.0.8",
+      "jsr:@std/streams@^1.1.1",
       "jsr:@std/yaml@^1.1.1"
     ]
   }
