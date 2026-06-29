@@ -4,7 +4,7 @@
     "-c",
     "core/env/dist/etc/worldserver.conf"
   ],
-  "cwd": ".",
+  "cwd": "core/env/dist/bin/",
   "pidFile": "core/env/dist/bin/world.pid",
   "files": {
     "worldserverConf": "core/env/dist/etc/worldserver.conf",
