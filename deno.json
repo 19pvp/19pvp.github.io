@@ -37,7 +37,7 @@
     "config:conf:worldserver": "deno run --allow-read --allow-write tasks/config.ts conf worldserver",
     "config:install": "deno run --env-file --allow-env --allow-net --allow-read --allow-write tasks/config.ts install",
     "config:watch": "deno run --allow-read --allow-write --allow-env --allow-net tasks/config.ts watch",
-    "server": "deno serve --allow-net --allow-read --allow-write --allow-run service/server.ts"
+    "server": "deno serve --watch=service,config --allow-net --allow-read --allow-write --allow-run service/server.ts"
   },
   "imports": {
     "@std/async/debounce": "jsr:@std/async@^1.0.14/debounce",
