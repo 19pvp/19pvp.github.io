@@ -1,12 +1,10 @@
-import worldserverConfig from '../config/worldserver.json' with { type: 'json' }
-import controlConfig from '../config/worldserver-control.json' with { type: 'json' }
-import { cors, json, projectPath, runCommand, sse, unquote } from './utils.ts'
+import { cors, json, runCommand, sse } from './utils.ts'
 
 type EventController = ReadableStreamDefaultController<Uint8Array>
 const eventClients = new Set<EventController>()
 const serviceJournalQuery = `_PID=${Deno.pid}`
 const worldserverServiceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
-const worldserverJournalQuery = `-u ${worldserverServiceName}`
+const worldserverJournalPath = `journalctl -u ${worldserverServiceName}`
 let journalProcesses: Deno.ChildProcess[] = []
 
 const emitEvent = (event: unknown) => {
@@ -19,21 +17,6 @@ const emitEvent = (event: unknown) => {
   }
 }
 
-const defaultWorldserverLogFile = () => {
-  const logsDir = unquote(worldserverConfig.LogsDir) || '.'
-  const appender = String(worldserverConfig['Appender.Server'] || '2,5,0,Server.log,w')
-  const file = appender.split(',')[3] || 'Server.log'
-  return projectPath(`${logsDir.replace(/[\\/]$/, '')}/${file}`)
-}
-
-const logFiles = () => ({
-  server: projectPath(controlConfig.files?.serverLog || defaultWorldserverLogFile()),
-  error: projectPath(controlConfig.files?.errorLog || 'core/env/dist/bin/Error.log'),
-  playerbots: projectPath(controlConfig.files?.playerbotsLog || 'core/env/dist/bin/Playerbots.log'),
-  service: serviceJournalQuery,
-})
-
-const worldserverLogFile = () => logFiles().server
 const systemctl = (...args: string[]) => runCommand('systemctl', args)
 const systemctlStatus = async () => {
   const active = await systemctl('is-active', worldserverServiceName).catch(() => 'inactive')
@@ -42,11 +25,28 @@ const systemctlStatus = async () => {
   return { running: active === 'active', active, pid, service: worldserverServiceName }
 }
 
+const worldserverJournalArgs = async (run: string | null = null) => {
+  if (run && run !== 'current') return [`_SYSTEMD_INVOCATION_ID=${run}`]
+  const invocationId = await systemctl('show', worldserverServiceName, '--property=InvocationID', '--value').catch(() =>
+    ''
+  )
+  return invocationId ? [`_SYSTEMD_INVOCATION_ID=${invocationId}`] : ['-u', worldserverServiceName]
+}
+
+const journalSources = async (log: string | null, run: string | null = null) => [
+  ...(!log || log === 'all' || log === 'server'
+    ? [{ file: 'server', path: worldserverJournalPath, args: await worldserverJournalArgs(run) }]
+    : []),
+  ...(!log || log === 'all' || log === 'service'
+    ? [{ file: 'service', path: serviceJournalQuery, args: [serviceJournalQuery] }]
+    : []),
+]
+
 emitEvent({ type: 'api', action: 'started', at: Date.now(), message: 'API server started' })
 
 const isLogLine = (line: string) => {
   const text = line.trim()
-  return text !== ''
+  return text !== '' && !/^AC>\s*$/.test(text)
 }
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
@@ -61,19 +61,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   }
 }
 
-const readTail = async (path: string, bytes = 64 * 1024) => {
-  try {
-    using file = await Deno.open(path)
-    const { size } = await file.stat()
-    await file.seek(Math.max(0, size - bytes), Deno.SeekMode.Start)
-    return (await new Response(file.readable).text()).split(/\r?\n/).filter(isLogLine).slice(-300)
-  } catch (err) {
-    if (err instanceof Deno.errors.NotFound) return []
-    throw err
-  }
-}
-
-const readJournalTail = async (args: string[], lines = 300) => {
+const readJournal = async (args: string[], lines: number | 'all' = 1000) => {
   try {
     const stdout = await runCommand('journalctl', ['--no-pager', '--output=cat', '-n', String(lines), ...args])
     return stdout.split(/\r?\n/).filter(isLogLine)
@@ -83,86 +71,84 @@ const readJournalTail = async (args: string[], lines = 300) => {
   }
 }
 
-export const logInfo = () => json({ path: worldserverLogFile(), files: logFiles() })
-
-export const logFile = async (req: Request) => {
-  const log = new URL(req.url).searchParams.get('log') || 'server'
-  const files = logFiles()
-  const path = log in files && log !== 'service' && log !== 'all' ? files[log as keyof typeof files] : files.server
-
-  try {
-    const file = await Deno.open(path)
-    return new Response(file.readable, {
-      headers: {
-        ...cors,
-        'content-type': 'text/plain; charset=utf-8',
-        'content-disposition': `inline; filename="${path.split(/[\\/]/).pop() || 'log.txt'}"`,
-      },
-    })
-  } catch (err) {
-    if (err instanceof Deno.errors.NotFound) return json({ error: 'Log file not found', path }, { status: 404 })
-    throw err
+const journalEntries = async (log: string | null, lines: number | 'all' = 1000, run: string | null = null) => {
+  const entries = []
+  for (const source of await journalSources(log, run)) {
+    for (const line of await readJournal(source.args, lines)) {
+      entries.push({ type: 'log', file: source.file, path: source.path, line })
+    }
   }
+  return entries
 }
 
-const selectedLogFiles = (log: string | null) => {
-  const files = logFiles()
-  if (!log || log === 'all') return Object.entries(files).filter(([name]) => name !== 'service' && name !== 'server')
-  if (log in files && log !== 'service' && log !== 'server') return [[log, files[log as keyof typeof files]]]
-  return []
+export const logInfo = () =>
+  json({ path: worldserverJournalPath, files: { server: worldserverJournalPath, service: serviceJournalQuery } })
+
+export const logRuns = async () => {
+  const current =
+    (await worldserverJournalArgs()).find((arg) => arg.startsWith('_SYSTEMD_INVOCATION_ID='))?.split('=')[1] ||
+    ''
+  const stdout = await runCommand('journalctl', [
+    '--no-pager',
+    '--output=json',
+    '--reverse',
+    '-n',
+    '5000',
+    '-u',
+    worldserverServiceName,
+  ], { okCodes: [0, 1] })
+  const runs = new Map<string, { id: string; startedAt: number; lastAt: number; current: boolean; lines: number }>()
+
+  for (const line of stdout.split(/\r?\n/).filter(Boolean)) {
+    const entry = JSON.parse(line)
+    const id = String(entry._SYSTEMD_INVOCATION_ID || '')
+    const at = Math.floor(Number(entry.__REALTIME_TIMESTAMP || 0) / 1000)
+    if (!id || !at) continue
+    const run = runs.get(id) || { id, startedAt: at, lastAt: at, current: id === current, lines: 0 }
+    run.startedAt = Math.min(run.startedAt, at)
+    run.lastAt = Math.max(run.lastAt, at)
+    run.lines++
+    runs.set(id, run)
+  }
+
+  return json([...runs.values()])
+}
+
+export const logFile = async (req: Request) => {
+  const url = new URL(req.url)
+  const log = url.searchParams.get('log') || 'server'
+  const run = url.searchParams.get('run')
+  const text = (await journalEntries(log, 'all', run)).map((entry) => entry.line).join('\n') + '\n'
+  const suffix = run && run !== 'current' ? `-${run.slice(0, 8)}` : ''
+  return new Response(text, {
+    headers: {
+      ...cors,
+      'content-type': 'text/plain; charset=utf-8',
+      'content-disposition': `attachment; filename="${log || 'server'}${suffix}.log"`,
+    },
+  })
 }
 
 export const logTail = async (req: Request) => {
-  const log = new URL(req.url).searchParams.get('log')
-  const lines = []
-
-  if (!log || log === 'all' || log === 'server') {
-    for (const line of await readJournalTail(['-u', worldserverServiceName])) {
-      lines.push({ type: 'log', file: 'server', path: worldserverJournalQuery, line })
-    }
-  }
-
-  if (!log || log === 'all' || log === 'service') {
-    for (const line of await readJournalTail([serviceJournalQuery])) {
-      lines.push({ type: 'log', file: 'service', path: serviceJournalQuery, line })
-    }
-  }
-
-  const files = selectedLogFiles(log)
-  for (const [file, path] of files) {
-    for (const line of await readTail(path)) lines.push({ type: 'log', file, path, line })
-  }
-
-  return json(lines)
+  const url = new URL(req.url)
+  return json(await journalEntries(url.searchParams.get('log'), 1000, url.searchParams.get('run')))
 }
 
 export const logSearch = async (req: Request) => {
   const query = new URL(req.url).searchParams.get('q') || ''
   if (!query) return json([])
   const log = new URL(req.url).searchParams.get('log')
-  const fileQueries = selectedLogFiles(log).map(([, path]) => path)
-  const journalQueries = [
-    ...(!log || log === 'all' || log === 'server' ? [['-u', worldserverServiceName]] : []),
-    ...(!log || log === 'all' || log === 'service' ? [[serviceJournalQuery]] : []),
-  ]
-  if (!fileQueries.length && !journalQueries.length) return json([])
+  const run = new URL(req.url).searchParams.get('run')
+  const sources = await journalSources(log, run)
+  if (!sources.length) return json([])
 
   try {
     const lines: string[] = []
 
-    if (fileQueries.length) {
-      const stdout = await runCommand(
-        'rg',
-        ['--line-number', '--color', 'never', '--max-count', '500', query, ...fileQueries],
-        { okCodes: [0, 1] },
-      )
-      lines.push(...stdout.split(/\r?\n/).filter(isLogLine))
-    }
-
-    for (const journalQuery of journalQueries) {
+    for (const source of sources) {
       const stdout = await runCommand(
         'journalctl',
-        ['--no-pager', '--output=cat', '--lines', '500', '--grep', query, ...journalQuery],
+        ['--no-pager', '--output=cat', '--lines', '500', '--grep', query, ...source.args],
         { okCodes: [0, 1] },
       )
       lines.push(...stdout.split(/\r?\n/).filter(isLogLine))
@@ -202,7 +188,7 @@ export const logEvents = () => {
           ;(async () => {
             try {
               const process = new Deno.Command('journalctl', {
-                args: ['--no-pager', '--output=cat', '-f', '-n', '0', ...args],
+                args: ['--no-pager', '--output=cat', '-f', '-n', '1000', ...args],
                 stdout: 'piped',
                 stderr: 'null',
               }).spawn()
@@ -237,8 +223,11 @@ export const logEvents = () => {
           })()
         }
 
-        followJournal(['-u', worldserverServiceName], 'server', worldserverJournalQuery)
-        followJournal([serviceJournalQuery], 'service', serviceJournalQuery)
+        journalSources('all')
+          .then((sources) => {
+            for (const source of sources) followJournal(source.args, source.file, source.path)
+          })
+          .catch((err) => send({ type: 'watcher', error: String(err), source: 'journalctl' }))
       },
       cancel() {
         closed = true
@@ -332,6 +321,7 @@ export default {
 
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
       if (url.pathname === '/logs/info') return logInfo()
+      if (url.pathname === '/logs/runs') return await logRuns()
       if (url.pathname === '/logs/file') return await logFile(req)
       if (url.pathname === '/logs/tail') return await logTail(req)
       if (url.pathname === '/logs/events') return logEvents()

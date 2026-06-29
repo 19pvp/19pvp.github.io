@@ -43,6 +43,7 @@
     }
 
     input,
+    select,
     button {
       height: 34px;
       box-sizing: border-box;
@@ -51,7 +52,8 @@
       color: #f3f0ea;
     }
 
-    input {
+    input,
+    select {
       min-width: 120px;
       padding: 0 10px;
     }
@@ -247,9 +249,10 @@
       <button id="start">Start</button>
       <button id="stop">Stop</button>
       <button id="kill">Kill</button>
+      <select id="runs"></select>
       <input id="query" placeholder="Search with rg">
       <button id="search">Search</button>
-      <button id="raw">Open file</button>
+      <button id="raw">Download</button>
       <button id="live">Live</button>
       <button id="clear">Clear</button>
       <nav id="tabs">
@@ -267,6 +270,7 @@
     const query = document.querySelector('#query')
     const raw = document.querySelector('#raw')
     const path = document.querySelector('#path')
+    const runs = document.querySelector('#runs')
     const tabs = document.querySelector('#tabs')
     const ansiHighlights = new Map()
     const supportsHighlights = Boolean(globalThis.CSS?.highlights && globalThis.Highlight && globalThis.Range)
@@ -276,6 +280,7 @@
     const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
     let source
     let currentLog = new URL(location.href).searchParams.get('log') || 'all'
+    let currentRun = new URL(location.href).searchParams.get('run') || 'current'
     let lastLogAt = 0
     let pending = []
     let pendingFrame = 0
@@ -484,7 +489,9 @@
 
     const fetchTail = async () => {
       resetOutput()
-      const lines = await fetch(`${api}/logs/tail?log=${encodeURIComponent(currentLog)}`).then((res) => res.json())
+      const lines = await fetch(
+        `${api}/logs/tail?log=${encodeURIComponent(currentLog)}&run=${encodeURIComponent(currentRun)}`,
+      ).then((res) => res.json())
       lines.forEach((line) => appendEvent(line))
     }
 
@@ -498,7 +505,10 @@
     }
 
     const live = () => {
+      currentRun = 'current'
+      runs.value = currentRun
       source?.close()
+      resetOutput()
       source = new EventSource(`${api}/logs/events`)
       source.onmessage = (event) => {
         const data = JSON.parse(event.data)
@@ -515,7 +525,9 @@
       source?.close()
       resetOutput()
       const lines = await fetch(
-        `${api}/logs/search?q=${encodeURIComponent(query.value)}&log=${encodeURIComponent(currentLog)}`,
+        `${api}/logs/search?q=${encodeURIComponent(query.value)}&log=${encodeURIComponent(currentLog)}&run=${
+          encodeURIComponent(currentRun)
+        }`,
       )
         .then((res) => res.json())
       lines.forEach((line) => append(line, 'system'))
@@ -529,8 +541,8 @@
 
     document.querySelector('#live').onclick = live
     raw.onclick = () => {
-      const log = currentLog === 'all' || currentLog === 'service' ? 'server' : currentLog
-      open(`${api}/logs/file?log=${encodeURIComponent(log)}`, '_blank', 'noopener')
+      const log = currentLog === 'all' ? 'server' : currentLog
+      open(`${api}/logs/file?log=${encodeURIComponent(log)}&run=${encodeURIComponent(currentRun)}`, '_blank', 'noopener')
     }
     document.querySelector('#clear').onclick = () => {
       resetOutput()
@@ -538,6 +550,14 @@
     tabs.onclick = (event) => {
       const button = event.target.closest('button[data-log]')
       if (button) selectLog(button.dataset.log)
+    }
+    runs.onchange = () => {
+      currentRun = runs.value
+      const url = new URL(location.href)
+      currentRun === 'current' ? url.searchParams.delete('run') : url.searchParams.set('run', currentRun)
+      history.replaceState(null, '', url)
+      source?.close()
+      fetchTail()
     }
     document.querySelector('#status').onclick = () => action('status')
     document.querySelector('#start').onclick = () => action('start')
@@ -550,8 +570,26 @@
       .then((info) => path.textContent = info.path || 'Server logs')
       .catch(() => path.textContent = 'Server logs')
 
-    selectLog(currentLog)
-    live()
+    fetch(`${api}/logs/runs`)
+      .then((res) => res.json())
+      .then((items) => {
+        runs.textContent = ''
+        if (!items.length) items.push({ id: 'current', current: true, startedAt: Date.now(), lines: 0 })
+        for (const item of items) {
+          const option = document.createElement('option')
+          option.value = item.current ? 'current' : item.id
+          option.textContent = `${item.current ? 'Current' : new Date(item.startedAt).toLocaleString()} (${item.lines})`
+          runs.append(option)
+        }
+        if (![...runs.options].some((option) => option.value === currentRun)) currentRun = 'current'
+        runs.value = currentRun
+        currentRun === 'current' ? live() : fetchTail()
+      })
+      .catch(live)
+
+    for (const button of tabs.querySelectorAll('button')) {
+      button.classList.toggle('active', button.dataset.log === currentLog)
+    }
     setInterval(updateIdleSpacer, 1000)
     </script>
   </body>
