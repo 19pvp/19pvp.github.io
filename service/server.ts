@@ -1,9 +1,9 @@
+import { TextLineStream } from '@std/streams'
 import { cors, json, runCommand, sse } from './utils.ts'
 
 const serviceJournalQuery = `_PID=${Deno.pid}`
 const worldserverServiceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
 const worldserverJournalPath = `journalctl -u ${worldserverServiceName}`
-let journalProcesses: Deno.ChildProcess[] = []
 
 const systemctl = (...args: string[]) => runCommand('systemctl', args)
 const systemctlStatus = async () => {
@@ -30,26 +30,22 @@ const journalSources = async (log: string | null, run: string | null = null) => 
     : []),
 ]
 
-const isLogLine = (line: string) => {
-  const text = line.trim()
-  return text !== '' && !/^AC>\s*$/.test(text)
-}
-
-for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-  try {
-    Deno.addSignalListener(signal, () => {
-      for (const process of journalProcesses) process.kill('SIGTERM')
-      Deno.exit(0)
-    })
-  } catch {
-    // Some local platforms do not expose every Unix signal Deno supports on Linux.
-  }
-}
+const journalArgs = (
+  sourceArgs: string[],
+  options: { lines?: number | 'all'; follow?: boolean; grep?: string } = {},
+) => [
+  '--no-pager',
+  '--output=cat',
+  ...(options.follow ? ['-f'] : []),
+  ...(options.lines === undefined ? [] : ['-n', String(options.lines)]),
+  ...(options.grep ? ['--grep', options.grep] : []),
+  ...sourceArgs,
+]
 
 const readJournal = async (args: string[], lines: number | 'all' = 1000) => {
   try {
-    const stdout = await runCommand('journalctl', ['--no-pager', '--output=cat', '-n', String(lines), ...args])
-    return stdout.split(/\r?\n/).filter(isLogLine)
+    const stdout = await runCommand('journalctl', journalArgs(args, { lines }))
+    return stdout ? stdout.split(/\r?\n/) : []
   } catch (err) {
     if (err instanceof Deno.errors.NotFound) return []
     throw err
@@ -64,6 +60,32 @@ const journalEntries = async (log: string | null, lines: number | 'all' = 1000, 
     }
   }
   return entries
+}
+
+const streamJournal = (
+  args: string[],
+  follow: boolean,
+  onLine: (line: string) => void,
+  isClosed: () => boolean,
+) => {
+  const process = new Deno.Command('journalctl', {
+    args: journalArgs(args, follow ? { follow: true, lines: 1000 } : { lines: 'all' }),
+    stdout: 'piped',
+    stderr: 'null',
+  }).spawn()
+
+  const done = (async () => {
+    const lines = process.stdout
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TextLineStream())
+
+    for await (const line of lines) {
+      if (isClosed()) break
+      onLine(line)
+    }
+  })()
+
+  return { process, done }
 }
 
 export const logInfo = () =>
@@ -128,10 +150,10 @@ export const logSearch = async (req: Request) => {
     for (const source of sources) {
       const stdout = await runCommand(
         'journalctl',
-        ['--no-pager', '--output=cat', '--lines', '500', '--grep', query, ...source.args],
+        journalArgs(source.args, { lines: 500, grep: query }),
         { okCodes: [0, 1] },
       )
-      lines.push(...stdout.split(/\r?\n/).filter(isLogLine))
+      if (stdout) lines.push(...stdout.split(/\r?\n/))
     }
 
     return json(lines)
@@ -163,48 +185,23 @@ export const logEvents = (req: Request) => {
         }
 
         if (follow) heartbeat = setInterval(() => send({ type: 'heartbeat', at: Date.now() }), 15000)
-        const followJournal = (args: string[], file: string, path: string) => {
-          ;(async () => {
-            try {
-              const process = new Deno.Command('journalctl', {
-                args: ['--no-pager', '--output=cat', ...(follow ? ['-f', '-n', '1000'] : ['-n', 'all']), ...args],
-                stdout: 'piped',
-                stderr: 'null',
-              }).spawn()
-              processes.push(process)
-              journalProcesses.push(process)
-
-              const reader = process.stdout.getReader()
-              const decoder = new TextDecoder()
-              let buffer = ''
-
-              while (!closed) {
-                const { value, done } = await reader.read()
-                if (done) break
-
-                buffer += decoder.decode(value, { stream: true })
-                let newline = buffer.indexOf('\n')
-                while (newline !== -1) {
-                  const line = buffer.slice(0, newline).trimEnd()
-                  buffer = buffer.slice(newline + 1)
-                  if (isLogLine(line)) send({ type: 'log', file, path, line })
-                  newline = buffer.indexOf('\n')
-                }
-              }
-
-              const tail = buffer.trim()
-              if (isLogLine(tail)) send({ type: 'log', file, path, line: tail })
-            } catch (err) {
-              if (!closed && !(err instanceof Deno.errors.NotFound)) {
-                send({ type: 'watcher', error: String(err), source: 'journalctl' })
-              }
-            }
-          })()
-        }
 
         journalSources(log, run)
           .then((sources) => {
-            for (const source of sources) followJournal(source.args, source.file, source.path)
+            for (const source of sources) {
+              const stream = streamJournal(
+                source.args,
+                follow,
+                (line) => send({ type: 'log', file: source.file, path: source.path, line }),
+                () => closed,
+              )
+              processes.push(stream.process)
+              stream.done.catch((err) => {
+                if (!closed && !(err instanceof Deno.errors.NotFound)) {
+                  send({ type: 'watcher', error: String(err), source: 'journalctl' })
+                }
+              })
+            }
           })
           .catch((err) => send({ type: 'watcher', error: String(err), source: 'journalctl' }))
       },
@@ -212,7 +209,6 @@ export const logEvents = (req: Request) => {
         closed = true
         if (heartbeat) clearInterval(heartbeat)
         for (const process of processes) process.kill('SIGTERM')
-        journalProcesses = journalProcesses.filter((process) => !processes.includes(process))
       },
     }),
     {
