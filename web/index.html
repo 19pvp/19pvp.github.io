@@ -70,7 +70,7 @@
     }
 
     main {
-      padding: 24px 10px 40vh;
+      padding: 16px 10px 120px;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       font-size: 13px;
@@ -140,12 +140,20 @@
     }
 
     .idle-spacer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 72px;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 28vh;
+      pointer-events: none;
       color: #8f969e;
       font: 600 12px/1.4 system-ui, sans-serif;
+    }
+
+    .idle-spacer[hidden] {
+      display: none;
     }
 
     ::highlight(ansi-black) {
@@ -236,9 +244,11 @@
       </nav>
     </header>
     <main id="output"></main>
+    <div id="idle" class="idle-spacer" hidden></div>
     <script type="module">
     const api = 'https://19pvp.devazuka.com'
     const output = document.querySelector('#output')
+    const idleSpacer = document.querySelector('#idle')
     const query = document.querySelector('#query')
     const path = document.querySelector('#path')
     const tabs = document.querySelector('#tabs')
@@ -246,8 +256,6 @@
     const supportsHighlights = Boolean(globalThis.CSS?.highlights && globalThis.Highlight && globalThis.Range)
     const idleAfterMs = 30_000
     const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
-    const idleSpacer = document.createElement('div')
-    idleSpacer.className = 'idle-spacer'
     let source
     let currentLog = new URL(location.href).searchParams.get('log') || 'all'
     let lastLogAt = 0
@@ -367,7 +375,7 @@
     }
 
     const append = (line, className = '') => {
-      idleSpacer.remove()
+      idleSpacer.hidden = true
       lastLogAt = Date.now()
       const row = document.createElement('div')
       const tag = ['all', 'error', 'playerbots', 'server', 'service', 'system'].includes(className) ? className : 'system'
@@ -389,12 +397,17 @@
     }
 
     const updateIdleSpacer = () => {
-      if (!lastLogAt || document.activeElement === query) return
+      if (!lastLogAt || document.activeElement === query) {
+        idleSpacer.hidden = true
+        return
+      }
       const elapsedMs = Date.now() - lastLogAt
-      if (elapsedMs < idleAfterMs) return idleSpacer.remove()
+      if (elapsedMs < idleAfterMs) {
+        idleSpacer.hidden = true
+        return
+      }
       idleSpacer.textContent = `Last log ${formatElapsed(elapsedMs)}`
-      if (!idleSpacer.isConnected) output.append(idleSpacer)
-      scrollTo(0, document.body.scrollHeight)
+      idleSpacer.hidden = false
     }
 
     const accepts = (data) => currentLog === 'all' || data.file === currentLog || data.type !== 'log'
@@ -422,6 +435,7 @@
       output.textContent = ''
       clearAnsiHighlights()
       lastLogAt = 0
+      idleSpacer.hidden = true
       const lines = await fetch(`${api}/logs/tail?log=${encodeURIComponent(currentLog)}`).then((res) => res.json())
       lines.forEach((line) => appendEvent(line))
     }
@@ -454,6 +468,7 @@
       output.textContent = ''
       clearAnsiHighlights()
       lastLogAt = 0
+      idleSpacer.hidden = true
       const lines = await fetch(
         `${api}/logs/search?q=${encodeURIComponent(query.value)}&log=${encodeURIComponent(currentLog)}`,
       )
@@ -472,6 +487,7 @@
       output.textContent = ''
       clearAnsiHighlights()
       lastLogAt = 0
+      idleSpacer.hidden = true
     }
     tabs.onclick = (event) => {
       const button = event.target.closest('button[data-log]')

@@ -42,6 +42,13 @@ const worldserverLogFile = () => logFiles().server
 
 emitEvent({ type: 'api', action: 'started', at: Date.now(), message: 'API server started' })
 
+const stripAnsi = (line: string) => line.replace(/\x1b\[[0-9;]*m/g, '')
+
+const isLogLine = (line: string) => {
+  const text = stripAnsi(line).trim()
+  return text !== '' && text !== '>'
+}
+
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   try {
     Deno.addSignalListener(signal, () => {
@@ -68,7 +75,7 @@ const readTail = async (path: string, bytes = 64 * 1024) => {
     using file = await Deno.open(path)
     const { size } = await file.stat()
     await file.seek(Math.max(0, size - bytes), Deno.SeekMode.Start)
-    return (await new Response(file.readable).text()).split(/\r?\n/).filter(Boolean).slice(-300)
+    return (await new Response(file.readable).text()).split(/\r?\n/).filter(isLogLine).slice(-300)
   } catch (err) {
     if (err instanceof Deno.errors.NotFound) return []
     throw err
@@ -83,7 +90,7 @@ const readJournalTail = async (query = serviceJournalQuery, lines = 300) => {
       stderr: 'null',
     })
     const { stdout } = await journal.output()
-    return new TextDecoder().decode(stdout).split(/\r?\n/).filter(Boolean)
+    return new TextDecoder().decode(stdout).split(/\r?\n/).filter(isLogLine)
   } catch (err) {
     if (err instanceof Deno.errors.NotFound) return []
     throw err
@@ -110,13 +117,13 @@ const forwardProcessOutput = async (
       while (newline !== -1) {
         const line = buffer.slice(0, newline).trimEnd()
         buffer = buffer.slice(newline + 1)
-        if (line) sendEventLine(file, path, line, stream)
+        if (isLogLine(line)) sendEventLine(file, path, line, stream)
         newline = buffer.indexOf('\n')
       }
     }
 
     const tail = buffer.trim()
-    if (tail) sendEventLine(file, path, tail, stream)
+    if (isLogLine(tail)) sendEventLine(file, path, tail, stream)
   } catch (err) {
     if (!closed) {
       emitEvent({ type: 'log', file, path, stream, error: String(err) })
@@ -173,7 +180,7 @@ export const logSearch = async (req: Request) => {
         stderr: 'null',
       })
       const { stdout } = await rg.output()
-      lines.push(...new TextDecoder().decode(stdout).split(/\r?\n/).filter(Boolean))
+      lines.push(...new TextDecoder().decode(stdout).split(/\r?\n/).filter(isLogLine))
     }
 
     if (journalQueries.length) {
@@ -183,7 +190,7 @@ export const logSearch = async (req: Request) => {
         stderr: 'null',
       })
       const { stdout } = await journal.output()
-      lines.push(...new TextDecoder().decode(stdout).split(/\r?\n/).filter(Boolean))
+      lines.push(...new TextDecoder().decode(stdout).split(/\r?\n/).filter(isLogLine))
     }
 
     return json(lines)
@@ -240,7 +247,7 @@ export const logEvents = () => {
 
             if (count) {
               const text = new TextDecoder().decode(buffer.slice(0, count))
-              for (const line of text.split(/\r?\n/).filter(Boolean)) {
+              for (const line of text.split(/\r?\n/).filter(isLogLine)) {
                 send({ type: 'log', file: name, path, line })
               }
             }
@@ -312,13 +319,13 @@ export const logEvents = () => {
               while (newline !== -1) {
                 const line = buffer.slice(0, newline).trimEnd()
                 buffer = buffer.slice(newline + 1)
-                if (line) send({ type: 'log', file: 'service', path: serviceJournalQuery, line })
+                if (isLogLine(line)) send({ type: 'log', file: 'service', path: serviceJournalQuery, line })
                 newline = buffer.indexOf('\n')
               }
             }
 
             const tail = buffer.trim()
-            if (tail) send({ type: 'log', file: 'service', path: serviceJournalQuery, line: tail })
+            if (isLogLine(tail)) send({ type: 'log', file: 'service', path: serviceJournalQuery, line: tail })
           } catch (err) {
             if (!closed && !(err instanceof Deno.errors.NotFound)) {
               send({ type: 'watcher', error: String(err), source: 'journalctl' })
