@@ -20,12 +20,12 @@
       min-height: 100dvh;
       background: #101112;
       color: #e6e1d8;
+      display: flex;
+      flex-direction: column;
     }
 
     footer {
-      position: fixed;
-      left: 0;
-      right: 0;
+      position: sticky;
       bottom: 0;
       z-index: 10;
       display: grid;
@@ -86,7 +86,8 @@
       justify-content: flex-end;
       min-height: 100vh;
       min-height: 100dvh;
-      padding: 12px 10px 96px;
+      flex: 1;
+      padding: 12px 10px;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       font-size: 13px;
@@ -159,7 +160,7 @@
       position: fixed;
       left: 0;
       right: 0;
-      bottom: 88px;
+      bottom: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -253,7 +254,6 @@
       <input id="query" placeholder="Search with rg">
       <button id="search">Search</button>
       <button id="raw">Download</button>
-      <button id="live">Live</button>
       <button id="clear">Clear</button>
       <nav id="tabs">
         <button data-log="all">All</button>
@@ -487,29 +487,22 @@
       append(JSON.stringify(data), 'system')
     }
 
-    const fetchTail = async () => {
-      resetOutput()
-      const lines = await fetch(
-        `${api}/logs/tail?log=${encodeURIComponent(currentLog)}&run=${encodeURIComponent(currentRun)}`,
-      ).then((res) => res.json())
-      lines.forEach((line) => appendEvent(line))
-    }
-
     const selectLog = (log) => {
       currentLog = log
       const url = new URL(location.href)
       log === 'all' ? url.searchParams.delete('log') : url.searchParams.set('log', log)
       history.replaceState(null, '', url)
       for (const button of tabs.querySelectorAll('button')) button.classList.toggle('active', button.dataset.log === log)
-      fetchTail()
+      connectLogs()
     }
 
-    const live = () => {
-      currentRun = 'current'
+    const connectLogs = () => {
       runs.value = currentRun
       source?.close()
       resetOutput()
-      source = new EventSource(`${api}/logs/events`)
+      source = new EventSource(
+        `${api}/logs/events?log=${encodeURIComponent(currentLog)}&run=${encodeURIComponent(currentRun)}`,
+      )
       source.onmessage = (event) => {
         const data = JSON.parse(event.data)
         if (data.type === 'heartbeat') return updateIdleSpacer()
@@ -539,7 +532,6 @@
       append(`${name}: ${JSON.stringify(result)}`)
     }
 
-    document.querySelector('#live').onclick = live
     raw.onclick = () => {
       const log = currentLog === 'all' ? 'server' : currentLog
       open(`${api}/logs/file?log=${encodeURIComponent(log)}&run=${encodeURIComponent(currentRun)}`, '_blank', 'noopener')
@@ -557,7 +549,7 @@
       currentRun === 'current' ? url.searchParams.delete('run') : url.searchParams.set('run', currentRun)
       history.replaceState(null, '', url)
       source?.close()
-      fetchTail()
+      connectLogs()
     }
     document.querySelector('#status').onclick = () => action('status')
     document.querySelector('#start').onclick = () => action('start')
@@ -567,7 +559,7 @@
 
     fetch(`${api}/logs/info`)
       .then((res) => res.json())
-      .then((info) => path.textContent = info.path || 'Server logs')
+      .then(() => path.textContent = 'Server logs')
       .catch(() => path.textContent = 'Server logs')
 
     fetch(`${api}/logs/runs`)
@@ -578,14 +570,16 @@
         for (const item of items) {
           const option = document.createElement('option')
           option.value = item.current ? 'current' : item.id
-          option.textContent = `${item.current ? 'Current' : new Date(item.startedAt).toLocaleString()} (${item.lines})`
+          option.textContent = `${
+            item.current ? 'Current start' : `Start ${new Date(item.startedAt).toLocaleString()}`
+          } (${item.lines})`
           runs.append(option)
         }
         if (![...runs.options].some((option) => option.value === currentRun)) currentRun = 'current'
         runs.value = currentRun
-        currentRun === 'current' ? live() : fetchTail()
+        connectLogs()
       })
-      .catch(live)
+      .catch(connectLogs)
 
     for (const button of tabs.querySelectorAll('button')) {
       button.classList.toggle('active', button.dataset.log === currentLog)

@@ -1,21 +1,9 @@
 import { cors, json, runCommand, sse } from './utils.ts'
 
-type EventController = ReadableStreamDefaultController<Uint8Array>
-const eventClients = new Set<EventController>()
 const serviceJournalQuery = `_PID=${Deno.pid}`
 const worldserverServiceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
 const worldserverJournalPath = `journalctl -u ${worldserverServiceName}`
 let journalProcesses: Deno.ChildProcess[] = []
-
-const emitEvent = (event: unknown) => {
-  for (const client of [...eventClients]) {
-    try {
-      client.enqueue(sse(event))
-    } catch {
-      eventClients.delete(client)
-    }
-  }
-}
 
 const systemctl = (...args: string[]) => runCommand('systemctl', args)
 const systemctlStatus = async () => {
@@ -42,8 +30,6 @@ const journalSources = async (log: string | null, run: string | null = null) => 
     : []),
 ]
 
-emitEvent({ type: 'api', action: 'started', at: Date.now(), message: 'API server started' })
-
 const isLogLine = (line: string) => {
   const text = line.trim()
   return text !== '' && !/^AC>\s*$/.test(text)
@@ -52,7 +38,6 @@ const isLogLine = (line: string) => {
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   try {
     Deno.addSignalListener(signal, () => {
-      emitEvent({ type: 'api', action: 'stopping', signal, at: Date.now(), message: `API server stopping (${signal})` })
       for (const process of journalProcesses) process.kill('SIGTERM')
       Deno.exit(0)
     })
@@ -129,11 +114,6 @@ export const logFile = async (req: Request) => {
   })
 }
 
-export const logTail = async (req: Request) => {
-  const url = new URL(req.url)
-  return json(await journalEntries(url.searchParams.get('log'), 1000, url.searchParams.get('run')))
-}
-
 export const logSearch = async (req: Request) => {
   const query = new URL(req.url).searchParams.get('q') || ''
   if (!query) return json([])
@@ -160,18 +140,18 @@ export const logSearch = async (req: Request) => {
   }
 }
 
-export const logEvents = () => {
+export const logEvents = (req: Request) => {
+  const url = new URL(req.url)
+  const log = url.searchParams.get('log')
+  const run = url.searchParams.get('run')
+  const follow = !run || run === 'current'
   let heartbeat: ReturnType<typeof setInterval> | undefined
-  let streamController: EventController | undefined
   const processes: Deno.ChildProcess[] = []
   let closed = false
 
   return new Response(
     new ReadableStream<Uint8Array>({
       start(controller) {
-        streamController = controller
-        eventClients.add(controller)
-
         const send = (event: unknown) => {
           if (closed) return
 
@@ -179,16 +159,15 @@ export const logEvents = () => {
             controller.enqueue(sse(event))
           } catch {
             closed = true
-            eventClients.delete(controller)
           }
         }
 
-        heartbeat = setInterval(() => send({ type: 'heartbeat', at: Date.now() }), 15000)
+        if (follow) heartbeat = setInterval(() => send({ type: 'heartbeat', at: Date.now() }), 15000)
         const followJournal = (args: string[], file: string, path: string) => {
           ;(async () => {
             try {
               const process = new Deno.Command('journalctl', {
-                args: ['--no-pager', '--output=cat', '-f', '-n', '1000', ...args],
+                args: ['--no-pager', '--output=cat', ...(follow ? ['-f', '-n', '1000'] : ['-n', 'all']), ...args],
                 stdout: 'piped',
                 stderr: 'null',
               }).spawn()
@@ -223,7 +202,7 @@ export const logEvents = () => {
           })()
         }
 
-        journalSources('all')
+        journalSources(log, run)
           .then((sources) => {
             for (const source of sources) followJournal(source.args, source.file, source.path)
           })
@@ -231,7 +210,6 @@ export const logEvents = () => {
       },
       cancel() {
         closed = true
-        if (streamController) eventClients.delete(streamController)
         if (heartbeat) clearInterval(heartbeat)
         for (const process of processes) process.kill('SIGTERM')
         journalProcesses = journalProcesses.filter((process) => !processes.includes(process))
@@ -256,21 +234,11 @@ export const worldserverStart = async () => {
   const status = await systemctlStatus()
   if (status.running) {
     const result = { ...status, started: false }
-    emitEvent({
-      type: 'worldserver',
-      action: 'start_skipped',
-      at: Date.now(),
-      message: 'Worldserver already running',
-      ...result,
-    })
     return json(result)
   }
 
-  emitEvent({ type: 'worldserver', action: 'starting', at: Date.now(), message: 'Worldserver starting' })
-
   await systemctl('start', worldserverServiceName)
   const result = { ...await systemctlStatus(), started: true }
-  emitEvent({ type: 'worldserver', action: 'started', at: Date.now(), message: 'Worldserver started', ...result })
   return json(result)
 }
 
@@ -278,24 +246,8 @@ export const worldserverStop = async (signal: Deno.Signal = 'SIGTERM') => {
   const status = await systemctlStatus()
   if (!status.running) {
     const result = { ...status, stopped: false }
-    emitEvent({
-      type: 'worldserver',
-      action: 'stop_skipped',
-      at: Date.now(),
-      message: 'Worldserver already stopped',
-      ...result,
-    })
     return json(result)
   }
-
-  emitEvent({
-    type: 'worldserver',
-    action: 'stopping',
-    signal,
-    pid: status.pid,
-    at: Date.now(),
-    message: `Worldserver stopping (${signal})`,
-  })
 
   if (signal === 'SIGKILL') {
     await systemctl('kill', '--signal=SIGKILL', worldserverServiceName)
@@ -304,13 +256,6 @@ export const worldserverStop = async (signal: Deno.Signal = 'SIGTERM') => {
   }
 
   const result = { ...await systemctlStatus(), stopped: true, signal }
-  emitEvent({
-    type: 'worldserver',
-    action: 'stopped',
-    at: Date.now(),
-    message: `Worldserver stop signal sent (${signal})`,
-    ...result,
-  })
   return json(result)
 }
 
@@ -323,8 +268,7 @@ export default {
       if (url.pathname === '/logs/info') return logInfo()
       if (url.pathname === '/logs/runs') return await logRuns()
       if (url.pathname === '/logs/file') return await logFile(req)
-      if (url.pathname === '/logs/tail') return await logTail(req)
-      if (url.pathname === '/logs/events') return logEvents()
+      if (url.pathname === '/logs/events') return logEvents(req)
       if (url.pathname === '/logs/search') return await logSearch(req)
       if (url.pathname === '/worldserver/status') return await worldserverStatus()
       if (url.pathname === '/worldserver/start' && req.method === 'POST') return await worldserverStart()
