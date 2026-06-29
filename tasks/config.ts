@@ -154,7 +154,9 @@ const installConf = async () => {
 
 const installWorldserverService = async () => {
   const serviceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
-  const execStart = [projectPath(controlConfig.command), ...(controlConfig.args || [])].join(' ')
+  const command = await Deno.realPath(projectPath(controlConfig.command))
+  const cwd = await Deno.realPath(projectPath(controlConfig.cwd))
+  const execStart = [command, ...(controlConfig.args || [])].join(' ')
   const unitPath = `/etc/systemd/system/${serviceName}.service`
   const unit = `[Unit]
 Description=19 PvP worldserver
@@ -163,7 +165,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=${projectPath(controlConfig.cwd)}
+WorkingDirectory=${cwd}
 ExecStart=${execStart}
 Restart=on-failure
 RestartSec=3
@@ -174,7 +176,8 @@ WantedBy=multi-user.target
 
   await Deno.writeTextFile(unitPath, unit)
   await runCommand('systemctl', ['daemon-reload'])
-  await runCommand('systemctl', ['enable', '--now', serviceName])
+  await runCommand('systemctl', ['enable', serviceName])
+  await runCommand('systemctl', ['start', serviceName])
   console.log(`Installed ${unitPath}`)
 }
 
