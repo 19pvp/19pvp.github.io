@@ -123,6 +123,20 @@ const streamJournalSource = async (
     send: (event: unknown) => void
   },
 ) => {
+  let lastLine = ''
+  let repeatCount = 0
+  const flushRepeat = () => {
+    if (repeatCount > 0) {
+      options.send({
+        type: 'log',
+        file: source.file,
+        path: source.path,
+        line: `... repeated ${repeatCount} times: ${lastLine}`,
+      })
+      repeatCount = 0
+    }
+  }
+
   try {
     using lines = journalctl(source.args, {
       follow: options.follow,
@@ -133,8 +147,15 @@ const streamJournalSource = async (
     try {
       for await (const line of lines) {
         if (options.isClosed()) break
+        if (line === lastLine) {
+          repeatCount++
+          continue
+        }
+        flushRepeat()
+        lastLine = line
         options.send({ type: 'log', file: source.file, path: source.path, line })
       }
+      flushRepeat()
     } finally {
       options.resources.delete(lines)
     }
