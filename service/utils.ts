@@ -26,3 +26,23 @@ export const parentDir = (path: string) => {
   const index = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))
   return index === -1 ? '.' : path.slice(0, index)
 }
+
+export const runCommand = async (
+  command: string,
+  args: string[],
+  options: Omit<Deno.CommandOptions, 'args'> & { okCodes?: number[] } = {},
+) => {
+  const { okCodes = [0], ...commandOptions } = options
+  const result = await new Deno.Command(command, {
+    ...commandOptions,
+    args,
+    stdout: 'piped',
+    stderr: 'piped',
+  }).output()
+  const stdout = new TextDecoder().decode(result.stdout).trim()
+  const stderr = new TextDecoder().decode(result.stderr).trim()
+  if (!okCodes.includes(result.code)) {
+    throw Error(`${command} ${args.join(' ')} failed${stderr || stdout ? `: ${stderr || stdout}` : ''}`)
+  }
+  return stdout
+}

@@ -1,11 +1,13 @@
 import worldserverConfig from '../config/worldserver.json' with { type: 'json' }
 import controlConfig from '../config/worldserver-control.json' with { type: 'json' }
-import { cors, json, projectPath, sse, unquote } from './utils.ts'
+import { cors, json, projectPath, runCommand, sse, unquote } from './utils.ts'
 
 type EventController = ReadableStreamDefaultController<Uint8Array>
 const eventClients = new Set<EventController>()
 const serviceJournalQuery = `_PID=${Deno.pid}`
-let serviceJournalProcess: Deno.ChildProcess | undefined
+const worldserverServiceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
+const worldserverJournalQuery = `-u ${worldserverServiceName}`
+let journalProcesses: Deno.ChildProcess[] = []
 
 const emitEvent = (event: unknown) => {
   for (const client of [...eventClients]) {
@@ -16,9 +18,6 @@ const emitEvent = (event: unknown) => {
     }
   }
 }
-
-const controlPidFile = () => projectPath(controlConfig.pidFile)
-const controlCommand = () => projectPath(controlConfig.command)
 
 const defaultWorldserverLogFile = () => {
   const logsDir = unquote(worldserverConfig.LogsDir) || '.'
@@ -35,6 +34,13 @@ const logFiles = () => ({
 })
 
 const worldserverLogFile = () => logFiles().server
+const systemctl = (...args: string[]) => runCommand('systemctl', args)
+const systemctlStatus = async () => {
+  const active = await systemctl('is-active', worldserverServiceName).catch(() => 'inactive')
+  const pidText = await systemctl('show', worldserverServiceName, '--property=MainPID', '--value').catch(() => '0')
+  const pid = Number(pidText) || null
+  return { running: active === 'active', active, pid, service: worldserverServiceName }
+}
 
 emitEvent({ type: 'api', action: 'started', at: Date.now(), message: 'API server started' })
 
@@ -47,20 +53,11 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   try {
     Deno.addSignalListener(signal, () => {
       emitEvent({ type: 'api', action: 'stopping', signal, at: Date.now(), message: `API server stopping (${signal})` })
+      for (const process of journalProcesses) process.kill('SIGTERM')
+      Deno.exit(0)
     })
   } catch {
     // Some local platforms do not expose every Unix signal Deno supports on Linux.
-  }
-}
-
-const pidExists = (pid: number) => {
-  if (!pid) return false
-
-  try {
-    Deno.kill(pid, 'SIGCONT')
-    return true
-  } catch {
-    return false
   }
 }
 
@@ -76,57 +73,14 @@ const readTail = async (path: string, bytes = 64 * 1024) => {
   }
 }
 
-const readJournalTail = async (query = serviceJournalQuery, lines = 300) => {
+const readJournalTail = async (args: string[], lines = 300) => {
   try {
-    const journal = new Deno.Command('journalctl', {
-      args: ['--no-pager', '--output=cat', '-n', String(lines), query],
-      stdout: 'piped',
-      stderr: 'null',
-    })
-    const { stdout } = await journal.output()
-    return new TextDecoder().decode(stdout).split(/\r?\n/).filter(isLogLine)
+    const stdout = await runCommand('journalctl', ['--no-pager', '--output=cat', '-n', String(lines), ...args])
+    return stdout.split(/\r?\n/).filter(isLogLine)
   } catch (err) {
     if (err instanceof Deno.errors.NotFound) return []
     throw err
   }
-}
-
-const forwardProcessOutput = async (
-  process: Deno.ChildProcess,
-  file: string,
-  path: string,
-  stream: 'stdout' | 'stderr',
-) => {
-  try {
-    const reader = stream === 'stdout' ? process.stdout.getReader() : process.stderr.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-
-    while (!closed) {
-      const { value, done } = await reader.read()
-      if (done) break
-
-      buffer += decoder.decode(value, { stream: true })
-      let newline = buffer.indexOf('\n')
-      while (newline !== -1) {
-        const line = buffer.slice(0, newline).trimEnd()
-        buffer = buffer.slice(newline + 1)
-        if (isLogLine(line)) sendEventLine(file, path, line, stream)
-        newline = buffer.indexOf('\n')
-      }
-    }
-
-    const tail = buffer.trim()
-    if (isLogLine(tail)) sendEventLine(file, path, tail, stream)
-  } catch (err) {
-    if (!closed) {
-      emitEvent({ type: 'log', file, path, stream, error: String(err) })
-    }
-  }
-}
-
-const sendEventLine = (file: string, path: string, line: string, stream?: 'stdout' | 'stderr') => {
-  emitEvent({ type: 'log', file, path, line, ...(stream ? { stream } : {}) })
 }
 
 export const logInfo = () => json({ path: worldserverLogFile(), files: logFiles() })
@@ -153,8 +107,8 @@ export const logFile = async (req: Request) => {
 
 const selectedLogFiles = (log: string | null) => {
   const files = logFiles()
-  if (!log || log === 'all') return Object.entries(files).filter(([name]) => name !== 'service')
-  if (log in files && log !== 'service') return [[log, files[log as keyof typeof files]]]
+  if (!log || log === 'all') return Object.entries(files).filter(([name]) => name !== 'service' && name !== 'server')
+  if (log in files && log !== 'service' && log !== 'server') return [[log, files[log as keyof typeof files]]]
   return []
 }
 
@@ -162,8 +116,14 @@ export const logTail = async (req: Request) => {
   const log = new URL(req.url).searchParams.get('log')
   const lines = []
 
+  if (!log || log === 'all' || log === 'server') {
+    for (const line of await readJournalTail(['-u', worldserverServiceName])) {
+      lines.push({ type: 'log', file: 'server', path: worldserverJournalQuery, line })
+    }
+  }
+
   if (!log || log === 'all' || log === 'service') {
-    for (const line of await readJournalTail()) {
+    for (const line of await readJournalTail([serviceJournalQuery])) {
       lines.push({ type: 'log', file: 'service', path: serviceJournalQuery, line })
     }
   }
@@ -181,30 +141,31 @@ export const logSearch = async (req: Request) => {
   if (!query) return json([])
   const log = new URL(req.url).searchParams.get('log')
   const fileQueries = selectedLogFiles(log).map(([, path]) => path)
-  const journalQueries = !log || log === 'all' || log === 'service' ? [serviceJournalQuery] : []
+  const journalQueries = [
+    ...(!log || log === 'all' || log === 'server' ? [['-u', worldserverServiceName]] : []),
+    ...(!log || log === 'all' || log === 'service' ? [[serviceJournalQuery]] : []),
+  ]
   if (!fileQueries.length && !journalQueries.length) return json([])
 
   try {
     const lines: string[] = []
 
     if (fileQueries.length) {
-      const rg = new Deno.Command('rg', {
-        args: ['--line-number', '--color', 'never', '--max-count', '500', query, ...fileQueries],
-        stdout: 'piped',
-        stderr: 'null',
-      })
-      const { stdout } = await rg.output()
-      lines.push(...new TextDecoder().decode(stdout).split(/\r?\n/).filter(isLogLine))
+      const stdout = await runCommand(
+        'rg',
+        ['--line-number', '--color', 'never', '--max-count', '500', query, ...fileQueries],
+        { okCodes: [0, 1] },
+      )
+      lines.push(...stdout.split(/\r?\n/).filter(isLogLine))
     }
 
-    if (journalQueries.length) {
-      const journal = new Deno.Command('journalctl', {
-        args: ['--no-pager', '--output=cat', '--lines', '500', '--grep', query, ...journalQueries],
-        stdout: 'piped',
-        stderr: 'null',
-      })
-      const { stdout } = await journal.output()
-      lines.push(...new TextDecoder().decode(stdout).split(/\r?\n/).filter(isLogLine))
+    for (const journalQuery of journalQueries) {
+      const stdout = await runCommand(
+        'journalctl',
+        ['--no-pager', '--output=cat', '--lines', '500', '--grep', query, ...journalQuery],
+        { okCodes: [0, 1] },
+      )
+      lines.push(...stdout.split(/\r?\n/).filter(isLogLine))
     }
 
     return json(lines)
@@ -216,6 +177,7 @@ export const logSearch = async (req: Request) => {
 export const logEvents = () => {
   let heartbeat: ReturnType<typeof setInterval> | undefined
   let streamController: EventController | undefined
+  const processes: Deno.ChildProcess[] = []
   let closed = false
 
   return new Response(
@@ -236,46 +198,54 @@ export const logEvents = () => {
         }
 
         heartbeat = setInterval(() => send({ type: 'heartbeat', at: Date.now() }), 15000)
-        ;(async () => {
-          try {
-            serviceJournalProcess = new Deno.Command('journalctl', {
-              args: ['--no-pager', '--output=cat', '-f', '-n', '0', serviceJournalQuery],
-              stdout: 'piped',
-              stderr: 'null',
-            }).spawn()
+        const followJournal = (args: string[], file: string, path: string) => {
+          ;(async () => {
+            try {
+              const process = new Deno.Command('journalctl', {
+                args: ['--no-pager', '--output=cat', '-f', '-n', '0', ...args],
+                stdout: 'piped',
+                stderr: 'null',
+              }).spawn()
+              processes.push(process)
+              journalProcesses.push(process)
 
-            const reader = serviceJournalProcess.stdout.getReader()
-            const decoder = new TextDecoder()
-            let buffer = ''
+              const reader = process.stdout.getReader()
+              const decoder = new TextDecoder()
+              let buffer = ''
 
-            while (!closed) {
-              const { value, done } = await reader.read()
-              if (done) break
+              while (!closed) {
+                const { value, done } = await reader.read()
+                if (done) break
 
-              buffer += decoder.decode(value, { stream: true })
-              let newline = buffer.indexOf('\n')
-              while (newline !== -1) {
-                const line = buffer.slice(0, newline).trimEnd()
-                buffer = buffer.slice(newline + 1)
-                if (isLogLine(line)) send({ type: 'log', file: 'service', path: serviceJournalQuery, line })
-                newline = buffer.indexOf('\n')
+                buffer += decoder.decode(value, { stream: true })
+                let newline = buffer.indexOf('\n')
+                while (newline !== -1) {
+                  const line = buffer.slice(0, newline).trimEnd()
+                  buffer = buffer.slice(newline + 1)
+                  if (isLogLine(line)) send({ type: 'log', file, path, line })
+                  newline = buffer.indexOf('\n')
+                }
+              }
+
+              const tail = buffer.trim()
+              if (isLogLine(tail)) send({ type: 'log', file, path, line: tail })
+            } catch (err) {
+              if (!closed && !(err instanceof Deno.errors.NotFound)) {
+                send({ type: 'watcher', error: String(err), source: 'journalctl' })
               }
             }
+          })()
+        }
 
-            const tail = buffer.trim()
-            if (isLogLine(tail)) send({ type: 'log', file: 'service', path: serviceJournalQuery, line: tail })
-          } catch (err) {
-            if (!closed && !(err instanceof Deno.errors.NotFound)) {
-              send({ type: 'watcher', error: String(err), source: 'journalctl' })
-            }
-          }
-        })()
+        followJournal(['-u', worldserverServiceName], 'server', worldserverJournalQuery)
+        followJournal([serviceJournalQuery], 'service', serviceJournalQuery)
       },
       cancel() {
         closed = true
         if (streamController) eventClients.delete(streamController)
         if (heartbeat) clearInterval(heartbeat)
-        serviceJournalProcess?.kill('SIGTERM')
+        for (const process of processes) process.kill('SIGTERM')
+        journalProcesses = journalProcesses.filter((process) => !processes.includes(process))
       },
     }),
     {
@@ -290,14 +260,13 @@ export const logEvents = () => {
 }
 
 export const worldserverStatus = async () => {
-  const pid = Number(await Deno.readTextFile(controlPidFile()).catch(() => 0))
-  return json({ running: await pidExists(pid), pid: pid || null })
+  return json(await systemctlStatus())
 }
 
 export const worldserverStart = async () => {
-  const pid = Number(await Deno.readTextFile(controlPidFile()).catch(() => 0))
-  if (await pidExists(pid)) {
-    const result = { running: true, started: false, pid }
+  const status = await systemctlStatus()
+  if (status.running) {
+    const result = { ...status, started: false }
     emitEvent({
       type: 'worldserver',
       action: 'start_skipped',
@@ -310,42 +279,21 @@ export const worldserverStart = async () => {
 
   emitEvent({ type: 'worldserver', action: 'starting', at: Date.now(), message: 'Worldserver starting' })
 
-  const child = new Deno.Command(controlCommand(), {
-    args: controlConfig.args,
-    cwd: projectPath(controlConfig.cwd),
-    stdout: 'piped',
-    stderr: 'piped',
-  }).spawn()
-
-  void forwardProcessOutput(child, 'server', worldserverLogFile(), 'stdout')
-  void forwardProcessOutput(child, 'server', worldserverLogFile(), 'stderr')
-  void (async () => {
-    const status = await child.status.catch((err) => ({ success: false, code: -1, signal: null, error: err }))
-    emitEvent({
-      type: 'worldserver',
-      action: 'exited',
-      at: Date.now(),
-      message: 'Worldserver process exited',
-      pid: child.pid,
-      status,
-    })
-  })()
-
-  await Deno.writeTextFile(controlPidFile(), `${child.pid}\n`)
-  const result = { running: true, started: true, pid: child.pid }
+  await systemctl('start', worldserverServiceName)
+  const result = { ...await systemctlStatus(), started: true }
   emitEvent({ type: 'worldserver', action: 'started', at: Date.now(), message: 'Worldserver started', ...result })
   return json(result)
 }
 
 export const worldserverStop = async (signal: Deno.Signal = 'SIGTERM') => {
-  const pid = Number(await Deno.readTextFile(controlPidFile()).catch(() => 0))
-  if (!pid) {
-    const result = { running: false, stopped: false, pid: null }
+  const status = await systemctlStatus()
+  if (!status.running) {
+    const result = { ...status, stopped: false }
     emitEvent({
       type: 'worldserver',
       action: 'stop_skipped',
       at: Date.now(),
-      message: 'Worldserver pid file missing',
+      message: 'Worldserver already stopped',
       ...result,
     })
     return json(result)
@@ -355,19 +303,18 @@ export const worldserverStop = async (signal: Deno.Signal = 'SIGTERM') => {
     type: 'worldserver',
     action: 'stopping',
     signal,
-    pid,
+    pid: status.pid,
     at: Date.now(),
     message: `Worldserver stopping (${signal})`,
   })
 
-  try {
-    Deno.kill(pid, signal)
-  } catch (err) {
-    if (!(err instanceof Deno.errors.NotFound)) throw err
+  if (signal === 'SIGKILL') {
+    await systemctl('kill', '--signal=SIGKILL', worldserverServiceName)
+  } else {
+    await systemctl('stop', worldserverServiceName)
   }
 
-  if (signal === 'SIGKILL') await Deno.remove(controlPidFile()).catch(() => {})
-  const result = { running: await pidExists(pid), stopped: true, pid, signal }
+  const result = { ...await systemctlStatus(), stopped: true, signal }
   emitEvent({
     type: 'worldserver',
     action: 'stopped',

@@ -1,6 +1,7 @@
 import { parse, stringify } from '@std/yaml'
 import controlConfig from '../config/worldserver-control.json' with { type: 'json' }
 import worldserverConfig from '../config/worldserver.json' with { type: 'json' }
+import { runCommand } from '../service/utils.ts'
 
 const targets = {
   ale: {
@@ -149,6 +150,32 @@ const installConf = async () => {
     await Deno.copyFile(targets[name].conf, destination)
     console.log(`Installed ${targets[name].conf} -> ${destination}`)
   }
+}
+
+const installWorldserverService = async () => {
+  const serviceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
+  const execStart = [projectPath(controlConfig.command), ...(controlConfig.args || [])].join(' ')
+  const unitPath = `/etc/systemd/system/${serviceName}.service`
+  const unit = `[Unit]
+Description=19 PvP worldserver
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=${projectPath(controlConfig.cwd)}
+ExecStart=${execStart}
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+`
+
+  await Deno.writeTextFile(unitPath, unit)
+  await runCommand('systemctl', ['daemon-reload'])
+  await runCommand('systemctl', ['enable', '--now', serviceName])
+  console.log(`Installed ${unitPath}`)
 }
 
 const ensureDefaultGuild = async () => {
@@ -305,6 +332,7 @@ if (command === 'json') {
   await writeConf(targetArg as TargetName, outputArg)
 } else if (command === 'install') {
   await installConf()
+  await installWorldserverService()
   await ensureDefaultGuild()
 } else if (command === 'watch') {
   await watch()
