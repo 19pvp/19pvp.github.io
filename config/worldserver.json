@@ -22,7 +22,7 @@
   "SourceDirectory": "\"\"",
   "MySQLExecutable": "\"\"",
   "PidFile": "\"./world.pid\"",
-  "Console.Enable": "1",
+  "Console.Enable": "0",
   "BeepAtStart": "1",
   "FlashAtStart": "1",
   "Updates.EnableDatabases": "7",
