@@ -130,12 +130,19 @@
 
     const accepts = (data) => currentLog === 'all' || data.file === currentLog || data.type !== 'log'
 
+    const fetchTail = async () => {
+      output.textContent = ''
+      const lines = await fetch(`${api}/logs/tail?log=${encodeURIComponent(currentLog)}`).then((res) => res.json())
+      lines.forEach((line) => append(eventLine(line)))
+    }
+
     const selectLog = (log) => {
       currentLog = log
       const url = new URL(location.href)
       log === 'all' ? url.searchParams.delete('log') : url.searchParams.set('log', log)
       history.replaceState(null, '', url)
       for (const button of tabs.querySelectorAll('button')) button.classList.toggle('active', button.dataset.log === log)
+      fetchTail()
     }
 
     const eventLine = (data) => {
@@ -147,7 +154,6 @@
 
     const live = () => {
       source?.close()
-      output.textContent = ''
       source = new EventSource(`${api}/logs/events`)
       source.onmessage = (event) => {
         const data = JSON.parse(event.data)
@@ -162,7 +168,10 @@
     document.querySelector('#search').onclick = async () => {
       source?.close()
       output.textContent = ''
-      const lines = await fetch(`${api}/logs/search?q=${encodeURIComponent(query.value)}`).then((res) => res.json())
+      const lines = await fetch(
+        `${api}/logs/search?q=${encodeURIComponent(query.value)}&log=${encodeURIComponent(currentLog)}`,
+      )
+        .then((res) => res.json())
       lines.forEach((line) => append(line))
     }
 

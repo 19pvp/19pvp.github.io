@@ -81,12 +81,34 @@ const readTail = async (path: string, bytes = 64 * 1024) => {
 
 export const logInfo = () => json({ path: worldserverLogFile(), files: logFiles() })
 
+const selectedLogFiles = (log: string | null) => {
+  const files = logFiles()
+  if (!log || log === 'all') return Object.entries(files)
+  if (log in files) return [[log, files[log as keyof typeof files]]]
+  return []
+}
+
+export const logTail = async (req: Request) => {
+  const log = new URL(req.url).searchParams.get('log')
+  const files = selectedLogFiles(log)
+  const lines = []
+
+  for (const [file, path] of files) {
+    for (const line of await readTail(path)) lines.push({ type: 'log', file, path, line })
+  }
+
+  return json(lines)
+}
+
 export const logSearch = async (req: Request) => {
   const query = new URL(req.url).searchParams.get('q') || ''
   if (!query) return json([])
+  const log = new URL(req.url).searchParams.get('log')
+  const files = selectedLogFiles(log).map(([, path]) => path)
+  if (!files.length) return json([])
 
   const rg = new Deno.Command('rg', {
-    args: ['--line-number', '--color', 'never', '--max-count', '500', query, worldserverLogFile()],
+    args: ['--line-number', '--color', 'never', '--max-count', '500', query, ...files],
     stdout: 'piped',
     stderr: 'null',
   })
@@ -111,16 +133,6 @@ export const logEvents = () => {
         const files = logFiles()
         const positions = new Map<string, number>()
         const logDirs = [...new Set(Object.values(files).map((path) => path.slice(0, path.lastIndexOf('/'))))]
-
-        const sendTail = async (name: string, path: string) => {
-          for (const line of await readTail(path)) controller.enqueue(sse({ type: 'log', file: name, path, line }))
-
-          try {
-            positions.set(path, (await Deno.stat(path)).size)
-          } catch {
-            positions.set(path, 0)
-          }
-        }
 
         const sendUpdates = async (name: string, path: string) => {
           try {
@@ -149,7 +161,13 @@ export const logEvents = () => {
           }
         }
 
-        for (const [name, path] of Object.entries(files)) await sendTail(name, path)
+        for (const path of Object.values(files)) {
+          try {
+            positions.set(path, (await Deno.stat(path)).size)
+          } catch {
+            positions.set(path, 0)
+          }
+        }
 
         const sendAllUpdates = () => {
           for (const [name, path] of Object.entries(files)) sendUpdates(name, path)
@@ -278,6 +296,7 @@ export default {
 
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
     if (url.pathname === '/logs/info') return logInfo()
+    if (url.pathname === '/logs/tail') return logTail(req)
     if (url.pathname === '/logs/events') return logEvents()
     if (url.pathname === '/logs/search') return logSearch(req)
     if (url.pathname === '/worldserver/status') return worldserverStatus()
