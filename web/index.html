@@ -19,6 +19,7 @@
     header {
       position: sticky;
       top: 0;
+      z-index: 10;
       display: grid;
       grid-template-columns: auto auto auto auto auto 1fr auto auto auto;
       gap: 8px;
@@ -69,7 +70,7 @@
     }
 
     main {
-      padding: 10px;
+      padding: 24px 10px 40vh;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       font-size: 13px;
@@ -136,6 +137,15 @@
     }
     .entry[data-log="system"]::before {
       color: #e1e5ea;
+    }
+
+    .idle-spacer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28vh;
+      color: #8f969e;
+      font: 600 12px/1.4 system-ui, sans-serif;
     }
 
     ::highlight(ansi-black) {
@@ -234,8 +244,13 @@
     const tabs = document.querySelector('#tabs')
     const ansiHighlights = new Map()
     const supportsHighlights = Boolean(globalThis.CSS?.highlights && globalThis.Highlight && globalThis.Range)
+    const idleAfterMs = 30_000
+    const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+    const idleSpacer = document.createElement('div')
+    idleSpacer.className = 'idle-spacer'
     let source
     let currentLog = new URL(location.href).searchParams.get('log') || 'all'
+    let lastLogAt = 0
 
     const clearAnsiHighlights = () => {
       if (!supportsHighlights) return
@@ -352,6 +367,8 @@
     }
 
     const append = (line, className = '') => {
+      idleSpacer.remove()
+      lastLogAt = Date.now()
       const row = document.createElement('div')
       const tag = ['all', 'error', 'playerbots', 'server', 'service', 'system'].includes(className) ? className : 'system'
       row.className = `entry${tag ? ` ${tag}` : ''}`
@@ -360,6 +377,24 @@
       renderAnsi(row, line)
       output.append(row)
       if (document.activeElement !== query) scrollTo(0, document.body.scrollHeight)
+    }
+
+    const formatElapsed = (elapsedMs) => {
+      const seconds = Math.max(1, Math.floor(elapsedMs / 1000))
+      if (seconds < 60) return relativeTime.format(-seconds, 'second')
+      const minutes = Math.floor(seconds / 60)
+      if (minutes < 60) return relativeTime.format(-minutes, 'minute')
+      const hours = Math.floor(minutes / 60)
+      return relativeTime.format(-hours, 'hour')
+    }
+
+    const updateIdleSpacer = () => {
+      if (!lastLogAt || document.activeElement === query) return
+      const elapsedMs = Date.now() - lastLogAt
+      if (elapsedMs < idleAfterMs) return idleSpacer.remove()
+      idleSpacer.textContent = `Last log ${formatElapsed(elapsedMs)}`
+      if (!idleSpacer.isConnected) output.append(idleSpacer)
+      scrollTo(0, document.body.scrollHeight)
     }
 
     const accepts = (data) => currentLog === 'all' || data.file === currentLog || data.type !== 'log'
@@ -386,6 +421,7 @@
     const fetchTail = async () => {
       output.textContent = ''
       clearAnsiHighlights()
+      lastLogAt = 0
       const lines = await fetch(`${api}/logs/tail?log=${encodeURIComponent(currentLog)}`).then((res) => res.json())
       lines.forEach((line) => appendEvent(line))
     }
@@ -404,7 +440,8 @@
       source = new EventSource(`${api}/logs/events`)
       source.onmessage = (event) => {
         const data = JSON.parse(event.data)
-        if (data.type === 'heartbeat' || !accepts(data)) return
+        if (data.type === 'heartbeat') return updateIdleSpacer()
+        if (!accepts(data)) return
         appendEvent(data)
       }
       source.onerror = () => {
@@ -416,6 +453,7 @@
       source?.close()
       output.textContent = ''
       clearAnsiHighlights()
+      lastLogAt = 0
       const lines = await fetch(
         `${api}/logs/search?q=${encodeURIComponent(query.value)}&log=${encodeURIComponent(currentLog)}`,
       )
@@ -433,6 +471,7 @@
     document.querySelector('#clear').onclick = () => {
       output.textContent = ''
       clearAnsiHighlights()
+      lastLogAt = 0
     }
     tabs.onclick = (event) => {
       const button = event.target.closest('button[data-log]')
@@ -451,6 +490,7 @@
 
     selectLog(currentLog)
     live()
+    setInterval(updateIdleSpacer, 1000)
     </script>
   </body>
 </html>
