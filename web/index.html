@@ -28,10 +28,11 @@
       position: sticky;
       bottom: 0;
       z-index: 10;
-      display: grid;
-      grid-template-columns: auto auto auto auto auto auto auto auto auto 1fr auto auto;
+      display: flex;
+      flex-wrap: nowrap;
       gap: 8px;
       align-items: center;
+      overflow-x: auto;
       padding: 10px;
       background: #191b1d;
       border-top: 1px solid #303236;
@@ -45,6 +46,7 @@
     input,
     select,
     button {
+      flex: 0 0 auto;
       height: 34px;
       box-sizing: border-box;
       border: 1px solid #41444a;
@@ -56,6 +58,17 @@
     select {
       min-width: 120px;
       padding: 0 10px;
+    }
+
+    select,
+    button {
+      width: max-content;
+    }
+
+    #query {
+      flex: 1 1 140px;
+      width: 100%;
+      min-width: 140px;
     }
 
     button {
@@ -215,13 +228,8 @@
     }
 
     @media (max-width: 720px) {
-      footer {
-        grid-template-columns: 1fr auto auto;
-      }
-
-      strong,
-      input {
-        grid-column: 1 / -1;
+      #query {
+        min-width: 120px;
       }
     }
     </style>
