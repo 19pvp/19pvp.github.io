@@ -13,20 +13,9 @@ const systemctlStatus = async () => {
   return { running: active === 'active', active, pid, service: worldserverServiceName }
 }
 
-const worldserverJournalArgs = async (run: string | null = null) => {
-  if (run && run !== 'current') return ['-u', worldserverServiceName, `_SYSTEMD_INVOCATION_ID=${run}`]
-  const invocationId = await systemctl('show', worldserverServiceName, '--property=InvocationID', '--value').catch(() =>
-    ''
-  )
-  return invocationId ? ['-u', worldserverServiceName, `_SYSTEMD_INVOCATION_ID=${invocationId}`] : [
-    '-u',
-    worldserverServiceName,
-  ]
-}
-
-const journalSources = async (log: string | null, run: string | null = null) => [
+const journalSources = (log: string | null) => [
   ...(!log || log === 'all' || log === 'server'
-    ? [{ file: 'server', path: worldserverJournalPath, args: await worldserverJournalArgs(run) }]
+    ? [{ file: 'server', path: worldserverJournalPath, args: ['-u', worldserverServiceName] }]
     : []),
   ...(!log || log === 'all' || log === 'service'
     ? [{ file: 'service', path: serviceJournalQuery, args: [serviceJournalQuery] }]
@@ -228,46 +217,10 @@ const streamJournalSource = async (
 export const logInfo = () =>
   json({ path: worldserverJournalPath, files: { server: worldserverJournalPath, service: serviceJournalQuery } })
 
-export const logRuns = async () => {
-  const current =
-    (await worldserverJournalArgs()).find((arg) => arg.startsWith('_SYSTEMD_INVOCATION_ID='))?.split('=')[1] ||
-    ''
-  const stdout = await runCommand('journalctl', [
-    '--no-pager',
-    '--output=json',
-    '--reverse',
-    '--since',
-    '1 month ago',
-    '-u',
-    worldserverServiceName,
-  ], { okCodes: [0, 1] })
-  const runs = new Map<string, { id: string; startedAt: number; lastAt: number; current: boolean; lines: number }>()
-
-  for (const line of stdout.split(/\r?\n/).filter(Boolean)) {
-    let entry
-    try {
-      entry = JSON.parse(line)
-    } catch {
-      continue
-    }
-    const id = String(entry._SYSTEMD_INVOCATION_ID || '')
-    const at = Math.floor(Number(entry.__REALTIME_TIMESTAMP || 0) / 1000)
-    if (!id || !at) continue
-    const run = runs.get(id) || { id, startedAt: at, lastAt: at, current: id === current, lines: 0 }
-    run.startedAt = Math.min(run.startedAt, at)
-    run.lastAt = Math.max(run.lastAt, at)
-    run.lines++
-    runs.set(id, run)
-  }
-
-  return json([...runs.values()])
-}
-
 export const logFile = async (req: Request) => {
   const url = new URL(req.url)
   const log = url.searchParams.get('log') || 'server'
-  const run = url.searchParams.get('run')
-  const sources = await journalSources(log, run)
+  const sources = journalSources(log)
   const options = { ...logOptions(url), lines: 'all' as const }
   const text = (await Promise.all(
     sources.map((source) =>
@@ -276,12 +229,11 @@ export const logFile = async (req: Request) => {
       })
     ),
   )).filter(Boolean).join('\n')
-  const suffix = run && run !== 'current' ? `-${run.slice(0, 8)}` : ''
   return new Response(text, {
     headers: {
       ...cors,
       'content-type': 'text/plain; charset=utf-8',
-      'content-disposition': `attachment; filename="${log || 'server'}${suffix}.log"`,
+      'content-disposition': `attachment; filename="${log || 'server'}.log"`,
     },
   })
 }
@@ -291,9 +243,8 @@ export const logSearch = async (req: Request) => {
   const query = url.searchParams.get('q') || ''
   if (!query) return json([])
   const log = url.searchParams.get('log')
-  const run = url.searchParams.get('run')
   const options = logOptions(url)
-  const sources = await journalSources(log, run)
+  const sources = journalSources(log)
   if (!sources.length) return json([])
 
   try {
@@ -315,9 +266,8 @@ export const logSearch = async (req: Request) => {
 export const logEvents = (req: Request) => {
   const url = new URL(req.url)
   const log = url.searchParams.get('log')
-  const run = url.searchParams.get('run')
   const options = logOptions(url)
-  const follow = !run || run === 'current'
+  const follow = true
   const initialLines = follow && req.headers.get('last-event-id') ? 0 : follow ? options.lines : 'all'
   let heartbeat: ReturnType<typeof setInterval> | undefined
   const resources = new Set<JournalLines>()
@@ -339,21 +289,21 @@ export const logEvents = (req: Request) => {
 
         if (follow) heartbeat = setInterval(() => send({ type: 'heartbeat', at: Date.now() }), 15000)
 
-        journalSources(log, run)
-          .then((sources) => {
-            for (const source of sources) {
-              void streamJournalSource(source, {
-                follow,
-                lines: initialLines,
-                priority: options.priority,
-                since: options.since,
-                isClosed: () => closed,
-                resources,
-                send,
-              })
-            }
-          })
-          .catch((err) => send({ type: 'watcher', error: String(err), source: 'journalctl' }))
+        try {
+          for (const source of journalSources(log)) {
+            void streamJournalSource(source, {
+              follow,
+              lines: initialLines,
+              priority: options.priority,
+              since: options.since,
+              isClosed: () => closed,
+              resources,
+              send,
+            })
+          }
+        } catch (err) {
+          send({ type: 'watcher', error: String(err), source: 'journalctl' })
+        }
       },
       cancel() {
         closed = true
@@ -413,7 +363,6 @@ export default {
 
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
       if (url.pathname === '/logs/info') return logInfo()
-      if (url.pathname === '/logs/runs') return await logRuns()
       if (url.pathname === '/logs/file') return await logFile(req)
       if (url.pathname === '/logs/events') return logEvents(req)
       if (url.pathname === '/logs/search') return await logSearch(req)

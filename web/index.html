@@ -247,7 +247,6 @@
         <option value="server">Worldserver</option>
         <option value="service">Service</option>
       </select>
-      <select id="runs"></select>
       <select id="lines">
         <option value="100">100 lines</option>
         <option value="500">500 lines</option>
@@ -283,7 +282,6 @@
     const raw = document.querySelector('#raw')
     const path = document.querySelector('#path')
     const logs = document.querySelector('#logs')
-    const runs = document.querySelector('#runs')
     const lines = document.querySelector('#lines')
     const priority = document.querySelector('#priority')
     const range = document.querySelector('#range')
@@ -304,7 +302,6 @@
     const initialPriority = initialParams.get('priority') || ''
     const initialRange = initialParams.get('range') || ''
     let currentLog = sourceOptions.has(initialLog) ? initialLog : 'all'
-    let currentRun = initialParams.get('run') || 'current'
     let currentLines = lineOptions.has(initialLines) ? initialLines : '10000'
     let currentPriority = priorityOptions.has(initialPriority) ? initialPriority : ''
     let currentRange = rangeOptions.has(initialRange) ? initialRange : ''
@@ -529,7 +526,6 @@
     const logParams = (extra = {}) => {
       const params = new URLSearchParams({
         log: currentLog,
-        run: currentRun,
         lines: currentLines,
         ...extra,
       })
@@ -540,7 +536,6 @@
 
     const connectLogs = () => {
       logs.value = currentLog
-      runs.value = currentRun
       lines.value = currentLines
       priority.value = currentPriority
       range.value = currentRange
@@ -584,11 +579,6 @@
       setUrlParam('log', currentLog, 'all')
       connectLogs()
     }
-    runs.onchange = () => {
-      currentRun = runs.value
-      setUrlParam('run', currentRun, 'current')
-      connectLogs()
-    }
     lines.onchange = () => {
       currentLines = lines.value
       setUrlParam('lines', currentLines, '10000')
@@ -610,38 +600,12 @@
     document.querySelector('#kill').onclick = () => action('kill')
     query.onkeydown = (event) => event.key === 'Enter' && document.querySelector('#search').click()
 
-    const populateRuns = (items = []) => {
-      runs.textContent = ''
-      if (!Array.isArray(items) || !items.length) {
-        items = [{ id: 'current', current: true, startedAt: Date.now(), lines: 0 }]
-      }
-      for (const item of items) {
-        const option = document.createElement('option')
-        option.value = item.current ? 'current' : item.id
-        option.textContent = `${
-          item.current ? 'Current start' : `Start ${new Date(item.startedAt).toLocaleString()}`
-        } (${item.lines})`
-        runs.append(option)
-      }
-      if (![...runs.options].some((option) => option.value === currentRun)) currentRun = 'current'
-      runs.value = currentRun
-    }
-
     fetch(`${api}/logs/info`)
       .then((res) => res.json())
       .then(() => path.textContent = 'Server logs')
       .catch(() => path.textContent = 'Server logs')
 
-    fetch(`${api}/logs/runs`)
-      .then((res) => res.json())
-      .then((items) => {
-        populateRuns(items)
-        connectLogs()
-      })
-      .catch(() => {
-        populateRuns()
-        connectLogs()
-      })
+    connectLogs()
 
     setInterval(updateIdleSpacer, 1000)
     </script>
