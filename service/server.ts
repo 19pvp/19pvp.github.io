@@ -86,12 +86,15 @@ const journalctl = (
 ) => new JournalLines(sourceArgs, options)
 
 const defaultLogLines = 10_000
+const isWorldserverPrompt = (line: string) => line.trim() === 'AC>'
 
 const readJournal = async (args: string[], lines: number | 'all' = defaultLogLines) => {
   try {
     using output = journalctl(args, { lines })
     const entries = []
-    for await (const line of output) entries.push(line)
+    for await (const line of output) {
+      if (!isWorldserverPrompt(line)) entries.push(line)
+    }
     return entries
   } catch (err) {
     if (err instanceof Deno.errors.NotFound) return []
@@ -147,6 +150,7 @@ const streamJournalSource = async (
     try {
       for await (const line of lines) {
         if (options.isClosed()) break
+        if (isWorldserverPrompt(line)) continue
         if (line === lastLine) {
           repeatCount++
           continue
@@ -226,12 +230,10 @@ export const logSearch = async (req: Request) => {
     const lines: string[] = []
 
     for (const source of sources) {
-      const stdout = await runCommand(
-        'journalctl',
-        journalArgs(source.args, { lines: 500, grep: query }),
-        { okCodes: [0, 1] },
-      )
-      if (stdout) lines.push(...stdout.split(/\r?\n/))
+      using output = journalctl(source.args, { lines: 500, grep: query })
+      for await (const line of output) {
+        if (!isWorldserverPrompt(line)) lines.push(line)
+      }
     }
 
     return json(lines)
