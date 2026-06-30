@@ -167,6 +167,7 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=${cwd}
 ExecStart=${execStart}
+StandardInput=null
 Restart=on-failure
 RestartSec=3
 

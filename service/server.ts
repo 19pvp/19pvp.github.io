@@ -268,7 +268,7 @@ export const logEvents = (req: Request) => {
   const log = url.searchParams.get('log')
   const options = logOptions(url)
   const follow = true
-  const initialLines = follow && req.headers.get('last-event-id') ? 0 : follow ? options.lines : 'all'
+  const initialLines = options.lines
   let heartbeat: ReturnType<typeof setInterval> | undefined
   const resources = new Set<JournalLines>()
   let closed = false
@@ -355,6 +355,9 @@ export const worldserverStop = async (signal: Deno.Signal = 'SIGTERM') => {
   const result = { ...await systemctlStatus(), stopped: true, signal }
   return json(result)
 }
+
+await runCommand('deno', ['task', 'conf:all'])
+await runCommand('deno', ['task', 'config:install'])
 
 export default {
   async fetch(req: Request) {
