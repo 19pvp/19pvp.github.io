@@ -357,7 +357,6 @@ export const worldserverStop = async (signal: Deno.Signal = 'SIGTERM') => {
 }
 
 await runCommand('deno', ['task', 'conf:all'])
-await runCommand('deno', ['task', 'config:install'])
 
 export default {
   async fetch(req: Request) {

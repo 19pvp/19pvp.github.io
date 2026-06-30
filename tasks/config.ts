@@ -51,6 +51,12 @@ const target = (name = targetArg) => {
   throw Error(`Expected target: ${names.join('|')}`)
 }
 
+const confDestinations = {
+  ale: controlConfig.files.aleConf,
+  playerbots: controlConfig.files.playerbotsConf,
+  worldserver: controlConfig.files.worldserverConf,
+} satisfies Record<TargetName, string>
+
 const fetchText = async (url: string) => {
   const res = await fetch(url)
   if (!res.ok) throw Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`)
@@ -128,27 +134,17 @@ const writeJson = async (name: TargetName) => {
   console.log(`Wrote ${t.json}`)
 }
 
-const writeConf = async (name: TargetName, output: string = targets[name].conf) => {
+const writeConf = async (name: TargetName, output: string = projectPath(confDestinations[name])) => {
   const values = JSON.parse(await Deno.readTextFile(targets[name].json)) as Record<string, unknown>
   const conf = Object.entries(values).map(([key, value]) => `${key} = ${String(value)}`).join('\n') + '\n'
-  await Deno.mkdir('config', { recursive: true })
+  await Deno.mkdir(output.slice(0, output.lastIndexOf('/')), { recursive: true })
   await Deno.writeTextFile(output, conf)
   console.log(`Wrote ${output}`)
 }
 
 const installConf = async () => {
-  const destinations = {
-    ale: controlConfig.files.aleConf,
-    playerbots: controlConfig.files.playerbotsConf,
-    worldserver: controlConfig.files.worldserverConf,
-  } satisfies Record<TargetName, string>
-
   for (const name of names) {
     await writeConf(name)
-    const destination = projectPath(destinations[name])
-    await Deno.mkdir(destination.slice(0, destination.lastIndexOf('/')), { recursive: true })
-    await Deno.copyFile(targets[name].conf, destination)
-    console.log(`Installed ${targets[name].conf} -> ${destination}`)
   }
 }
 
