@@ -14,11 +14,14 @@ const systemctlStatus = async () => {
 }
 
 const worldserverJournalArgs = async (run: string | null = null) => {
-  if (run && run !== 'current') return [`_SYSTEMD_INVOCATION_ID=${run}`]
+  if (run && run !== 'current') return ['-u', worldserverServiceName, `_SYSTEMD_INVOCATION_ID=${run}`]
   const invocationId = await systemctl('show', worldserverServiceName, '--property=InvocationID', '--value').catch(() =>
     ''
   )
-  return invocationId ? [`_SYSTEMD_INVOCATION_ID=${invocationId}`] : ['-u', worldserverServiceName]
+  return invocationId ? ['-u', worldserverServiceName, `_SYSTEMD_INVOCATION_ID=${invocationId}`] : [
+    '-u',
+    worldserverServiceName,
+  ]
 }
 
 const journalSources = async (log: string | null, run: string | null = null) => [
@@ -38,10 +41,11 @@ const journalArgs = (
     grep?: string
     priority?: string
     since?: string
+    output?: 'json' | 'cat'
   } = {},
 ) => [
   '--no-pager',
-  '--output=json',
+  `--output=${options.output || 'json'}`,
   ...(options.follow ? ['-f'] : []),
   ...(options.lines === undefined ? [] : ['-n', String(options.lines)]),
   ...(options.grep ? ['--grep', options.grep] : []),
@@ -263,8 +267,8 @@ export const logRuns = async () => {
     '--no-pager',
     '--output=json',
     '--reverse',
-    '-n',
-    '5000',
+    '--since',
+    '1 month ago',
     '-u',
     worldserverServiceName,
   ], { okCodes: [0, 1] })
@@ -289,9 +293,15 @@ export const logFile = async (req: Request) => {
   const url = new URL(req.url)
   const log = url.searchParams.get('log') || 'server'
   const run = url.searchParams.get('run')
-  const text = (await journalEntries(log, { ...logOptions(url), lines: 'all' }, run)).map((entry) => entry.line).join(
-    '\n',
-  ) + '\n'
+  const sources = await journalSources(log, run)
+  const options = { ...logOptions(url), lines: 'all' as const }
+  const text = (await Promise.all(
+    sources.map((source) =>
+      runCommand('journalctl', journalArgs(source.args, { ...options, output: 'cat' }), {
+        okCodes: [0, 1],
+      })
+    ),
+  )).filter(Boolean).join('\n')
   const suffix = run && run !== 'current' ? `-${run.slice(0, 8)}` : ''
   return new Response(text, {
     headers: {

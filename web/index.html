@@ -230,7 +230,6 @@
     <main id="output"></main>
     <div id="idle" class="idle-spacer" hidden></div>
     <footer>
-      <strong id="path">Server logs</strong>
       <button id="status">Status</button>
       <button id="start">Start</button>
       <button id="stop">Stop</button>
@@ -446,6 +445,7 @@
     const flushPending = () => {
       pendingFrame = 0
       const shouldStick = document.activeElement !== query && isNearBottom()
+      pending.sort((a, b) => (a[2]?.at || 0) - (b[2]?.at || 0))
       const batch = pending.splice(0, maxBatch)
       for (const [line, className, meta] of batch) appendNow(line, className, meta)
       if (shouldStick) scrollTo(0, document.body.scrollHeight)
