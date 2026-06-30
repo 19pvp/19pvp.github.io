@@ -32,24 +32,65 @@ const journalSources = async (log: string | null, run: string | null = null) => 
 
 const journalArgs = (
   sourceArgs: string[],
-  options: { lines?: number | 'all'; follow?: boolean; grep?: string } = {},
+  options: {
+    lines?: number | 'all'
+    follow?: boolean
+    grep?: string
+    priority?: string
+    since?: string
+  } = {},
 ) => [
   '--no-pager',
-  '--output=cat',
+  '--output=json',
   ...(options.follow ? ['-f'] : []),
   ...(options.lines === undefined ? [] : ['-n', String(options.lines)]),
   ...(options.grep ? ['--grep', options.grep] : []),
+  ...(options.priority ? ['--priority', options.priority] : []),
+  ...(options.since ? ['--since', options.since] : []),
   ...sourceArgs,
 ]
 
-class JournalLines implements AsyncIterable<string>, Disposable {
+type JournalEntry = {
+  line: string
+  at: number | null
+  priority: number | null
+  transport: string
+}
+
+const parseJournalEntry = (line: string): JournalEntry | null => {
+  let entry
+  try {
+    entry = JSON.parse(line)
+  } catch {
+    return null
+  }
+
+  const message = entry.MESSAGE
+  if (typeof message !== 'string') return null
+  const realtime = Number(entry.__REALTIME_TIMESTAMP || 0)
+  const priority = Number(entry.PRIORITY)
+  return {
+    line: message,
+    at: realtime ? Math.floor(realtime / 1000) : null,
+    priority: Number.isFinite(priority) ? priority : null,
+    transport: String(entry._TRANSPORT || ''),
+  }
+}
+
+class JournalLines implements AsyncIterable<JournalEntry>, Disposable {
   #closed = false
   #process: Deno.ChildProcess
-  #lines: ReadableStream<string>
+  #lines: ReadableStream<JournalEntry>
 
   constructor(
     sourceArgs: string[],
-    options: { lines?: number | 'all'; follow?: boolean; grep?: string } = {},
+    options: {
+      lines?: number | 'all'
+      follow?: boolean
+      grep?: string
+      priority?: string
+      since?: string
+    } = {},
   ) {
     this.#process = new Deno.Command('journalctl', {
       args: journalArgs(sourceArgs, options),
@@ -59,6 +100,15 @@ class JournalLines implements AsyncIterable<string>, Disposable {
     this.#lines = this.#process.stdout
       .pipeThrough(new TextDecoderStream())
       .pipeThrough(new TextLineStream())
+      .pipeThrough(
+        new TransformStream<string, JournalEntry>({
+          transform(line, controller) {
+            if (!line) return
+            const entry = parseJournalEntry(line)
+            if (entry) controller.enqueue(entry)
+          },
+        }),
+      )
   }
 
   close() {
@@ -82,18 +132,45 @@ class JournalLines implements AsyncIterable<string>, Disposable {
 
 const journalctl = (
   sourceArgs: string[],
-  options: { lines?: number | 'all'; follow?: boolean; grep?: string } = {},
+  options: {
+    lines?: number | 'all'
+    follow?: boolean
+    grep?: string
+    priority?: string
+    since?: string
+  } = {},
 ) => new JournalLines(sourceArgs, options)
 
 const defaultLogLines = 10_000
-const isWorldserverPrompt = (line: string) => line.trim() === 'AC>'
+const lineOptions = new Set(['100', '500', '1000', '5000', '10000', 'all'])
+const priorities = new Set(['emerg', 'alert', 'crit', 'err', 'warning', 'notice', 'info', 'debug'])
+const ranges = new Map([
+  ['today', 'today'],
+  ['week', 'this week'],
+  ['month', 'this month'],
+])
+const isWorldserverPrompt = (entry: JournalEntry) => entry.line.trim() === 'AC>'
 
-const readJournal = async (args: string[], lines: number | 'all' = defaultLogLines) => {
+const logOptions = (url: URL) => {
+  const linesParam = url.searchParams.get('lines') || String(defaultLogLines)
+  const priority = url.searchParams.get('priority') || ''
+  const range = url.searchParams.get('range') || ''
+  return {
+    lines: lineOptions.has(linesParam) ? linesParam === 'all' ? 'all' as const : Number(linesParam) : defaultLogLines,
+    priority: priorities.has(priority) ? priority : undefined,
+    since: ranges.get(range),
+  }
+}
+
+const readJournal = async (
+  args: string[],
+  options: { lines?: number | 'all'; priority?: string; since?: string } = {},
+) => {
   try {
-    using output = journalctl(args, { lines })
+    using output = journalctl(args, { lines: defaultLogLines, ...options })
     const entries = []
-    for await (const line of output) {
-      if (!isWorldserverPrompt(line)) entries.push(line)
+    for await (const entry of output) {
+      if (!isWorldserverPrompt(entry)) entries.push(entry)
     }
     return entries
   } catch (err) {
@@ -104,13 +181,13 @@ const readJournal = async (args: string[], lines: number | 'all' = defaultLogLin
 
 const journalEntries = async (
   log: string | null,
-  lines: number | 'all' = defaultLogLines,
+  options: { lines?: number | 'all'; priority?: string; since?: string } = {},
   run: string | null = null,
 ) => {
   const entries = []
   for (const source of await journalSources(log, run)) {
-    for (const line of await readJournal(source.args, lines)) {
-      entries.push({ type: 'log', file: source.file, path: source.path, line })
+    for (const entry of await readJournal(source.args, options)) {
+      entries.push({ type: 'log', file: source.file, path: source.path, ...entry })
     }
   }
   return entries
@@ -121,20 +198,23 @@ const streamJournalSource = async (
   options: {
     follow: boolean
     lines: number | 'all'
+    priority?: string
+    since?: string
     isClosed: () => boolean
     resources: Set<JournalLines>
     send: (event: unknown) => void
   },
 ) => {
-  let lastLine = ''
+  let lastEntry: JournalEntry | null = null
   let repeatCount = 0
   const flushRepeat = () => {
-    if (repeatCount > 0) {
+    if (repeatCount > 0 && lastEntry) {
       options.send({
         type: 'log',
         file: source.file,
         path: source.path,
-        line: `... repeated ${repeatCount} times: ${lastLine}`,
+        ...lastEntry,
+        line: `... repeated ${repeatCount} times: ${lastEntry.line}`,
       })
       repeatCount = 0
     }
@@ -144,20 +224,22 @@ const streamJournalSource = async (
     using lines = journalctl(source.args, {
       follow: options.follow,
       lines: options.lines,
+      priority: options.priority,
+      since: options.since,
     })
     options.resources.add(lines)
 
     try {
-      for await (const line of lines) {
+      for await (const entry of lines) {
         if (options.isClosed()) break
-        if (isWorldserverPrompt(line)) continue
-        if (line === lastLine) {
+        if (isWorldserverPrompt(entry)) continue
+        if (entry.line === lastEntry?.line) {
           repeatCount++
           continue
         }
         flushRepeat()
-        lastLine = line
-        options.send({ type: 'log', file: source.file, path: source.path, line })
+        lastEntry = entry
+        options.send({ type: 'log', file: source.file, path: source.path, ...entry })
       }
       flushRepeat()
     } finally {
@@ -207,7 +289,9 @@ export const logFile = async (req: Request) => {
   const url = new URL(req.url)
   const log = url.searchParams.get('log') || 'server'
   const run = url.searchParams.get('run')
-  const text = (await journalEntries(log, 'all', run)).map((entry) => entry.line).join('\n') + '\n'
+  const text = (await journalEntries(log, { ...logOptions(url), lines: 'all' }, run)).map((entry) => entry.line).join(
+    '\n',
+  ) + '\n'
   const suffix = run && run !== 'current' ? `-${run.slice(0, 8)}` : ''
   return new Response(text, {
     headers: {
@@ -219,10 +303,12 @@ export const logFile = async (req: Request) => {
 }
 
 export const logSearch = async (req: Request) => {
-  const query = new URL(req.url).searchParams.get('q') || ''
+  const url = new URL(req.url)
+  const query = url.searchParams.get('q') || ''
   if (!query) return json([])
-  const log = new URL(req.url).searchParams.get('log')
-  const run = new URL(req.url).searchParams.get('run')
+  const log = url.searchParams.get('log')
+  const run = url.searchParams.get('run')
+  const options = logOptions(url)
   const sources = await journalSources(log, run)
   if (!sources.length) return json([])
 
@@ -230,9 +316,9 @@ export const logSearch = async (req: Request) => {
     const lines: string[] = []
 
     for (const source of sources) {
-      using output = journalctl(source.args, { lines: 500, grep: query })
-      for await (const line of output) {
-        if (!isWorldserverPrompt(line)) lines.push(line)
+      using output = journalctl(source.args, { ...options, grep: query })
+      for await (const entry of output) {
+        if (!isWorldserverPrompt(entry)) lines.push(entry.line)
       }
     }
 
@@ -246,8 +332,9 @@ export const logEvents = (req: Request) => {
   const url = new URL(req.url)
   const log = url.searchParams.get('log')
   const run = url.searchParams.get('run')
+  const options = logOptions(url)
   const follow = !run || run === 'current'
-  const initialLines = follow && req.headers.get('last-event-id') ? 0 : follow ? defaultLogLines : 'all'
+  const initialLines = follow && req.headers.get('last-event-id') ? 0 : follow ? options.lines : 'all'
   let heartbeat: ReturnType<typeof setInterval> | undefined
   const resources = new Set<JournalLines>()
   let closed = false
@@ -271,7 +358,15 @@ export const logEvents = (req: Request) => {
         journalSources(log, run)
           .then((sources) => {
             for (const source of sources) {
-              void streamJournalSource(source, { follow, lines: initialLines, isClosed: () => closed, resources, send })
+              void streamJournalSource(source, {
+                follow,
+                lines: initialLines,
+                priority: options.priority,
+                since: options.since,
+                isClosed: () => closed,
+                resources,
+                send,
+              })
             }
           })
           .catch((err) => send({ type: 'watcher', error: String(err), source: 'journalctl' }))

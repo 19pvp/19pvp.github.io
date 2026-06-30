@@ -29,7 +29,7 @@
       bottom: 0;
       z-index: 10;
       display: grid;
-      grid-template-columns: auto auto auto auto auto 1fr auto auto auto auto;
+      grid-template-columns: auto auto auto auto auto auto auto auto auto 1fr auto auto;
       gap: 8px;
       align-items: center;
       padding: 10px;
@@ -63,22 +63,6 @@
       cursor: pointer;
     }
 
-    nav {
-      grid-column: 1 / -1;
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-    }
-
-    nav button {
-      min-width: 84px;
-    }
-
-    nav button.active {
-      border-color: #f2c879;
-      color: #f2c879;
-    }
-
     main {
       box-sizing: border-box;
       display: flex;
@@ -96,7 +80,7 @@
 
     .entry {
       position: relative;
-      padding: 0px 10px 0px 92px;
+      padding: 0px 10px 0px 164px;
     }
 
     .entry::before {
@@ -108,6 +92,14 @@
       font-weight: 700;
     }
 
+    .entry::after {
+      position: absolute;
+      left: 82px;
+      top: 2px;
+      content: attr(data-time);
+      color: #7e858c;
+    }
+
     .entry[data-log="server"] {
       background: #10161e;
       --tag-color: #7db1ff;
@@ -115,10 +107,6 @@
     .entry[data-log="error"] {
       background: #1b1111;
       --tag-color: #ff8f8f;
-    }
-    .entry[data-log="playerbots"] {
-      background: #111a16;
-      --tag-color: #8ee0a1;
     }
     .entry[data-log="service"] {
       background: #17131f;
@@ -145,9 +133,6 @@
     }
     .entry[data-log="error"]::before {
       color: #ffaaa9;
-    }
-    .entry[data-log="playerbots"]::before {
-      color: #a6e8b4;
     }
     .entry[data-log="all"]::before {
       color: #ffe0a2;
@@ -250,18 +235,38 @@
       <button id="start">Start</button>
       <button id="stop">Stop</button>
       <button id="kill">Kill</button>
+      <select id="logs">
+        <option value="all">All logs</option>
+        <option value="server">Worldserver</option>
+        <option value="service">Service</option>
+      </select>
       <select id="runs"></select>
-      <input id="query" placeholder="Search with rg">
+      <select id="lines">
+        <option value="100">100 lines</option>
+        <option value="500">500 lines</option>
+        <option value="1000">1k lines</option>
+        <option value="5000">5k lines</option>
+        <option value="10000">10k lines</option>
+        <option value="all">All lines</option>
+      </select>
+      <select id="priority">
+        <option value="">All priorities</option>
+        <option value="err">Errors only</option>
+        <option value="warning">Warnings+</option>
+        <option value="notice">Notice+</option>
+        <option value="info">Info+</option>
+        <option value="debug">Debug+</option>
+      </select>
+      <select id="range">
+        <option value="">All dates</option>
+        <option value="today">Today</option>
+        <option value="week">This week</option>
+        <option value="month">This month</option>
+      </select>
+      <input id="query" placeholder="Search journal">
       <button id="search">Search</button>
       <button id="raw">Download</button>
       <button id="clear">Clear</button>
-      <nav id="tabs">
-        <button data-log="all">All</button>
-        <button data-log="server">Server</button>
-        <button data-log="error">Error</button>
-        <button data-log="playerbots">Playerbots</button>
-        <button data-log="service">Service</button>
-      </nav>
     </footer>
     <script type="module">
     const api = 'https://19pvp.devazuka.com'
@@ -270,8 +275,11 @@
     const query = document.querySelector('#query')
     const raw = document.querySelector('#raw')
     const path = document.querySelector('#path')
+    const logs = document.querySelector('#logs')
     const runs = document.querySelector('#runs')
-    const tabs = document.querySelector('#tabs')
+    const lines = document.querySelector('#lines')
+    const priority = document.querySelector('#priority')
+    const range = document.querySelector('#range')
     const ansiHighlights = new Map()
     const supportsHighlights = Boolean(globalThis.CSS?.highlights && globalThis.Highlight && globalThis.Range)
     const idleAfterMs = 30_000
@@ -279,8 +287,20 @@
     const maxBatch = 100
     const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
     let source
-    let currentLog = new URL(location.href).searchParams.get('log') || 'all'
-    let currentRun = new URL(location.href).searchParams.get('run') || 'current'
+    const sourceOptions = new Set(['all', 'server', 'service'])
+    const lineOptions = new Set(['100', '500', '1000', '5000', '10000', 'all'])
+    const priorityOptions = new Set(['', 'err', 'warning', 'notice', 'info', 'debug'])
+    const rangeOptions = new Set(['', 'today', 'week', 'month'])
+    const initialParams = new URL(location.href).searchParams
+    const initialLog = initialParams.get('log')
+    const initialLines = initialParams.get('lines')
+    const initialPriority = initialParams.get('priority') || ''
+    const initialRange = initialParams.get('range') || ''
+    let currentLog = sourceOptions.has(initialLog) ? initialLog : 'all'
+    let currentRun = initialParams.get('run') || 'current'
+    let currentLines = lineOptions.has(initialLines) ? initialLines : '10000'
+    let currentPriority = priorityOptions.has(initialPriority) ? initialPriority : ''
+    let currentRange = rangeOptions.has(initialRange) ? initialRange : ''
     let lastLogAt = 0
     let pending = []
     let pendingFrame = 0
@@ -405,14 +425,19 @@
 
     const isNearBottom = () => window.innerHeight + scrollY >= document.body.scrollHeight - 80
 
-    const appendNow = (line, className = '') => {
+    const formatLogTime = (at) => at ? new Date(at).toLocaleTimeString() : ''
+
+    const appendNow = (line, className = '', meta = {}) => {
       idleSpacer.hidden = true
       lastLogAt = Date.now()
       const row = document.createElement('div')
-      const tag = ['all', 'error', 'playerbots', 'server', 'service', 'system'].includes(className) ? className : 'system'
+      const tag = ['all', 'error', 'server', 'service', 'system'].includes(className) ? className : 'system'
       row.className = `entry${tag ? ` ${tag}` : ''}`
       row.dataset.log = tag
       row.dataset.tag = tag
+      row.dataset.time = formatLogTime(meta.at)
+      if (meta.priority !== undefined && meta.priority !== null) row.dataset.priority = meta.priority
+      if (meta.transport) row.dataset.transport = meta.transport
       renderAnsi(row, line)
       output.append(row)
       pruneRows()
@@ -422,13 +447,13 @@
       pendingFrame = 0
       const shouldStick = document.activeElement !== query && isNearBottom()
       const batch = pending.splice(0, maxBatch)
-      for (const [line, className] of batch) appendNow(line, className)
+      for (const [line, className, meta] of batch) appendNow(line, className, meta)
       if (shouldStick) scrollTo(0, document.body.scrollHeight)
       if (pending.length) pendingFrame = requestAnimationFrame(flushPending)
     }
 
-    const append = (line, className = '') => {
-      pending.push([line, className])
+    const append = (line, className = '', meta = {}) => {
+      pending.push([line, className, meta])
       if (pending.length > maxRows) pending = pending.slice(-maxRows)
       if (!pendingFrame) pendingFrame = requestAnimationFrame(flushPending)
     }
@@ -475,7 +500,7 @@
       }
 
       if (data.line) {
-        append(data.line, data.file || 'system')
+        append(data.line, data.file || 'system', data)
         return
       }
 
@@ -487,22 +512,33 @@
       append(JSON.stringify(data), 'system')
     }
 
-    const selectLog = (log) => {
-      currentLog = log
+    const setUrlParam = (name, value, defaultValue = '') => {
       const url = new URL(location.href)
-      log === 'all' ? url.searchParams.delete('log') : url.searchParams.set('log', log)
+      value === defaultValue ? url.searchParams.delete(name) : url.searchParams.set(name, value)
       history.replaceState(null, '', url)
-      for (const button of tabs.querySelectorAll('button')) button.classList.toggle('active', button.dataset.log === log)
-      connectLogs()
+    }
+
+    const logParams = (extra = {}) => {
+      const params = new URLSearchParams({
+        log: currentLog,
+        run: currentRun,
+        lines: currentLines,
+        ...extra,
+      })
+      if (currentPriority) params.set('priority', currentPriority)
+      if (currentRange) params.set('range', currentRange)
+      return params
     }
 
     const connectLogs = () => {
+      logs.value = currentLog
       runs.value = currentRun
+      lines.value = currentLines
+      priority.value = currentPriority
+      range.value = currentRange
       source?.close()
       resetOutput()
-      source = new EventSource(
-        `${api}/logs/events?log=${encodeURIComponent(currentLog)}&run=${encodeURIComponent(currentRun)}`,
-      )
+      source = new EventSource(`${api}/logs/events?${logParams()}`)
       source.onmessage = (event) => {
         const data = JSON.parse(event.data)
         if (data.type === 'heartbeat') return updateIdleSpacer()
@@ -517,11 +553,7 @@
     document.querySelector('#search').onclick = async () => {
       source?.close()
       resetOutput()
-      const lines = await fetch(
-        `${api}/logs/search?q=${encodeURIComponent(query.value)}&log=${encodeURIComponent(currentLog)}&run=${
-          encodeURIComponent(currentRun)
-        }`,
-      )
+      const lines = await fetch(`${api}/logs/search?${logParams({ q: query.value })}`)
         .then((res) => res.json())
       lines.forEach((line) => append(line, 'system'))
     }
@@ -534,21 +566,34 @@
 
     raw.onclick = () => {
       const log = currentLog === 'all' ? 'server' : currentLog
-      open(`${api}/logs/file?log=${encodeURIComponent(log)}&run=${encodeURIComponent(currentRun)}`, '_blank', 'noopener')
+      open(`${api}/logs/file?${logParams({ log })}`, '_blank', 'noopener')
     }
     document.querySelector('#clear').onclick = () => {
       resetOutput()
     }
-    tabs.onclick = (event) => {
-      const button = event.target.closest('button[data-log]')
-      if (button) selectLog(button.dataset.log)
+    logs.onchange = () => {
+      currentLog = logs.value
+      setUrlParam('log', currentLog, 'all')
+      connectLogs()
     }
     runs.onchange = () => {
       currentRun = runs.value
-      const url = new URL(location.href)
-      currentRun === 'current' ? url.searchParams.delete('run') : url.searchParams.set('run', currentRun)
-      history.replaceState(null, '', url)
-      source?.close()
+      setUrlParam('run', currentRun, 'current')
+      connectLogs()
+    }
+    lines.onchange = () => {
+      currentLines = lines.value
+      setUrlParam('lines', currentLines, '10000')
+      connectLogs()
+    }
+    priority.onchange = () => {
+      currentPriority = priority.value
+      setUrlParam('priority', currentPriority)
+      connectLogs()
+    }
+    range.onchange = () => {
+      currentRange = range.value
+      setUrlParam('range', currentRange)
       connectLogs()
     }
     document.querySelector('#status').onclick = () => action('status')
@@ -581,9 +626,6 @@
       })
       .catch(connectLogs)
 
-    for (const button of tabs.querySelectorAll('button')) {
-      button.classList.toggle('active', button.dataset.log === currentLog)
-    }
     setInterval(updateIdleSpacer, 1000)
     </script>
   </body>
