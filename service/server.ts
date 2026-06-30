@@ -166,37 +166,6 @@ const logOptions = (url: URL) => {
   }
 }
 
-const readJournal = async (
-  args: string[],
-  options: { lines?: number | 'all'; priority?: string; since?: string } = {},
-) => {
-  try {
-    using output = journalctl(args, { lines: defaultLogLines, ...options })
-    const entries = []
-    for await (const entry of output) {
-      if (!isWorldserverPrompt(entry)) entries.push(entry)
-    }
-    return entries
-  } catch (err) {
-    if (err instanceof Deno.errors.NotFound) return []
-    throw err
-  }
-}
-
-const journalEntries = async (
-  log: string | null,
-  options: { lines?: number | 'all'; priority?: string; since?: string } = {},
-  run: string | null = null,
-) => {
-  const entries = []
-  for (const source of await journalSources(log, run)) {
-    for (const entry of await readJournal(source.args, options)) {
-      entries.push({ type: 'log', file: source.file, path: source.path, ...entry })
-    }
-  }
-  return entries
-}
-
 const streamJournalSource = async (
   source: { args: string[]; file: string; path: string },
   options: {
@@ -275,7 +244,12 @@ export const logRuns = async () => {
   const runs = new Map<string, { id: string; startedAt: number; lastAt: number; current: boolean; lines: number }>()
 
   for (const line of stdout.split(/\r?\n/).filter(Boolean)) {
-    const entry = JSON.parse(line)
+    let entry
+    try {
+      entry = JSON.parse(line)
+    } catch {
+      continue
+    }
     const id = String(entry._SYSTEMD_INVOCATION_ID || '')
     const at = Math.floor(Number(entry.__REALTIME_TIMESTAMP || 0) / 1000)
     if (!id || !at) continue

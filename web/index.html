@@ -610,6 +610,23 @@
     document.querySelector('#kill').onclick = () => action('kill')
     query.onkeydown = (event) => event.key === 'Enter' && document.querySelector('#search').click()
 
+    const populateRuns = (items = []) => {
+      runs.textContent = ''
+      if (!Array.isArray(items) || !items.length) {
+        items = [{ id: 'current', current: true, startedAt: Date.now(), lines: 0 }]
+      }
+      for (const item of items) {
+        const option = document.createElement('option')
+        option.value = item.current ? 'current' : item.id
+        option.textContent = `${
+          item.current ? 'Current start' : `Start ${new Date(item.startedAt).toLocaleString()}`
+        } (${item.lines})`
+        runs.append(option)
+      }
+      if (![...runs.options].some((option) => option.value === currentRun)) currentRun = 'current'
+      runs.value = currentRun
+    }
+
     fetch(`${api}/logs/info`)
       .then((res) => res.json())
       .then(() => path.textContent = 'Server logs')
@@ -618,21 +635,13 @@
     fetch(`${api}/logs/runs`)
       .then((res) => res.json())
       .then((items) => {
-        runs.textContent = ''
-        if (!items.length) items.push({ id: 'current', current: true, startedAt: Date.now(), lines: 0 })
-        for (const item of items) {
-          const option = document.createElement('option')
-          option.value = item.current ? 'current' : item.id
-          option.textContent = `${
-            item.current ? 'Current start' : `Start ${new Date(item.startedAt).toLocaleString()}`
-          } (${item.lines})`
-          runs.append(option)
-        }
-        if (![...runs.options].some((option) => option.value === currentRun)) currentRun = 'current'
-        runs.value = currentRun
+        populateRuns(items)
         connectLogs()
       })
-      .catch(connectLogs)
+      .catch(() => {
+        populateRuns()
+        connectLogs()
+      })
 
     setInterval(updateIdleSpacer, 1000)
     </script>
