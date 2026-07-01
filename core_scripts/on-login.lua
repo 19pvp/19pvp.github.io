@@ -9,10 +9,8 @@ local INVENTORY_SLOT_BAG_END = 22
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_FIRST_LOGIN, function (event, player)
   -- learn spells
-  for _, spell in pairs(starting_info.spells[player:GetClass()]) do
-    if spell.lvl == 15 then
-      player:LearnSpell(spell.id)
-    end
+  for _, spellId in pairs(starting_info.spells[player:GetClass()]) do
+    player:LearnSpell(spellId)
   end
 
   -- add bags
