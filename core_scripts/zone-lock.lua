@@ -22,7 +22,6 @@ end
 local TeleportMainGraveyard = Teleport(530, 4370.4556, 3096.8328, 132.97714, 3.5827959)
 local TeleportStartingZone  = Teleport(530, 4115.9697, 3058.874, 339.4637, 1.9342613)
 
-
 function isPlayerAllowed(player)
   local map = player:GetMapId()
   if map ~= 0 and map ~= 1 then return true end

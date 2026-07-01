@@ -1,13 +1,3 @@
---[[
-    EmuDevs <http:emudevs.com/forum.php>
-    Eluna Lua Engine <https://github.com/ElunaLuaEngine/Eluna>
-    Eluna Scripts <https://github.com/ElunaLuaEngine/Scripts>
-    Eluna Wiki <http://wiki.emudevs.com/doku.php?id=eluna>
-
-    Eluna Globals
-    
-    Copyright (C) 2014 EmuDevs <http://www.emudevs.com/>
---]]
 --------------------------------------------------------
 --[[
      COMMON
