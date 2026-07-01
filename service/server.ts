@@ -63,6 +63,11 @@ type JournalEntry = {
   priority: number | null
   transport: string
   cursor: string
+  unit: string
+  pid: number | null
+  comm: string
+  identifier: string
+  invocationId: string
   fields: Record<string, unknown>
 }
 
@@ -90,17 +95,32 @@ const parseJournalEntry = (line: string): JournalEntry | null => {
     priority: Number.isFinite(priority) ? priority : null,
     transport: String(entry._TRANSPORT || ''),
     cursor: String(entry.__CURSOR || ''),
+    unit: String(entry._SYSTEMD_UNIT || ''),
+    pid: Number(entry._PID) || null,
+    comm: String(entry._COMM || ''),
+    identifier: String(entry.SYSLOG_IDENTIFIER || ''),
+    invocationId: String(entry._SYSTEMD_INVOCATION_ID || ''),
     fields: entry,
   }
 }
 
 const parseJournalMessage = (message: unknown) => {
-  if (typeof message === 'string') return message
+  if (typeof message === 'string') return normalizeJournalMessage(message)
   if (!Array.isArray(message)) return null
 
   const bytes = message.map((byte) => Number(byte))
   if (bytes.some((byte) => !Number.isInteger(byte) || byte < 0 || byte > 255)) return null
-  return new TextDecoder().decode(new Uint8Array(bytes))
+  return normalizeJournalMessage(new TextDecoder().decode(new Uint8Array(bytes)))
+}
+
+const normalizeJournalMessage = (message: string) => {
+  let normalized = ''
+  for (const char of message) {
+    const code = char.charCodeAt(0)
+    if ((code < 32 || code === 127) && code !== 9 && code !== 10 && code !== 13 && code !== 27) continue
+    normalized += char
+  }
+  return normalized
 }
 
 class JournalLines implements AsyncIterable<JournalEntry>, Disposable {

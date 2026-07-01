@@ -3,7 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>">
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>"
+    >
     <title>19 PvP Logs</title>
     <style>
       :root {
@@ -394,10 +397,8 @@
               state.bright = false
             } else if (code === 39) {
               state.fg = ''
-              state.bright = false
             } else if (code >= 30 && code <= 37) {
               state.fg = ansiToken([code])
-              state.bright = false
             } else if (code >= 90 && code <= 97) {
               state.fg = ansiToken([code - 60])
               state.bright = true
@@ -432,7 +433,15 @@
 
       const isNearBottom = () => window.innerHeight + scrollY >= document.body.scrollHeight - 80
 
-      const formatLogTime = (at) => at ? new Date(at).toLocaleTimeString() : ''
+      const formatLogTime = (at) =>
+        at
+          ? new Date(at).toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          })
+          : ''
 
       const appendNow = (line, className = '', meta = {}) => {
         idleSpacer.hidden = true
