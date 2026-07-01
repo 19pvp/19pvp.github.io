@@ -602,14 +602,7 @@
       document.querySelector('#stop').onclick = () => action('stop')
       document.querySelector('#kill').onclick = () => action('kill')
       query.onkeydown = (event) => event.key === 'Enter' && document.querySelector('#search').click()
-
-      fetch(`${api}/logs/info`)
-        .then((res) => res.json())
-        .then(() => path.textContent = 'Server logs')
-        .catch(() => path.textContent = 'Server logs')
-
       connectLogs()
-
       setInterval(updateIdleSpacer, 1000)
     </script>
   </body>

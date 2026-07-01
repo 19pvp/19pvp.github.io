@@ -25,6 +25,7 @@
         "config:json:worldserver"
       ]
     },
+    "ci": { "dependencies": ["lint", "check", "fmt"] },
     "config:json:ale": "deno run --allow-net --allow-write tasks/config.ts json ale",
     "config:json:playerbots": "deno run --allow-net --allow-write tasks/config.ts json playerbots",
     "config:json:worldserver": "deno run --allow-net --allow-write tasks/config.ts json worldserver",
