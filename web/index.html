@@ -288,7 +288,6 @@
       const ansiHighlights = new Map()
       const supportsHighlights = Boolean(globalThis.CSS?.highlights && globalThis.Highlight && globalThis.Range)
       const idleAfterMs = 30_000
-      const maxRows = 1_000
       const maxBatch = 100
       const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
       let source
@@ -308,6 +307,8 @@
       let lastLogAt = 0
       let pending = []
       let pendingFrame = 0
+
+      const maxRows = () => currentLines === 'all' ? 20_000 : Number(currentLines) || 1_000
 
       const clearAnsiHighlights = () => {
         if (!supportsHighlights) return
@@ -424,7 +425,8 @@
       }
 
       const pruneRows = () => {
-        while (output.childElementCount > maxRows) output.firstElementChild?.remove()
+        const limit = maxRows()
+        while (output.childElementCount > limit) output.firstElementChild?.remove()
       }
 
       const isNearBottom = () => window.innerHeight + scrollY >= document.body.scrollHeight - 80
@@ -459,7 +461,8 @@
 
       const append = (line, className = '', meta = {}) => {
         pending.push([line, className, meta])
-        if (pending.length > maxRows) pending = pending.slice(-maxRows)
+        const limit = maxRows()
+        if (pending.length > limit) pending = pending.slice(-limit)
         if (!pendingFrame) pendingFrame = requestAnimationFrame(flushPending)
       }
 

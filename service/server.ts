@@ -31,6 +31,8 @@ const journalArgs = (
     grep?: string
     priority?: string
     since?: string
+    until?: string
+    afterCursor?: string
     output?: 'json' | 'cat'
   } = {},
 ) => [
@@ -41,6 +43,8 @@ const journalArgs = (
   ...(options.grep ? ['--grep', options.grep] : []),
   ...(options.priority ? ['--priority', options.priority] : []),
   ...(options.since ? ['--since', options.since] : []),
+  ...(options.until ? ['--until', options.until] : []),
+  ...(options.afterCursor ? ['--after-cursor', options.afterCursor] : []),
   ...sourceArgs,
 ]
 
@@ -49,6 +53,13 @@ type JournalEntry = {
   at: number | null
   priority: number | null
   transport: string
+  cursor: string
+}
+
+type JournalEvent = JournalEntry & {
+  type: 'log'
+  file: string
+  path: string
 }
 
 const parseJournalEntry = (line: string): JournalEntry | null => {
@@ -68,6 +79,7 @@ const parseJournalEntry = (line: string): JournalEntry | null => {
     at: realtime ? Math.floor(realtime / 1000) : null,
     priority: Number.isFinite(priority) ? priority : null,
     transport: String(entry._TRANSPORT || ''),
+    cursor: String(entry.__CURSOR || ''),
   }
 }
 
@@ -84,6 +96,8 @@ class JournalLines implements AsyncIterable<JournalEntry>, Disposable {
       grep?: string
       priority?: string
       since?: string
+      until?: string
+      afterCursor?: string
     } = {},
   ) {
     this.#process = new Deno.Command('journalctl', {
@@ -132,18 +146,61 @@ const journalctl = (
     grep?: string
     priority?: string
     since?: string
+    until?: string
+    afterCursor?: string
   } = {},
 ) => new JournalLines(sourceArgs, options)
 
 const defaultLogLines = 10_000
 const lineOptions = new Set(['100', '500', '1000', '5000', '10000', 'all'])
-const priorities = new Set(['emerg', 'alert', 'crit', 'err', 'warning', 'notice', 'info', 'debug'])
+const priorityRanges = new Map([
+  ['emerg', '0'],
+  ['alert', '0..1'],
+  ['crit', '0..2'],
+  ['err', '0..3'],
+  ['warning', '0..4'],
+  ['notice', '0..5'],
+  ['info', '0..6'],
+  ['debug', '0..7'],
+])
 const ranges = new Map([
   ['today', 'today'],
   ['week', 'this week'],
   ['month', 'this month'],
 ])
 const isWorldserverPrompt = (entry: JournalEntry) => entry.line.trim() === 'AC>'
+const journalTime = (at: number) => `@${Math.floor(at / 1000)}`
+const journalEvent = (source: { file: string; path: string }, entry: JournalEntry): JournalEvent => ({
+  type: 'log',
+  file: source.file,
+  path: source.path,
+  ...entry,
+})
+
+const journalEventKey = (event: JournalEvent) =>
+  event.cursor
+    ? `${event.file}:cursor:${event.cursor}`
+    : `${event.file}:entry:${event.at ?? ''}:${event.priority ?? ''}:${event.transport}:${event.line}`
+
+const createSeenFilter = () => {
+  const seen = new Set<string>()
+  const order: string[] = []
+  const maxSeen = 50_000
+
+  return (event: JournalEvent) => {
+    const key = journalEventKey(event)
+    if (seen.has(key)) return false
+
+    seen.add(key)
+    order.push(key)
+    while (order.length > maxSeen) {
+      const dropped = order.shift()
+      if (dropped) seen.delete(dropped)
+    }
+
+    return true
+  }
+}
 
 const logOptions = (url: URL) => {
   const linesParam = url.searchParams.get('lines') || String(defaultLogLines)
@@ -151,7 +208,7 @@ const logOptions = (url: URL) => {
   const range = url.searchParams.get('range') || ''
   return {
     lines: lineOptions.has(linesParam) ? linesParam === 'all' ? 'all' as const : Number(linesParam) : defaultLogLines,
-    priority: priorities.has(priority) ? priority : undefined,
+    priority: priorityRanges.get(priority),
     since: ranges.get(range),
   }
 }
@@ -163,9 +220,11 @@ const streamJournalSource = async (
     lines: number | 'all'
     priority?: string
     since?: string
+    afterCursor?: string
     isClosed: () => boolean
     resources: Set<JournalLines>
-    send: (event: unknown) => void
+    send: (event: JournalEvent) => void
+    sendError: (event: unknown) => void
   },
 ) => {
   let lastEntry: JournalEntry | null = null
@@ -177,6 +236,7 @@ const streamJournalSource = async (
         file: source.file,
         path: source.path,
         ...lastEntry,
+        cursor: '',
         line: `... repeated ${repeatCount} times: ${lastEntry.line}`,
       })
       repeatCount = 0
@@ -189,6 +249,7 @@ const streamJournalSource = async (
       lines: options.lines,
       priority: options.priority,
       since: options.since,
+      afterCursor: options.afterCursor,
     })
     options.resources.add(lines)
 
@@ -202,7 +263,7 @@ const streamJournalSource = async (
         }
         flushRepeat()
         lastEntry = entry
-        options.send({ type: 'log', file: source.file, path: source.path, ...entry })
+        options.send(journalEvent(source, entry))
       }
       flushRepeat()
     } finally {
@@ -210,9 +271,50 @@ const streamJournalSource = async (
     }
   } catch (err) {
     if (!options.isClosed() && !(err instanceof Deno.errors.NotFound)) {
-      options.send({ type: 'watcher', error: String(err), source: 'journalctl' })
+      options.sendError({ type: 'watcher', error: String(err), source: 'journalctl' })
     }
   }
+}
+
+const collectJournalHistory = async (
+  sources: { args: string[]; file: string; path: string }[],
+  options: {
+    lines: number | 'all'
+    priority?: string
+    since?: string
+    until: string
+  },
+) => {
+  const batches = await Promise.all(
+    sources.map(async (source) => {
+      const events: JournalEvent[] = []
+      let cursor = ''
+
+      using lines = journalctl(source.args, {
+        lines: options.lines,
+        priority: options.priority,
+        since: options.since,
+        until: options.until,
+      })
+
+      for await (const entry of lines) {
+        if (entry.cursor) cursor = entry.cursor
+        if (!isWorldserverPrompt(entry)) {
+          events.push(journalEvent(source, entry))
+        }
+      }
+
+      return { events, source, cursor }
+    }),
+  )
+
+  const events = batches.flatMap((batch) => batch.events).sort((a, b) => (a.at || 0) - (b.at || 0))
+  const trimmedEvents = typeof options.lines === 'number' && events.length > options.lines
+    ? events.slice(-options.lines)
+    : events
+  const cursors = new Map(batches.map((batch) => [batch.source.file, batch.cursor]))
+
+  return { events: trimmedEvents, cursors }
 }
 
 export const logInfo = () =>
@@ -268,12 +370,13 @@ export const logEvents = (req: Request) => {
   const url = new URL(req.url)
   const log = url.searchParams.get('log')
   const options = logOptions(url)
-  const follow = true
-  const initialLines = options.lines
+  const sources = journalSources(log)
+  const requestStartedAt = Date.now()
   let heartbeat: ReturnType<typeof setInterval> | undefined
   const resources = new Set<JournalLines>()
   let closed = false
   let eventId = Date.now()
+  const remember = createSeenFilter()
 
   return new Response(
     new ReadableStream<Uint8Array>({
@@ -288,23 +391,44 @@ export const logEvents = (req: Request) => {
           }
         }
 
-        if (follow) heartbeat = setInterval(() => send({ type: 'heartbeat', at: Date.now() }), 15000)
+        heartbeat = setInterval(() => send({ type: 'heartbeat', at: Date.now() }), 15000)
 
-        try {
-          for (const source of journalSources(log)) {
-            void streamJournalSource(source, {
-              follow,
-              lines: initialLines,
+        const sendLog = (event: JournalEvent) => {
+          if (remember(event)) send(event)
+        }
+
+        void (async () => {
+          try {
+            const history = await collectJournalHistory(sources, {
+              lines: options.lines,
               priority: options.priority,
               since: options.since,
-              isClosed: () => closed,
-              resources,
-              send,
+              until: journalTime(requestStartedAt),
             })
+
+            for (const event of history.events) {
+              if (closed) return
+              sendLog(event)
+            }
+
+            for (const source of sources) {
+              const cursor = history.cursors.get(source.file)
+              void streamJournalSource(source, {
+                follow: true,
+                lines: cursor ? 0 : 'all',
+                priority: options.priority,
+                since: cursor ? undefined : journalTime(requestStartedAt - 1_000),
+                afterCursor: cursor || undefined,
+                isClosed: () => closed,
+                resources,
+                send: sendLog,
+                sendError: send,
+              })
+            }
+          } catch (err) {
+            send({ type: 'watcher', error: String(err), source: 'journalctl' })
           }
-        } catch (err) {
-          send({ type: 'watcher', error: String(err), source: 'journalctl' })
-        }
+        })()
       },
       cancel() {
         closed = true
