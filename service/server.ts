@@ -287,7 +287,7 @@ const streamJournalSource = async (
         path: lastSource.path,
         ...lastEntry,
         cursor: '',
-        line: `... repeated ${repeatCount} times: ${lastEntry.line}`,
+        line: `${lastEntry.line} (x${repeatCount})`,
       })
       repeatCount = 0
     }
