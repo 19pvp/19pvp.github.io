@@ -66,7 +66,7 @@ type JournalEntry = {
   fields: Record<string, unknown>
 }
 
-type JournalEvent = JournalEntry & {
+type JournalEvent = Omit<JournalEntry, 'fields'> & {
   type: 'log'
   file: string
   path: string
@@ -80,8 +80,8 @@ const parseJournalEntry = (line: string): JournalEntry | null => {
     return null
   }
 
-  const message = entry.MESSAGE
-  if (typeof message !== 'string') return null
+  const message = parseJournalMessage(entry.MESSAGE)
+  if (message === null) return null
   const realtime = Number(entry.__REALTIME_TIMESTAMP || 0)
   const priority = Number(entry.PRIORITY)
   return {
@@ -92,6 +92,15 @@ const parseJournalEntry = (line: string): JournalEntry | null => {
     cursor: String(entry.__CURSOR || ''),
     fields: entry,
   }
+}
+
+const parseJournalMessage = (message: unknown) => {
+  if (typeof message === 'string') return message
+  if (!Array.isArray(message)) return null
+
+  const bytes = message.map((byte) => Number(byte))
+  if (bytes.some((byte) => !Number.isInteger(byte) || byte < 0 || byte > 255)) return null
+  return new TextDecoder().decode(new Uint8Array(bytes))
 }
 
 class JournalLines implements AsyncIterable<JournalEntry>, Disposable {
@@ -178,12 +187,15 @@ const ranges = new Map([
   ['month', 'this month'],
 ])
 const isWorldserverPrompt = (entry: JournalEntry) => entry.line.trim() === 'AC>'
-const journalEvent = (source: JournalSource, entry: JournalEntry): JournalEvent => ({
-  type: 'log',
-  file: source.file,
-  path: source.path,
-  ...entry,
-})
+const journalEvent = (source: JournalSource, entry: JournalEntry): JournalEvent => {
+  const { fields: _fields, ...event } = entry
+  return {
+    type: 'log',
+    file: source.file,
+    path: source.path,
+    ...event,
+  }
+}
 
 const journalEventKey = (event: JournalEvent) =>
   event.cursor
