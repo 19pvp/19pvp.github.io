@@ -8,36 +8,9 @@ local allowed_zones = {
 }
 
 local allowed_areas = {
-  [33] = { -- Stranglethorn
-    [  35] = true, -- Booty Bay
-    [  43] = true, -- Wild Shore
-    [ 297] = true, -- Jaguero Isle
-    [ 302] = true, -- The Crystal Shore
-    [ 310] = true, -- Crystalvein Mine
-    [ 311] = true, -- Ruins of Aboraz
-    [ 312] = true, -- Janeiro's Point
-    [ 477] = true, -- Ruins of Jubuwal
-    [1577] = true, -- The Cape of Stranglethorn
-    [1578] = true, -- Southern Savage Coast
-    [1737] = true, -- Mistvale Valley
-    [1738] = true, -- Nek'mani Wellspring
-    [1739] = true, -- Bloodsail Compound
-    [1741] = true, -- Gurubashi Arena
-    [1742] = true, -- Spirit Den
-    [2177] = true, -- Battle Ring
-  },
-  [721] = { [721] = true }, -- Gnomergan
-  [719] = { [719] = true }, -- Blackfathom Deeps
-  [331] = { -- Ashenvale
-    [2897] = true, -- Zoram'gar Outpost
-    [414] = true, -- The Zoram Strand
-  },
-  [17] = { -- The Barrens
-    [392] = true, -- Ratchet
-    [391] = true, -- The Merchant Coast
-    [385] = true, -- Northwatch Hold
-    [401] = true, -- The Tidus Stair
-    [720] = true, -- Fray Island
+  [3523] = { -- Netherstorm
+    [3875] = true, -- Ecodome Skyperch
+    [3738] = true, -- Stormspire
   },
 }
 
@@ -45,11 +18,9 @@ function Teleport (map, x, y, z, o)
   return function (player) return player:Teleport(map, x, y, z, o) end
 end
 
--- Zone: 33 (Stranglethorn Vale) Area: 1577 (The Cape of Stranglethorn)
-local TeleportMainGraveyard = Teleport(0, -14285, 288.447, 32.329372, 4.223945)
-
--- Zone: 33 (Stranglethorn Vale) Area: 35 (Booty Bay)
-local TeleportStartingZone  = Teleport(0, -14284.343,  559.23016, 8.76681, 4.223945)
+-- Map: 530 (Outland) Zone: 3523 (Netherstorm) Area: 3738 (The Stormspire)
+local TeleportMainGraveyard = Teleport(530, 4370.4556, 3096.8328, 132.97714, 3.5827959)
+local TeleportStartingZone  = Teleport(530, 4115.9697, 3058.874, 339.4637, 1.9342613)
 
 
 function isPlayerAllowed(player)
