@@ -1,42 +1,9 @@
 import { parse, stringify } from '@std/yaml'
-import controlConfig from '../config/worldserver-control.json' with { type: 'json' }
-import worldserverConfig from '../config/worldserver.json' with { type: 'json' }
+import { bin, etc, type TargetName, targets } from '../env.ts'
 import { runCommand } from '../service/utils.ts'
 
-const targets = {
-  ale: {
-    conf: 'config/mod_ale.conf',
-    json: 'config/ale.json',
-    label: 'ALE Config',
-    reload: 'reload ale',
-    url: 'https://raw.githubusercontent.com/azerothcore/mod-ale/refs/heads/master/conf/mod_ale.conf.dist',
-  },
-  playerbots: {
-    conf: 'config/playerbots.conf',
-    json: 'config/playerbots.json',
-    label: 'Playerbots Config',
-    reload: 'reload config',
-    url: 'https://raw.githubusercontent.com/mod-playerbots/mod-playerbots/refs/heads/master/conf/playerbots.conf.dist',
-  },
-  worldserver: {
-    conf: 'config/worldserver.conf',
-    json: 'config/worldserver.json',
-    label: 'WorldServer Config',
-    reload: 'reload config',
-    url:
-      'https://raw.githubusercontent.com/mod-playerbots/azerothcore-wotlk/refs/heads/Playerbot/src/server/apps/worldserver/worldserver.conf.dist',
-  },
-} as const
-
-type TargetName = keyof typeof targets
-
 const names = Object.keys(targets) as TargetName[]
-const [command, targetArg, outputArg] = Deno.args
-const projectPath = (path: string) =>
-  path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(path) ? path : `${import.meta.dirname}/../${path}`
-
 const unquote = (value: unknown) => String(value || '').replace(/^"|"$/g, '')
-
 const databaseName = (info: unknown) => {
   const parts = unquote(info).split(';')
   const name = parts[4]
@@ -44,23 +11,15 @@ const databaseName = (info: unknown) => {
   return name
 }
 
-const characterDatabase = () => databaseName(worldserverConfig.CharacterDatabaseInfo)
-
-const target = (name = targetArg) => {
+const target = (name?: string) => {
   if (name && name in targets) return targets[name as TargetName]
   throw Error(`Expected target: ${names.join('|')}`)
 }
 
-const confDestinations = {
-  ale: controlConfig.files.aleConf,
-  playerbots: controlConfig.files.playerbotsConf,
-  worldserver: controlConfig.files.worldserverConf,
-} satisfies Record<TargetName, string>
-
 const fetchText = async (url: string) => {
   const res = await fetch(url)
   if (!res.ok) throw Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`)
-  return await res.text()
+  return res.text()
 }
 
 const typeOfLine = (line: string) => {
@@ -130,29 +89,27 @@ const writeJson = async (name: TargetName) => {
   const t = targets[name]
   const conf = parseConf(await fetchText(t.url))
   await Deno.mkdir('config', { recursive: true })
-  await Deno.writeTextFile(t.json, `${JSON.stringify(defaults(conf), null, 2)}\n`)
-  console.log(`Wrote ${t.json}`)
+  await Deno.writeTextFile(`config/${name}.json`, `${JSON.stringify(defaults(conf), null, 2)}\n`)
+  console.log(`Wrote ${name}`)
 }
 
-const writeConf = async (name: TargetName, output: string = projectPath(confDestinations[name])) => {
-  const values = JSON.parse(await Deno.readTextFile(targets[name].json)) as Record<string, unknown>
-  const conf = Object.entries(values).map(([key, value]) => `${key} = ${String(value)}`).join('\n') + '\n'
-  await Deno.mkdir(output.slice(0, output.lastIndexOf('/')), { recursive: true })
+const writeConf = async (name: TargetName) => {
+  const t = targets[name]
+  const conf = Object.entries(t.config).map(([key, value]) => `${key} = ${String(value)}\n`).join('')
+  const output = etc(t.url.split('/').at(-1)!.replace('.conf.dist', '.conf'))
   await Deno.writeTextFile(output, conf)
   console.log(`Wrote ${output}`)
 }
 
-const installConf = async () => {
+export const installConf = async () => {
   for (const name of names) {
     await writeConf(name)
   }
 }
 
 const installWorldserverService = async () => {
+  // TODO: derive name from repository name
   const serviceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
-  const command = await Deno.realPath(projectPath(controlConfig.command))
-  const cwd = await Deno.realPath(projectPath(controlConfig.cwd))
-  const execStart = [command, ...(controlConfig.args || [])].join(' ')
   const unitPath = `/etc/systemd/system/${serviceName}.service`
   const unit = `[Unit]
 Description=19 PvP worldserver
@@ -161,8 +118,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=${cwd}
-ExecStart=${execStart}
+WorkingDirectory=${await Deno.realPath(bin(''))}
+ExecStart=${await Deno.realPath(bin('worldserver'))}
 StandardInput=null
 Restart=on-failure
 RestartSec=3
@@ -185,7 +142,7 @@ const ensureDefaultGuild = async () => {
   }
 
   const { sqlRaw } = await import('../service/db.ts')
-  const db = characterDatabase()
+  const db = databaseName(targets.worldserver.config.CharacterDatabaseInfo)
   const guildName = Deno.env.get('DEFAULT_GUILD_NAME') || '19 PvP'
   const [existing] = await sqlRaw(`SELECT COUNT(*) AS count FROM ${db}.guild`)
   if (Number(existing.count)) {
@@ -251,14 +208,14 @@ const updatePages = async () => {
 
   for (const name of names) {
     const t = targets[name]
-    let item = page.content.find((entry) => entry.name === name || entry.path === t.json)
+    const path = `config/${name}.json`
+    let item = page.content.find((entry) => entry.name === name || entry.path === path)
     if (!item) page.content.push(item = {})
-
     Object.assign(item, {
       name,
       label: t.label,
       type: 'file',
-      path: t.json,
+      path,
       fields: fields(parseConf(await fetchText(t.url))),
     })
     console.log(`Updated ${name} fields`)
@@ -284,60 +241,62 @@ const reload = async (name: TargetName) => {
   console.log(`${name} reloaded with .${targets[name].reload}`)
 }
 
-const processChanged = async (changed: Set<TargetName>) => {
+const changed = new Set<TargetName>()
+const processChanged = async () => {
   for (const name of [...changed]) {
     changed.delete(name)
     const t = targets[name]
-    const previous = await readIfExists(t.conf)
-
-    if (!await readIfExists(t.json)) {
-      console.log(`${t.json} missing; skipped`)
-      continue
-    }
+    const conf = etc(t.url.split('/').at(-1)!.replace('.conf.dist', '.conf'))
+    const previous = await readIfExists(conf)
 
     await writeConf(name)
-
-    if (await readIfExists(t.conf) !== previous) {
-      await reload(name)
+    if (await readIfExists(conf) !== previous) {
+      try {
+        await reload(name)
+      } catch (err) {
+        console.warn('unable to reload', name, err)
+      }
     } else {
-      console.log(`${t.conf} unchanged`)
+      console.log(`${name} unchanged`)
     }
   }
 }
 
-const watch = async () => {
-  const changed = new Set<TargetName>()
-  let timer: ReturnType<typeof setTimeout> | undefined
-  console.log(`Watching ${names.map((name) => targets[name].json).join(', ')}`)
-
-  for await (const event of Deno.watchFs(names.map((name) => targets[name].json))) {
-    for (const path of event.paths) {
-      const name = names.find((entry) => path.endsWith(targets[entry].json))
-      if (!name) continue
-
-      changed.add(name)
-      if (timer) clearTimeout(timer)
-      timer = setTimeout(() => processChanged(changed), 250)
-    }
-  }
-}
-
-if (command === 'json') {
-  await writeJson(targetArg as TargetName)
-} else if (command === 'fields') {
-  console.log(stringify(fields(parseConf(await fetchText(target().url)))))
-} else if (command === 'pages') {
-  await updatePages()
-} else if (command === 'conf') {
-  await writeConf(targetArg as TargetName, outputArg)
-} else if (command === 'install') {
+export const watch = async () => {
   await installConf()
-  await installWorldserverService()
-  await ensureDefaultGuild()
-} else if (command === 'watch') {
-  await watch()
-} else {
-  throw Error(
-    'Usage: deno run --allow-net --allow-read --allow-write --allow-env tasks/config.ts json|fields|pages|conf|install|watch [target] [output]',
-  )
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const files = names.map((name) => `config/${name}.json`)
+  console.log(`Watching ${files.join(', ')}`)
+  for await (const event of Deno.watchFs(files)) {
+    for (const path of event.paths) {
+      const name = names.find((n) => path.endsWith(`config/${n}.json`))
+      if (!name) continue
+      changed.add(name)
+      timer && clearTimeout(timer)
+      timer = setTimeout(processChanged, 250)
+    }
+  }
+}
+
+if (import.meta.main) {
+  const [command, targetArg] = Deno.args
+  if (command === 'json') {
+    await writeJson(targetArg as TargetName)
+  } else if (command === 'fields') {
+    console.log(stringify(fields(parseConf(await fetchText(target(targetArg).url)))))
+  } else if (command === 'pages') {
+    await updatePages()
+  } else if (command === 'conf') {
+    await writeConf(targetArg as TargetName)
+  } else if (command === 'install') {
+    await installConf()
+    await installWorldserverService()
+    await ensureDefaultGuild()
+  } else if (command === 'watch') {
+    await watch()
+  } else {
+    throw Error(
+      'Usage: deno run --allow-net --allow-read --allow-write --allow-env tasks/config.ts json|fields|pages|conf|install|watch [target] [output]',
+    )
+  }
 }

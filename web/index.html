@@ -1,237 +1,237 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>19 PvP Logs</title>
     <style>
-    :root {
-      color-scheme: dark;
-      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
-    }
-
-    html {
-      min-height: 100%;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      min-height: 100dvh;
-      background: #101112;
-      color: #e6e1d8;
-      display: flex;
-      flex-direction: column;
-    }
-
-    footer {
-      position: sticky;
-      bottom: 0;
-      z-index: 10;
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 8px;
-      align-items: center;
-      overflow-x: auto;
-      padding: 10px;
-      background: #191b1d;
-      border-top: 1px solid #303236;
-    }
-
-    strong {
-      font: 600 13px/1.2 system-ui, sans-serif;
-      color: #f2c879;
-    }
-
-    input,
-    select,
-    button {
-      flex: 0 0 auto;
-      height: 34px;
-      box-sizing: border-box;
-      border: 1px solid #41444a;
-      background: #0c0d0e;
-      color: #f3f0ea;
-    }
-
-    input,
-    select {
-      min-width: 120px;
-      padding: 0 10px;
-    }
-
-    select,
-    button {
-      width: max-content;
-    }
-
-    #query {
-      flex: 1 1 140px;
-      width: 100%;
-      min-width: 140px;
-    }
-
-    button {
-      padding: 0 12px;
-      cursor: pointer;
-    }
-
-    main {
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      min-height: 100vh;
-      min-height: 100dvh;
-      flex: 1;
-      padding: 12px 10px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      font-size: 13px;
-      line-height: calc(1.45em - 3px);
-    }
-
-    .entry {
-      position: relative;
-      padding: 0px 10px 0px 164px;
-    }
-
-    .entry::before {
-      position: absolute;
-      left: 10px;
-      top: 2px;
-      content: attr(data-tag);
-      color: var(--tag-color, #cbbf9a);
-      font-weight: 700;
-    }
-
-    .entry::after {
-      position: absolute;
-      left: 82px;
-      top: 2px;
-      content: attr(data-time);
-      color: #7e858c;
-    }
-
-    .entry[data-log="server"] {
-      background: #10161e;
-      --tag-color: #7db1ff;
-    }
-    .entry[data-log="error"] {
-      background: #1b1111;
-      --tag-color: #ff8f8f;
-    }
-    .entry[data-log="service"] {
-      background: #17131f;
-      --tag-color: #c88cff;
-    }
-    .entry[data-log="all"] {
-      background: #131517;
-      --tag-color: #f2c879;
-    }
-    .entry[data-log="system"] {
-      background: #121418;
-      --tag-color: #d4d8df;
-    }
-
-    .entry.error {
-      --tag-color: #ff8f8f;
-    }
-
-    .entry[data-log="service"]::before {
-      color: #dcabff;
-    }
-    .entry[data-log="server"]::before {
-      color: #92c0ff;
-    }
-    .entry[data-log="error"]::before {
-      color: #ffaaa9;
-    }
-    .entry[data-log="all"]::before {
-      color: #ffe0a2;
-    }
-    .entry[data-log="system"]::before {
-      color: #e1e5ea;
-    }
-
-    .idle-spacer {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 120px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      color: #8f969e;
-      font: 600 12px/1.4 system-ui, sans-serif;
-    }
-
-    .idle-spacer[hidden] {
-      display: none;
-    }
-
-    ::highlight(ansi-black) {
-      color: #7f858b;
-    }
-    ::highlight(ansi-red) {
-      color: #ff8d8d;
-    }
-    ::highlight(ansi-green) {
-      color: #8ee0a1;
-    }
-    ::highlight(ansi-yellow) {
-      color: #ffd98f;
-    }
-    ::highlight(ansi-blue) {
-      color: #8cbcff;
-    }
-    ::highlight(ansi-magenta) {
-      color: #d8a4ff;
-    }
-    ::highlight(ansi-cyan) {
-      color: #85e0e6;
-    }
-    ::highlight(ansi-white) {
-      color: #eef1f3;
-    }
-    ::highlight(ansi-bright-black) {
-      color: #a5adb5;
-    }
-    ::highlight(ansi-bright-red) {
-      color: #ffb3b3;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-green) {
-      color: #b7f0c3;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-yellow) {
-      color: #ffe7ad;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-blue) {
-      color: #b8d2ff;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-magenta) {
-      color: #e3c0ff;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-cyan) {
-      color: #b9eff2;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-white) {
-      color: #ffffff;
-      font-weight: 600;
-    }
-
-    @media (max-width: 720px) {
-      #query {
-        min-width: 120px;
+      :root {
+        color-scheme: dark;
+        font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
       }
-    }
+
+      html {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: #101112;
+        color: #e6e1d8;
+        display: flex;
+        flex-direction: column;
+      }
+
+      footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        align-items: center;
+        overflow-x: auto;
+        padding: 10px;
+        background: #191b1d;
+        border-top: 1px solid #303236;
+      }
+
+      strong {
+        font: 600 13px/1.2 system-ui, sans-serif;
+        color: #f2c879;
+      }
+
+      input,
+      select,
+      button {
+        flex: 0 0 auto;
+        height: 34px;
+        box-sizing: border-box;
+        border: 1px solid #41444a;
+        background: #0c0d0e;
+        color: #f3f0ea;
+      }
+
+      input,
+      select {
+        min-width: 120px;
+        padding: 0 10px;
+      }
+
+      select,
+      button {
+        width: max-content;
+      }
+
+      #query {
+        flex: 1 1 140px;
+        width: 100%;
+        min-width: 140px;
+      }
+
+      button {
+        padding: 0 12px;
+        cursor: pointer;
+      }
+
+      main {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        min-height: 100vh;
+        min-height: 100dvh;
+        flex: 1;
+        padding: 12px 10px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 13px;
+        line-height: calc(1.45em - 3px);
+      }
+
+      .entry {
+        position: relative;
+        padding: 0px 10px 0px 164px;
+      }
+
+      .entry::before {
+        position: absolute;
+        left: 10px;
+        top: 2px;
+        content: attr(data-tag);
+        color: var(--tag-color, #cbbf9a);
+        font-weight: 700;
+      }
+
+      .entry::after {
+        position: absolute;
+        left: 82px;
+        top: 2px;
+        content: attr(data-time);
+        color: #7e858c;
+      }
+
+      .entry[data-log='server'] {
+        background: #10161e;
+        --tag-color: #7db1ff;
+      }
+      .entry[data-log='error'] {
+        background: #1b1111;
+        --tag-color: #ff8f8f;
+      }
+      .entry[data-log='service'] {
+        background: #17131f;
+        --tag-color: #c88cff;
+      }
+      .entry[data-log='all'] {
+        background: #131517;
+        --tag-color: #f2c879;
+      }
+      .entry[data-log='system'] {
+        background: #121418;
+        --tag-color: #d4d8df;
+      }
+
+      .entry.error {
+        --tag-color: #ff8f8f;
+      }
+
+      .entry[data-log='service']::before {
+        color: #dcabff;
+      }
+      .entry[data-log='server']::before {
+        color: #92c0ff;
+      }
+      .entry[data-log='error']::before {
+        color: #ffaaa9;
+      }
+      .entry[data-log='all']::before {
+        color: #ffe0a2;
+      }
+      .entry[data-log='system']::before {
+        color: #e1e5ea;
+      }
+
+      .idle-spacer {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        color: #8f969e;
+        font: 600 12px/1.4 system-ui, sans-serif;
+      }
+
+      .idle-spacer[hidden] {
+        display: none;
+      }
+
+      ::highlight(ansi-black) {
+        color: #7f858b;
+      }
+      ::highlight(ansi-red) {
+        color: #ff8d8d;
+      }
+      ::highlight(ansi-green) {
+        color: #8ee0a1;
+      }
+      ::highlight(ansi-yellow) {
+        color: #ffd98f;
+      }
+      ::highlight(ansi-blue) {
+        color: #8cbcff;
+      }
+      ::highlight(ansi-magenta) {
+        color: #d8a4ff;
+      }
+      ::highlight(ansi-cyan) {
+        color: #85e0e6;
+      }
+      ::highlight(ansi-white) {
+        color: #eef1f3;
+      }
+      ::highlight(ansi-bright-black) {
+        color: #a5adb5;
+      }
+      ::highlight(ansi-bright-red) {
+        color: #ffb3b3;
+        font-weight: 600;
+      }
+      ::highlight(ansi-bright-green) {
+        color: #b7f0c3;
+        font-weight: 600;
+      }
+      ::highlight(ansi-bright-yellow) {
+        color: #ffe7ad;
+        font-weight: 600;
+      }
+      ::highlight(ansi-bright-blue) {
+        color: #b8d2ff;
+        font-weight: 600;
+      }
+      ::highlight(ansi-bright-magenta) {
+        color: #e3c0ff;
+        font-weight: 600;
+      }
+      ::highlight(ansi-bright-cyan) {
+        color: #b9eff2;
+        font-weight: 600;
+      }
+      ::highlight(ansi-bright-white) {
+        color: #ffffff;
+        font-weight: 600;
+      }
+
+      @media (max-width: 720px) {
+        #query {
+          min-width: 120px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -275,339 +275,339 @@
       <button id="clear">Clear</button>
     </footer>
     <script type="module">
-    const api = 'https://19pvp.devazuka.com'
-    const output = document.querySelector('#output')
-    const idleSpacer = document.querySelector('#idle')
-    const query = document.querySelector('#query')
-    const raw = document.querySelector('#raw')
-    const path = document.querySelector('#path')
-    const logs = document.querySelector('#logs')
-    const lines = document.querySelector('#lines')
-    const priority = document.querySelector('#priority')
-    const range = document.querySelector('#range')
-    const ansiHighlights = new Map()
-    const supportsHighlights = Boolean(globalThis.CSS?.highlights && globalThis.Highlight && globalThis.Range)
-    const idleAfterMs = 30_000
-    const maxRows = 1_000
-    const maxBatch = 100
-    const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
-    let source
-    const sourceOptions = new Set(['all', 'server', 'service'])
-    const lineOptions = new Set(['100', '500', '1000', '5000', '10000', 'all'])
-    const priorityOptions = new Set(['', 'err', 'warning', 'notice', 'info', 'debug'])
-    const rangeOptions = new Set(['', 'today', 'week', 'month'])
-    const initialParams = new URL(location.href).searchParams
-    const initialLog = initialParams.get('log')
-    const initialLines = initialParams.get('lines')
-    const initialPriority = initialParams.get('priority') || ''
-    const initialRange = initialParams.get('range') || ''
-    let currentLog = sourceOptions.has(initialLog) ? initialLog : 'all'
-    let currentLines = lineOptions.has(initialLines) ? initialLines : '10000'
-    let currentPriority = priorityOptions.has(initialPriority) ? initialPriority : ''
-    let currentRange = rangeOptions.has(initialRange) ? initialRange : ''
-    let lastLogAt = 0
-    let pending = []
-    let pendingFrame = 0
+      const api = 'https://19pvp.devazuka.com'
+      const output = document.querySelector('#output')
+      const idleSpacer = document.querySelector('#idle')
+      const query = document.querySelector('#query')
+      const raw = document.querySelector('#raw')
+      const path = document.querySelector('#path')
+      const logs = document.querySelector('#logs')
+      const lines = document.querySelector('#lines')
+      const priority = document.querySelector('#priority')
+      const range = document.querySelector('#range')
+      const ansiHighlights = new Map()
+      const supportsHighlights = Boolean(globalThis.CSS?.highlights && globalThis.Highlight && globalThis.Range)
+      const idleAfterMs = 30_000
+      const maxRows = 1_000
+      const maxBatch = 100
+      const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+      let source
+      const sourceOptions = new Set(['all', 'server', 'service'])
+      const lineOptions = new Set(['100', '500', '1000', '5000', '10000', 'all'])
+      const priorityOptions = new Set(['', 'err', 'warning', 'notice', 'info', 'debug'])
+      const rangeOptions = new Set(['', 'today', 'week', 'month'])
+      const initialParams = new URL(location.href).searchParams
+      const initialLog = initialParams.get('log')
+      const initialLines = initialParams.get('lines')
+      const initialPriority = initialParams.get('priority') || ''
+      const initialRange = initialParams.get('range') || ''
+      let currentLog = sourceOptions.has(initialLog) ? initialLog : 'all'
+      let currentLines = lineOptions.has(initialLines) ? initialLines : '10000'
+      let currentPriority = priorityOptions.has(initialPriority) ? initialPriority : ''
+      let currentRange = rangeOptions.has(initialRange) ? initialRange : ''
+      let lastLogAt = 0
+      let pending = []
+      let pendingFrame = 0
 
-    const clearAnsiHighlights = () => {
-      if (!supportsHighlights) return
-      for (const name of ansiHighlights.keys()) CSS.highlights.delete(name)
-      ansiHighlights.clear()
-    }
-
-    const highlightName = (token) => `ansi-${token}`
-
-    const ensureHighlight = (name) => {
-      if (!supportsHighlights) return null
-      let highlight = ansiHighlights.get(name)
-      if (!highlight) {
-        highlight = new Highlight()
-        ansiHighlights.set(name, highlight)
-        CSS.highlights.set(name, highlight)
-      }
-      return highlight
-    }
-
-    const ansiToken = (codes) => {
-      const palette = {
-        30: 'black',
-        31: 'red',
-        32: 'green',
-        33: 'yellow',
-        34: 'blue',
-        35: 'magenta',
-        36: 'cyan',
-        37: 'white',
-        90: 'bright-black',
-        91: 'bright-red',
-        92: 'bright-green',
-        93: 'bright-yellow',
-        94: 'bright-blue',
-        95: 'bright-magenta',
-        96: 'bright-cyan',
-        97: 'bright-white',
-      }
-      for (const code of codes) {
-        if (palette[code]) return palette[code]
-      }
-      return ''
-    }
-
-    const renderAnsi = (row, raw) => {
-      const text = []
-      const ranges = []
-      const state = { bright: false, fg: '' }
-      const ansi = /\x1b\[([0-9;]*)m/g
-      let last = 0
-      let plainLength = 0
-
-      const currentHighlight = () => {
-        if (!state.fg) return ''
-        return state.bright ? `bright-${state.fg}` : state.fg
+      const clearAnsiHighlights = () => {
+        if (!supportsHighlights) return
+        for (const name of ansiHighlights.keys()) CSS.highlights.delete(name)
+        ansiHighlights.clear()
       }
 
-      const pushSegment = (segment) => {
-        if (!segment) return
-        const start = plainLength
-        text.push(segment)
-        plainLength += segment.length
-        const end = plainLength
-        const name = currentHighlight()
-        if (name) ranges.push({ start, end, name })
+      const highlightName = (token) => `ansi-${token}`
+
+      const ensureHighlight = (name) => {
+        if (!supportsHighlights) return null
+        let highlight = ansiHighlights.get(name)
+        if (!highlight) {
+          highlight = new Highlight()
+          ansiHighlights.set(name, highlight)
+          CSS.highlights.set(name, highlight)
+        }
+        return highlight
       }
 
-      for (let match = ansi.exec(raw); match; match = ansi.exec(raw)) {
-        pushSegment(raw.slice(last, match.index))
-
-        const codes = match[1].split(';').filter(Boolean).map(Number)
-        if (!codes.length) codes.push(0)
-
+      const ansiToken = (codes) => {
+        const palette = {
+          30: 'black',
+          31: 'red',
+          32: 'green',
+          33: 'yellow',
+          34: 'blue',
+          35: 'magenta',
+          36: 'cyan',
+          37: 'white',
+          90: 'bright-black',
+          91: 'bright-red',
+          92: 'bright-green',
+          93: 'bright-yellow',
+          94: 'bright-blue',
+          95: 'bright-magenta',
+          96: 'bright-cyan',
+          97: 'bright-white',
+        }
         for (const code of codes) {
-          if (code === 0) {
-            state.bright = false
-            state.fg = ''
-          } else if (code === 1) {
-            state.bright = true
-          } else if (code === 22) {
-            state.bright = false
-          } else if (code === 39) {
-            state.fg = ''
-            state.bright = false
-          } else if (code >= 30 && code <= 37) {
-            state.fg = ansiToken([code])
-            state.bright = false
-          } else if (code >= 90 && code <= 97) {
-            state.fg = ansiToken([code - 60])
-            state.bright = true
-          } else {
-            const token = ansiToken([code])
-            if (token) state.fg = token
-          }
+          if (palette[code]) return palette[code]
+        }
+        return ''
+      }
+
+      const renderAnsi = (row, raw) => {
+        const text = []
+        const ranges = []
+        const state = { bright: false, fg: '' }
+        const ansi = /\x1b\[([0-9;]*)m/g
+        let last = 0
+        let plainLength = 0
+
+        const currentHighlight = () => {
+          if (!state.fg) return ''
+          return state.bright ? `bright-${state.fg}` : state.fg
         }
 
-        last = match.index + match[0].length
+        const pushSegment = (segment) => {
+          if (!segment) return
+          const start = plainLength
+          text.push(segment)
+          plainLength += segment.length
+          const end = plainLength
+          const name = currentHighlight()
+          if (name) ranges.push({ start, end, name })
+        }
+
+        for (let match = ansi.exec(raw); match; match = ansi.exec(raw)) {
+          pushSegment(raw.slice(last, match.index))
+
+          const codes = match[1].split(';').filter(Boolean).map(Number)
+          if (!codes.length) codes.push(0)
+
+          for (const code of codes) {
+            if (code === 0) {
+              state.bright = false
+              state.fg = ''
+            } else if (code === 1) {
+              state.bright = true
+            } else if (code === 22) {
+              state.bright = false
+            } else if (code === 39) {
+              state.fg = ''
+              state.bright = false
+            } else if (code >= 30 && code <= 37) {
+              state.fg = ansiToken([code])
+              state.bright = false
+            } else if (code >= 90 && code <= 97) {
+              state.fg = ansiToken([code - 60])
+              state.bright = true
+            } else {
+              const token = ansiToken([code])
+              if (token) state.fg = token
+            }
+          }
+
+          last = match.index + match[0].length
+        }
+
+        pushSegment(raw.slice(last))
+
+        const node = document.createTextNode(text.join(''))
+        row.append(node)
+
+        for (const { start, end, name } of ranges) {
+          const highlight = ensureHighlight(highlightName(name))
+          if (!highlight) continue
+          const range = new Range()
+          range.setStart(node, start)
+          range.setEnd(node, end)
+          highlight.add(range)
+        }
       }
 
-      pushSegment(raw.slice(last))
-
-      const node = document.createTextNode(text.join(''))
-      row.append(node)
-
-      for (const { start, end, name } of ranges) {
-        const highlight = ensureHighlight(highlightName(name))
-        if (!highlight) continue
-        const range = new Range()
-        range.setStart(node, start)
-        range.setEnd(node, end)
-        highlight.add(range)
+      const pruneRows = () => {
+        while (output.childElementCount > maxRows) output.firstElementChild?.remove()
       }
-    }
 
-    const pruneRows = () => {
-      while (output.childElementCount > maxRows) output.firstElementChild?.remove()
-    }
+      const isNearBottom = () => window.innerHeight + scrollY >= document.body.scrollHeight - 80
 
-    const isNearBottom = () => window.innerHeight + scrollY >= document.body.scrollHeight - 80
+      const formatLogTime = (at) => at ? new Date(at).toLocaleTimeString() : ''
 
-    const formatLogTime = (at) => at ? new Date(at).toLocaleTimeString() : ''
-
-    const appendNow = (line, className = '', meta = {}) => {
-      idleSpacer.hidden = true
-      lastLogAt = Date.now()
-      const row = document.createElement('div')
-      const tag = ['all', 'error', 'server', 'service', 'system'].includes(className) ? className : 'system'
-      row.className = `entry${tag ? ` ${tag}` : ''}`
-      row.dataset.log = tag
-      row.dataset.tag = tag
-      row.dataset.time = formatLogTime(meta.at)
-      if (meta.priority !== undefined && meta.priority !== null) row.dataset.priority = meta.priority
-      if (meta.transport) row.dataset.transport = meta.transport
-      renderAnsi(row, line)
-      output.append(row)
-      pruneRows()
-    }
-
-    const flushPending = () => {
-      pendingFrame = 0
-      const shouldStick = document.activeElement !== query && isNearBottom()
-      pending.sort((a, b) => (a[2]?.at || 0) - (b[2]?.at || 0))
-      const batch = pending.splice(0, maxBatch)
-      for (const [line, className, meta] of batch) appendNow(line, className, meta)
-      if (shouldStick) scrollTo(0, document.body.scrollHeight)
-      if (pending.length) pendingFrame = requestAnimationFrame(flushPending)
-    }
-
-    const append = (line, className = '', meta = {}) => {
-      pending.push([line, className, meta])
-      if (pending.length > maxRows) pending = pending.slice(-maxRows)
-      if (!pendingFrame) pendingFrame = requestAnimationFrame(flushPending)
-    }
-
-    const resetOutput = () => {
-      pending = []
-      if (pendingFrame) cancelAnimationFrame(pendingFrame)
-      pendingFrame = 0
-      output.textContent = ''
-      clearAnsiHighlights()
-      lastLogAt = 0
-      idleSpacer.hidden = true
-    }
-
-    const formatElapsed = (elapsedMs) => {
-      const seconds = Math.max(1, Math.floor(elapsedMs / 1000))
-      if (seconds < 60) return relativeTime.format(-seconds, 'second')
-      const minutes = Math.floor(seconds / 60)
-      if (minutes < 60) return relativeTime.format(-minutes, 'minute')
-      const hours = Math.floor(minutes / 60)
-      return relativeTime.format(-hours, 'hour')
-    }
-
-    const updateIdleSpacer = () => {
-      if (!lastLogAt || document.activeElement === query) {
+      const appendNow = (line, className = '', meta = {}) => {
         idleSpacer.hidden = true
-        return
+        lastLogAt = Date.now()
+        const row = document.createElement('div')
+        const tag = ['all', 'error', 'server', 'service', 'system'].includes(className) ? className : 'system'
+        row.className = `entry${tag ? ` ${tag}` : ''}`
+        row.dataset.log = tag
+        row.dataset.tag = tag
+        row.dataset.time = formatLogTime(meta.at)
+        if (meta.priority !== undefined && meta.priority !== null) row.dataset.priority = meta.priority
+        if (meta.transport) row.dataset.transport = meta.transport
+        renderAnsi(row, line)
+        output.append(row)
+        pruneRows()
       }
-      const elapsedMs = Date.now() - lastLogAt
-      if (elapsedMs < idleAfterMs) {
+
+      const flushPending = () => {
+        pendingFrame = 0
+        const shouldStick = document.activeElement !== query && isNearBottom()
+        pending.sort((a, b) => (a[2]?.at || 0) - (b[2]?.at || 0))
+        const batch = pending.splice(0, maxBatch)
+        for (const [line, className, meta] of batch) appendNow(line, className, meta)
+        if (shouldStick) scrollTo(0, document.body.scrollHeight)
+        if (pending.length) pendingFrame = requestAnimationFrame(flushPending)
+      }
+
+      const append = (line, className = '', meta = {}) => {
+        pending.push([line, className, meta])
+        if (pending.length > maxRows) pending = pending.slice(-maxRows)
+        if (!pendingFrame) pendingFrame = requestAnimationFrame(flushPending)
+      }
+
+      const resetOutput = () => {
+        pending = []
+        if (pendingFrame) cancelAnimationFrame(pendingFrame)
+        pendingFrame = 0
+        output.textContent = ''
+        clearAnsiHighlights()
+        lastLogAt = 0
         idleSpacer.hidden = true
-        return
-      }
-      idleSpacer.textContent = `Last log ${formatElapsed(elapsedMs)}`
-      idleSpacer.hidden = false
-    }
-
-    const accepts = (data) => currentLog === 'all' || data.file === currentLog || data.type !== 'log'
-
-    const appendEvent = (data) => {
-      if (data.error) {
-        append(data.error, 'error')
-        return
       }
 
-      if (data.line) {
-        append(data.line, data.file || 'system', data)
-        return
+      const formatElapsed = (elapsedMs) => {
+        const seconds = Math.max(1, Math.floor(elapsedMs / 1000))
+        if (seconds < 60) return relativeTime.format(-seconds, 'second')
+        const minutes = Math.floor(seconds / 60)
+        if (minutes < 60) return relativeTime.format(-minutes, 'minute')
+        const hours = Math.floor(minutes / 60)
+        return relativeTime.format(-hours, 'hour')
       }
 
-      if (data.message) {
-        append(data.message, ['worldserver', 'api'].includes(data.type) ? 'system' : data.type || 'system')
-        return
+      const updateIdleSpacer = () => {
+        if (!lastLogAt || document.activeElement === query) {
+          idleSpacer.hidden = true
+          return
+        }
+        const elapsedMs = Date.now() - lastLogAt
+        if (elapsedMs < idleAfterMs) {
+          idleSpacer.hidden = true
+          return
+        }
+        idleSpacer.textContent = `Last log ${formatElapsed(elapsedMs)}`
+        idleSpacer.hidden = false
       }
 
-      append(JSON.stringify(data), 'system')
-    }
+      const accepts = (data) => currentLog === 'all' || data.file === currentLog || data.type !== 'log'
 
-    const setUrlParam = (name, value, defaultValue = '') => {
-      const url = new URL(location.href)
-      value === defaultValue ? url.searchParams.delete(name) : url.searchParams.set(name, value)
-      history.replaceState(null, '', url)
-    }
+      const appendEvent = (data) => {
+        if (data.error) {
+          append(data.error, 'error')
+          return
+        }
 
-    const logParams = (extra = {}) => {
-      const params = new URLSearchParams({
-        log: currentLog,
-        lines: currentLines,
-        ...extra,
-      })
-      if (currentPriority) params.set('priority', currentPriority)
-      if (currentRange) params.set('range', currentRange)
-      return params
-    }
+        if (data.line) {
+          append(data.line, data.file || 'system', data)
+          return
+        }
 
-    const connectLogs = () => {
-      logs.value = currentLog
-      lines.value = currentLines
-      priority.value = currentPriority
-      range.value = currentRange
-      source?.close()
-      resetOutput()
-      source = new EventSource(`${api}/logs/events?${logParams()}`)
-      source.onmessage = (event) => {
-        const data = JSON.parse(event.data)
-        if (data.type === 'heartbeat') return updateIdleSpacer()
-        if (!accepts(data)) return
-        appendEvent(data)
+        if (data.message) {
+          append(data.message, ['worldserver', 'api'].includes(data.type) ? 'system' : data.type || 'system')
+          return
+        }
+
+        append(JSON.stringify(data), 'system')
       }
-      source.onerror = () => {
-        if (source?.readyState === EventSource.CLOSED) append('Log stream closed', 'error')
-      }
-    }
 
-    document.querySelector('#search').onclick = async () => {
-      source?.close()
-      resetOutput()
-      const lines = await fetch(`${api}/logs/search?${logParams({ q: query.value })}`)
+      const setUrlParam = (name, value, defaultValue = '') => {
+        const url = new URL(location.href)
+        value === defaultValue ? url.searchParams.delete(name) : url.searchParams.set(name, value)
+        history.replaceState(null, '', url)
+      }
+
+      const logParams = (extra = {}) => {
+        const params = new URLSearchParams({
+          log: currentLog,
+          lines: currentLines,
+          ...extra,
+        })
+        if (currentPriority) params.set('priority', currentPriority)
+        if (currentRange) params.set('range', currentRange)
+        return params
+      }
+
+      const connectLogs = () => {
+        logs.value = currentLog
+        lines.value = currentLines
+        priority.value = currentPriority
+        range.value = currentRange
+        source?.close()
+        resetOutput()
+        source = new EventSource(`${api}/logs/events?${logParams()}`)
+        source.onmessage = (event) => {
+          const data = JSON.parse(event.data)
+          if (data.type === 'heartbeat') return updateIdleSpacer()
+          if (!accepts(data)) return
+          appendEvent(data)
+        }
+        source.onerror = () => {
+          if (source?.readyState === EventSource.CLOSED) append('Log stream closed', 'error')
+        }
+      }
+
+      document.querySelector('#search').onclick = async () => {
+        source?.close()
+        resetOutput()
+        const lines = await fetch(`${api}/logs/search?${logParams({ q: query.value })}`)
+          .then((res) => res.json())
+        lines.forEach((line) => append(line, 'system'))
+      }
+
+      const action = async (name) => {
+        const method = name === 'status' ? 'GET' : 'POST'
+        const result = await fetch(`${api}/worldserver/${name}`, { method }).then((res) => res.json())
+        append(`${name}: ${JSON.stringify(result)}`)
+      }
+
+      raw.onclick = () => {
+        const log = currentLog === 'all' ? 'server' : currentLog
+        open(`${api}/logs/file?${logParams({ log })}`, '_blank', 'noopener')
+      }
+      document.querySelector('#clear').onclick = () => {
+        resetOutput()
+      }
+      logs.onchange = () => {
+        currentLog = logs.value
+        setUrlParam('log', currentLog, 'all')
+        connectLogs()
+      }
+      lines.onchange = () => {
+        currentLines = lines.value
+        setUrlParam('lines', currentLines, '10000')
+        connectLogs()
+      }
+      priority.onchange = () => {
+        currentPriority = priority.value
+        setUrlParam('priority', currentPriority)
+        connectLogs()
+      }
+      range.onchange = () => {
+        currentRange = range.value
+        setUrlParam('range', currentRange)
+        connectLogs()
+      }
+      document.querySelector('#status').onclick = () => action('status')
+      document.querySelector('#start').onclick = () => action('start')
+      document.querySelector('#stop').onclick = () => action('stop')
+      document.querySelector('#kill').onclick = () => action('kill')
+      query.onkeydown = (event) => event.key === 'Enter' && document.querySelector('#search').click()
+
+      fetch(`${api}/logs/info`)
         .then((res) => res.json())
-      lines.forEach((line) => append(line, 'system'))
-    }
+        .then(() => path.textContent = 'Server logs')
+        .catch(() => path.textContent = 'Server logs')
 
-    const action = async (name) => {
-      const method = name === 'status' ? 'GET' : 'POST'
-      const result = await fetch(`${api}/worldserver/${name}`, { method }).then((res) => res.json())
-      append(`${name}: ${JSON.stringify(result)}`)
-    }
-
-    raw.onclick = () => {
-      const log = currentLog === 'all' ? 'server' : currentLog
-      open(`${api}/logs/file?${logParams({ log })}`, '_blank', 'noopener')
-    }
-    document.querySelector('#clear').onclick = () => {
-      resetOutput()
-    }
-    logs.onchange = () => {
-      currentLog = logs.value
-      setUrlParam('log', currentLog, 'all')
       connectLogs()
-    }
-    lines.onchange = () => {
-      currentLines = lines.value
-      setUrlParam('lines', currentLines, '10000')
-      connectLogs()
-    }
-    priority.onchange = () => {
-      currentPriority = priority.value
-      setUrlParam('priority', currentPriority)
-      connectLogs()
-    }
-    range.onchange = () => {
-      currentRange = range.value
-      setUrlParam('range', currentRange)
-      connectLogs()
-    }
-    document.querySelector('#status').onclick = () => action('status')
-    document.querySelector('#start').onclick = () => action('start')
-    document.querySelector('#stop').onclick = () => action('stop')
-    document.querySelector('#kill').onclick = () => action('kill')
-    query.onkeydown = (event) => event.key === 'Enter' && document.querySelector('#search').click()
 
-    fetch(`${api}/logs/info`)
-      .then((res) => res.json())
-      .then(() => path.textContent = 'Server logs')
-      .catch(() => path.textContent = 'Server logs')
-
-    connectLogs()
-
-    setInterval(updateIdleSpacer, 1000)
+      setInterval(updateIdleSpacer, 1000)
     </script>
   </body>
 </html>

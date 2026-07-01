@@ -1,5 +1,6 @@
 import { TextLineStream } from '@std/streams'
 import { cors, json, runCommand, sse } from './utils.ts'
+import { watch } from '../tasks/config.ts'
 
 const serviceJournalQuery = `_PID=${Deno.pid}`
 const worldserverServiceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
@@ -356,7 +357,7 @@ export const worldserverStop = async (signal: Deno.Signal = 'SIGTERM') => {
   return json(result)
 }
 
-await runCommand('deno', ['task', 'conf:all'])
+void watch()
 
 export default {
   async fetch(req: Request) {
