@@ -305,7 +305,7 @@
       const initialPriority = initialParams.get('priority') || ''
       const initialRange = initialParams.get('range') || ''
       let currentLog = sourceOptions.has(initialLog) ? initialLog : 'all'
-      let currentLines = lineOptions.has(initialLines) ? initialLines : '10000'
+      let currentLines = lineOptions.has(initialLines) ? initialLines : '500'
       let currentPriority = priorityOptions.has(initialPriority) ? initialPriority : ''
       let currentRange = rangeOptions.has(initialRange) ? initialRange : ''
       let lastLogAt = 0
@@ -594,7 +594,7 @@
       }
       lines.onchange = () => {
         currentLines = lines.value
-        setUrlParam('lines', currentLines, '10000')
+        setUrlParam('lines', currentLines, '500')
         connectLogs()
       }
       priority.onchange = () => {

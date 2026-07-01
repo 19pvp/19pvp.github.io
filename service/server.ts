@@ -189,7 +189,7 @@ const journalctl = (
   } = {},
 ) => new JournalLines(sourceArgs, options)
 
-const defaultLogLines = 10_000
+const defaultLogLines = 500
 const lineOptions = new Set(['100', '500', '1000', '5000', '10000', 'all'])
 const priorityRanges = new Map([
   ['emerg', '0'],
@@ -350,7 +350,6 @@ export const logFile = async (req: Request) => {
 export const logSearch = async (req: Request) => {
   const url = new URL(req.url)
   const query = url.searchParams.get('q') || ''
-  if (!query) return json([])
   const log = url.searchParams.get('log')
   const options = logOptions(url)
   const sources = journalSources(log)
@@ -359,7 +358,7 @@ export const logSearch = async (req: Request) => {
   try {
     const lines: string[] = []
 
-    using output = journalctl(sourceArgs(sources), { ...options, grep: query })
+    using output = journalctl(sourceArgs(sources), { ...options, grep: query || undefined })
     for await (const entry of output) {
       if (!isWorldserverPrompt(entry)) lines.push(entry.line)
     }
