@@ -34,6 +34,7 @@ export const runCommand = async (
   options: Omit<Deno.CommandOptions, 'args'> & { okCodes?: number[] } = {},
 ) => {
   const { okCodes = [0], ...commandOptions } = options
+  console.log('$', command, ...args.map((s) => JSON.stringify(s)))
   const result = await new Deno.Command(command, {
     ...commandOptions,
     args,
