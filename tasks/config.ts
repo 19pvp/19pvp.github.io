@@ -101,10 +101,25 @@ const writeConf = async (name: TargetName) => {
   console.log(`Wrote ${output}`)
 }
 
+export const installLuaScripts = async () => {
+  const output = bin('lua_scripts')
+  for await (const entry of Deno.readDir(output)) {
+    if (entry.isFile && entry.name.endsWith('.lua')) await Deno.remove(`${output}/${entry.name}`)
+  }
+
+  for await (const entry of Deno.readDir('core_scripts')) {
+    if (!entry.isFile || !entry.name.endsWith('.lua')) continue
+    await Deno.copyFile(`core_scripts/${entry.name}`, `${output}/${entry.name}`)
+  }
+
+  console.log(`Installed Lua scripts to ${output}`)
+}
+
 export const installConf = async () => {
   for (const name of names) {
     await writeConf(name)
   }
+  await installLuaScripts()
 }
 
 const installWorldserverService = async () => {
@@ -242,6 +257,7 @@ const reload = async (name: TargetName) => {
 }
 
 const changed = new Set<TargetName>()
+let luaScriptsChanged = false
 const processChanged = async () => {
   for (const name of [...changed]) {
     changed.delete(name)
@@ -260,18 +276,35 @@ const processChanged = async () => {
       console.log(`${name} unchanged`)
     }
   }
+
+  if (luaScriptsChanged) {
+    luaScriptsChanged = false
+    await installLuaScripts()
+    try {
+      await reload('ale')
+    } catch (err) {
+      console.warn('unable to reload ale', err)
+    }
+  }
 }
 
 export const watch = async () => {
   await installConf()
   let timer: ReturnType<typeof setTimeout> | undefined
   const files = names.map((name) => `config/${name}.json`)
-  console.log(`Watching ${files.join(', ')}`)
-  for await (const event of Deno.watchFs(files)) {
+  const luaScriptsPath = 'core_scripts'
+  console.log(`Watching ${[...files, luaScriptsPath].join(', ')}`)
+  for await (const event of Deno.watchFs([...files, luaScriptsPath])) {
     for (const path of event.paths) {
       const name = names.find((n) => path.endsWith(`config/${n}.json`))
-      if (!name) continue
-      changed.add(name)
+      if (name) {
+        changed.add(name)
+      } else if (path.endsWith('.lua') && path.includes(luaScriptsPath)) {
+        luaScriptsChanged = true
+      } else {
+        continue
+      }
+
       timer && clearTimeout(timer)
       timer = setTimeout(processChanged, 250)
     }
@@ -288,6 +321,8 @@ if (import.meta.main) {
     await updatePages()
   } else if (command === 'conf') {
     await writeConf(targetArg as TargetName)
+  } else if (command === 'lua') {
+    await installLuaScripts()
   } else if (command === 'install') {
     await installConf()
     await installWorldserverService()
@@ -296,7 +331,7 @@ if (import.meta.main) {
     await watch()
   } else {
     throw Error(
-      'Usage: deno run --allow-net --allow-read --allow-write --allow-env tasks/config.ts json|fields|pages|conf|install|watch [target] [output]',
+      'Usage: deno run --allow-net --allow-read --allow-write --allow-env tasks/config.ts json|fields|pages|conf|lua|install|watch [target] [output]',
     )
   }
 }
