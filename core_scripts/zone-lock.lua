@@ -1,3 +1,9 @@
+local restricted_maps = {
+  [0] = true, -- vanilla
+  [1] = true, -- vanilla
+  [530] = true, -- BC
+}
+
 local allowed_zones = {
   [4378] = true, -- Dalaran Arena
   [4406] = true, -- The Ring of Valor
@@ -24,7 +30,7 @@ local TeleportStartingZone  = Teleport(530, 4115.9697, 3058.874, 339.4637, 1.934
 
 function isPlayerAllowed(player)
   local map = player:GetMapId()
-  if map ~= 0 and map ~= 1 then return true end
+  if not restricted_maps[map] then return true end
   local zone = player:GetZoneId()
   if allowed_zones[zone] then return true end
   local areas = allowed_areas[zone]
@@ -46,7 +52,7 @@ function restrictPlayerArea(player)
     player:RemoveAura(AURA_MIST)
     return
   end
-  if not player:IsGM() and not player:GetMapId() ~= 0 then
+  if not player:IsGM() and restricted_maps[map] then
     player:AddAura(AURA_ASPHYXIATION, player)
     player:AddAura(AURA_MIST, player)
   end

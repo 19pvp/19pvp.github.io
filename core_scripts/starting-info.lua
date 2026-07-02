@@ -17,18 +17,15 @@ starting_info.spells = {
 }
 
 starting_info.items = {
-  [DRUID] = { { item_id = 4368, slot = 0 }, { item_id = 15019, slot = 2 }, { item_id = 4244, slot = 4 }, { item_id = 23408, slot = 8 }, { item_id = 15405, slot = 9 }, { item_id = 16608, slot = 5 }, { item_id = 2986, slot = 6 }, { item_id = 10653, slot = 7 }, { item_id = 1440, slot = 15 }, { item_id = 15866, slot = 16 }, { item_id = 14745, slot = 14 }, { item_id = 7005, slot = nil }, { item_id = 2901, slot = nil }, { item_id = 6256, slot = nil } },
-  [HUNTER] = { { item_id = 4368, slot = 0 }, { item_id = 10405, slot = 2 }, { item_id = 28157, slot = 4 }, { item_id = 23408, slot = 8 }, { item_id = 15405, slot = 9 }, { item_id = 26026, slot = 5 }, { item_id = 2986, slot = 6 }, { item_id = 10653, slot = 7 }, { item_id = 1220, slot = 15 }, { item_id = 11304, slot = 17 }, { item_id = 6179, slot = 14 }, { item_id = 3573, slot = nil }, { item_id = 2515, slot = nil }, { item_id = 7005, slot = nil }, { item_id = 2901, slot = nil }, { item_id = 6256, slot = nil } },
-  [MAGE] = { { item_id = 4368, slot = 0 }, { item_id = 14170, slot = 2 }, { item_id = 26005, slot = 4 }, { item_id = 23407, slot = 8 }, { item_id = 1304, slot = 9 }, { item_id = 26013, slot = 5 }, { item_id = 26007, slot = 6 }, { item_id = 26011, slot = 7 }, { item_id = 3848, slot = 15 }, { item_id = 7507, slot = 16 }, { item_id = 8071, slot = 17 }, { item_id = 1190, slot = 14 }, { item_id = 7005, slot = nil }, { item_id = 2901, slot = nil }, { item_id = 6256, slot = nil } },
-  [PALADIN] = { { item_id = 4368, slot = 0 }, { item_id = 15505, slot = 2 }, { item_id = 6731, slot = 4 }, { item_id = 23406, slot = 8 }, { item_id = 28163, slot = 9 }, { item_id = 26038, slot = 5 }, { item_id = 28161, slot = 6 }, { item_id = 2910, slot = 7 }, { item_id = 1440, slot = 15 }, { item_id = 24334, slot = 16 }, { item_id = 14745, slot = 14 }, { item_id = 7005, slot = nil }, { item_id = 2901, slot = nil }, { item_id = 6256, slot = nil } },
-  [PRIEST] = { { item_id = 4368, slot = 0 }, { item_id = 14170, slot = 2 }, { item_id = 26005, slot = 4 }, { item_id = 23407, slot = 8 }, { item_id = 1304, slot = 9 }, { item_id = 26013, slot = 5 }, { item_id = 26007, slot = 6 }, { item_id = 26011, slot = 7 }, { item_id = 27641, slot = 15 }, { item_id = 8071, slot = 17 }, { item_id = 1190, slot = 14 }, { item_id = 7005, slot = nil }, { item_id = 2901, slot = nil }, { item_id = 6256, slot = nil } },
-  [ROGUE] = { { item_id = 4368, slot = 0 }, { item_id = 10405, slot = 2 }, { item_id = 28157, slot = 4 }, { item_id = 23408, slot = 8 }, { item_id = 5629, slot = 9 }, { item_id = 26026, slot = 5 }, { item_id = 7282, slot = 6 }, { item_id = 10653, slot = 7 }, { item_id = 29583, slot = 15 }, { item_id = 899, slot = 16 }, { item_id = 3040, slot = 17 }, { item_id = 2516, slot = nil }, { item_id = 6179, slot = 14 }, { item_id = 7005, slot = nil }, { item_id = 2901, slot = nil }, { item_id = 6256, slot = nil } },
-  [SHAMAN] = { { item_id = 4368, slot = 0 }, { item_id = 15019, slot = 2 }, { item_id = 4244, slot = 4 }, { item_id = 23408, slot = 8 }, { item_id = 15405, slot = 9 }, { item_id = 26026, slot = 5 }, { item_id = 2986, slot = 6 }, { item_id = 10653, slot = 7 }, { item_id = 1440, slot = 15 }, { item_id = 24334, slot = 16 }, { item_id = 1190, slot = 14 }, { item_id = 46978, slot = 17 }, { item_id = 7005, slot = nil }, { item_id = 2901, slot = nil }, { item_id = 6256, slot = nil } },
-  [WARLOCK] = { { item_id = 4368, slot = 0 }, { item_id = 14170, slot = 2 }, { item_id = 6263, slot = 4 }, { item_id = 23407, slot = 8 }, { item_id = 1304, slot = 9 }, { item_id = 26013, slot = 5 }, { item_id = 26007, slot = 6 }, { item_id = 26011, slot = 7 }, { item_id = 27641, slot = 15 }, { item_id = 8071, slot = 17 }, { item_id = 1190, slot = 14 }, { item_id = 7005, slot = nil }, { item_id = 2901, slot = nil }, { item_id = 6256, slot = nil } },
-  [WARRIOR] = { { item_id = 4368, slot = 0 }, { item_id = 15505, slot = 2 }, { item_id = 6731, slot = 4 }, { item_id = 23406, slot = 8 }, { item_id = 6481, slot = 9 }, { item_id = 26038, slot = 5 }, { item_id = 26033, slot = 6 }, { item_id = 2910, slot = 7 }, { item_id = 5626, slot = 15 }, { item_id = 3040, slot = 17 }, { item_id = 14745, slot = 14 }, { item_id = 2516, slot = nil }, { item_id = 7005, slot = nil }, { item_id = 2901, slot = nil }, { item_id = 6256, slot = nil } },
-
-  [DEATHKNIGHT] = {},
-
+  [DRUID] = { 4368, 15019, 4244, 23408, 15405, 16608, 2986, 10653, 1440, 15866, 14745, 7005, 2901, 6256 },
+  [HUNTER] = { 4368, 10405, 28157, 23408, 15405, 26026, 2986, 10653, 1220, 11304, 6179, 3573, 2515, 7005, 2901, 6256 },
+  [MAGE] = { 4368, 14170, 26005, 23407, 1304, 26013, 26007, 26011, 3848, 7507, 8071, 1190, 7005, 2901, 6256 },
+  [PALADIN] = { 4368, 15505, 6731, 23406, 28163, 26038, 28161, 2910, 1440, 24334, 14745, 7005, 2901, 6256 },
+  [PRIEST] = { 4368, 14170, 26005, 23407, 1304, 26013, 26007, 26011, 27641, 8071, 1190, 7005, 2901, 6256 },
+  [ROGUE] = { 4368, 10405, 28157, 23408, 5629, 26026, 7282, 10653, 29583, 899, 3040, 2516, 6179, 7005, 2901, 6256 },
+  [SHAMAN] = { 4368, 15019, 4244, 23408, 15405, 26026, 2986, 10653, 1440, 24334, 1190, 46978, 7005, 2901, 6256 },
+  [WARLOCK] = { 4368, 14170, 6263, 23407, 1304, 26013, 26007, 26011, 27641, 8071, 1190, 7005, 2901, 6256 },
+  [WARRIOR] = { 4368, 15505, 6731, 23406, 6481, 26038, 26033, 2910, 5626, 3040, 14745, 2516, 7005, 2901, 6256 },
 }
 
 return starting_info
