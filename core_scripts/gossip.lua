@@ -7,6 +7,15 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, que
   if quest:GetId() == 777001 then player:LearnSpell(55428) end
 end)
 
+local function validateOnTrigger(event, player, creature)
+  player:KilledMonsterCredit(creature:GetEntry())
+  return false
+end
+
+RegisterCreatureGossipEvent(19538, ON_HELLO, validateOnTrigger) -- Dealer Senzik's <Gems Merchant>
+RegisterCreatureGossipEvent(19537, ON_HELLO, validateOnTrigger) -- Dealer Malij <Enchanter Merchant>
+RegisterCreatureGossipEvent(22427, ON_HELLO, validateOnTrigger) -- Zarevhi <Arcane Healer>
+
 -- CreatureGossipEvents
 local ON_HELLO = 1
 local ON_SELECT = 2
