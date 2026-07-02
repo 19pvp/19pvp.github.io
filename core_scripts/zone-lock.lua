@@ -15,7 +15,8 @@ local allowed_zones = {
 
 local allowed_areas = {
   [3523] = { -- Netherstorm
-    [3875] = true, -- Ecodome Skyperch
+    [3875] = true, -- Eco-Dome Skyperch
+    [3876] = true, -- Eco-Dome Sutheron
     [3738] = true, -- Stormspire
   },
 }
@@ -29,6 +30,7 @@ local TeleportMainGraveyard = Teleport(530, 4370.4556, 3096.8328, 132.97714, 3.5
 local TeleportStartingZone  = Teleport(530, 4115.9697, 3058.874, 339.4637, 1.9342613)
 
 function isPlayerAllowed(player)
+  if player:IsGM() then return true end
   local map = player:GetMapId()
   if not restricted_maps[map] then return true end
   local zone = player:GetZoneId()
@@ -37,9 +39,9 @@ function isPlayerAllowed(player)
   return areas ~= nil and areas[player:GetAreaId()]
 end
 
+local AURA_MIST = 54119
 local AURA_PREPARATION = 44521
 local AURA_ASPHYXIATION = 71665
-local AURA_MIST = 54119
 function resetCooldownInBattleground(player)
   if player:InBattleground() and player:HasAura(AURA_PREPARATION) then
     player:RemoveArenaSpellCooldowns()
@@ -48,11 +50,14 @@ end
 
 function restrictPlayerArea(player)
   if isPlayerAllowed(player) then
-    player:RemoveAura(AURA_ASPHYXIATION)
-    player:RemoveAura(AURA_MIST)
+    if player:HasAura(AURA_ASPHYXIATION) then
+      player:RemoveAura(AURA_ASPHYXIATION)
+      player:RemoveAura(AURA_MIST)
+    end
     return
   end
-  if not player:IsGM() and restricted_maps[map] then
+
+  if not player:HasAura(AURA_ASPHYXIATION) then
     player:AddAura(AURA_ASPHYXIATION, player)
     player:AddAura(AURA_MIST, player)
   end
@@ -61,6 +66,10 @@ end
 RegisterPlayerEvent(PLAYER_EVENT_ON_UPDATE_ZONE, function (event, player, zone, area)
   restrictPlayerArea(player)
   resetCooldownInBattleground(player)
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_UPDATE_AREA, function (event, player, oldArea, newArea)
+  restrictPlayerArea(player)
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function (event, player)
@@ -85,12 +94,12 @@ end)
 RegisterPlayerEvent(PLAYER_EVENT_ON_KILL_PLAYER, function (event, killer, killed)
   if killer:GetAccountId() == killed:GetAccountId() then return end
   if killer:InBattleground() or killer:InArena() then return end
-  SendWebEvent('PVP_KILL', player, {
+  SendWebEvent('PVP_KILL', killer, {
     victim = FormatPlayer(killed),
-    map = player:GetMapId(),
-    x = player:GetX(),
-    y = player:GetY(),
-    z = player:GetZ(),
+    map = killed:GetMapId(),
+    x = killed:GetX(),
+    y = killed:GetY(),
+    z = killed:GetZ(),
   })
   killer:AddItem(5075) -- blood shard
 end)
@@ -99,7 +108,7 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
   local mapId = bg:GetMapId()
   local map = GetMapById(mapId, instanceId)
   if not map then return end
-  local tokenId = (map:IsArena() and 37836) or (map:isBattleground() and 20558)
+  local tokenId = (map:IsArena() and 37836) or (map:IsBattleground() and 20558)
   if not tokenId then return end
   for _, player in ipairs(map:GetPlayers()) do
     if player:GetTeam() == winner then
@@ -109,4 +118,3 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
     end
   end
 end)
-
