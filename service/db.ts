@@ -12,6 +12,15 @@ import { Client, configLogger } from 'mysql'
 
 export type SqlValue = string | number | bigint | boolean | Date | null | undefined
 export type SqlRow = Record<string, unknown>
+type SqlConnection = {
+  query: (query: string, args?: SqlValue[]) => Promise<unknown>
+  execute: (query: string, args?: SqlValue[]) => Promise<unknown>
+}
+class RollbackValidation extends Error {
+  constructor() {
+    super('rollback validation')
+  }
+}
 
 let db: Client | undefined
 
@@ -48,6 +57,30 @@ export const sqlRaw = async (query: string, args: SqlValue[] = []): Promise<SqlR
     return result as SqlRow[]
   } catch (err) {
     console.log(red(sql), args)
+    throw err
+  }
+}
+
+const executeRaw = async (connection: SqlConnection, sql: string, args: SqlValue[] = []) => {
+  return sql.slice(0, 6).toUpperCase() === 'SELECT'
+    ? await connection.query(sql, args)
+    : await connection.execute(sql, args)
+}
+
+export const sqlTransaction = async (statements: string[], rollback = true) => {
+  const db = await database() as Client & {
+    transaction: <T>(fn: (connection: SqlConnection) => Promise<T>) => Promise<T>
+  }
+
+  try {
+    await db.transaction(async (connection) => {
+      for (const statement of statements) {
+        await executeRaw(connection, statement)
+      }
+      if (rollback) throw new RollbackValidation()
+    })
+  } catch (err) {
+    if (err instanceof RollbackValidation) return
     throw err
   }
 }

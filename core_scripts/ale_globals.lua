@@ -29,6 +29,30 @@ SEC_MODERATOR      = 1
 SEC_GAMEMASTER     = 2
 SEC_ADMINISTRATOR  = 3
 SEC_CONSOLE        = 4 -- must be always last in list, accounts must have less security level always also
+
+local function ReadFile(path)
+  local file = io.open(path, "r")
+  if file == nil then return nil end
+  local content = file:read("*a")
+  file:close()
+  return content
+end
+
+function WorldDBLoadFile(name)
+  if type(WorldDBExecute) ~= "function" then
+    print("WorldDBLoadFile: WorldDBExecute is unavailable")
+    return false
+  end
+
+  local sql = ReadFile("lua_scripts/"..name) or ReadFile(name)
+  if sql == nil then
+    print("WorldDBLoadFile: unable to read "..name)
+    return false
+  end
+
+  WorldDBExecute(sql)
+  return true
+end
 --------------------------------------------------------
 --[[
      OBJECT FIELDS

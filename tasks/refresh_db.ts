@@ -3,6 +3,8 @@ import { openDBC } from '../dbc.ts'
 import { sqlRaw } from '../service/db.ts'
 
 const _config = config
+const worldDb = Deno.env.get('WORLD_DB') || '19pvp_world'
+if (!/^[a-zA-Z0-9_]+$/.test(worldDb)) throw Error(`invalid WORLD_DB ${worldDb}`)
 
 type GSheetData = {
   ITEM: { ID: string }[]
@@ -42,8 +44,8 @@ SELECT
   item.RandomProperty randomProperty,
   suffix.ench suffixId,
   suffix.chance chance
-FROM acore_world.item_template item
-LEFT JOIN acore_world.item_enchantment_template suffix
+FROM \`${worldDb}\`.item_template item
+LEFT JOIN \`${worldDb}\`.item_enchantment_template suffix
   ON suffix.entry = item.RandomSuffix
 WHERE item.entry IN (${itemIds.map(() => '?').join(', ')})
 ORDER BY item.entry, suffix.chance DESC, suffix.ench

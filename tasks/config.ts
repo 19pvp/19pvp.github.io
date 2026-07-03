@@ -104,11 +104,14 @@ const writeConf = async (name: TargetName) => {
 export const installLuaScripts = async () => {
   const output = bin('lua_scripts')
   for await (const entry of Deno.readDir(output)) {
-    if (entry.isFile && entry.name.endsWith('.lua')) await Deno.remove(`${output}/${entry.name}`)
+    if (entry.isFile && (entry.name.endsWith('.lua') || entry.name.endsWith('.sql'))) {
+      await Deno.remove(`${output}/${entry.name}`)
+    }
   }
 
   for await (const entry of Deno.readDir('core_scripts')) {
-    if (!entry.isFile || !entry.name.endsWith('.lua')) continue
+    if (!entry.isFile) continue
+    if (!entry.name.endsWith('.lua') && !entry.name.endsWith('.sql')) continue
     await Deno.copyFile(`core_scripts/${entry.name}`, `${output}/${entry.name}`)
   }
 
