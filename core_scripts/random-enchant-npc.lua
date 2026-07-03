@@ -2,19 +2,26 @@ require("random-enchant-db")
 
 local NPC_RANDOM_ENCHANTER = 777100
 local GOSSIP_TEXT = 777100
-local ITEM_GOSSIP_MENU = 777101
-local ENCHANT_GOSSIP_MENU = 777200
 local ON_HELLO = 1
 local ON_SELECT = 2
 
-local ICON_DOT = 10
-local ITEM_MENU_SENDER = 1
-local ENCHANT_MENU_SENDER = 100
+local ICON_GOSSIP = 7
+local ITEM_MENU_SENDER = 100
+local ENCHANT_MENU_SENDER = 101
+local BACK_MENU_SENDER = 102
+local ENCHANT_MENU_OFFSET = 1000
 
-local TOKEN_ITEM_ID = 40752
-local TOKEN_NAME = GetItemTemplate(TOKEN_ITEM_ID):GetName()
-local TOKEN_COST = 1
 local ITEM_ICON_SIZE = 32
+local QUALITY_COST_MULTIPLIER = {
+  [0] = 1,
+  [1] = 1,
+  [2] = 2,
+  [3] = 4,
+  [4] = 8,
+  [5] = 16,
+  [6] = 32,
+  [7] = 64,
+}
 
 local EQUIPMENT_SLOTS = {
   SLOT_HEAD,
@@ -54,16 +61,9 @@ local function itemLabel(item)
   return itemIcon(item, ITEM_ICON_SIZE)..item:GetItemLink()
 end
 
-local function canPay(player)
-  if TOKEN_COST == 0 then return true end
-  return TOKEN_ITEM_ID > 0 and player:HasItem(TOKEN_ITEM_ID, TOKEN_COST)
-end
-
-local function charge(player)
-  if TOKEN_COST == 0 then return true end
-  if not canPay(player) then return false end
-  player:RemoveItem(TOKEN_ITEM_ID, TOKEN_COST)
-  return true
+local function enchantCost(item)
+  local multiplier = QUALITY_COST_MULTIPLIER[item:GetQuality()] or QUALITY_COST_MULTIPLIER[1]
+  return math.max(10000, item:GetBuyPrice() * multiplier)
 end
 
 local function equippedRandomItems(player)
@@ -98,9 +98,9 @@ local function showItems(player, creature)
   end
 
   for index, entry in ipairs(items) do
-    player:GossipMenuAddItem(ICON_DOT, itemLabel(entry.item), ITEM_MENU_SENDER, entry.slot)
+    player:GossipMenuAddItem(ICON_GOSSIP, itemLabel(entry.item), ITEM_MENU_SENDER, entry.slot)
   end
-  player:GossipSendMenu(GOSSIP_TEXT, creature, ITEM_GOSSIP_MENU)
+  player:GossipSendMenu(GOSSIP_TEXT, creature)
 end
 
 local function enchantMenu(info)
@@ -137,19 +137,30 @@ local function showSuffixes(player, creature, slot)
   for index, entry in ipairs(menu) do
     local option = entry.option
     if option then
-      local label = option.name
       player:GossipMenuAddItem(
-        ICON_DOT,
-        label,
-        ENCHANT_MENU_SENDER + slot,
-        index,
+        ICON_GOSSIP,
+        option.name,
+        ENCHANT_MENU_SENDER,
+        ENCHANT_MENU_OFFSET + slot * 100 + index,
         false,
-        "Apply ..."..option.name.." to "..itemName(item).."?"
+        "Apply "..option.name.." to "..itemName(item).."?",
+        enchantCost(item)
       )
     end
   end
-  player:GossipMenuAddItem(ICON_DOT, "Back", 0, 0)
-  player:GossipSendMenu(GOSSIP_TEXT, creature, ENCHANT_GOSSIP_MENU + slot)
+  player:GossipMenuAddItem(ICON_GOSSIP, "Back", BACK_MENU_SENDER, 0)
+  player:GossipSendMenu(GOSSIP_TEXT, creature)
+end
+
+local function selectedEnchant(slot, intid)
+  local index = intid - ENCHANT_MENU_OFFSET - slot * 100
+  if index < 1 then return nil end
+  return index
+end
+
+local function selectedSlot(intid)
+  if intid < ENCHANT_MENU_OFFSET then return nil end
+  return math.floor((intid - ENCHANT_MENU_OFFSET) / 100)
 end
 
 local function applyOption(player, creature, slot, entry)
@@ -187,11 +198,14 @@ local function applyOption(player, creature, slot, entry)
     return
   end
 
-  if not charge(player) then
-    player:SendBroadcastMessage("You need "..TOKEN_COST.." "..TOKEN_NAME..".")
+  local cost = enchantCost(item)
+  if player:GetCoinage() < cost then
+    player:SendBroadcastMessage("You do not have enough gold.")
     showSuffixes(player, creature, slot)
     return
   end
+
+  player:ModifyMoney(-cost)
 
   if entry.type == "suffix" then
     item:SetRandomSuffix(entry.id)
@@ -207,7 +221,7 @@ RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_HELLO, function(event, play
 end)
 
 RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_SELECT, function(event, player, creature, sender, intid)
-  if sender == 0 and intid == 0 then
+  if sender == BACK_MENU_SENDER then
     showItems(player, creature)
     return
   end
@@ -217,8 +231,13 @@ RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_SELECT, function(event, pla
     return
   end
 
-  if sender >= ENCHANT_MENU_SENDER then
-    local slot = sender - ENCHANT_MENU_SENDER
+  if sender == ENCHANT_MENU_SENDER then
+    local slot = selectedSlot(intid)
+    if not slot then
+      showItems(player, creature)
+      return
+    end
+
     local item = player:GetEquippedItemBySlot(slot)
     if not item then
       showItems(player, creature)
@@ -227,7 +246,7 @@ RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_SELECT, function(event, pla
 
     local info = random_enchant_db.items[item:GetEntry()]
     local menu = info and enchantMenu(info) or {}
-    applyOption(player, creature, slot, menu[intid])
+    applyOption(player, creature, slot, menu[selectedEnchant(slot, intid)])
     return
   end
 
