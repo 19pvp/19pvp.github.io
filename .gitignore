@@ -148,3 +148,5 @@ core/
 *.njsproj
 *.sln
 *.sw?
+
+dbc/

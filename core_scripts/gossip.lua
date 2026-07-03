@@ -10,16 +10,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, que
   if quest:GetId() == 777001 then player:LearnSpell(55428) end
 end)
 
-talkToNpc(777003, 19537) -- Dealer Malij <Enchanter Merchant>
-talkToNpc(777002, 19538) -- Dealer Senzik's <Gems Merchant>
-talkToNpc(777001, 22427) -- Zarevhi <Arcane Healer>
-
-local function talkToNpc(quest_id, npc_id) do
-  RegisterCreatureGossipEvent(npc_id, ON_HELLO, function (event, player, creature)
-  player:AreaExploredOrEventHappens(quest_id)
-  return false
-end)
-
+--[[
 
 local function BuildMenu(accumulator, menus)
   for key, options in pairs(menus) do
@@ -56,7 +47,6 @@ local function AddGossipNpc(npc_id, gossips)
     player:GossipComplete()
   end)
 end
-
 local ICON_CHAT          = 0
 local ICON_VENDOR        = 1
 local ICON_TAXI          = 2
@@ -470,3 +460,5 @@ print("gossip.lua loaded successfull.")
 -- ammend last commit
 -- push --force-with-lease
 -- reload eluna
+
+]]--

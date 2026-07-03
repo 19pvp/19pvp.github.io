@@ -10,7 +10,7 @@
     "lint": "deno lint",
     "check": "deno check --unstable-tsgo",
     "build": "deno run --allow-read --allow-write tasks/build.ts",
-    "refresh-db": "deno run --allow-net tasks/refresh_db.ts",
+    "refresh-db": "deno run --env-file --allow-net --allow-read --allow-write --allow-env tasks/refresh_db.ts",
     "conf:all": {
       "dependencies": [
         "config:conf:ale",
