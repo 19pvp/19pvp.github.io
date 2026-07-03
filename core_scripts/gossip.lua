@@ -5,21 +5,22 @@ local ON_HELLO = 1
 local ON_SELECT = 2
 
 -- Add quests triggers
-
 RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, quest, opt)
   -- Learn Lifeblood R1
   if quest:GetId() == 777001 then player:LearnSpell(55428) end
 end)
 
-local function validateOnTrigger(event, player, creature)
-  player:SendBroadcastMessage('gossip hello'..tostring(creature:GetEntry()))
-  player:KilledMonsterCredit(creature:GetEntry())
-  return false
-end
+talkToNpc(777003, 19537) -- Dealer Malij <Enchanter Merchant>
+talkToNpc(777002, 19538) -- Dealer Senzik's <Gems Merchant>
+talkToNpc(777001, 22427) -- Zarevhi <Arcane Healer>
 
-RegisterCreatureGossipEvent(19538, ON_HELLO, validateOnTrigger) -- Dealer Senzik's <Gems Merchant>
-RegisterCreatureGossipEvent(19537, ON_HELLO, validateOnTrigger) -- Dealer Malij <Enchanter Merchant>
-RegisterCreatureGossipEvent(22427, ON_HELLO, validateOnTrigger) -- Zarevhi <Arcane Healer>
+local function talkToNpc(quest_id, npc_id) do
+  RegisterCreatureGossipEvent(npc_id, ON_HELLO, function (event, player, creature)
+  player:AreaExploredOrEventHappens(quest_id)
+  return false
+end)
+
+
 local function BuildMenu(accumulator, menus)
   for key, options in pairs(menus) do
     if type(options) == 'table' then
