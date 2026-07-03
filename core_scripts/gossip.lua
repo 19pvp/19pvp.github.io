@@ -1,13 +1,15 @@
 print("gossip.lua loading starting...")
 
+require("custom-data")
+
 -- CreatureGossipEvents
 local ON_HELLO = 1
 local ON_SELECT = 2
 
 -- Add quests triggers
 RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, quest, opt)
-  -- Learn Lifeblood R1
-  if quest:GetId() == 777001 then player:LearnSpell(55428) end
+  local spellId = custom_data.quest_reward_spells[quest:GetId()]
+  if spellId then player:LearnSpell(spellId) end
 end)
 
 --[[

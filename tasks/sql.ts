@@ -9,8 +9,42 @@ const stripComments = (sql: string) =>
     .filter((line) => !line.trimStart().startsWith('--'))
     .join('\n')
 
-const statements = stripComments(await Deno.readTextFile(file))
-  .split(';')
+const splitStatements = (sql: string) => {
+  const statements: string[] = []
+  let current = ''
+  let quote: "'" | '"' | undefined
+  let escaped = false
+
+  for (const char of sql) {
+    current += char
+
+    if (escaped) {
+      escaped = false
+      continue
+    }
+    if (char === '\\') {
+      escaped = true
+      continue
+    }
+    if (quote) {
+      if (char === quote) quote = undefined
+      continue
+    }
+    if (char === "'" || char === '"') {
+      quote = char
+      continue
+    }
+    if (char === ';') {
+      statements.push(current.slice(0, -1))
+      current = ''
+    }
+  }
+
+  if (current.trim()) statements.push(current)
+  return statements
+}
+
+const statements = splitStatements(stripComments(await Deno.readTextFile(file)))
   .map((statement) => statement.trim())
   .filter(Boolean)
 

@@ -1,4 +1,6 @@
-require("random-enchant-db")
+require("custom-data")
+
+local random_enchant_db = custom_data.random_enchants
 
 local NPC_RANDOM_ENCHANTER = 777100
 local GOSSIP_TEXT = 777100
