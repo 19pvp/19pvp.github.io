@@ -10,6 +10,8 @@
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
 #include "WorldSession.h"
+#include "Guild.h"
+#include "GuildMgr.h"
 
 #include <string>
 #include <vector>
@@ -274,12 +276,147 @@ public:
         }
     }
 
+    void EnsureGuildMembership(Player* player)
+    {
+        if (!_enabled || !player)
+            return;
+
+        ObjectGuid::LowType const playerGuid = player->GetGUID().GetCounter();
+        if (!IsFixedBot(playerGuid))
+            return;
+
+        Guild* guild = sGuildMgr->GetGuildByName("WIP");
+
+        // If the player is already in another guild, remove them first to prevent errors
+        if (player->GetGuildId() && (!guild || player->GetGuildId() != guild->GetId()))
+        {
+            if (Guild* oldGuild = sGuildMgr->GetGuildById(player->GetGuildId()))
+            {
+                oldGuild->DeleteMember(player->GetGUID(), false, false);
+                player->SetInGuild(0);
+            }
+        }
+
+        if (!guild)
+        {
+            guild = new Guild();
+            if (guild->Create(player, "WIP"))
+            {
+                sGuildMgr->AddGuild(guild);
+                LOG_INFO("playerbots", "[WsgFixedBots] Created new guild 'WIP' with leader {}.", player->GetName());
+            }
+            else
+            {
+                delete guild;
+                guild = nullptr;
+                LOG_ERROR("playerbots", "[WsgFixedBots] Failed to create guild 'WIP' programmatically.");
+            }
+        }
+        else
+        {
+            if (player->GetGuildId() != guild->GetId())
+            {
+                guild->AddMember(player->GetGUID());
+                LOG_INFO("playerbots", "[WsgFixedBots] Added bot {} to guild 'WIP'.", player->GetName());
+            }
+        }
+    }
+
+    void EnsureGuildMembershipForOnlineBots()
+    {
+        for (WsgFixedRosterEntry const& entry : _roster)
+        {
+            ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(entry.guid);
+            Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
+            if (bot && bot->IsInWorld())
+                EnsureGuildMembership(bot);
+        }
+    }
+
     std::size_t Reload()
     {
         LoadConfig();
         LoadFromDB();
         GrantConfiguredItemsToOnlineBots();
+        EnsureGuildMembershipForOnlineBots();
         return _roster.size();
+    }
+
+    void LogLoginDiagnostics(WsgFixedRosterEntry const& entry, ObjectGuid guid, uint32 cacheAccountId) const
+    {
+        QueryResult characterResult = CharacterDatabase.Query(
+            "SELECT `account`, `name`, `race`, `class`, `level`, `online` "
+            "FROM `characters` WHERE `guid` = {}",
+            entry.guid);
+
+        if (!characterResult)
+        {
+            LOG_ERROR("playerbots", "[WsgFixedBots] Login diagnostic for {}: no character row for GUID {}.",
+                entry.name, entry.guid);
+            return;
+        }
+
+        Field* characterFields = characterResult->Fetch();
+        uint32 const characterAccountId = characterFields[0].Get<uint32>();
+        std::string const characterName = characterFields[1].Get<std::string>();
+        uint8 const characterRace = characterFields[2].Get<uint8>();
+        uint8 const characterClass = characterFields[3].Get<uint8>();
+        uint8 const characterLevel = characterFields[4].Get<uint8>();
+        uint8 const characterOnline = characterFields[5].Get<uint8>();
+
+        LOG_INFO("playerbots",
+            "[WsgFixedBots] Login diagnostic for {}: character account={}, name={}, race={}, class={}, level={}, online={}, cacheAccount={}.",
+            entry.name, characterAccountId, characterName, uint32(characterRace), uint32(characterClass),
+            uint32(characterLevel), uint32(characterOnline), cacheAccountId);
+
+        if (characterAccountId != cacheAccountId)
+        {
+            LOG_WARN("playerbots",
+                "[WsgFixedBots] Login diagnostic for {}: character account {} differs from cache account {}.",
+                entry.name, characterAccountId, cacheAccountId);
+        }
+
+        if (characterName != entry.name || characterRace != entry.race || characterClass != entry.class_)
+        {
+            LOG_WARN("playerbots",
+                "[WsgFixedBots] Login diagnostic for {}: roster mismatch, roster name/race/class={}/{}/{} but character name/race/class={}/{}/{}.",
+                entry.name, entry.name, uint32(entry.race), uint32(entry.class_), characterName,
+                uint32(characterRace), uint32(characterClass));
+        }
+
+        QueryResult accountResult = LoginDatabase.Query(
+            "SELECT `username`, `online`, `locked`, `expansion` FROM `account` WHERE `id` = {}",
+            characterAccountId);
+
+        if (!accountResult)
+        {
+            LOG_ERROR("playerbots",
+                "[WsgFixedBots] Login diagnostic for {}: no auth account row for account id {}.",
+                entry.name, characterAccountId);
+            return;
+        }
+
+        Field* accountFields = accountResult->Fetch();
+        std::string const username = accountFields[0].Get<std::string>();
+        uint8 const accountOnline = accountFields[1].Get<uint8>();
+        uint8 const accountLocked = accountFields[2].Get<uint8>();
+        uint8 const accountExpansion = accountFields[3].Get<uint8>();
+
+        LOG_INFO("playerbots",
+            "[WsgFixedBots] Login diagnostic for {}: auth username={}, online={}, locked={}, expansion={}.",
+            entry.name, username, uint32(accountOnline), uint32(accountLocked), uint32(accountExpansion));
+
+        if (username != entry.account)
+        {
+            LOG_WARN("playerbots",
+                "[WsgFixedBots] Login diagnostic for {}: roster account key {} differs from auth username {}.",
+                entry.name, entry.account, username);
+        }
+
+        Player* connected = ObjectAccessor::FindConnectedPlayer(guid);
+        LOG_INFO("playerbots",
+            "[WsgFixedBots] Login diagnostic for {}: connectedPlayer={}, inWorld={}.",
+            entry.name, connected ? 1 : 0, connected && connected->IsInWorld() ? 1 : 0);
     }
 
     void Update(uint32 diff)
@@ -297,10 +434,15 @@ public:
 
         LOG_INFO("playerbots", "[WsgFixedBots] Checking fixed roster login status...");
 
+        uint32 onlineCount = 0;
+        uint32 attemptedCount = 0;
+        uint32 skippedGuidCount = 0;
+
         for (WsgFixedRosterEntry const& entry : _roster)
         {
             if (entry.guid == 0)
             {
+                skippedGuidCount++;
                 LOG_WARN("playerbots", "[WsgFixedBots] Bot {} has GUID 0, skipping login.", entry.name);
                 continue;
             }
@@ -309,14 +451,36 @@ public:
             Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
 
             if (bot && bot->IsInWorld())
+            {
+                onlineCount++;
+                LOG_DEBUG("playerbots", "[WsgFixedBots] Bot {} (GUID {}) is already online.", entry.name, entry.guid);
                 continue;
+            }
 
             uint32 cacheAccountId = sCharacterCache->GetCharacterAccountIdByGuid(guid);
             LOG_INFO("playerbots", "[WsgFixedBots] Attempting to login bot {} (GUID {}, Account ID in cache: {})...", 
                      entry.name, entry.guid, cacheAccountId);
+            LogLoginDiagnostics(entry, guid, cacheAccountId);
 
+            attemptedCount++;
             sRandomPlayerbotMgr.AddPlayerBot(guid, 0);
+
+            Player* postLoginBot = ObjectAccessor::FindConnectedPlayer(guid);
+            if (postLoginBot && postLoginBot->IsInWorld())
+            {
+                LOG_INFO("playerbots", "[WsgFixedBots] AddPlayerBot connected {} immediately.", entry.name);
+            }
+            else
+            {
+                LOG_WARN("playerbots",
+                    "[WsgFixedBots] AddPlayerBot returned but {} is not connected yet (connectedPlayer={}, inWorld={}). Check following playerbot/login errors for rejection reason.",
+                    entry.name, postLoginBot ? 1 : 0, postLoginBot && postLoginBot->IsInWorld() ? 1 : 0);
+            }
         }
+
+        LOG_INFO("playerbots",
+            "[WsgFixedBots] Fixed roster login check complete: roster={}, alreadyOnline={}, attempted={}, skippedMissingGuid={}.",
+            _roster.size(), onlineCount, attemptedCount, skippedGuidCount);
     }
 
 private:
@@ -351,6 +515,7 @@ public:
     void OnPlayerLogin(Player* player) override
     {
         WsgFixedRosterMgr::Instance().GrantConfiguredItems(player);
+        WsgFixedRosterMgr::Instance().EnsureGuildMembership(player);
     }
 };
 
