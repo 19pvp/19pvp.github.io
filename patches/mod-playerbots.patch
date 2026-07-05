@@ -1,0 +1,46 @@
+diff --git a/src/Bot/RandomPlayerbotMgr.cpp b/src/Bot/RandomPlayerbotMgr.cpp
+index a1064b4e..5a33263b 100644
+--- a/src/Bot/RandomPlayerbotMgr.cpp
++++ b/src/Bot/RandomPlayerbotMgr.cpp
+@@ -630,6 +630,29 @@ bool RandomPlayerbotMgr::IsAccountType(uint32 accountId, uint8 accountType)
+     return result != nullptr;
+ }
+ 
++void RandomPlayerbotMgr::RegisterManualRandomBot(ObjectGuid::LowType bot, uint32 accountId, uint32 validIn)
++{
++    if (!bot || !accountId)
++        return;
++
++    if (!sPlayerbotAIConfig.IsInRandomAccountList(accountId))
++        sPlayerbotAIConfig.randomBotAccounts.push_back(accountId);
++
++    if (std::find(rndBotTypeAccounts.begin(), rndBotTypeAccounts.end(), accountId) == rndBotTypeAccounts.end())
++        rndBotTypeAccounts.push_back(accountId);
++
++    PlayerbotsDatabase.Execute(
++        "INSERT INTO playerbots_account_type (account_id, account_type) VALUES ({}, 1) "
++        "ON DUPLICATE KEY UPDATE account_type = 1, assignment_date = NOW()",
++        accountId);
++
++    SetEventValue(bot, "add", 1, validIn ? validIn : sPlayerbotAIConfig.maxRandomBotInWorldTime);
++    SetEventValue(bot, "logout", 0, 0);
++
++    if (std::find(currentBots.begin(), currentBots.end(), bot) == currentBots.end())
++        currentBots.push_back(bot);
++}
++
+ // Logs-in bots in 4 phases. Phase 1 logs Alliance bots up to how much is expected according to the faction ratio,
+ // and Phase 2 logs-in the remainder Horde bots to reach the total maxAllowedBotCount. If maxAllowedBotCount is not
+ // reached after Phase 2, the function goes back to log-in Alliance bots and reach maxAllowedBotCount. This is done
+diff --git a/src/Bot/RandomPlayerbotMgr.h b/src/Bot/RandomPlayerbotMgr.h
+index 91fcebb1..f041e28c 100644
+--- a/src/Bot/RandomPlayerbotMgr.h
++++ b/src/Bot/RandomPlayerbotMgr.h
+@@ -171,6 +171,7 @@ public:
+     // Account type management
+     void AssignAccountTypes();
+     bool IsAccountType(uint32 accountId, uint8 accountType);
++    void RegisterManualRandomBot(ObjectGuid::LowType bot, uint32 accountId, uint32 validIn = 0);
+ 
+ protected:
+     void OnBotLoginInternal(Player* const bot) override;
