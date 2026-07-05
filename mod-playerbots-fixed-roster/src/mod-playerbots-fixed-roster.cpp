@@ -19,10 +19,15 @@ namespace
 struct WsgFixedRosterEntry
 {
     ObjectGuid::LowType guid = 0;
-    uint8 team = 0;
-    uint8 slot = 0;
+    std::string account;
     std::string name;
     std::string role;
+};
+
+struct WsgFixedRosterItem
+{
+    uint32 item = 0;
+    uint32 amount = 0;
 };
 
 class WsgFixedRosterMgr
@@ -55,29 +60,35 @@ public:
         PlayerbotsDatabase.Execute(
             "CREATE TABLE IF NOT EXISTS `playerbots_fixed_roster` ("
             "`guid` int unsigned NULL DEFAULT NULL,"
-            "`team` tinyint unsigned NOT NULL,"
-            "`slot` tinyint unsigned NOT NULL,"
-            "`name` varchar(12) NOT NULL DEFAULT '',"
             "`account` varchar(32) NOT NULL DEFAULT '',"
-            "`faction` varchar(16) NOT NULL DEFAULT '',"
+            "`name` varchar(12) NOT NULL DEFAULT '',"
             "`race` tinyint unsigned NOT NULL DEFAULT 0,"
             "`class` tinyint unsigned NOT NULL DEFAULT 0,"
-            "`level` tinyint unsigned NOT NULL DEFAULT 19,"
             "`role` varchar(16) NOT NULL DEFAULT '',"
             "`spec` varchar(32) NOT NULL DEFAULT '',"
             "`replacement_priority` tinyint unsigned NOT NULL DEFAULT 0,"
-            "`gear_profile` varchar(32) NOT NULL DEFAULT '',"
             "`behavior_profile` varchar(32) NOT NULL DEFAULT '',"
             "`enabled` tinyint(1) unsigned NOT NULL DEFAULT 1,"
-            "PRIMARY KEY (`team`, `slot`),"
+            "PRIMARY KEY (`account`),"
             "UNIQUE KEY `guid_unique` (`guid`),"
             "UNIQUE KEY `name_unique` (`name`),"
             "KEY `enabled` (`enabled`)"
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+        PlayerbotsDatabase.Execute(
+            "CREATE TABLE IF NOT EXISTS `playerbots_fixed_roster_item` ("
+            "`account` varchar(32) NOT NULL,"
+            "`item` int unsigned NOT NULL,"
+            "`amount` int unsigned NOT NULL DEFAULT 1,"
+            "`note` varchar(255) NOT NULL DEFAULT '',"
+            "`enabled` tinyint(1) unsigned NOT NULL DEFAULT 1,"
+            "PRIMARY KEY (`account`, `item`),"
+            "KEY `enabled` (`enabled`)"
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
         QueryResult result = PlayerbotsDatabase.Query(
-            "SELECT `guid`, `team`, `slot`, `name`, `role` FROM `playerbots_fixed_roster` "
-            "WHERE `enabled` = 1 AND `guid` IS NOT NULL ORDER BY `team`, `slot`");
+            "SELECT `guid`, `account`, `name`, `role` FROM `playerbots_fixed_roster` "
+            "WHERE `enabled` = 1 AND `guid` IS NOT NULL ORDER BY `account`");
 
         if (!result)
         {
@@ -91,10 +102,9 @@ public:
 
             WsgFixedRosterEntry entry;
             entry.guid = fields[0].Get<uint32>();
-            entry.team = fields[1].Get<uint8>();
-            entry.slot = fields[2].Get<uint8>();
-            entry.name = fields[3].Get<std::string>();
-            entry.role = fields[4].Get<std::string>();
+            entry.account = fields[1].Get<std::string>();
+            entry.name = fields[2].Get<std::string>();
+            entry.role = fields[3].Get<std::string>();
 
             if (entry.guid)
                 _roster.push_back(entry);
@@ -103,10 +113,78 @@ public:
         LOG_INFO("playerbots", "[WsgFixedBots] Loaded {} fixed roster bots.", _roster.size());
     }
 
+    bool IsFixedBot(ObjectGuid::LowType guid) const
+    {
+        for (WsgFixedRosterEntry const& entry : _roster)
+        {
+            if (entry.guid == guid)
+                return true;
+        }
+
+        return false;
+    }
+
+    void GrantConfiguredItems(Player* player)
+    {
+        if (!_enabled || !player)
+            return;
+
+        ObjectGuid::LowType const playerGuid = player->GetGUID().GetCounter();
+        if (!IsFixedBot(playerGuid))
+            return;
+
+        QueryResult result = PlayerbotsDatabase.Query(
+            "SELECT item.`item`, item.`amount` "
+            "FROM `playerbots_fixed_roster` roster "
+            "JOIN `playerbots_fixed_roster_item` item "
+            "  ON item.`account` = roster.`account` "
+            "WHERE roster.`guid` = {} AND roster.`enabled` = 1 AND item.`enabled` = 1 "
+            "ORDER BY item.`item`",
+            playerGuid);
+
+        if (!result)
+            return;
+
+        uint32 granted = 0;
+        do
+        {
+            Field* fields = result->Fetch();
+            WsgFixedRosterItem item;
+            item.item = fields[0].Get<uint32>();
+            item.amount = fields[1].Get<uint32>();
+
+            if (!item.item || !item.amount)
+                continue;
+
+            uint32 const current = player->GetItemCount(item.item, true);
+            if (current >= item.amount)
+                continue;
+
+            uint32 const missing = item.amount - current;
+            if (player->StoreNewItemInBestSlots(item.item, missing))
+                granted += missing;
+        } while (result->NextRow());
+
+        if (granted)
+            LOG_INFO("playerbots", "[WsgFixedBots] Granted {} configured item(s) to {}.", granted, player->GetName());
+    }
+
+    void GrantConfiguredItemsToOnlineBots()
+    {
+        for (WsgFixedRosterEntry const& entry : _roster)
+        {
+            ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(entry.guid);
+            Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
+            if (bot && bot->IsInWorld())
+                GrantConfiguredItems(bot);
+        }
+    }
+
     std::size_t Reload()
     {
         LoadConfig();
         LoadFromDB();
+        GrantConfiguredItemsToOnlineBots();
         return _roster.size();
     }
 
@@ -159,6 +237,17 @@ public:
     }
 };
 
+class WsgFixedBotsPlayerScript : public PlayerScript
+{
+public:
+    WsgFixedBotsPlayerScript() : PlayerScript("WsgFixedBotsPlayerScript", {PLAYERHOOK_ON_LOGIN}) { }
+
+    void OnPlayerLogin(Player* player) override
+    {
+        WsgFixedRosterMgr::Instance().GrantConfiguredItems(player);
+    }
+};
+
 class WsgFixedBotsCommandScript : public CommandScript
 {
 public:
@@ -189,5 +278,6 @@ public:
 void Addmod_playerbots_fixed_rosterScripts()
 {
     new WsgFixedBotsWorldScript();
+    new WsgFixedBotsPlayerScript();
     new WsgFixedBotsCommandScript();
 }
