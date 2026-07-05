@@ -61,7 +61,7 @@ SET `subname` = CASE `entry`
   WHEN 19531 THEN 'Innkeeper'
   WHEN 19533 THEN '(WIP) Transmog Merchant'
   WHEN 19534 THEN 'Weapons Merchant'
-  WHEN 19535 THEN 'Tabar Merchant'
+  WHEN 19535 THEN 'Tabard Merchant'
   WHEN 19537 THEN 'Enchant Merchant'
   WHEN 19538 THEN 'Gem Merchant'
   WHEN 19539 THEN 'Gem Quartermaster'

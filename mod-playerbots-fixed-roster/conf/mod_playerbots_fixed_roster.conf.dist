@@ -1,0 +1,11 @@
+[worldserver]
+
+##############################################
+# 19 PvP fixed WSG filler bots
+##############################################
+
+# Enable fixed WSG roster login from PlayerbotsDatabase.playerbots_fixed_roster.
+WsgFixedBots.Enabled = 1
+
+# Seconds between checks for missing fixed roster bots.
+WsgFixedBots.CheckFrequencySeconds = 5

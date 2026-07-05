@@ -4,13 +4,16 @@ import { sqlRaw } from '../service/db.ts'
 
 const _config = config
 const worldDb = Deno.env.get('WORLD_DB') || '19pvp_world'
+const playerbotsDb = Deno.env.get('PLAYERBOTS_DB') || '19pvp_playerbots'
 const sheetId = Deno.env.get('SHEET_ID') || '1F1Re3VLtPuF5fXZ1wV79CpogaSgP-fS9r9dm3_aRoP0'
 if (!/^[a-zA-Z0-9_]+$/.test(worldDb)) throw Error(`invalid WORLD_DB ${worldDb}`)
+if (!/^[a-zA-Z0-9_]+$/.test(playerbotsDb)) throw Error(`invalid PLAYERBOTS_DB ${playerbotsDb}`)
 
 type GSheetData = {
   ITEM: ItemSheetRow[]
   NPC?: NpcSheetRow[]
   QUEST?: QuestSheetRow[]
+  WSG_BOT?: WsgBotSheetRow[]
 }
 
 type ItemSheetRow = {
@@ -40,6 +43,26 @@ type QuestSheetRow = {
   OBJECTIVE?: string
 }
 
+type WsgBotSheetRow = {
+  ACCOUNT?: string
+  BEHAVIOR?: string
+  BEHAVIOR_PROFILE?: string
+  CLASS?: string
+  ENABLED?: string
+  FACTION?: string
+  GEAR?: string
+  GEAR_PROFILE?: string
+  GUID?: string
+  LEVEL?: string
+  NAME?: string
+  RACE?: string
+  REPLACEMENT_PRIORITY?: string
+  ROLE?: string
+  SLOT?: string
+  SPEC?: string
+  TEAM?: string
+}
+
 type CountedItem = {
   count: number
   id: number
@@ -58,6 +81,26 @@ type StarterItem = {
   className: string
   itemId: number
   name: string
+}
+
+type WsgBotRosterEntry = {
+  account: string
+  behaviorProfile: string
+  classId: number
+  className: string
+  enabled: boolean
+  faction: string
+  gearProfile: string
+  guid?: number
+  level: number
+  name: string
+  raceId: number
+  raceName: string
+  replacementPriority: number
+  role: string
+  slot: number
+  spec: string
+  team: number
 }
 
 type QuestProps = {
@@ -140,10 +183,29 @@ const playerClassIdByName = {
   warrior: 1,
 } as const
 
+const playerRaceIdByName = {
+  bloodelf: 10,
+  draenei: 11,
+  dwarf: 3,
+  gnome: 7,
+  human: 1,
+  nightelf: 4,
+  orc: 2,
+  tauren: 6,
+  troll: 8,
+  undead: 5,
+} as const
+
+const teamIdByName = {
+  alliance: 1,
+  horde: 2,
+} as const
+
 await Promise.all([
   fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/QUEST`),
   fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/ITEM`),
   fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/NPC`),
+  fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/WSG_BOT`),
 ])
 const gsheetResponse = await fetch(`https://gsheet.devazuka.com/${sheetId}`)
 if (!gsheetResponse.ok || !gsheetResponse.headers.get('content-type')?.includes('application/json')) {
@@ -401,6 +463,298 @@ const parseItemUpdates = (rows: ItemSheetRow[] | undefined) => {
 }
 
 const normalizeClassName = (value: string) => value.trim().toLowerCase().replaceAll(/\s+/g, '')
+const normalizeRosterKey = (value: string) => value.trim().toLowerCase().replaceAll(/[\s_-]+/g, '')
+
+const defaultWsgBotRoster: WsgBotRosterEntry[] = [
+  {
+    team: 1,
+    slot: 1,
+    name: 'Aegwynn',
+    account: 'wsgbot-aegwynn',
+    faction: 'alliance',
+    raceName: 'human',
+    raceId: playerRaceIdByName.human,
+    className: 'priest',
+    classId: playerClassIdByName.priest,
+    level: 19,
+    role: 'healer',
+    spec: 'discipline',
+    replacementPriority: 5,
+    gearProfile: 'wsg-priest-healer',
+    behaviorProfile: 'wsg-healer',
+    enabled: true,
+  },
+  {
+    team: 1,
+    slot: 2,
+    name: 'Antonidas',
+    account: 'wsgbot-antonidas',
+    faction: 'alliance',
+    raceName: 'human',
+    raceId: playerRaceIdByName.human,
+    className: 'mage',
+    classId: playerClassIdByName.mage,
+    level: 19,
+    role: 'dps',
+    spec: 'frost',
+    replacementPriority: 1,
+    gearProfile: 'wsg-mage-dps',
+    behaviorProfile: 'wsg-ranged-dps',
+    enabled: true,
+  },
+  {
+    team: 1,
+    slot: 3,
+    name: 'Lothar',
+    account: 'wsgbot-lothar',
+    faction: 'alliance',
+    raceName: 'human',
+    raceId: playerRaceIdByName.human,
+    className: 'warrior',
+    classId: playerClassIdByName.warrior,
+    level: 19,
+    role: 'dps',
+    spec: 'arms',
+    replacementPriority: 2,
+    gearProfile: 'wsg-warrior-dps',
+    behaviorProfile: 'wsg-melee-dps',
+    enabled: true,
+  },
+  {
+    team: 1,
+    slot: 4,
+    name: 'Alleria',
+    account: 'wsgbot-alleria',
+    faction: 'alliance',
+    raceName: 'nightelf',
+    raceId: playerRaceIdByName.nightelf,
+    className: 'hunter',
+    classId: playerClassIdByName.hunter,
+    level: 19,
+    role: 'dps',
+    spec: 'marksman',
+    replacementPriority: 3,
+    gearProfile: 'wsg-hunter-dps',
+    behaviorProfile: 'wsg-ranged-dps',
+    enabled: true,
+  },
+  {
+    team: 1,
+    slot: 5,
+    name: 'Malfurion',
+    account: 'wsgbot-malfurion',
+    faction: 'alliance',
+    raceName: 'nightelf',
+    raceId: playerRaceIdByName.nightelf,
+    className: 'druid',
+    classId: playerClassIdByName.druid,
+    level: 19,
+    role: 'flag-carrier',
+    spec: 'feral',
+    replacementPriority: 4,
+    gearProfile: 'wsg-druid-fc',
+    behaviorProfile: 'wsg-flag-carrier',
+    enabled: true,
+  },
+  {
+    team: 2,
+    slot: 1,
+    name: 'Velenar',
+    account: 'wsgbot-velenar',
+    faction: 'horde',
+    raceName: 'undead',
+    raceId: playerRaceIdByName.undead,
+    className: 'priest',
+    classId: playerClassIdByName.priest,
+    level: 19,
+    role: 'healer',
+    spec: 'discipline',
+    replacementPriority: 5,
+    gearProfile: 'wsg-priest-healer',
+    behaviorProfile: 'wsg-healer',
+    enabled: true,
+  },
+  {
+    team: 2,
+    slot: 2,
+    name: 'Kelthuzad',
+    account: 'wsgbot-kelthuzad',
+    faction: 'horde',
+    raceName: 'undead',
+    raceId: playerRaceIdByName.undead,
+    className: 'mage',
+    classId: playerClassIdByName.mage,
+    level: 19,
+    role: 'dps',
+    spec: 'frost',
+    replacementPriority: 1,
+    gearProfile: 'wsg-mage-dps',
+    behaviorProfile: 'wsg-ranged-dps',
+    enabled: true,
+  },
+  {
+    team: 2,
+    slot: 3,
+    name: 'Saurfang',
+    account: 'wsgbot-saurfang',
+    faction: 'horde',
+    raceName: 'orc',
+    raceId: playerRaceIdByName.orc,
+    className: 'warrior',
+    classId: playerClassIdByName.warrior,
+    level: 19,
+    role: 'dps',
+    spec: 'arms',
+    replacementPriority: 2,
+    gearProfile: 'wsg-warrior-dps',
+    behaviorProfile: 'wsg-melee-dps',
+    enabled: true,
+  },
+  {
+    team: 2,
+    slot: 4,
+    name: 'Rokhan',
+    account: 'wsgbot-rokhan',
+    faction: 'horde',
+    raceName: 'troll',
+    raceId: playerRaceIdByName.troll,
+    className: 'hunter',
+    classId: playerClassIdByName.hunter,
+    level: 19,
+    role: 'dps',
+    spec: 'marksman',
+    replacementPriority: 3,
+    gearProfile: 'wsg-hunter-dps',
+    behaviorProfile: 'wsg-ranged-dps',
+    enabled: true,
+  },
+  {
+    team: 2,
+    slot: 5,
+    name: 'Hamuul',
+    account: 'wsgbot-hamuul',
+    faction: 'horde',
+    raceName: 'tauren',
+    raceId: playerRaceIdByName.tauren,
+    className: 'druid',
+    classId: playerClassIdByName.druid,
+    level: 19,
+    role: 'flag-carrier',
+    spec: 'feral',
+    replacementPriority: 4,
+    gearProfile: 'wsg-druid-fc',
+    behaviorProfile: 'wsg-flag-carrier',
+    enabled: true,
+  },
+]
+
+const parseOptionalPositiveInt = (value: string | undefined, label: string, rowLabel: string): number | undefined => {
+  if (!value?.trim()) return undefined
+  return parseRequiredInt(value, label, rowLabel)
+}
+
+const parseEnabled = (value: string | undefined) => {
+  const normalized = value?.trim().toLowerCase()
+  return !normalized || ['1', 'true', 'yes', 'y', 'enabled'].includes(normalized)
+}
+
+const parseWsgBotRoster = (rows: WsgBotSheetRow[] | undefined): WsgBotRosterEntry[] => {
+  const parsedRows: WsgBotRosterEntry[] = []
+
+  for (const [index, row] of (rows ?? []).entries()) {
+    if (!Object.values(row).some((value) => value?.trim())) continue
+
+    const rowLabel = `WSG_BOT row ${index + 2}${row.NAME ? ` (${row.NAME})` : ''}`
+    const teamRaw = row.TEAM?.trim()
+    const team = teamRaw
+      ? teamIdByName[normalizeRosterKey(teamRaw) as keyof typeof teamIdByName] ?? Number(teamRaw)
+      : NaN
+    if (team !== 1 && team !== 2) {
+      questWarnings.push(`${rowLabel}: ignored bot, TEAM must be alliance/1 or horde/2`)
+      continue
+    }
+
+    const slot = parseRequiredInt(row.SLOT, 'SLOT', rowLabel)
+    if (!slot || slot > 5) {
+      questWarnings.push(`${rowLabel}: ignored bot, SLOT must be 1-5`)
+      continue
+    }
+
+    const name = row.NAME?.trim()
+    if (!name || !/^[A-Za-z][A-Za-z]{1,11}$/.test(name)) {
+      questWarnings.push(`${rowLabel}: ignored bot, NAME must be 2-12 letters`)
+      continue
+    }
+
+    const raceName = row.RACE?.trim()
+    const raceId = raceName
+      ? playerRaceIdByName[normalizeRosterKey(raceName) as keyof typeof playerRaceIdByName]
+      : undefined
+    if (!raceName || !raceId) {
+      questWarnings.push(`${rowLabel}: ignored bot, unknown RACE ${JSON.stringify(row.RACE)}`)
+      continue
+    }
+
+    const className = row.CLASS?.trim()
+    const classId = className
+      ? playerClassIdByName[normalizeClassName(className) as keyof typeof playerClassIdByName]
+      : undefined
+    if (!className || !classId) {
+      questWarnings.push(`${rowLabel}: ignored bot, unknown CLASS ${JSON.stringify(row.CLASS)}`)
+      continue
+    }
+
+    const level = row.LEVEL?.trim() ? parseRequiredInt(row.LEVEL, 'LEVEL', rowLabel) : 19
+    if (level !== 19) {
+      questWarnings.push(`${rowLabel}: ignored bot, LEVEL must be 19`)
+      continue
+    }
+
+    parsedRows.push({
+      team,
+      slot,
+      name,
+      account: row.ACCOUNT?.trim() || `wsgbot-${name.toLowerCase()}`,
+      faction: row.FACTION?.trim().toLowerCase() || (team === 1 ? 'alliance' : 'horde'),
+      raceName: normalizeRosterKey(raceName),
+      raceId,
+      className: normalizeClassName(className),
+      classId,
+      level,
+      role: row.ROLE?.trim().toLowerCase() || (classId === playerClassIdByName.priest ? 'healer' : 'dps'),
+      spec: row.SPEC?.trim().toLowerCase() || '',
+      replacementPriority: parseOptionalPositiveInt(row.REPLACEMENT_PRIORITY, 'REPLACEMENT_PRIORITY', rowLabel) ?? slot,
+      gearProfile: row.GEAR_PROFILE?.trim() || row.GEAR?.trim() || `wsg-${normalizeClassName(className)}`,
+      behaviorProfile: row.BEHAVIOR_PROFILE?.trim() || row.BEHAVIOR?.trim() || `wsg-${normalizeClassName(className)}`,
+      enabled: parseEnabled(row.ENABLED),
+      guid: parseOptionalPositiveInt(row.GUID, 'GUID', rowLabel),
+    })
+  }
+
+  const roster = parsedRows.length > 0 ? parsedRows : defaultWsgBotRoster
+  const slotKeys = new Set<string>()
+  const names = new Set<string>()
+  for (const bot of roster) {
+    const slotKey = `${bot.team}:${bot.slot}`
+    if (slotKeys.has(slotKey)) questWarnings.push(`WSG_BOT: duplicate team/slot ${slotKey}`)
+    slotKeys.add(slotKey)
+
+    const nameKey = bot.name.toLowerCase()
+    if (names.has(nameKey)) questWarnings.push(`WSG_BOT: duplicate bot name ${bot.name}`)
+    names.add(nameKey)
+  }
+
+  if (roster.length !== 10) questWarnings.push(`WSG_BOT: expected 10 fixed bots, found ${roster.length}`)
+  for (const team of [1, 2]) {
+    const teamBots = roster.filter((bot) => bot.team === team)
+    const classes = teamBots.map((bot) => bot.className).sort().join(',')
+    if (classes !== 'druid,hunter,mage,priest,warrior') {
+      questWarnings.push(`WSG_BOT: team ${team} should contain priest, mage, warrior, hunter, and druid`)
+    }
+  }
+
+  return roster.sort((a, b) => a.team - b.team || a.slot - b.slot)
+}
 
 const parseStarterItems = (rows: ItemSheetRow[] | undefined) => {
   const items: StarterItem[] = []
@@ -999,6 +1353,65 @@ const cdCategories: Record<number, number> = {
 }
 const generatedHeader = '-- Generated by tasks/refresh_db.ts'
 
+const generateWsgBotRosterSql = (roster: WsgBotRosterEntry[]) => {
+  const rows = roster.map((bot) =>
+    `  (${bot.guid ?? 'NULL'}, ${bot.team}, ${bot.slot}, ${sqlString(bot.name)}, ${sqlString(bot.account)}, ${
+      sqlString(bot.faction)
+    }, ${bot.raceId}, ${bot.classId}, ${bot.level}, ${sqlString(bot.role)}, ${
+      sqlString(bot.spec)
+    }, ${bot.replacementPriority}, ${sqlString(bot.gearProfile)}, ${sqlString(bot.behaviorProfile)}, ${
+      bot.enabled ? 1 : 0
+    })`
+  )
+
+  return `${generatedHeader}
+
+USE \`${playerbotsDb}\`;
+
+DROP TABLE IF EXISTS \`playerbots_fixed_roster\`;
+CREATE TABLE IF NOT EXISTS \`playerbots_fixed_roster\` (
+  \`guid\` int unsigned NULL DEFAULT NULL,
+  \`team\` tinyint unsigned NOT NULL,
+  \`slot\` tinyint unsigned NOT NULL,
+  \`name\` varchar(12) NOT NULL DEFAULT '',
+  \`account\` varchar(32) NOT NULL DEFAULT '',
+  \`faction\` varchar(16) NOT NULL DEFAULT '',
+  \`race\` tinyint unsigned NOT NULL DEFAULT 0,
+  \`class\` tinyint unsigned NOT NULL DEFAULT 0,
+  \`level\` tinyint unsigned NOT NULL DEFAULT 19,
+  \`role\` varchar(16) NOT NULL DEFAULT '',
+  \`spec\` varchar(32) NOT NULL DEFAULT '',
+  \`replacement_priority\` tinyint unsigned NOT NULL DEFAULT 0,
+  \`gear_profile\` varchar(32) NOT NULL DEFAULT '',
+  \`behavior_profile\` varchar(32) NOT NULL DEFAULT '',
+  \`enabled\` tinyint(1) unsigned NOT NULL DEFAULT 1,
+  PRIMARY KEY (\`team\`, \`slot\`),
+  UNIQUE KEY \`guid_unique\` (\`guid\`),
+  UNIQUE KEY \`name_unique\` (\`name\`),
+  KEY \`enabled\` (\`enabled\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO \`playerbots_fixed_roster\` (
+  \`guid\`,
+  \`team\`,
+  \`slot\`,
+  \`name\`,
+  \`account\`,
+  \`faction\`,
+  \`race\`,
+  \`class\`,
+  \`level\`,
+  \`role\`,
+  \`spec\`,
+  \`replacement_priority\`,
+  \`gear_profile\`,
+  \`behavior_profile\`,
+  \`enabled\`
+) VALUES
+${rows.join(',\n')};
+`
+}
+
 const itemUpdateSql = (itemId: number, props: ItemProps) => {
   const assignments: string[] = []
   assignments.push(`\`bonding\` = ${soulboundBonding}`)
@@ -1334,6 +1747,7 @@ const quests = parseQuests(gsheetData.QUEST)
 const npcSubnames = parseNpcSubnames(gsheetData.NPC)
 const npcNames = parseNpcNames(gsheetData.NPC)
 const npcSpawnSwaps = parseNpcSpawnSwaps(gsheetData.NPC)
+const wsgBotRoster = parseWsgBotRoster(gsheetData.WSG_BOT)
 const luaQuestRewardSpells = quests
   .filter((quest) => quest.props.LearnSpell)
   .sort((a, b) => a.id - b.id)
@@ -1382,6 +1796,9 @@ console.log('wrote item prop updates to core_scripts/generated-item-props.sql')
 
 await Deno.writeTextFile('core_scripts/generated-item-template.sql', generateItemTemplateSql(itemIds))
 console.log('wrote item template normalization to core_scripts/generated-item-template.sql')
+
+await Deno.writeTextFile('core_scripts/generated-playerbots-fixed-roster.sql', generateWsgBotRosterSql(wsgBotRoster))
+console.log(`wrote ${wsgBotRoster.length} WSG bot roster rows to core_scripts/generated-playerbots-fixed-roster.sql`)
 
 await Deno.writeTextFile('core_scripts/starting-info.sql', await generateStartingInfoSql(starterItems))
 console.log(`wrote ${starterItems.length} starter item rows to core_scripts/starting-info.sql`)

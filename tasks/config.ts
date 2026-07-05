@@ -119,10 +119,38 @@ export const installLuaScripts = async () => {
   console.log(`Installed Lua scripts to ${output}`)
 }
 
+const installLocalModules = async () => {
+  const sourceRoot = '.'
+  const targetRoot = 'core/modules'
+
+  for await (const entry of Deno.readDir(sourceRoot)) {
+    if (!entry.isDirectory || !entry.name.startsWith('mod-')) continue
+
+    const source = await Deno.realPath(`${sourceRoot}/${entry.name}`)
+    const target = `${targetRoot}/${entry.name}`
+
+    try {
+      const info = await Deno.lstat(target)
+      if (!info.isSymlink) throw Error(`${target} exists and is not a symlink`)
+
+      const current = await Deno.readLink(target)
+      if (current !== source) throw Error(`${target} links to ${current}, expected ${source}`)
+    } catch (err) {
+      if (!(err instanceof Deno.errors.NotFound)) throw err
+      await Deno.symlink(source, target, { type: 'dir' })
+      console.log(`Linked ${target} -> ${source}`)
+      continue
+    }
+
+    console.log(`${target} already linked`)
+  }
+}
+
 export const installConf = async () => {
   for (const name of names) {
     await writeConf(name)
   }
+  await installLocalModules()
   await installLuaScripts()
 }
 
