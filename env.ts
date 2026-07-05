@@ -11,14 +11,14 @@ export const targets = {
   ale: {
     label: 'ALE Config',
     reload: 'reload ale',
-    subdir: 'module/',
+    subdir: 'modules/',
     config: aleConfig,
     url: 'https://raw.githubusercontent.com/azerothcore/mod-ale/refs/heads/master/conf/mod_ale.conf.dist',
   },
   playerbots: {
     label: 'Playerbots Config',
     reload: 'reload config',
-    subdir: 'module/',
+    subdir: 'modules/',
     config: playerbotsConfig,
     url: 'https://raw.githubusercontent.com/mod-playerbots/mod-playerbots/refs/heads/master/conf/playerbots.conf.dist',
   },

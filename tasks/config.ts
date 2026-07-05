@@ -96,7 +96,8 @@ const writeJson = async (name: TargetName) => {
 const writeConf = async (name: TargetName) => {
   const t = targets[name]
   const conf = Object.entries(t.config).map(([key, value]) => `${key} = ${String(value)}\n`).join('')
-  const output = etc(t.url.split('/').at(-1)!.replace('.conf.dist', '.conf'))
+  const filename = t.url.split('/').at(-1)!.replace('.conf.dist', '.conf')
+  const output = t.subdir ? etc(`${t.subdir}${filename}`) : etc(filename)
   await Deno.writeTextFile(output, conf)
   console.log(`Wrote ${output}`)
 }
