@@ -13,6 +13,8 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 
+#include <algorithm>
+#include <cctype>
 #include <string>
 #include <vector>
 #include <thread>
@@ -37,6 +39,16 @@ struct WsgFixedRosterItem
     uint32 item = 0;
     uint32 amount = 0;
 };
+
+std::string UpperAscii(std::string value)
+{
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c)
+    {
+        return static_cast<char>(std::toupper(c));
+    });
+
+    return value;
+}
 
 class WsgFixedRosterMgr
 {
@@ -406,7 +418,7 @@ public:
             "[WsgFixedBots] Login diagnostic for {}: auth username={}, online={}, locked={}, expansion={}.",
             entry.name, username, uint32(accountOnline), uint32(accountLocked), uint32(accountExpansion));
 
-        if (username != entry.account)
+        if (UpperAscii(username) != UpperAscii(entry.account))
         {
             LOG_WARN("playerbots",
                 "[WsgFixedBots] Login diagnostic for {}: roster account key {} differs from auth username {}.",
@@ -463,6 +475,7 @@ public:
             LogLoginDiagnostics(entry, guid, cacheAccountId);
 
             attemptedCount++;
+            sRandomPlayerbotMgr.RegisterManualRandomBot(entry.guid, cacheAccountId);
             sRandomPlayerbotMgr.AddPlayerBot(guid, 0);
 
             Player* postLoginBot = ObjectAccessor::FindConnectedPlayer(guid);
