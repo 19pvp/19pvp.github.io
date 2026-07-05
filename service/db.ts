@@ -47,7 +47,7 @@ const databaseConfig = (info: unknown, label: string) => {
 
   return {
     hostname: Deno.env.get('DB_HOSTNAME') || hostname,
-    port: Deno.env.get('DB_PORT') || Number(port),
+    port: Number(Deno.env.get('DB_PORT') || port),
     username: Deno.env.get('DB_USERNAME') || username,
     password: Deno.env.get('DB_PASSWORD') || password,
     db: validateDatabaseName(db, label),
@@ -56,7 +56,13 @@ const databaseConfig = (info: unknown, label: string) => {
 
 const authDb = databaseConfig(worldserverConfig.LoginDatabaseInfo, 'LoginDatabaseInfo')
 const worldDb = databaseConfig(worldserverConfig.WorldDatabaseInfo, 'WorldDatabaseInfo')
+const charactersDb = databaseConfig(worldserverConfig.CharacterDatabaseInfo, 'CharacterDatabaseInfo')
 const playerbotsDb = databaseConfig(playerbotsConfig.PlayerbotsDatabaseInfo, 'PlayerbotsDatabaseInfo')
+
+export const authDbName = authDb.db
+export const worldDbName = worldDb.db
+export const charactersDbName = charactersDb.db
+export const playerbotsDbName = playerbotsDb.db
 
 const dbConnect = {
   poolSize: Number(Deno.env.get('DB_POOL_SIZE')) || 3,
@@ -81,11 +87,6 @@ const database = async (config: DatabaseConfig = worldDb) => {
   })
   dbByConfig.set(key, client)
   return client
-}
-
-export const sql = async (template: TemplateStringsArray, ...args: SqlValue[]): Promise<SqlRow[]> => {
-  const query = template.join('?').trim()
-  return await sqlRaw(query, args)
 }
 
 export const sqlRaw = async (
@@ -207,6 +208,7 @@ const scope = (config: DatabaseConfig): DatabaseScope => ({
 
 export const auth = scope(authDb)
 export const worldserver = scope(worldDb)
+export const characters = scope(charactersDb)
 export const playerbots = scope(playerbotsDb)
 /*
 Query Graveyard:

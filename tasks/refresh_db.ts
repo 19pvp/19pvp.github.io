@@ -1,13 +1,12 @@
 import config from '../config.json' with { type: 'json' }
 import { openDBC } from '../dbc.ts'
-import { sqlRaw } from '../service/db.ts'
+import { charactersDbName, playerbotsDbName, worldDbName, worldserver } from '../service/db.ts'
 
 const _config = config
-const worldDb = Deno.env.get('WORLD_DB') || '19pvp_world'
-const playerbotsDb = Deno.env.get('PLAYERBOTS_DB') || '19pvp_playerbots'
+const worldDb = worldDbName
+const playerbotsDb = playerbotsDbName
+const charactersDb = charactersDbName
 const sheetId = Deno.env.get('SHEET_ID') || '1F1Re3VLtPuF5fXZ1wV79CpogaSgP-fS9r9dm3_aRoP0'
-if (!/^[a-zA-Z0-9_]+$/.test(worldDb)) throw Error(`invalid WORLD_DB ${worldDb}`)
-if (!/^[a-zA-Z0-9_]+$/.test(playerbotsDb)) throw Error(`invalid PLAYERBOTS_DB ${playerbotsDb}`)
 
 type GSheetData = {
   ITEM: ItemSheetRow[]
@@ -718,24 +717,21 @@ type ItemEnchantRow = {
   propertyId: number | null
 }
 
-const itemEnchantRows = await sqlRaw(
-  `
+const itemEnchantRows = await worldserver.raw.sql`
 SELECT
   item.entry item,
   item.RandomSuffix randomSuffix,
   item.RandomProperty randomProperty,
   suffix.ench suffixId,
   property.ench propertyId
-FROM \`${worldDb}\`.item_template item
-LEFT JOIN \`${worldDb}\`.item_enchantment_template suffix
+FROM item_template item
+LEFT JOIN item_enchantment_template suffix
   ON suffix.entry = item.RandomSuffix
-LEFT JOIN \`${worldDb}\`.item_enchantment_template property
+LEFT JOIN item_enchantment_template property
   ON property.entry = item.RandomProperty
-WHERE item.entry IN (${itemIds.map(() => '?').join(', ')})
+WHERE item.entry IN (${itemIds.join(', ')})
 ORDER BY item.entry, suffix.chance DESC, suffix.ench, property.chance DESC, property.ench
-  `,
-  itemIds,
-) as ItemEnchantRow[]
+  ` as ItemEnchantRow[]
 
 type RandomEnchantOption = {
   id: number
@@ -1323,6 +1319,13 @@ ${
 ${itemRows.join(',\n')};`
       : '-- No fixed roster item rows.'
   }
+
+-- Sync character names from the fixed roster to the characters database
+UPDATE \`${charactersDb}\`.\`characters\` c
+JOIN \`${playerbotsDb}\`.\`playerbots_fixed_roster_guid\` g ON g.\`guid\` = c.\`guid\`
+JOIN \`${playerbotsDb}\`.\`playerbots_fixed_roster\` r ON r.\`account\` = g.\`account\`
+SET c.\`name\` = r.\`name\`
+WHERE c.\`name\` <> r.\`name\`;
 `
 }
 
@@ -1725,25 +1728,22 @@ console.log(`wrote ${starterItems.length} starter item rows to core_scripts/star
 
 if (quests.length > 0) {
   const takerIds = [...new Set(quests.map((quest) => quest.taker))].sort((a, b) => a - b)
-  const creaturePositionRows = await sqlRaw(
-    `
+  const creaturePositionRows = await worldserver.raw.sql`
 SELECT spawned.npc, spawned.map, spawned.position_x, spawned.position_y
 FROM (
   SELECT id npc, map, position_x, position_y, guid
-  FROM \`${worldDb}\`.creature
-  WHERE map = 530 AND id IN (${takerIds.map(() => '?').join(', ')})
+  FROM creature
+  WHERE map = 530 AND id IN (${takerIds.join(', ')})
 ) spawned
 INNER JOIN (
   SELECT id npc, MAX(guid) guid
-  FROM \`${worldDb}\`.creature
-  WHERE map = 530 AND id IN (${takerIds.map(() => '?').join(', ')})
+  FROM creature
+  WHERE map = 530 AND id IN (${takerIds.join(', ')})
   GROUP BY id
 ) latest
   ON latest.npc = spawned.npc AND latest.guid = spawned.guid
 ORDER BY npc
-    `,
-    [...takerIds, ...takerIds],
-  ) as CreaturePositionRow[]
+    ` as CreaturePositionRow[]
 
   const positionsByNpc = new Map(creaturePositionRows.map((row) => [Number(row.npc), row]))
   const missingPoiTakers = takerIds.filter((taker) => !positionsByNpc.has(taker))

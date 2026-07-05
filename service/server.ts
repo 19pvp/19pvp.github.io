@@ -32,6 +32,8 @@ const applyPatches = async () => {
 
         console.log(`Applying patch ${entry.name} to ${targetDir}...`)
         try {
+          await runCommand('git', ['-C', targetDir, 'reset', '--hard', 'HEAD'])
+          await runCommand('git', ['-C', targetDir, 'clean', '-fd'])
           await runCommand('git', ['-C', targetDir, 'apply', '--ignore-whitespace', Deno.realPathSync(patchPath)])
           console.log(`Successfully applied patch ${entry.name}`)
         } catch (err) {

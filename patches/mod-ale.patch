@@ -47,14 +47,13 @@ index a21640d..c48b308 100644
      void OnCreate(Player* pPlayer);
      void OnDelete(uint32 guid);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..093654b 100644
+index c0acc01..d1fb020 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
-@@ -566,6 +566,9 @@ ALERegister<Player> PlayerMethods[] =
+@@ -566,6 +566,8 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
-+    { "IsBot", &LuaPlayer::IsBot },
 +    { "SetBotStrategy", &LuaPlayer::SetBotStrategy },
 +    { "HasBotStrategy", &LuaPlayer::HasBotStrategy },
  
@@ -79,7 +78,7 @@ index 7649274..e15e283 100644
  {
      START_HOOK(PLAYER_EVENT_ON_LOGOUT);
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..9483228 100644
+index c39801f..d953d27 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -10,6 +10,8 @@
@@ -91,22 +90,11 @@ index c39801f..9483228 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -5175,6 +5177,85 @@ namespace LuaPlayer
+@@ -5175,6 +5177,74 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
 +
-+    /**
-+     * Returns `true` if the [Player] is a playerbot, `false` otherwise.
-+     *
-+     * @return bool isBot
-+     */
-+    int IsBot(lua_State* L, Player* player)
-+    {
-+        bool isBot = (player && sPlayerbotsMgr.GetPlayerbotAI(player) != nullptr);
-+        ALE::Push(L, isBot);
-+        return 1;
-+    }
 +
 +    /**
 +     * Changes a strategy on the playerbot.
