@@ -200,7 +200,7 @@
   "AiPlayerbot.RandomBotSpellIds": "\"54197\"",
   "AiPlayerbot.OpenGoSpell": "6477",
   "AiPlayerbot.RandomBotCombatStrategies": "\"\"",
-  "AiPlayerbot.RandomBotNonCombatStrategies": "\"+rpg,+explore\"",
+  "AiPlayerbot.RandomBotNonCombatStrategies": "\"+rpg,+explore,+bg\"",
   "AiPlayerbot.CombatStrategies": "\"\"",
   "AiPlayerbot.NonCombatStrategies": "\"\"",
   "AiPlayerbot.HealerDPSMapRestriction": "1",

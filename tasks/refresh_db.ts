@@ -1172,9 +1172,7 @@ const generateQuestSql = (
   const npcSubnameRows = [...npcSubnames.entries()].sort(([a], [b]) => a - b)
   const npcSubnameCase = npcSubnameRows.map(([id, subname]) => `  WHEN ${id} THEN ${sqlString(subname)}`).join('\n')
   const npcSpawnSwapRows = npcSpawnSwaps
-    .map((swap) =>
-      `UPDATE \`creature\` SET \`id\` = ${swap.id} WHERE \`guid\` = ${swap.guid};`
-    )
+    .map((swap) => `UPDATE \`creature\` SET \`id\` = ${swap.id} WHERE \`guid\` = ${swap.guid};`)
     .join('\n')
 
   return `${generatedHeader}

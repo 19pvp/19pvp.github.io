@@ -1,9 +1,9 @@
 import { unemojify } from 'node-emoji'
 
-import { sql, type SqlRow } from './db.ts'
-import { discord } from './discord-bot.ts'
+import { auth, type SqlRow } from './db.ts'
+import { discord } from './discord.ts'
 import { wowEvents } from './wow-events.ts'
-import { createAccount, setGmLevel, setPassword } from './ra-web.ts'
+import { createAccount, setGmLevel, setPassword } from './account.ts'
 
 const botUserID = '766251453337436170' // App Id
 const guildId = Deno.env.get('DISCORD_GUILD_ID')
@@ -102,17 +102,17 @@ const toDiscordAccount = (
 })
 
 const getDiscordAccountByDiscordId = async (discordId: bigint) => {
-  const [row] = await sql`
+  const [row] = await auth.sql`
     SELECT discord_id AS id, discord_login AS login, account_id AS account
-    FROM acore_auth.discord_account WHERE discord_id=${discordId}
+    FROM discord_account WHERE discord_id=${discordId}
   `
   return row ? toDiscordAccount(row as DiscordAccountRow) : undefined
 }
 
 const createDiscordAccount = async (discordId: bigint, login: string, username: string) => {
   const account = await createAccount({ username })
-  await sql`
-    INSERT INTO acore_auth.discord_account (discord_id, discord_login, account_id)
+  await auth.sql`
+    INSERT INTO discord_account (discord_id, discord_login, account_id)
     VALUES (${discordId}, ${login}, ${account.id})
   `
   return toDiscordAccount({ id: discordId, login, account: account.id }, { syncAction: 'created' })
@@ -120,8 +120,8 @@ const createDiscordAccount = async (discordId: bigint, login: string, username: 
 
 const linkDiscordAccount = async (userData: DiscordAccount, discordId: bigint, username: string) => {
   const account = await createAccount({ username, useExisting: true })
-  await sql`
-    UPDATE acore_auth.discord_account
+  await auth.sql`
+    UPDATE discord_account
     SET account_id=${account.id}
     WHERE discord_id=${discordId}
   `
@@ -163,8 +163,8 @@ const syncUserDataNow = async (member?: DiscordMember, user = member?.user): Pro
   }
 
   if (userData.gmLevel == null) {
-    const access = await sql`
-      SELECT gmlevel FROM acore_auth.account_access
+    const access = await auth.sql`
+      SELECT gmlevel FROM account_access
       WHERE id=${userData.account}
     `
 
@@ -172,8 +172,8 @@ const syncUserDataNow = async (member?: DiscordMember, user = member?.user): Pro
   }
 
   if (userData.login !== login) {
-    await sql`
-      UPDATE acore_auth.discord_account
+    await auth.sql`
+      UPDATE discord_account
       SET discord_login=${login}
       WHERE discord_id=${id}
     `
@@ -257,9 +257,9 @@ discord.once.READY().then(syncGuildMembers).catch((err) => {
 const getDiscordDataForAccount = async (account: number) => {
   const userData = activeUsersByAccount[account]
   if (userData) return userData
-  const [currentData] = await sql`
+  const [currentData] = await auth.sql`
     SELECT discord_id AS id, discord_login AS login, account_id AS account
-    FROM acore_auth.discord_account WHERE account_id=${account}
+    FROM discord_account WHERE account_id=${account}
   `
   if (!currentData) return undefined
 
@@ -409,8 +409,8 @@ Example:
   const fullMessage = [formattedMsg, ...attachement].filter((s) => s && s.trim()).join(' ').slice(0, 255)
   if (!fullMessage.length) return console.log('empty message, skipping.')
   console.log('[general]:', fullMessage)
-  await sql`
-    INSERT INTO acore_auth.discord_message (message, discord_id)
+  await auth.sql`
+    INSERT INTO discord_message (message, discord_id)
     VALUES (${fullMessage}, ${id})
   `
 })

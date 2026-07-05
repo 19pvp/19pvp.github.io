@@ -412,21 +412,14 @@ const API = (method: string) => (url: string, init?: DiscordRequestInit) =>
   fetch(`https://discord.com/api/v10${url}`, {
     method,
     ...init,
-    body: init?.body == null
+    body: (init?.body == null
       ? undefined
       : (typeof init.body === 'string' || init.body instanceof Uint8Array)
       ? init.body
-      : JSON.stringify(init.body),
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bot ${TOKEN}`,
-      ...init?.headers,
-    },
+      : JSON.stringify(init.body)) as BodyInit,
+    headers: { 'Content-Type': 'application/json', authorization, ...init?.headers },
   })
 
 const POST = API('POST')
 discord.do.createMessage = ({ channelId, content }) =>
-  POST(`/channels/${channelId}/messages`, {
-    method: 'POST',
-    body: { content },
-  })
+  POST(`/channels/${channelId}/messages`, { method: 'POST', body: { content } })

@@ -1,7 +1,6 @@
-import { sql, type SqlRow } from './db.ts'
+import { auth, type SqlRow } from './db.ts'
 
 const MAX_ACCOUNT_USERNAME_LENGTH = 17
-const DEFAULT_EXPANSION = Number(Deno.env.get('ACCOUNT_EXPANSION') || 2)
 const N = BigInt('0x894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7')
 const G = 7n
 const encoder = new TextEncoder()
@@ -16,12 +15,12 @@ const getAccountByUsername = async (username: string, timeout = 10_000): Promise
   const start = Date.now()
   username = upperOnlyLatin(username)
   while (true) {
-    const [account] = await sql`SELECT * FROM acore_auth.account WHERE username = ${username}`
+    const [account] = await auth.sql`SELECT * FROM account WHERE username = ${username}`
     if (account) return account as Account
     if (Date.now() - start >= timeout) break
     await sleep(100)
   }
-  throw Error(`Created account ${username}, but it was not found in acore_auth.account`)
+  throw Error(`Created account ${username}, but it was not found in account`)
 }
 
 const upperOnlyLatin = (value: unknown) => String(value).replace(/[a-z]/g, (char) => char.toUpperCase())
@@ -80,9 +79,9 @@ const makeRegistrationData = async (username: string, password: string) => {
   }
 }
 const initRealmCharacters = async (accountId: number) => {
-  await sql`
-    INSERT IGNORE INTO acore_auth.realmcharacters (realmid, acctid, numchars)
-    SELECT id, ${accountId}, 0 FROM acore_auth.realmlist
+  await auth.sql`
+    INSERT IGNORE INTO realmcharacters (realmid, acctid, numchars)
+    SELECT id, ${accountId}, 0 FROM realmlist
   `
 }
 
@@ -105,7 +104,7 @@ export const createAccount = async ({
       throw Error(`Account name can't be longer than ${MAX_ACCOUNT_USERNAME_LENGTH} characters, account not created!`)
     }
 
-    const [existing] = await sql`SELECT * FROM acore_auth.account WHERE username = ${username}`
+    const [existing] = await auth.sql`SELECT * FROM account WHERE username = ${username}`
     if (!existing) break
     if (useExisting) return existing as Account
 
@@ -117,9 +116,9 @@ export const createAccount = async ({
   }
 
   const registration = await makeRegistrationData(String(username), password)
-  await sql`
-    INSERT INTO acore_auth.account(username, salt, verifier, expansion, reg_mail, email, joindate)
-    VALUES (${username}, UNHEX(${registration.salt}), UNHEX(${registration.verifier}), ${DEFAULT_EXPANSION}, '', '', NOW())
+  await auth.sql`
+    INSERT INTO account(username, salt, verifier, expansion, reg_mail, email, joindate)
+    VALUES (${username}, UNHEX(${registration.salt}), UNHEX(${registration.verifier}), ${2}, '', '', NOW())
   `
 
   const account = await getAccountByUsername(username)
@@ -128,19 +127,19 @@ export const createAccount = async ({
   return account
 }
 
-const getUsername = async (accountIdOrName: number | string) => {
+export const getUsername = async (accountIdOrName: number | string) => {
   if (typeof accountIdOrName === 'string') return accountIdOrName
-  const [account] = await sql`SELECT username FROM acore_auth.account WHERE id=${accountIdOrName}`
+  const [account] = await auth.sql`SELECT username FROM account WHERE id=${accountIdOrName}`
   return account?.username ? String(account.username) : undefined
 }
 
 export const setGmLevel = async (account: number | string, gmLevel: number) => {
   const id = typeof account === 'string' ? (await getAccountByUsername(account)).id : account
 
-  await sql`DELETE FROM acore_auth.account_access WHERE id=${id}`
+  await auth.sql`DELETE FROM account_access WHERE id=${id}`
   if (gmLevel > 0) {
-    await sql`
-      INSERT INTO acore_auth.account_access (id, gmlevel, RealmID)
+    await auth.sql`
+      INSERT INTO account_access (id, gmlevel, RealmID)
       VALUES (${id}, ${gmLevel}, -1)
     `
   }
@@ -154,8 +153,8 @@ export const setPassword = async (account: number | string, password: string) =>
   }
 
   const registration = await makeRegistrationData(username, password)
-  await sql`
-    UPDATE acore_auth.account
+  await auth.sql`
+    UPDATE account
     SET salt=UNHEX(${registration.salt}), verifier=UNHEX(${registration.verifier})
     WHERE id=${id}
   `

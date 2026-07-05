@@ -1,4 +1,4 @@
-import { sql, type SqlRow } from './db.ts'
+import { auth, type SqlRow } from './db.ts'
 
 // tables
 const worldId = Number(Deno.env.get('WORLD_ID')) || 1
@@ -53,9 +53,9 @@ for (const type of eventTypes) {
   wowEvents.once[type] = () => new Promise(next)
 }
 
-// await sql`DROP TABLE acore_auth.web_events;`
-await sql`
-CREATE TABLE IF NOT EXISTS acore_auth.web_events (
+// await auth.sql`DROP TABLE web_events;`
+await auth.sql`
+CREATE TABLE IF NOT EXISTS web_events (
   id    INT  PRIMARY KEY AUTO_INCREMENT,
   type  TEXT NOT NULL,
   world INT  NOT NULL,
@@ -66,37 +66,37 @@ CREATE TABLE IF NOT EXISTS acore_auth.web_events (
 );
 `
 
-await sql`
-CREATE TABLE IF NOT EXISTS acore_auth.web_events_archive
-LIKE acore_auth.web_events;
+await auth.sql`
+CREATE TABLE IF NOT EXISTS web_events_archive
+LIKE web_events;
 `
 
 try {
-  await sql`ALTER TABLE acore_auth.web_events ADD INDEX web_events_archive_idx (end, at);`
+  await auth.sql`ALTER TABLE web_events ADD INDEX web_events_archive_idx (end, at);`
 } catch (err) {
   if (!(err instanceof Error) || !/Duplicate key name|already exists/i.test(err.message)) throw err
 }
 
 try {
-  await sql`
-  CREATE EVENT IF NOT EXISTS acore_auth.archive_web_events
+  await auth.sql`
+  CREATE EVENT IF NOT EXISTS archive_web_events
   ON SCHEDULE EVERY 1 HOUR
   DO
   BEGIN
-    INSERT IGNORE INTO acore_auth.web_events_archive
+    INSERT IGNORE INTO web_events_archive
     SELECT *
-    FROM acore_auth.web_events
+    FROM web_events
     WHERE at < NOW(3) - INTERVAL 7 DAY
       AND end IS NOT NULL;
 
-    DELETE FROM acore_auth.web_events
+    DELETE FROM web_events
     WHERE at < NOW(3) - INTERVAL 7 DAY
       AND end IS NOT NULL;
   END;
   `
 } catch (err) {
   console.warn(
-    'Unable to create acore_auth.archive_web_events. Enable event_scheduler and grant EVENT privilege if automatic archiving is needed.',
+    'Unable to create archive_web_events. Enable event_scheduler and grant EVENT privilege if automatic archiving is needed.',
   )
   console.warn(err)
 }
@@ -139,22 +139,22 @@ async function handleNewEvents() {
   polling = true
 
   try {
-    const events = await sql`
-      SELECT * FROM acore_auth.web_events WHERE start IS NULL AND world=${worldId} ORDER BY id
+    const events = await auth.sql`
+      SELECT * FROM web_events WHERE start IS NULL AND world=${worldId} ORDER BY id
     `
 
     for (const event of events as WebEvent[]) {
       try {
-        await sql`UPDATE acore_auth.web_events SET start=NOW(3) WHERE id=${event.id} AND start IS NULL`
+        await auth.sql`UPDATE web_events SET start=NOW(3) WHERE id=${event.id} AND start IS NULL`
         await handleSingleEvent(event)
         if (purgedEvents.has(event.type)) {
-          await sql`DELETE FROM acore_auth.web_events WHERE id=${event.id}`
+          await auth.sql`DELETE FROM web_events WHERE id=${event.id}`
           event.purged = true
         } else {
-          await sql`UPDATE acore_auth.web_events SET end=NOW(3) WHERE id=${event.id}`
+          await auth.sql`UPDATE web_events SET end=NOW(3) WHERE id=${event.id}`
         }
         event.elapsed = (Date.now() - Number(event.start)) / 1000
-        console.log('acore_auth.web_events:', event)
+        console.log('web_events:', event)
       } catch (err) {
         console.error(err)
       }
@@ -170,15 +170,15 @@ let initialStateStart: Date | number | undefined
 export async function handleInitialStateEvents() {
   if (initialStateStart) return initialStateStart
 
-  const [startup] = await sql`
-    SELECT * FROM acore_auth.web_events
+  const [startup] = await auth.sql`
+    SELECT * FROM web_events
     WHERE type = ${'STARTUP'} AND world=${worldId}
     ORDER BY at DESC LIMIT 1
   ` as WebEvent[]
   const start = startup?.at || new Date()
   initialStateStart = start
-  const events = await sql`
-    SELECT * FROM acore_auth.web_events WHERE world=${worldId} AND at > ${start} ORDER BY id
+  const events = await auth.sql`
+    SELECT * FROM web_events WHERE world=${worldId} AND at > ${start} ORDER BY id
   `
 
   startup && (await handleSingleEvent(startup))

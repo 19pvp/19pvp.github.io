@@ -444,8 +444,6 @@ public:
 
         _timer = _checkMs;
 
-        LOG_INFO("playerbots", "[WsgFixedBots] Checking fixed roster login status...");
-
         uint32 onlineCount = 0;
         uint32 attemptedCount = 0;
         uint32 skippedGuidCount = 0;
@@ -490,10 +488,6 @@ public:
                     entry.name, postLoginBot ? 1 : 0, postLoginBot && postLoginBot->IsInWorld() ? 1 : 0);
             }
         }
-
-        LOG_INFO("playerbots",
-            "[WsgFixedBots] Fixed roster login check complete: roster={}, alreadyOnline={}, attempted={}, skippedMissingGuid={}.",
-            _roster.size(), onlineCount, attemptedCount, skippedGuidCount);
     }
 
 private:

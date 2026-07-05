@@ -57,3 +57,8 @@
 - Character creation: `core/src/server/game/Entities/Player/Player.cpp`; use this for level 19 start level, location,
   outfit order, custom spells, skills, ammo, and durability behavior.
 - Item rules/equipment: `core/src/server/game/Entities/Item/` and player equip checks in `Entities/Player/Player.cpp`.
+
+## Automated Patches & Modules
+
+- The API service in `service/server.ts` automatically applies `.patch` files from the `patches/` folder on startup.
+- Patches starting with `mod-` (e.g. `mod-playerbots.patch`) are automatically mapped and applied to `${CORE_PATH}/modules/[module-name]/`.
