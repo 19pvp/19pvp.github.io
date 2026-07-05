@@ -13,6 +13,8 @@
 
 #include <string>
 #include <vector>
+#include <thread>
+#include <chrono>
 
 using namespace Acore::ChatCommands;
 
@@ -109,7 +111,21 @@ public:
                     LOG_ERROR("playerbots", "[WsgFixedBots] Failed to create account {} for fixed bot {}", entry.account, entry.name);
                     continue;
                 }
-                accountId = AccountMgr::GetId(entry.account);
+                
+                // sAccountMgr->CreateAccount executes asynchronously, so we wait/retry for the DB to complete
+                int retries = 0;
+                while (!accountId && retries < 20)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    accountId = AccountMgr::GetId(entry.account);
+                    retries++;
+                }
+
+                if (!accountId)
+                {
+                    LOG_ERROR("playerbots", "[WsgFixedBots] Failed to retrieve account ID for newly created account {} (timeout)", entry.account);
+                    continue;
+                }
                 LOG_INFO("playerbots", "[WsgFixedBots] Created account {} for fixed bot {}", entry.account, entry.name);
             }
 
@@ -214,7 +230,9 @@ public:
             "FROM `playerbots_fixed_roster` roster "
             "JOIN `playerbots_fixed_roster_item` item "
             "  ON item.`account` = roster.`account` "
-            "WHERE roster.`guid` = {} AND roster.`enabled` = 1 AND item.`enabled` = 1 "
+            "JOIN `playerbots_fixed_roster_guid` g "
+            "  ON g.`account` = roster.`account` "
+            "WHERE g.`guid` = {} AND roster.`enabled` = 1 AND item.`enabled` = 1 "
             "ORDER BY item.`item`",
             playerGuid);
 
@@ -277,13 +295,25 @@ public:
 
         _timer = _checkMs;
 
+        LOG_INFO("playerbots", "[WsgFixedBots] Checking fixed roster login status...");
+
         for (WsgFixedRosterEntry const& entry : _roster)
         {
+            if (entry.guid == 0)
+            {
+                LOG_WARN("playerbots", "[WsgFixedBots] Bot {} has GUID 0, skipping login.", entry.name);
+                continue;
+            }
+
             ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(entry.guid);
             Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
 
             if (bot && bot->IsInWorld())
                 continue;
+
+            uint32 cacheAccountId = sCharacterCache->GetCharacterAccountIdByGuid(guid);
+            LOG_INFO("playerbots", "[WsgFixedBots] Attempting to login bot {} (GUID {}, Account ID in cache: {})...", 
+                     entry.name, entry.guid, cacheAccountId);
 
             sRandomPlayerbotMgr.AddPlayerBot(guid, 0);
         }
