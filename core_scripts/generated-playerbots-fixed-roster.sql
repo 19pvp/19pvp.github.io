@@ -6,7 +6,6 @@ DROP TABLE IF EXISTS `playerbots_fixed_roster_item`;
 DROP TABLE IF EXISTS `playerbots_fixed_roster`;
 
 CREATE TABLE IF NOT EXISTS `playerbots_fixed_roster` (
-  `guid` int unsigned NOT NULL DEFAULT '0' COMMENT 'Global Unique Identifier',
   `account` varchar(32) NOT NULL DEFAULT '',
   `name` varchar(12) NOT NULL DEFAULT '',
   `race` tinyint unsigned NOT NULL DEFAULT 0,
@@ -17,9 +16,15 @@ CREATE TABLE IF NOT EXISTS `playerbots_fixed_roster` (
   `behavior_profile` varchar(32) NOT NULL DEFAULT '',
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`account`),
-  UNIQUE KEY `guid_unique` (`guid`),
   UNIQUE KEY `name_unique` (`name`),
   KEY `enabled` (`enabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `playerbots_fixed_roster_guid` (
+  `account` varchar(32) NOT NULL DEFAULT '',
+  `guid` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`account`),
+  UNIQUE KEY `guid_unique` (`guid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `playerbots_fixed_roster_item` (
@@ -33,7 +38,6 @@ CREATE TABLE IF NOT EXISTS `playerbots_fixed_roster_item` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `playerbots_fixed_roster` (
-  `guid`,
   `account`,
   `name`,
   `race`,
@@ -44,16 +48,16 @@ INSERT INTO `playerbots_fixed_roster` (
   `behavior_profile`,
   `enabled`
 ) VALUES
-  (777000, 'alliance-priest', 'Aegwynn', 1, 5, 'healer', 'discipline', 5, 'wsg-healer', 1),
-  (777001, 'alliance-mage', 'Antonidas', 1, 8, 'dps', 'frost', 1, 'wsg-ranged-dps', 1),
-  (777002, 'alliance-warrior', 'Trarife', 1, 1, 'dps', 'arms', 2, 'wsg-melee-dps', 1),
-  (777003, 'alliance-hunter', 'Alleria', 4, 3, 'dps', 'marksman', 3, 'wsg-ranged-dps', 1),
-  (777004, 'alliance-druid', 'Malfurion', 4, 11, 'flag-carrier', 'feral', 4, 'wsg-flag-carrier', 1),
-  (777005, 'horde-priest', 'Velenar', 5, 5, 'healer', 'discipline', 5, 'wsg-healer', 1),
-  (777006, 'horde-mage', 'Kelthuzad', 5, 8, 'dps', 'frost', 1, 'wsg-ranged-dps', 1),
-  (777007, 'horde-warrior', 'Saurfang', 2, 1, 'dps', 'arms', 2, 'wsg-melee-dps', 1),
-  (777008, 'horde-hunter', 'Rokhan', 8, 3, 'dps', 'marksman', 3, 'wsg-ranged-dps', 1),
-  (777009, 'horde-druid', 'Hamuul', 6, 11, 'flag-carrier', 'feral', 4, 'wsg-flag-carrier', 1);
+  ('alliance-priest', 'Aegwynn', 1, 5, 'healer', 'discipline', 5, 'wsg-healer', 1),
+  ('alliance-mage', 'Antonidas', 1, 8, 'dps', 'frost', 1, 'wsg-ranged-dps', 1),
+  ('alliance-warrior', 'Trarife', 1, 1, 'dps', 'arms', 2, 'wsg-melee-dps', 1),
+  ('alliance-hunter', 'Alleria', 4, 3, 'dps', 'marksman', 3, 'wsg-ranged-dps', 1),
+  ('alliance-druid', 'Malfurion', 4, 11, 'flag-carrier', 'feral', 4, 'wsg-flag-carrier', 1),
+  ('horde-priest', 'Velenar', 5, 5, 'healer', 'discipline', 5, 'wsg-healer', 1),
+  ('horde-mage', 'Kelthuzad', 5, 8, 'dps', 'frost', 1, 'wsg-ranged-dps', 1),
+  ('horde-warrior', 'Saurfang', 2, 1, 'dps', 'arms', 2, 'wsg-melee-dps', 1),
+  ('horde-hunter', 'Rokhan', 8, 3, 'dps', 'marksman', 3, 'wsg-ranged-dps', 1),
+  ('horde-druid', 'Hamuul', 6, 11, 'flag-carrier', 'feral', 4, 'wsg-flag-carrier', 1);
 
 INSERT INTO `playerbots_fixed_roster_item` (`account`, `item`, `amount`, `note`, `enabled`) VALUES
   ('alliance-druid', 892, 1, 'player starter gear', 1),

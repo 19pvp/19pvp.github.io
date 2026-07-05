@@ -1,4 +1,5 @@
 #include "Common.h"
+#include "AccountMgr.h"
 #include "Chat.h"
 #include "Configuration/Config.h"
 #include "DatabaseEnv.h"
@@ -8,6 +9,7 @@
 #include "Player.h"
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
+#include "WorldSession.h"
 
 #include <string>
 #include <vector>
@@ -22,6 +24,8 @@ struct WsgFixedRosterEntry
     std::string account;
     std::string name;
     std::string role;
+    uint8 race = 0;
+    uint8 class_ = 0;
 };
 
 struct WsgFixedRosterItem
@@ -58,8 +62,10 @@ public:
         }
 
         QueryResult result = PlayerbotsDatabase.Query(
-            "SELECT `guid`, `account`, `name`, `role` FROM `playerbots_fixed_roster` "
-            "WHERE `enabled` = 1 AND `guid` IS NOT NULL ORDER BY `account`");
+            "SELECT g.`guid`, r.`account`, r.`name`, r.`role`, r.`race`, r.`class` "
+            "FROM `playerbots_fixed_roster` r "
+            "LEFT JOIN `playerbots_fixed_roster_guid` g ON g.`account` = r.`account` "
+            "WHERE r.`enabled` = 1 ORDER BY r.`account`");
 
         if (!result)
         {
@@ -72,14 +78,115 @@ public:
             Field* fields = result->Fetch();
 
             WsgFixedRosterEntry entry;
-            entry.guid = fields[0].Get<uint32>();
+            entry.guid = fields[0].Get<uint32>(); // NULL values will naturally return 0
             entry.account = fields[1].Get<std::string>();
             entry.name = fields[2].Get<std::string>();
             entry.role = fields[3].Get<std::string>();
+            entry.race = fields[4].Get<uint8>();
+            entry.class_ = fields[5].Get<uint8>();
             _roster.push_back(entry);
         } while (result->NextRow());
 
         LOG_INFO("playerbots", "[WsgFixedBots] Loaded {} fixed roster bots.", _roster.size());
+
+        CreateMissingBots();
+    }
+
+    void CreateMissingBots()
+    {
+        if (!_enabled || _roster.empty())
+            return;
+
+        for (WsgFixedRosterEntry& entry : _roster)
+        {
+            // 1. Ensure account exists
+            uint32 accountId = AccountMgr::GetId(entry.account);
+            if (!accountId)
+            {
+                AccountOpResult result = sAccountMgr->CreateAccount(entry.account, entry.account);
+                if (result != AOR_OK)
+                {
+                    LOG_ERROR("playerbots", "[WsgFixedBots] Failed to create account {} for fixed bot {}", entry.account, entry.name);
+                    continue;
+                }
+                accountId = AccountMgr::GetId(entry.account);
+                LOG_INFO("playerbots", "[WsgFixedBots] Created account {} for fixed bot {}", entry.account, entry.name);
+            }
+
+            // 2. Ensure character exists
+            bool characterExists = false;
+            if (entry.guid != 0)
+            {
+                QueryResult checkResult = CharacterDatabase.Query("SELECT 1 FROM characters WHERE guid = {}", entry.guid);
+                if (checkResult)
+                    characterExists = true;
+            }
+
+            if (!characterExists)
+            {
+                // Determine the guid to use
+                ObjectGuid::LowType guidToUse = entry.guid;
+                if (guidToUse == 0)
+                {
+                    guidToUse = sObjectMgr->GetGenerator<HighGuid::Player>().Generate();
+                }
+                else
+                {
+                    // Double check for conflicts
+                    QueryResult checkConflict = CharacterDatabase.Query("SELECT 1 FROM characters WHERE guid = {}", guidToUse);
+                    if (checkConflict)
+                    {
+                        guidToUse = sObjectMgr->GetGenerator<HighGuid::Player>().Generate();
+                    }
+                }
+
+                LOG_INFO("playerbots", "[WsgFixedBots] Character {} (GUID {}) does not exist. Creating...", entry.name, guidToUse);
+
+                // Create a temporary session
+                WorldSession* session = new WorldSession(accountId, "", 0x0, nullptr, SEC_PLAYER, EXPANSION_WRATH_OF_THE_LICH_KING,
+                                                        time_t(0), LOCALE_enUS, 0, false, false, 0, true);
+
+                uint8 gender = urand(0, 1) ? GENDER_MALE : GENDER_FEMALE;
+                uint8 skin = 0;
+                uint8 face = 0;
+                uint8 hairStyle = 0;
+                uint8 hairColor = 0;
+                uint8 facialHair = 0;
+
+                std::unique_ptr<CharacterCreateInfo> characterInfo = std::make_unique<CharacterCreateInfo>(
+                    entry.name, entry.race, entry.class_, gender, skin, face, hairStyle, hairColor, facialHair);
+
+                Player* player = new Player(session);
+                player->GetMotionMaster()->Initialize();
+
+                if (player->Create(guidToUse, characterInfo.get()))
+                {
+                    player->SetLevel(19);
+                    player->SaveToDB(true, false);
+                    sCharacterCache->AddCharacterCacheEntry(player->GetGUID(), accountId, player->GetName(),
+                                                            player->getGender(), player->getRace(),
+                                                            player->getClass(), player->GetLevel());
+
+                    // Save new GUID to the entry and update the relation table
+                    entry.guid = guidToUse;
+                    PlayerbotsDatabase.Execute(
+                        "INSERT INTO `playerbots_fixed_roster_guid` (`account`, `guid`) "
+                        "VALUES ('{}', {}) "
+                        "ON DUPLICATE KEY UPDATE `guid` = {}",
+                        entry.account, guidToUse, guidToUse);
+
+                    LOG_INFO("playerbots", "[WsgFixedBots] Successfully created level 19 character {} (GUID {}).", entry.name, guidToUse);
+                }
+                else
+                {
+                    LOG_ERROR("playerbots", "[WsgFixedBots] Failed to create character {} programmatically.", entry.name);
+                }
+
+                player->CleanupsBeforeDelete();
+                delete player;
+                delete session;
+            }
+        }
     }
 
     bool IsFixedBot(ObjectGuid::LowType guid) const
