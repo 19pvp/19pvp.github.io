@@ -57,35 +57,6 @@ public:
             return;
         }
 
-        PlayerbotsDatabase.Execute(
-            "CREATE TABLE IF NOT EXISTS `playerbots_fixed_roster` ("
-            "`guid` int unsigned NULL DEFAULT NULL,"
-            "`account` varchar(32) NOT NULL DEFAULT '',"
-            "`name` varchar(12) NOT NULL DEFAULT '',"
-            "`race` tinyint unsigned NOT NULL DEFAULT 0,"
-            "`class` tinyint unsigned NOT NULL DEFAULT 0,"
-            "`role` varchar(16) NOT NULL DEFAULT '',"
-            "`spec` varchar(32) NOT NULL DEFAULT '',"
-            "`replacement_priority` tinyint unsigned NOT NULL DEFAULT 0,"
-            "`behavior_profile` varchar(32) NOT NULL DEFAULT '',"
-            "`enabled` tinyint(1) unsigned NOT NULL DEFAULT 1,"
-            "PRIMARY KEY (`account`),"
-            "UNIQUE KEY `guid_unique` (`guid`),"
-            "UNIQUE KEY `name_unique` (`name`),"
-            "KEY `enabled` (`enabled`)"
-            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
-        PlayerbotsDatabase.Execute(
-            "CREATE TABLE IF NOT EXISTS `playerbots_fixed_roster_item` ("
-            "`account` varchar(32) NOT NULL,"
-            "`item` int unsigned NOT NULL,"
-            "`amount` int unsigned NOT NULL DEFAULT 1,"
-            "`note` varchar(255) NOT NULL DEFAULT '',"
-            "`enabled` tinyint(1) unsigned NOT NULL DEFAULT 1,"
-            "PRIMARY KEY (`account`, `item`),"
-            "KEY `enabled` (`enabled`)"
-            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
         QueryResult result = PlayerbotsDatabase.Query(
             "SELECT `guid`, `account`, `name`, `role` FROM `playerbots_fixed_roster` "
             "WHERE `enabled` = 1 AND `guid` IS NOT NULL ORDER BY `account`");
@@ -105,9 +76,7 @@ public:
             entry.account = fields[1].Get<std::string>();
             entry.name = fields[2].Get<std::string>();
             entry.role = fields[3].Get<std::string>();
-
-            if (entry.guid)
-                _roster.push_back(entry);
+            _roster.push_back(entry);
         } while (result->NextRow());
 
         LOG_INFO("playerbots", "[WsgFixedBots] Loaded {} fixed roster bots.", _roster.size());
