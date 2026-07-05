@@ -2,6 +2,11 @@ import { brightRed, cyan, green, magenta } from '@std/fmt/colors'
 const TOKEN = Deno.env.get('DISCORD_TOKEN')
 const GUILD_ID = Deno.env.get('DISCORD_GUILD_ID')
 
+console.log('INIT DISCORD:', {
+  token: TOKEN.slice(0, 4) + '...' + TOKEN.slice(-4),
+  guild: GUILD_ID,
+})
+
 type DiscordPayload = Record<string, unknown>
 type DiscordHandler<T = unknown> = (data: T) => unknown
 type DiscordEventMap = Record<string, <T>(fn: DiscordHandler<T>) => Set<DiscordHandler>>
