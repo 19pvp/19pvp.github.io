@@ -1,0 +1,179 @@
+diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
+index d8886ce..deee66e 100644
+--- a/src/ALE_SC.cpp
++++ b/src/ALE_SC.cpp
+@@ -618,6 +618,7 @@ public:
+         PLAYERHOOK_ON_TEXT_EMOTE,
+         PLAYERHOOK_ON_SPELL_CAST,
+         PLAYERHOOK_ON_LOGIN,
++        PLAYERHOOK_ON_PLAYER_JOIN_BG,
+         PLAYERHOOK_ON_LOGOUT,
+         PLAYERHOOK_ON_CREATE,
+         PLAYERHOOK_ON_SAVE,
+@@ -832,6 +833,11 @@ public:
+         sALE->OnLogin(player);
+     }
+ 
++    void OnPlayerJoinBG(Player* player) override
++    {
++        sALE->OnPlayerJoinBG(player);
++    }
++
+     void OnPlayerLogout(Player* player) override
+     {
+         sALE->OnLogout(player);
+diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
+index f83dd99..5d7d44f 100644
+--- a/src/LuaEngine/Hooks.h
++++ b/src/LuaEngine/Hooks.h
+@@ -238,6 +238,7 @@ namespace Hooks
+         PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
+         PLAYER_EVENT_ON_DEAL_DAMAGE                         =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
+         PLAYER_EVENT_ON_RELEASED_GHOST                      =     73,       // (event, player)
++        PLAYER_EVENT_ON_PLAYER_JOIN_BG                      =     74,       // (event, player)
+ 
+         PLAYER_EVENT_COUNT
+     };
+diff --git a/src/LuaEngine/LuaEngine.h b/src/LuaEngine/LuaEngine.h
+index a21640d..c48b308 100644
+--- a/src/LuaEngine/LuaEngine.h
++++ b/src/LuaEngine/LuaEngine.h
+@@ -479,6 +479,7 @@ public:
+     void OnTextEmote(Player* pPlayer, uint32 textEmote, uint32 emoteNum, ObjectGuid guid);
+     void OnPlayerSpellCast(Player* pPlayer, Spell* pSpell, bool skipCheck);
+     void OnLogin(Player* pPlayer);
++    void OnPlayerJoinBG(Player* pPlayer);
+     void OnLogout(Player* pPlayer);
+     void OnCreate(Player* pPlayer);
+     void OnDelete(uint32 guid);
+diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
+index c0acc01..093654b 100644
+--- a/src/LuaEngine/LuaFunctions.cpp
++++ b/src/LuaEngine/LuaFunctions.cpp
+@@ -566,6 +566,9 @@ ALERegister<Player> PlayerMethods[] =
+     { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
+     { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
+     { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
++    { "IsBot", &LuaPlayer::IsBot },
++    { "SetBotStrategy", &LuaPlayer::SetBotStrategy },
++    { "HasBotStrategy", &LuaPlayer::HasBotStrategy },
+ 
+     // Setters
+     { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
+diff --git a/src/LuaEngine/hooks/PlayerHooks.cpp b/src/LuaEngine/hooks/PlayerHooks.cpp
+index 7649274..e15e283 100644
+--- a/src/LuaEngine/hooks/PlayerHooks.cpp
++++ b/src/LuaEngine/hooks/PlayerHooks.cpp
+@@ -344,6 +344,13 @@ void ALE::OnLogin(Player* pPlayer)
+     CallAllFunctions(PlayerEventBindings, key);
+ }
+ 
++void ALE::OnPlayerJoinBG(Player* pPlayer)
++{
++    START_HOOK(PLAYER_EVENT_ON_PLAYER_JOIN_BG);
++    Push(pPlayer);
++    CallAllFunctions(PlayerEventBindings, key);
++}
++
+ void ALE::OnLogout(Player* pPlayer)
+ {
+     START_HOOK(PLAYER_EVENT_ON_LOGOUT);
+diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
+index c39801f..9483228 100644
+--- a/src/LuaEngine/methods/PlayerMethods.h
++++ b/src/LuaEngine/methods/PlayerMethods.h
+@@ -10,6 +10,8 @@
+ #include "Chat.h"
+ #include "GameTime.h"
+ #include "GossipDef.h"
++#include "PlayerbotAI.h"
++#include "PlayerbotMgr.h"
+ 
+ /***
+  * Inherits all methods from: [Object], [WorldObject], [Unit]
+@@ -5175,6 +5177,85 @@ namespace LuaPlayer
+         ALE::Push(L, player->GetMostPointsTalentTree());
+         return 1;
+     }
++
++    /**
++     * Returns `true` if the [Player] is a playerbot, `false` otherwise.
++     *
++     * @return bool isBot
++     */
++    int IsBot(lua_State* L, Player* player)
++    {
++        bool isBot = (player && sPlayerbotsMgr.GetPlayerbotAI(player) != nullptr);
++        ALE::Push(L, isBot);
++        return 1;
++    }
++
++    /**
++     * Changes a strategy on the playerbot.
++     *
++     * @param string strategyText (e.g. "+bg" or "-grind")
++     * @param uint32 state (combat=0, non-combat=1, dead=2. Default is 1)
++     * @return bool success
++     */
++    int SetBotStrategy(lua_State* L, Player* player)
++    {
++        if (!player)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        PlayerbotAI* botAI = sPlayerbotsMgr.GetPlayerbotAI(player);
++        if (!botAI)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        std::string strategyText = ALE::CHECKVAL<std::string>(L, 2);
++        uint32 stateVal = ALE::CHECKVAL<uint32>(L, 3, 1);
++
++        BotState state = BOT_STATE_NON_COMBAT;
++        if (stateVal == 0) state = BOT_STATE_COMBAT;
++        else if (stateVal == 2) state = BOT_STATE_DEAD;
++
++        botAI->ChangeStrategy(strategyText, state);
++        ALE::Push(L, true);
++        return 1;
++    }
++
++    /**
++     * Checks if the playerbot has the specified strategy active.
++     *
++     * @param string strategyName
++     * @param uint32 state (combat=0, non-combat=1, dead=2. Default is 1)
++     * @return bool hasStrategy
++     */
++    int HasBotStrategy(lua_State* L, Player* player)
++    {
++        if (!player)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        PlayerbotAI* botAI = sPlayerbotsMgr.GetPlayerbotAI(player);
++        if (!botAI)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        std::string strategyName = ALE::CHECKVAL<std::string>(L, 2);
++        uint32 stateVal = ALE::CHECKVAL<uint32>(L, 3, 1);
++
++        BotState state = BOT_STATE_NON_COMBAT;
++        if (stateVal == 0) state = BOT_STATE_COMBAT;
++        else if (stateVal == 2) state = BOT_STATE_DEAD;
++
++        ALE::Push(L, botAI->HasStrategy(strategyName, state));
++        return 1;
++    }
+ };
+ #endif
+ 

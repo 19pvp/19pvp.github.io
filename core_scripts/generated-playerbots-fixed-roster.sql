@@ -210,3 +210,10 @@ INSERT INTO `playerbots_fixed_roster_item` (`account`, `item`, `amount`, `note`,
   ('horde-warrior', 21934, 1, 'player starter gear', 1),
   ('horde-warrior', 22979, 1, 'player starter gear', 1),
   ('horde-warrior', 25873, 1, 'player starter gear', 1);
+
+-- Sync character names from the fixed roster to the characters database
+UPDATE `19pvp_characters`.`characters` c
+JOIN `19pvp_playerbots`.`playerbots_fixed_roster_guid` g ON g.`guid` = c.`guid`
+JOIN `19pvp_playerbots`.`playerbots_fixed_roster` r ON r.`account` = g.`account`
+SET c.`name` = r.`name`
+WHERE c.`name` <> r.`name`;
