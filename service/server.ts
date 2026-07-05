@@ -1,6 +1,13 @@
 import { TextLineStream } from '@std/streams'
 import { cors, json, runCommand, sse } from './utils.ts'
 import { watch } from '../tasks/config.ts'
+import { ac } from './soap.ts'
+
+if (Deno.env.get('DISCORD_TOKEN')) {
+  void import('./world-chat.ts').catch((err) => {
+    console.error('Discord bridge failed to start', err)
+  })
+}
 
 const serviceJournalQuery = `_PID=${Deno.pid}`
 const worldserverServiceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
@@ -458,7 +465,7 @@ export const worldserverStop = async (signal: Deno.Signal = 'SIGTERM') => {
   }
 
   if (signal === 'SIGKILL') {
-    await systemctl('kill', '--signal=SIGKILL', worldserverServiceName)
+    await systemctl('kill', '-s', 'SIGKILL', worldserverServiceName)
   } else {
     await systemctl('stop', worldserverServiceName)
   }

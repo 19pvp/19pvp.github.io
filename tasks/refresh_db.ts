@@ -13,8 +13,6 @@ type GSheetData = {
   ITEM: ItemSheetRow[]
   NPC?: NpcSheetRow[]
   QUEST?: QuestSheetRow[]
-  WSG_BOT?: WsgBotSheetRow[]
-  WSG_BOT_ITEM?: WsgBotItemSheetRow[]
 }
 
 type ItemSheetRow = {
@@ -42,21 +40,6 @@ type QuestSheetRow = {
   PROGRESSION?: string
   END?: string
   OBJECTIVE?: string
-}
-
-type WsgBotSheetRow = {
-  BEHAVIOR?: string
-  BEHAVIOR_PROFILE?: string
-  CLASS?: string
-  ENABLED?: string
-  GUID?: string
-  NAME?: string
-  RACE?: string
-  REPLACEMENT_PRIORITY?: string
-  ROLE?: string
-  SLOT?: string
-  SPEC?: string
-  TEAM?: string
 }
 
 type WsgBotItemSheetRow = {
@@ -226,14 +209,11 @@ const wsgClassSlotOrder = {
 
 const wsgSlotKey = (team: number, className: string) =>
   `${teamNameById[team as keyof typeof teamNameById] ?? `team${team}`}-${normalizeClassName(className)}`
-const teamIdForRace = (raceName: string) =>
-  ['human', 'dwarf', 'nightelf', 'gnome', 'draenei'].includes(normalizeRosterKey(raceName)) ? 1 : 2
 
 await Promise.all([
   fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/QUEST`),
   fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/ITEM`),
   fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/NPC`),
-  fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/BOT`),
 ])
 const gsheetResponse = await fetch(`https://gsheet.devazuka.com/${sheetId}`)
 if (!gsheetResponse.ok || !gsheetResponse.headers.get('content-type')?.includes('application/json')) {
@@ -536,83 +516,8 @@ const parseOptionalPositiveInt = (value: string | undefined, label: string, rowL
   return parseRequiredInt(value, label, rowLabel)
 }
 
-const parseEnabled = (value: string | undefined) => {
-  const normalized = value?.trim().toLowerCase()
-  return !normalized || ['1', 'true', 'yes', 'y', 'enabled'].includes(normalized)
-}
-
-const parseWsgBotRoster = (rows: WsgBotSheetRow[] | undefined): WsgBotRosterEntry[] => {
-  const parsedRows: WsgBotRosterEntry[] = []
-
-  for (const [index, row] of (rows ?? []).entries()) {
-    if (!Object.values(row).some((value) => value?.trim())) continue
-
-    const rowLabel = `WSG_BOT row ${index + 2}${row.NAME ? ` (${row.NAME})` : ''}`
-    const teamRaw = row.TEAM?.trim()
-
-    const name = row.NAME?.trim()
-    if (!name || !/^[A-Za-z][A-Za-z]{1,11}$/.test(name)) {
-      questWarnings.push(`${rowLabel}: ignored bot, NAME must be 2-12 letters`)
-      continue
-    }
-
-    const raceName = row.RACE?.trim()
-    const raceId = raceName
-      ? playerRaceIdByName[normalizeRosterKey(raceName) as keyof typeof playerRaceIdByName]
-      : undefined
-    if (!raceName || !raceId) {
-      questWarnings.push(`${rowLabel}: ignored bot, unknown RACE ${JSON.stringify(row.RACE)}`)
-      continue
-    }
-    const inferredTeam = teamIdForRace(raceName)
-    const team = teamRaw
-      ? teamIdByName[normalizeRosterKey(teamRaw) as keyof typeof teamIdByName] ?? Number(teamRaw)
-      : inferredTeam
-    if (team !== 1 && team !== 2) {
-      questWarnings.push(`${rowLabel}: ignored bot, TEAM must be alliance/1 or horde/2 when set`)
-      continue
-    }
-    if (teamRaw && team !== inferredTeam) {
-      questWarnings.push(
-        `${rowLabel}: TEAM ${JSON.stringify(row.TEAM)} does not match RACE ${JSON.stringify(row.RACE)}`,
-      )
-    }
-
-    const className = row.CLASS?.trim()
-    const classId = className
-      ? playerClassIdByName[normalizeClassName(className) as keyof typeof playerClassIdByName]
-      : undefined
-    if (!className || !classId) {
-      questWarnings.push(`${rowLabel}: ignored bot, unknown CLASS ${JSON.stringify(row.CLASS)}`)
-      continue
-    }
-
-    const slot = row.SLOT?.trim()
-      ? parseRequiredInt(row.SLOT, 'SLOT', rowLabel)
-      : wsgClassSlotOrder[normalizeClassName(className) as keyof typeof wsgClassSlotOrder]
-    if (!slot || slot > 5) {
-      questWarnings.push(`${rowLabel}: ignored bot, could not derive a 1-5 slot from CLASS`)
-      continue
-    }
-
-    parsedRows.push({
-      team,
-      slot,
-      name,
-      account: wsgSlotKey(team, className),
-      raceName: normalizeRosterKey(raceName),
-      raceId,
-      className: normalizeClassName(className),
-      classId,
-      role: row.ROLE?.trim().toLowerCase() || (classId === playerClassIdByName.priest ? 'healer' : 'dps'),
-      spec: row.SPEC?.trim().toLowerCase() || '',
-      replacementPriority: parseOptionalPositiveInt(row.REPLACEMENT_PRIORITY, 'REPLACEMENT_PRIORITY', rowLabel) ?? slot,
-      behaviorProfile: row.BEHAVIOR_PROFILE?.trim() || row.BEHAVIOR?.trim() || `wsg-${normalizeClassName(className)}`,
-      enabled: parseEnabled(row.ENABLED),
-    })
-  }
-
-  const roster = (parsedRows.length > 0 ? parsedRows : defaultWsgBotRoster).map((bot) => ({
+const parseWsgBotRoster = (): WsgBotRosterEntry[] => {
+  const roster = defaultWsgBotRoster.map((bot) => ({
     ...bot,
     account: wsgSlotKey(bot.team, bot.className),
   }))
@@ -1353,10 +1258,10 @@ const cdCategories: Record<number, number> = {
 const generatedHeader = '-- Generated by tasks/refresh_db.ts'
 
 const generateWsgBotRosterSql = (roster: WsgBotRosterEntry[], items: WsgBotItem[]) => {
-  const rosterRows = roster.map((bot, i) =>
-    `  (${sqlString(bot.account)}, ${sqlString(bot.name)}, ${bot.raceId}, ${bot.classId}, ${
-      sqlString(bot.role)
-    }, ${sqlString(bot.spec)}, ${bot.replacementPriority}, ${sqlString(bot.behaviorProfile)}, ${bot.enabled ? 1 : 0})`
+  const rosterRows = roster.map((bot) =>
+    `  (${sqlString(bot.account)}, ${sqlString(bot.name)}, ${bot.raceId}, ${bot.classId}, ${sqlString(bot.role)}, ${
+      sqlString(bot.spec)
+    }, ${bot.replacementPriority}, ${sqlString(bot.behaviorProfile)}, ${bot.enabled ? 1 : 0})`
   )
   const itemRows = items.map((item) =>
     `  (${sqlString(item.account)}, ${item.itemId}, ${item.amount}, ${sqlString(item.note)}, 1)`
@@ -1758,7 +1663,7 @@ const quests = parseQuests(gsheetData.QUEST)
 const npcSubnames = parseNpcSubnames(gsheetData.NPC)
 const npcNames = parseNpcNames(gsheetData.NPC)
 const npcSpawnSwaps = parseNpcSpawnSwaps(gsheetData.NPC)
-const wsgBotRoster = parseWsgBotRoster(gsheetData.BOT)
+const wsgBotRoster = parseWsgBotRoster()
 const wsgBotItems = parseWsgBotItems(/* gsheetData.ITEM */ [], wsgBotRoster, starterItems, botStarterItems)
 const luaQuestRewardSpells = quests
   .filter((quest) => quest.props.LearnSpell)

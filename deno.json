@@ -1,5 +1,5 @@
 {
-  "exclude": ["core"],
+  "exclude": ["core", "mod-ale", "mod-playerbots"],
   "fmt": {
     "singleQuote": true,
     "lineWidth": 120,
@@ -44,6 +44,7 @@
     "@std/async/debounce": "jsr:@std/async@^1.0.14/debounce",
     "@std/fmt/colors": "jsr:@std/fmt@^1.0.8/colors",
     "@std/streams": "jsr:@std/streams@^1.1.1",
+    "node-emoji": "npm:node-emoji@^2.2.0",
     "mysql": "https://deno.land/x/mysql@v2.12.1/mod.ts",
     "@std/yaml": "jsr:@std/yaml@^1.1.1"
   }
