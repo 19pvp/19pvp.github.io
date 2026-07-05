@@ -11,7 +11,47 @@ DELETE FROM quest_template WHERE ID >= 777000 AND ID <= 777017;
 DELETE FROM quest_poi WHERE QuestId >= 777000 AND QuestId <= 777017;
 DELETE FROM quest_poi_points WHERE QuestId >= 777000 AND QuestId <= 777017;
 
+UPDATE `item_template` SET `AllowableClass` = -1 WHERE (`entry` = 18468);
+
 UPDATE `creature_template` SET `npcflag` = `npcflag` | 2 WHERE `entry` IN (19531, 19537, 19538, 20084, 20205, 20980, 22427);
+
+UPDATE `creature_template`
+SET `name` = CASE `entry`
+  WHEN 213 THEN 'Starving Dire Wolf'
+  WHEN 428 THEN 'Dire Condor'
+  WHEN 547 THEN 'Great Goretusk'
+  WHEN 569 THEN 'Green Recluse'
+  WHEN 958 THEN 'Pygmy Venom Web Spider'
+  WHEN 1417 THEN 'Young Wetlands Crocolisk'
+  WHEN 2350 THEN 'Forest Moss Creeper'
+  WHEN 2804 THEN 'Kurden Bloodclaw'
+  WHEN 3247 THEN 'Thunderhawk Hatchlingl'
+  WHEN 3256 THEN 'Sunscale Scytheclaw'
+  WHEN 4129 THEN 'Hecklefang Snarler'
+  WHEN 5161 THEN 'Angler Thorn Vale'
+  WHEN 14981 THEN 'Elfarran'
+  WHEN 19531 THEN 'Eyonix'
+  WHEN 19533 THEN 'Dealer Aljaan'
+  WHEN 19534 THEN 'Dealer Digriz'
+  WHEN 19535 THEN 'Dealer Zijaad'
+  WHEN 19537 THEN 'Dealer Malij'
+  WHEN 19538 THEN 'Dealer Senzik'
+  WHEN 19539 THEN 'Jazdalaad'
+  WHEN 19540 THEN 'Asarnan'
+  WHEN 20084 THEN 'Image of Nexus-Prince Haramad'
+  WHEN 20205 THEN 'Audi the Needle'
+  WHEN 20242 THEN 'Karaaz'
+  WHEN 20980 THEN 'Dealer Rashaad'
+  WHEN 20981 THEN 'Dealer Najeeb'
+  WHEN 20989 THEN 'Dealer Sadaqat'
+  WHEN 22427 THEN 'Zarevhi'
+  WHEN 22899 THEN 'Warpweaver Rahim'
+  WHEN 32332 THEN 'Action Jaxon'
+  WHEN 32474 THEN 'Jonas The Fisherman'
+  WHEN 35364 THEN 'Slahtz'
+  WHEN 35365 THEN 'Behsten'
+END
+WHERE `entry` IN (213, 428, 547, 569, 958, 1417, 2350, 2804, 3247, 3256, 4129, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 32332, 32474, 35364, 35365);
 
 UPDATE `creature_template`
 SET `subname` = CASE `entry`
@@ -19,7 +59,7 @@ SET `subname` = CASE `entry`
   WHEN 5161 THEN 'Fishing Supplies'
   WHEN 14981 THEN 'Warsong Gulch Battlemaster'
   WHEN 19531 THEN 'Innkeeper'
-  WHEN 19533 THEN '(WIP) Transmog Guy'
+  WHEN 19533 THEN '(WIP) Transmog Merchant'
   WHEN 19534 THEN 'Weapons Merchant'
   WHEN 19535 THEN 'Tabar Merchant'
   WHEN 19537 THEN 'Enchant Merchant'
@@ -33,30 +73,38 @@ SET `subname` = CASE `entry`
   WHEN 20981 THEN 'Exotic Creatures'
   WHEN 20989 THEN 'Armor Merchant'
   WHEN 22427 THEN 'Arcane Healer'
+  WHEN 22899 THEN 'Transmogrifier'
   WHEN 32332 THEN 'Arena Battlemaster'
   WHEN 32474 THEN 'Fishing Trainer'
+  WHEN 35364 THEN 'Weapons Quartermaster'
+  WHEN 35365 THEN 'Armor Quartermaster'
 END
-WHERE `entry` IN (2804, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 32332, 32474);
+WHERE `entry` IN (2804, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 32332, 32474, 35364, 35365);
+
+UPDATE `creature` SET `id1` = 14981, `id2` = 0, `id3` = 0 WHERE `guid` = 69933;
+UPDATE `creature` SET `id1` = 2804, `id2` = 0, `id3` = 0 WHERE `guid` = 69934;
+UPDATE `creature` SET `id1` = 12999, `id2` = 0, `id3` = 0 WHERE `guid` = 70019;
+UPDATE `creature` SET `id1` = 32332, `id2` = 0, `id3` = 0 WHERE `guid` = 71820;
 
 INSERT INTO `quest_template` (`ID`, `QuestType`, `QuestLevel`, `MinLevel`, `QuestSortID`, `QuestInfoID`, `SuggestedGroupNum`, `RequiredFactionId1`, `RequiredFactionId2`, `RequiredFactionValue1`, `RequiredFactionValue2`, `RewardNextQuest`, `RewardXPDifficulty`, `RewardMoney`, `RewardMoneyDifficulty`, `RewardDisplaySpell`, `RewardSpell`, `RewardHonor`, `RewardKillHonor`, `StartItem`, `Flags`, `RequiredPlayerKills`, `RewardItem1`, `RewardAmount1`, `RewardItem2`, `RewardAmount2`, `RewardItem3`, `RewardAmount3`, `RewardItem4`, `RewardAmount4`, `ItemDrop1`, `ItemDropQuantity1`, `ItemDrop2`, `ItemDropQuantity2`, `ItemDrop3`, `ItemDropQuantity3`, `ItemDrop4`, `ItemDropQuantity4`, `RewardChoiceItemID1`, `RewardChoiceItemQuantity1`, `RewardChoiceItemID2`, `RewardChoiceItemQuantity2`, `RewardChoiceItemID3`, `RewardChoiceItemQuantity3`, `RewardChoiceItemID4`, `RewardChoiceItemQuantity4`, `RewardChoiceItemID5`, `RewardChoiceItemQuantity5`, `RewardChoiceItemID6`, `RewardChoiceItemQuantity6`, `POIContinent`, `POIx`, `POIy`, `POIPriority`, `RewardTitle`, `RewardTalents`, `RewardArenaPoints`, `RewardFactionID1`, `RewardFactionValue1`, `RewardFactionOverride1`, `RewardFactionID2`, `RewardFactionValue2`, `RewardFactionOverride2`, `RewardFactionID3`, `RewardFactionValue3`, `RewardFactionOverride3`, `RewardFactionID4`, `RewardFactionValue4`, `RewardFactionOverride4`, `RewardFactionID5`, `RewardFactionValue5`, `RewardFactionOverride5`, `TimeAllowed`, `AllowableRaces`, `LogTitle`, `LogDescription`, `QuestDescription`, `AreaDescription`, `QuestCompletionLog`, `RequiredNpcOrGo1`, `RequiredNpcOrGo2`, `RequiredNpcOrGo3`, `RequiredNpcOrGo4`, `RequiredNpcOrGoCount1`, `RequiredNpcOrGoCount2`, `RequiredNpcOrGoCount3`, `RequiredNpcOrGoCount4`, `RequiredItemId1`, `RequiredItemId2`, `RequiredItemId3`, `RequiredItemId4`, `RequiredItemId5`, `RequiredItemId6`, `RequiredItemCount1`, `RequiredItemCount2`, `RequiredItemCount3`, `RequiredItemCount4`, `RequiredItemCount5`, `RequiredItemCount6`, `Unknown0`, `ObjectiveText1`, `ObjectiveText2`, `ObjectiveText3`, `ObjectiveText4`, `VerifiedBuild`) VALUES
   (777000, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4113, 3066, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777001, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777002, 0, 0, 0, 55428, 36937, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Stayin\' alive', 'Speak with Zarevhi, the arcane healer and learn it\'s techniques.', 'Food won\'t keep you alive when you\'re bleeding out. Find the healer here in the Stormspire. They\'ll show you how to patch up your own leaks so you aren\'t constantly running back from the graveyard.', 'Find the arcane healer inside the Stormspire.', 'Find the arcane healer inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the arcane healer inside the Stormspire.', '', '', '', 0),
-  (777002, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777003, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4202, 2999, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Gems for the Drip', 'Speak with Dealer Senzik to get your shiny gems.', 'Forget grinding dusty old librams and arcanums to pimp out your hats and legs. Instead, our top engineers cooked up special custom gems made specifically for your head and leg slots. You get the same insane stat boosts, but with way more variety to min-max your build! Go find Dealer Senzik the gem merchant right now and get shiny!', 'Find the gem merchant inside the Stormspire.', 'Find the gem merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the gem merchant inside the Stormspire.', '', '', '', 0),
+  (777001, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777002, 0, 0, 0, 55428, 36937, 0, 0, 0, 0, 0, 8545, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Stayin\' alive', 'Speak with Zarevhi, the arcane healer and learn it\'s techniques.', 'Food won\'t keep you alive when you\'re bleeding out. Find the healer here in the Stormspire. They\'ll show you how to patch up your own leaks so you aren\'t constantly running back from the graveyard.', 'Find the arcane healer inside the Stormspire.', 'Find the arcane healer inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the arcane healer inside the Stormspire.', '', '', '', 0),
+  (777002, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777003, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28463, 2, 28468, 2, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4202, 2999, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Gems for the Drip', 'Speak with Dealer Senzik to get your shiny gems.', 'Forget grinding dusty old librams and arcanums to pimp out your hats and legs. Instead, our top engineers cooked up special custom gems made specifically for your head and leg slots. You get the same insane stat boosts, but with way more variety to min-max your build! Go find Dealer Senzik the gem merchant right now and get shiny!', 'Find the gem merchant inside the Stormspire.', 'Find the gem merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the gem merchant inside the Stormspire.', '', '', '', 0),
   (777003, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4190, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'An enchanting encounter', '[WIP] An enchanting encounter Progression text', '[WIP] An enchanting encounter Start text', 'Find the enchant merchant inside the Stormspire.', 'Find the enchant merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the enchant merchant inside the Stormspire.', '', '', '', 0),
-  (777004, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777005, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Glad to meet you', '[WIP] Glad to meet you Progression text', '[WIP] Glad to meet you Start text', 'Find former gladiator Audi the Needle inside the Stormspire.', 'Find former gladiator Audi the Needle inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find former gladiator Audi the Needle inside the Stormspire.', '', '', '', 0),
-  (777005, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13966, 1, 18468, 1, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4145, 3057, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Prepared for battle', '[WIP] Prepared for battle Progression text', '[WIP] Prepared for battle Start text', 'Find the accessory merchant inside the Stormspire.', 'Find the accessory merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the accessory merchant inside the Stormspire.', '', '', '', 0),
+  (777004, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777005, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13966, 1, 18468, 1, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4145, 3057, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Prepared for battle', '[WIP] Prepared for battle Progression text', '[WIP] Prepared for battle Start text', 'Find the accessory merchant inside the Stormspire.', 'Find the accessory merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the accessory merchant inside the Stormspire.', '', '', '', 0),
+  (777005, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18706, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Glad to meet you', '[WIP] Glad to meet you Progression text', '[WIP] Glad to meet you Start text', 'Find former gladiator Audi the Needle inside the Stormspire.', 'Find former gladiator Audi the Needle inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find former gladiator Audi the Needle inside the Stormspire.', '', '', '', 0),
   (777006, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 17500, 0, 0, 0, 1750, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Just queue Warsong Gluch already!', '[WIP] Just queue Warsong Gluch already! Start text', '[WIP] Just queue Warsong Gluch already! Start text', 'Find the field commander inside the Stormspire.', 'Find the field commander inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the field commander inside the Stormspire.', '', '', '', 0),
   (777007, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55480, 36937, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Life blood R2', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
   (777008, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55500, 36937, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Life blood R3', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
   (777009, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 13209, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] AGM R2', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 18706, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
   (777010, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 8663, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] AGM R3', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 13209, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
   (777011, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 19024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] AGM R4', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 8663, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777012, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 14529, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] First Aid R2', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777013, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 14530, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] First Aid R3', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777014, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 5000, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Daily Honor Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777015, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 666, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Daily Arena Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777016, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 15000, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Weekly Honor Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777017, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Weekly Arena Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0);
+  (777012, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 14529, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] First Aid R2', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 8545, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777013, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 14530, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] First Aid R3', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 14529, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777014, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 5000, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Daily Honor Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777015, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 0, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 666, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Daily Arena Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777016, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 15000, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Weekly Honor Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777017, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 0, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Weekly Arena Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0);
 
 INSERT INTO `quest_offer_reward` (`ID`, `Emote1`, `Emote2`, `Emote3`, `Emote4`, `EmoteDelay1`, `EmoteDelay2`, `EmoteDelay3`, `EmoteDelay4`, `RewardText`, `VerifiedBuild`) VALUES
   (777000, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire, traveler! Please, take a moment to rest, have a warm meal, and enjoy the artificial breeze. Your adventure in the dome starts now, but heed my words: do not step outside the glass. The twisting nether out there will tear a newcomer apart, and I’d prefer not to lose a customer so quickly.', 0),
@@ -67,9 +115,9 @@ I have some average gems are ready to fuse with your armor, but you must make a 
 
 Choose your power, traveler, and let us begin our business!', 0),
   (777003, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] An enchanting encounter End text', 0),
-  (777004, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Glad to meet you
+  (777004, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Prepared for battle
 End text', 0),
-  (777005, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Prepared for battle
+  (777005, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Glad to meet you
 End text', 0),
   (777006, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Just queue Warsong Gluch already!
 End text', 0),
@@ -111,8 +159,8 @@ INSERT INTO `quest_request_items` (`ID`, `EmoteOnComplete`, `EmoteOnIncomplete`,
   (777001, 0, 0, 'Speak with Zarevhi, the arcane healer and learn it\'s techniques.', 0),
   (777002, 0, 0, 'Speak with Dealer Senzik to get your shiny gems.', 0),
   (777003, 0, 0, '[WIP] An enchanting encounter Progression text', 0),
-  (777004, 0, 0, '[WIP] Glad to meet you Progression text', 0),
-  (777005, 0, 0, '[WIP] Prepared for battle Progression text', 0),
+  (777004, 0, 0, '[WIP] Prepared for battle Progression text', 0),
+  (777005, 0, 0, '[WIP] Glad to meet you Progression text', 0),
   (777006, 0, 0, '[WIP] Just queue Warsong Gluch already! Start text', 0),
   (777007, 0, 0, '', 0),
   (777008, 0, 0, '', 0),
@@ -132,8 +180,8 @@ INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES
   (22427, 777002),
   (19538, 777003),
   (19537, 777004),
-  (20205, 777005),
-  (20980, 777006),
+  (20980, 777005),
+  (20205, 777006),
   (22427, 777007),
   (22427, 777008),
   (20205, 777009),
@@ -151,8 +199,8 @@ INSERT INTO `creature_questender` (`id`, `quest`) VALUES
   (22427, 777001),
   (19538, 777002),
   (19537, 777003),
-  (20205, 777004),
-  (20980, 777005),
+  (20980, 777004),
+  (20205, 777005),
   (20084, 777006),
   (22427, 777007),
   (22427, 777008),
@@ -191,8 +239,8 @@ INSERT INTO quest_poi_points (`QuestId`, `idx1`, `idx2`, `X`, `Y`) VALUES
   (777001, 1, 0, 4095, 3024),
   (777002, 1, 0, 4202, 2999),
   (777003, 1, 0, 4190, 3024),
-  (777004, 1, 0, 4090, 2989),
-  (777005, 1, 0, 4145, 3057),
+  (777004, 1, 0, 4145, 3057),
+  (777005, 1, 0, 4090, 2989),
   (777006, 1, 0, 4120, 2926),
   (777007, 1, 0, 4095, 3024),
   (777008, 1, 0, 4095, 3024),

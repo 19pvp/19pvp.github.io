@@ -47,8 +47,6 @@ local EQUIPMENT_SLOTS = {
   SLOT_TABARD,
 }
 
--- WorldDBLoadFile("random-enchant-npc.sql")
-
 local function itemIcon(item, size)
   local info = random_enchant_db.items[item:GetEntry()]
   if not info or not info.icon or info.icon == "" then return "" end

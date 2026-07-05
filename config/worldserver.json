@@ -167,7 +167,7 @@
   "AlwaysMaxSkillForLevel": "1",
   "AlwaysMaxWeaponSkill": "1",
   "PlayerStart.AllReputation": "0",
-  "PlayerStart.CustomSpells": "0",
+  "PlayerStart.CustomSpells": "1",
   "PlayerStart.MapsExplored": "0",
   "InstantLogout": "4",
   "PlayerSaveInterval": "900000",

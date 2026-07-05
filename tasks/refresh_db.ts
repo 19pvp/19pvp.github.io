@@ -4,17 +4,28 @@ import { sqlRaw } from '../service/db.ts'
 
 const _config = config
 const worldDb = Deno.env.get('WORLD_DB') || '19pvp_world'
+const sheetId = Deno.env.get('SHEET_ID') || '1F1Re3VLtPuF5fXZ1wV79CpogaSgP-fS9r9dm3_aRoP0'
 if (!/^[a-zA-Z0-9_]+$/.test(worldDb)) throw Error(`invalid WORLD_DB ${worldDb}`)
 
 type GSheetData = {
-  ITEM: { ID: string }[]
+  ITEM: ItemSheetRow[]
   NPC?: NpcSheetRow[]
   QUEST?: QuestSheetRow[]
 }
 
+type ItemSheetRow = {
+  CLASSES?: string
+  ID?: string
+  NAME?: string
+  PROPS?: string
+  SOURCE?: string
+}
+
 type NpcSheetRow = {
+  GUID?: string
   ID?: string
   GUILD?: string
+  NAME?: string
 }
 
 type QuestSheetRow = {
@@ -34,10 +45,26 @@ type CountedItem = {
   id: number
 }
 
+type ItemProps = {
+  cd?: number
+  name?: string
+  quality?: number
+  stats: { type: number; value: number }[]
+  use?: number
+}
+
+type StarterItem = {
+  classId: number
+  className: string
+  itemId: number
+  name: string
+}
+
 type QuestProps = {
-  ChooseItem?: number[]
+  ChooseItem?: CountedItem[]
   LearnSpell?: number
   NextQuestID?: number
+  Repeat?: 'Daily' | 'Weekly'
   RequireQuestID?: number
   RewardArena?: number
   RewardGold?: number
@@ -65,17 +92,65 @@ type CreaturePositionRow = {
   position_y: number
 }
 
-const autoReturnQuestFlags = 589824
-const learnSpellRewardDummy = 36937
+type NpcSpawnSwap = {
+  guid: number
+  id: number
+}
 
-await fetch('https://gsheet.devazuka.com/refresh/1F1Re3VLtPuF5fXZ1wV79CpogaSgP-fS9r9dm3_aRoP0/QUEST')
-const gsheetResponse = await fetch('https://gsheet.devazuka.com/1F1Re3VLtPuF5fXZ1wV79CpogaSgP-fS9r9dm3_aRoP0')
+const autoReturnQuestFlags = 589824
+const dailyQuestFlags = 4096
+const weeklyQuestFlags = 32768
+const invisibleNpcEntry = 12999
+const learnSpellRewardDummy = 36937
+const soulboundBonding = 1
+const bonusArmorStatType = 50
+
+const itemQualityByName = {
+  common: 1,
+  uncommon: 2,
+  rare: 3,
+  epic: 4,
+} as const
+
+const itemStatTypeByKey = {
+  agi: 3,
+  str: 4,
+  int: 5,
+  spirit: 6,
+  stam: 7,
+  hit: 31,
+  crit: 32,
+  ap: 38,
+  hast: 36,
+  mp5: 43,
+  spell: 45,
+} as const
+
+const playerClassIdByName = {
+  deathknight: 6,
+  deathKnight: 6,
+  druid: 11,
+  hunter: 3,
+  mage: 8,
+  paladin: 2,
+  priest: 5,
+  rogue: 4,
+  shaman: 7,
+  warlock: 9,
+  warrior: 1,
+} as const
+
+await Promise.all([
+  fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/QUEST`),
+  fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/ITEM`),
+  fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/NPC`),
+])
+const gsheetResponse = await fetch(`https://gsheet.devazuka.com/${sheetId}`)
 if (!gsheetResponse.ok || !gsheetResponse.headers.get('content-type')?.includes('application/json')) {
   const body = await gsheetResponse.text()
   throw Error(`invalid gsheet response ${gsheetResponse.status}: ${body.slice(0, 120)}`)
 }
 const gsheetData = await gsheetResponse.json() as GSheetData
-
 const questWarnings: string[] = []
 
 const toPositiveInt = (value: unknown): number | undefined => {
@@ -112,19 +187,6 @@ const parseNumberProp = (key: keyof QuestProps, value: unknown, rowLabel: string
   return number
 }
 
-const parseNumberArrayProp = (key: keyof QuestProps, value: unknown, rowLabel: string): number[] | undefined => {
-  if (!Array.isArray(value)) {
-    questWarnings.push(`${rowLabel}: ignored ${key}, expected an array of positive integers`)
-    return undefined
-  }
-  const numbers = value.map(toPositiveInt)
-  if (numbers.some((number) => !number)) {
-    questWarnings.push(`${rowLabel}: ignored ${key}, expected an array of positive integers`)
-    return undefined
-  }
-  return numbers as number[]
-}
-
 const parseCountedItemArrayProp = (
   key: keyof QuestProps,
   value: unknown,
@@ -157,13 +219,17 @@ const parseQuestProps = (props: string | undefined, rowLabel: string): QuestProp
     try {
       value = JSON.parse(rawValue)
     } catch (err) {
-      questWarnings.push(`${rowLabel}: ignored ${key}, invalid JSON value (${(err as Error).message})`)
-      continue
+      if (key === 'Repeat' && (rawValue === 'Daily' || rawValue === 'Weekly')) {
+        value = rawValue
+      } else {
+        questWarnings.push(`${rowLabel}: ignored ${key}, invalid JSON value (${(err as Error).message})`)
+        continue
+      }
     }
 
     switch (key) {
       case 'ChooseItem': {
-        const parsed = parseNumberArrayProp(key, value, rowLabel)
+        const parsed = parseCountedItemArrayProp(key, value, rowLabel)
         if (parsed) result.ChooseItem = parsed
         break
       }
@@ -175,6 +241,14 @@ const parseQuestProps = (props: string | undefined, rowLabel: string): QuestProp
       case 'NextQuestID': {
         const parsed = parseNumberProp(key, value, rowLabel)
         if (parsed) result.NextQuestID = parsed
+        break
+      }
+      case 'Repeat': {
+        if (value === 'Daily' || value === 'Weekly') {
+          result.Repeat = value
+        } else {
+          questWarnings.push(`${rowLabel}: ignored Repeat, expected Daily or Weekly`)
+        }
         break
       }
       case 'RequireQuestID': {
@@ -214,6 +288,155 @@ const parseQuestProps = (props: string | undefined, rowLabel: string): QuestProp
   return result
 }
 
+const parseItemDurationMs = (value: string): number | undefined => {
+  const match = value.trim().match(
+    /^(\d+)\s*(ms|s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours)$/,
+  )
+  if (!match) return undefined
+
+  const amount = Number(match[1])
+  const unit = match[2]
+  if (!Number.isInteger(amount) || amount < 0) return undefined
+  if (unit === 'ms') return amount
+  if (unit === 's' || unit === 'sec' || unit === 'secs' || unit === 'second' || unit === 'seconds') {
+    return amount * 1000
+  }
+  if (unit === 'm' || unit === 'min' || unit === 'mins' || unit === 'minute' || unit === 'minutes') {
+    return amount * 60 * 1000
+  }
+  return amount * 60 * 60 * 1000
+}
+
+const parseItemProps = (props: string | undefined, rowLabel: string): ItemProps | undefined => {
+  const result: ItemProps = { stats: [] }
+  let hasProps = false
+
+  for (const [index, line] of (props ?? '').split(/\r?\n/).entries()) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    const separator = trimmed.indexOf(':')
+    if (separator === -1) {
+      questWarnings.push(`${rowLabel}: ignored PROPS line ${index + 1}, missing ":"`)
+      continue
+    }
+
+    const key = trimmed.slice(0, separator).trim().toLowerCase()
+    const rawValue = trimmed.slice(separator + 1).trim()
+    if (!rawValue) {
+      questWarnings.push(`${rowLabel}: ignored ${key}, missing value`)
+      continue
+    }
+
+    if (key === 'quality') {
+      const quality = itemQualityByName[rawValue.toLowerCase() as keyof typeof itemQualityByName]
+      if (!quality) {
+        questWarnings.push(`${rowLabel}: ignored quality, expected common, uncommon, rare, or epic`)
+        continue
+      }
+      result.quality = quality
+      hasProps = true
+      continue
+    }
+
+    if (key === 'use') {
+      const spellId = Number(rawValue)
+      if (!Number.isInteger(spellId) || spellId <= 0) {
+        questWarnings.push(`${rowLabel}: ignored use, expected a positive spell id`)
+        continue
+      }
+      result.use = spellId
+      hasProps = true
+      continue
+    }
+
+    if (key === 'cd') {
+      const cooldown = parseItemDurationMs(rawValue)
+      if (cooldown === undefined) {
+        questWarnings.push(`${rowLabel}: ignored cd, expected values like 50s, 3m, or 1h`)
+        continue
+      }
+      result.cd = cooldown
+      hasProps = true
+      continue
+    }
+
+    const statType = itemStatTypeByKey[key as keyof typeof itemStatTypeByKey]
+    if (statType) {
+      const value = Number(rawValue)
+      if (!Number.isInteger(value) || value <= 0) {
+        questWarnings.push(`${rowLabel}: ignored ${key}, expected a positive integer`)
+        continue
+      }
+      result.stats.push({ type: statType, value })
+      hasProps = true
+      continue
+    }
+
+    questWarnings.push(`${rowLabel}: ignored unknown PROPS key ${JSON.stringify(key)}`)
+  }
+
+  if (result.stats.length > 10) {
+    questWarnings.push(`${rowLabel}: ignored item stats, expected at most 10 stat props`)
+    result.stats = []
+  }
+
+  return hasProps ? result : undefined
+}
+
+const parseItemUpdates = (rows: ItemSheetRow[] | undefined) => {
+  const updates = new Map<number, ItemProps>()
+  for (const [index, row] of (rows ?? []).entries()) {
+    if (!row.PROPS?.trim()) continue
+
+    const rowLabel = `ITEM row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
+    const id = parseRequiredInt(row.ID, 'ID', rowLabel)
+    if (!id) continue
+
+    const props = parseItemProps(row.PROPS, rowLabel)
+    if (props && row.NAME?.trim()) props.name = row.NAME.trim()
+    if (props) updates.set(id, props)
+  }
+  return updates
+}
+
+const normalizeClassName = (value: string) => value.trim().toLowerCase().replaceAll(/\s+/g, '')
+
+const parseStarterItems = (rows: ItemSheetRow[] | undefined) => {
+  const items: StarterItem[] = []
+  const seen = new Set<string>()
+
+  for (const [index, row] of (rows ?? []).entries()) {
+    if (row.SOURCE?.trim().toLowerCase() !== 'starter') continue
+
+    const rowLabel = `ITEM row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
+    const itemId = parseRequiredInt(row.ID, 'ID', rowLabel)
+    if (!itemId) continue
+
+    const classNames = row.CLASSES?.split(',').map((value) => value.trim()).filter(Boolean) ?? []
+    if (classNames.length === 0) {
+      questWarnings.push(`${rowLabel}: ignored starter item, missing CLASSES`)
+      continue
+    }
+
+    for (const className of classNames) {
+      const normalized = normalizeClassName(className)
+      const classId = playerClassIdByName[normalized as keyof typeof playerClassIdByName]
+      if (!classId) {
+        questWarnings.push(`${rowLabel}: ignored starter class ${JSON.stringify(className)}`)
+        continue
+      }
+
+      const key = `${classId}:${itemId}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      items.push({ classId, className, itemId, name: row.NAME?.trim() || String(itemId) })
+    }
+  }
+
+  return items.sort((a, b) => a.classId - b.classId || a.itemId - b.itemId)
+}
+
 const dbc = {
   item: openDBC('Item'),
   itemDisplay: openDBC('ItemDisplayInfo'),
@@ -223,6 +446,8 @@ const dbc = {
 }
 
 const itemIds = gsheetData.ITEM.map((i) => Number(i.ID)).filter((i) => i > 1)
+const itemUpdates = parseItemUpdates(gsheetData.ITEM)
+const starterItems = parseStarterItems(gsheetData.ITEM)
 
 console.log(itemIds)
 
@@ -264,6 +489,58 @@ type RandomEnchantOption = {
 const luaString = (value: string) => `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`
 const luaArray = <T>(values: T[], formatter: (value: T) => string) => `{ ${values.map(formatter).join(', ')} }`
 const sqlString = (value: string) => `'${value.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`
+
+const startingInfoSpellSection = async () => {
+  const existing = await Deno.readTextFile('core_scripts/starting-info.sql').catch(() => '')
+  const marker = 'DROP TEMPORARY TABLE IF EXISTS `starting_info_spell`;'
+  const index = existing.indexOf(marker)
+  if (index === -1) throw Error(`core_scripts/starting-info.sql is missing ${marker}`)
+  return existing.slice(index).trimEnd()
+}
+
+const generateStartingInfoSql = async (starterItems: StarterItem[]) => {
+  const itemRows = starterItems.map((item) =>
+    `  (${item.classId}, ${item.itemId}, 1, ${sqlString(`${item.className}: ${item.name}`)})`
+  )
+  const itemInsert = itemRows.length
+    ? `INSERT INTO \`starting_info_item\` (\`class\`, \`itemid\`, \`amount\`, \`note\`) VALUES
+${itemRows.join(',\n')};
+
+DELETE FROM \`playercreateinfo_item\`;
+INSERT INTO \`playercreateinfo_item\` (\`race\`, \`class\`, \`itemid\`, \`amount\`, \`Note\`)
+SELECT pci.\`race\`, pci.\`class\`, item.\`itemid\`, item.\`amount\`, CONCAT('19pvp starter sheet: ', item.\`note\`)
+FROM \`playercreateinfo\` pci
+JOIN \`starting_info_item\` item ON item.\`class\` = pci.\`class\`;`
+    : `DELETE FROM \`playercreateinfo_item\`;
+-- No starter item rows found in the ITEM sheet.`
+
+  return `-- Applied by tasks/refresh_sql.ts.
+-- Generated by tasks/refresh_db.ts.
+-- Overrides DBC-backed player starting location, items, and custom spells.
+
+UPDATE \`playercreateinfo\`
+SET \`map\` = 530,
+    \`zone\` = 3523,
+    \`position_x\` = 4115.9697,
+    \`position_y\` = 3058.874,
+    \`position_z\` = 339.4637,
+    \`orientation\` = 1.9342613;
+
+DROP TEMPORARY TABLE IF EXISTS \`starting_info_item\`;
+CREATE TEMPORARY TABLE \`starting_info_item\` (
+  \`class\` TINYINT UNSIGNED NOT NULL,
+  \`itemid\` INT UNSIGNED NOT NULL,
+  \`amount\` INT NOT NULL DEFAULT 1,
+  \`note\` VARCHAR(255) NOT NULL
+);
+
+${itemInsert}
+
+DROP TEMPORARY TABLE \`starting_info_item\`;
+
+${await startingInfoSpellSection()}
+`
+}
 
 const slotValue = <T>(values: T[] | undefined, index: number, getter: (value: T) => number) =>
   values?.[index] ? getter(values[index]) : 0
@@ -309,6 +586,41 @@ const parseNpcSubnames = (rows: NpcSheetRow[] | undefined) => {
     subnames.set(id, subname)
   }
   return subnames
+}
+
+const parseNpcNames = (rows: NpcSheetRow[] | undefined) => {
+  const names = new Map<number, string>()
+  for (const [index, row] of (rows ?? []).entries()) {
+    const rowLabel = `NPC row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
+    if (!row.ID?.trim()) continue
+    const id = parseRequiredInt(row.ID, 'ID', rowLabel)
+    if (!id) continue
+
+    const name = row.NAME?.trim()
+    if (!name) continue
+    names.set(id, name)
+  }
+  return names
+}
+
+const parseNpcSpawnSwaps = (rows: NpcSheetRow[] | undefined) => {
+  const swaps: NpcSpawnSwap[] = []
+  for (const [index, row] of (rows ?? []).entries()) {
+    const rowLabel = `NPC row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
+    if (!row.GUID?.trim()) continue
+
+    const guid = Number(row.GUID)
+    if (!Number.isInteger(guid) || guid <= 0) continue
+
+    const id = row.ID?.trim() ? Number(row.ID) : invisibleNpcEntry
+    if (!Number.isInteger(id) || id <= 0) {
+      questWarnings.push(`${rowLabel}: ignored spawn swap, invalid ID ${JSON.stringify(row.ID)}`)
+      continue
+    }
+
+    swaps.push({ guid, id })
+  }
+  return swaps.sort((a, b) => a.guid - b.guid)
 }
 
 const questTemplateColumns = [
@@ -421,9 +733,11 @@ const questTemplateColumns = [
 
 const questTemplateRow = (quest: Quest, poi: CreaturePositionRow | undefined) => {
   const rewardItems = quest.props.RewardItem ?? []
-  const choiceItems = quest.props.ChooseItem?.map((id) => ({ count: 1, id })) ?? []
+  const choiceItems = quest.props.ChooseItem ?? []
   const requiredItems = quest.props.TakeItem ?? []
-  const flags = quest.start.trim() || quest.progression.trim() ? 0 : autoReturnQuestFlags
+  let flags = quest.start.trim() || quest.progression.trim() ? 0 : autoReturnQuestFlags
+  if (quest.props.Repeat === 'Daily') flags |= dailyQuestFlags
+  if (quest.props.Repeat === 'Weekly') flags |= weeklyQuestFlags
   const values = [
     quest.id,
     2,
@@ -540,7 +854,9 @@ const questTemplateRow = (quest: Quest, poi: CreaturePositionRow | undefined) =>
 const generateQuestSql = (
   quests: Quest[],
   positionsByNpc: Map<number, CreaturePositionRow>,
+  npcNames: Map<number, string>,
   npcSubnames: Map<number, string>,
+  npcSpawnSwaps: NpcSpawnSwap[],
 ) => {
   const questIds = quests.map((quest) => quest.id)
   const minQuestId = Math.min(...questIds)
@@ -564,10 +880,17 @@ const generateQuestSql = (
       }, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32)`,
     ]
   })
+  const npcNameRows = [...npcNames.entries()].sort(([a], [b]) => a - b)
+  const npcNameCase = npcNameRows.map(([id, name]) => `  WHEN ${id} THEN ${sqlString(name)}`).join('\n')
   const npcSubnameRows = [...npcSubnames.entries()].sort(([a], [b]) => a - b)
   const npcSubnameCase = npcSubnameRows.map(([id, subname]) => `  WHEN ${id} THEN ${sqlString(subname)}`).join('\n')
+  const npcSpawnSwapRows = npcSpawnSwaps
+    .map((swap) =>
+      `UPDATE \`creature\` SET \`id1\` = ${swap.id}, \`id2\` = 0, \`id3\` = 0 WHERE \`guid\` = ${swap.guid};`
+    )
+    .join('\n')
 
-  return `-- Generated by tasks/refresh_db.ts
+  return `${generatedHeader}
 
 USE \`${worldDb}\`;
 
@@ -580,9 +903,21 @@ DELETE FROM quest_template WHERE ${rangeWhere};
 DELETE FROM quest_poi WHERE ${poiWhere};
 DELETE FROM quest_poi_points WHERE ${poiWhere};
 
+UPDATE \`item_template\` SET \`AllowableClass\` = -1 WHERE (\`entry\` = 18468);
+
 UPDATE \`creature_template\` SET \`npcflag\` = \`npcflag\` | 2 WHERE \`entry\` IN (${
     [...new Set(quests.flatMap((quest) => [quest.giver, quest.taker]))].sort((a, b) => a - b).join(', ')
   });
+
+${
+    npcNameRows.length
+      ? `UPDATE \`creature_template\`
+SET \`name\` = CASE \`entry\`
+${npcNameCase}
+END
+WHERE \`entry\` IN (${npcNameRows.map(([id]) => id).join(', ')});`
+      : '-- No NPC name rows.'
+  }
 
 ${
     npcSubnameRows.length
@@ -593,6 +928,8 @@ END
 WHERE \`entry\` IN (${npcSubnameRows.map(([id]) => id).join(', ')});`
       : '-- No NPC subname rows.'
   }
+
+${npcSpawnSwapRows || '-- No NPC spawn swaps.'}
 
 INSERT INTO \`quest_template\` (${questTemplateColumns.map((column) => `\`${column}\``).join(', ')}) VALUES
 ${quests.map((quest) => `  ${questTemplateRow(quest, positionsByNpc.get(quest.taker))}`).join(',\n')};
@@ -625,6 +962,186 @@ INSERT INTO quest_poi_points (\`QuestId\`, \`idx1\`, \`idx2\`, \`X\`, \`Y\`) VAL
 ${questPoiPointRows.map((row) => `  ${row}`).join(',\n')};`
       : '-- No quest POI rows: no taker NPCs found on map 530.'
   }
+`
+}
+
+const cdCategories: Record<number, number> = {
+  42292: 1182, // PvP Trinket
+}
+const generatedHeader = '-- Generated by tasks/refresh_db.ts'
+
+const itemUpdateSql = (itemId: number, props: ItemProps) => {
+  const assignments: string[] = []
+  assignments.push(`\`bonding\` = ${soulboundBonding}`)
+  if (props.name !== undefined) {
+    assignments.push(`\`description\` = IF(\`name\` <> ${sqlString(props.name)}, '', \`description\`)`)
+    assignments.push(`\`name\` = ${sqlString(props.name)}`)
+  }
+  if (props.quality !== undefined) assignments.push(`\`Quality\` = ${props.quality}`)
+
+  for (let index = 0; index < 10; index++) {
+    const stat = props.stats[index]
+    assignments.push(`\`stat_type${index + 1}\` = ${stat?.type ?? 0}`)
+    assignments.push(`\`stat_value${index + 1}\` = ${stat?.value ?? 0}`)
+  }
+
+  for (const column of ['holy_res', 'fire_res', 'nature_res', 'frost_res', 'shadow_res', 'arcane_res']) {
+    assignments.push(`\`${column}\` = 0`)
+  }
+
+  for (let index = 1; index <= 5; index++) {
+    assignments.push(`\`spellid_${index}\` = 0`)
+    assignments.push(`\`spelltrigger_${index}\` = 0`)
+    assignments.push(`\`spellcharges_${index}\` = 0`)
+    assignments.push(`\`spellppmRate_${index}\` = 0`)
+    assignments.push(`\`spellcooldown_${index}\` = -1`)
+    assignments.push(`\`spellcategory_${index}\` = 0`)
+    assignments.push(`\`spellcategorycooldown_${index}\` = -1`)
+  }
+
+  if (props.use !== undefined) {
+    assignments.push(`\`spellid_1\` = ${props.use}`)
+    assignments.push('`spelltrigger_1` = 0')
+    assignments.push(`\`spellcategory_1\` = ${cdCategories[props.use] || props.use}`)
+  }
+
+  if (props.cd !== undefined) {
+    assignments.push(`\`spellcooldown_1\` = ${props.cd}`)
+    assignments.push(`\`spellcategorycooldown_1\` = ${props.cd}`)
+  }
+
+  return `UPDATE \`item_template\`
+SET ${assignments.join(',\n    ')}
+WHERE \`entry\` = ${itemId};`
+}
+
+const bonusArmorStatCleanupSql = () => {
+  const assignments: string[] = [`\`bonding\` = ${soulboundBonding}`, '`startquest` = 0']
+  for (let index = 1; index <= 10; index++) {
+    assignments.push(
+      `\`stat_value${index}\` = IF(\`stat_type${index}\` = ${bonusArmorStatType}, 0, \`stat_value${index}\`)`,
+    )
+    assignments.push(
+      `\`stat_type${index}\` = IF(\`stat_type${index}\` = ${bonusArmorStatType}, 0, \`stat_type${index}\`)`,
+    )
+  }
+  return assignments.join(',\n    ')
+}
+
+const classMasks = {
+  warrior: 1,
+  paladin: 2,
+  hunter: 4,
+  rogue: 8,
+  priest: 16,
+  shaman: 64,
+  mage: 128,
+  warlock: 256,
+  druid: 1024,
+} as const
+
+type PlayerClass = keyof typeof classMasks
+
+const allowableClass = (classes: PlayerClass[]) =>
+  classes.reduce((mask, playerClass) => mask | classMasks[playerClass], 0)
+
+const weaponClassRestrictions = [
+  { subclasses: [0], classes: ['warrior', 'paladin', 'hunter', 'rogue', 'shaman'] }, // One-handed axes
+  { subclasses: [1], classes: ['warrior', 'paladin', 'hunter', 'shaman'] }, // Two-handed axes
+  { subclasses: [2, 3, 16, 18], classes: ['warrior', 'hunter', 'rogue'] }, // Bows, guns, thrown, crossbows
+  { subclasses: [4], classes: ['warrior', 'paladin', 'rogue', 'priest', 'shaman', 'druid'] }, // One-handed maces
+  { subclasses: [5], classes: ['warrior', 'paladin', 'shaman', 'druid'] }, // Two-handed maces
+  { subclasses: [6], classes: ['warrior', 'paladin', 'hunter', 'druid'] }, // Polearms
+  { subclasses: [7], classes: ['warrior', 'paladin', 'hunter', 'rogue', 'mage', 'warlock'] }, // One-handed swords
+  { subclasses: [8], classes: ['warrior', 'paladin', 'hunter'] }, // Two-handed swords
+  { subclasses: [10], classes: ['warrior', 'hunter', 'priest', 'shaman', 'mage', 'warlock', 'druid'] }, // Staves
+  { subclasses: [13], classes: ['warrior', 'hunter', 'rogue', 'shaman', 'druid'] }, // Fist weapons
+  { subclasses: [15], classes: ['warrior', 'hunter', 'rogue', 'priest', 'shaman', 'mage', 'warlock', 'druid'] }, // Daggers
+  { subclasses: [19], classes: ['priest', 'mage', 'warlock'] }, // Wands
+] satisfies { subclasses: number[]; classes: PlayerClass[] }[]
+
+const subclassList = (subclasses: number[]) =>
+  subclasses.length === 1 ? `= ${subclasses[0]}` : `IN (${subclasses.join(', ')})`
+
+const weaponClassRestrictionSql = () =>
+  weaponClassRestrictions.map((restriction) =>
+    `UPDATE \`item_template\`
+SET \`AllowableClass\` = ${allowableClass(restriction.classes)}
+WHERE \`class\` = 2
+  AND \`subclass\` ${subclassList(restriction.subclasses)}
+  AND \`AllowableClass\` = -1;`
+  ).join('\n\n')
+
+const generateItemPropsSql = (itemUpdates: Map<number, ItemProps>) => {
+  const itemUpdateRows = [...itemUpdates.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([itemId, props]) => itemUpdateSql(itemId, props))
+    .join('\n\n')
+
+  return `${generatedHeader}
+
+USE \`${worldDb}\`;
+
+${itemUpdateRows || '-- No item prop updates.'}
+`
+}
+
+const generateItemTemplateSql = (itemIds: number[]) => {
+  const itemIdList = [...new Set(itemIds)].sort((a, b) => a - b).join(', ')
+
+  return `${generatedHeader}
+
+USE \`${worldDb}\`;
+
+-- Make every sheet-listed item soulbound and remove any bonus armor stat slots.
+UPDATE \`item_template\`
+SET ${bonusArmorStatCleanupSql()}
+WHERE \`entry\` IN (${itemIdList});
+
+CREATE TEMPORARY TABLE item_template_relaxed_class_entries AS
+SELECT \`entry\`
+FROM \`item_template\`
+WHERE \`RequiredLevel\` > 19
+   OR \`ItemLevel\` > 45;
+
+-- Normalize custom bracket item levels before relaxing requirements.
+UPDATE \`item_template\`
+SET \`ItemLevel\` = 35;
+
+-- Remove class requirements from items that were above the bracket before level normalization.
+UPDATE \`item_template\`
+SET \`AllowableClass\` = -1
+WHERE \`entry\` IN (SELECT \`entry\` FROM item_template_relaxed_class_entries);
+
+-- Remove item required levels.
+UPDATE \`item_template\`
+SET \`RequiredLevel\` = 0;
+
+DROP TEMPORARY TABLE item_template_relaxed_class_entries;
+
+-- Restrict unrestricted mail and plate armor to warrior/paladin.
+UPDATE \`item_template\`
+SET \`AllowableClass\` = 3
+WHERE \`class\` = 4
+  AND \`subclass\` IN (3, 4)
+  AND \`AllowableClass\` = -1;
+
+-- Restrict unrestricted leather armor to every non-DK class except priest/mage/warlock.
+UPDATE \`item_template\`
+SET \`AllowableClass\` = 1103
+WHERE \`class\` = 4
+  AND \`subclass\` = 2
+  AND \`AllowableClass\` = -1;
+
+-- Restrict unrestricted weapons to classes that can learn each weapon type.
+${weaponClassRestrictionSql()}
+
+-- Restrict unrestricted shields to warrior/paladin/shaman.
+UPDATE \`item_template\`
+SET \`AllowableClass\` = ${allowableClass(['warrior', 'paladin', 'shaman'])}
+WHERE \`class\` = 4
+  AND \`subclass\` = 6
+  AND \`AllowableClass\` = -1;
 `
 }
 
@@ -786,6 +1303,8 @@ const luaOption = (option: RandomEnchantOption) =>
 
 const quests = parseQuests(gsheetData.QUEST)
 const npcSubnames = parseNpcSubnames(gsheetData.NPC)
+const npcNames = parseNpcNames(gsheetData.NPC)
+const npcSpawnSwaps = parseNpcSpawnSwaps(gsheetData.NPC)
 const luaQuestRewardSpells = quests
   .filter((quest) => quest.props.LearnSpell)
   .sort((a, b) => a.id - b.id)
@@ -829,6 +1348,15 @@ console.log(
   } quest reward spells`,
 )
 
+await Deno.writeTextFile('core_scripts/generated-item-props.sql', generateItemPropsSql(itemUpdates))
+console.log('wrote item prop updates to core_scripts/generated-item-props.sql')
+
+await Deno.writeTextFile('core_scripts/generated-item-template.sql', generateItemTemplateSql(itemIds))
+console.log('wrote item template normalization to core_scripts/generated-item-template.sql')
+
+await Deno.writeTextFile('core_scripts/starting-info.sql', await generateStartingInfoSql(starterItems))
+console.log(`wrote ${starterItems.length} starter item rows to core_scripts/starting-info.sql`)
+
 if (quests.length > 0) {
   const takerIds = [...new Set(quests.map((quest) => quest.taker))].sort((a, b) => a - b)
   const creaturePositionRows = await sqlRaw(
@@ -870,7 +1398,10 @@ ORDER BY npc
     questWarnings.push(`NPC ${taker}: no map 530 creature spawn found for quest POI`)
   }
 
-  await Deno.writeTextFile('core_scripts/generated-quests.sql', generateQuestSql(quests, positionsByNpc, npcSubnames))
+  await Deno.writeTextFile(
+    'core_scripts/generated-quests.sql',
+    generateQuestSql(quests, positionsByNpc, npcNames, npcSubnames, npcSpawnSwaps),
+  )
   console.log(`wrote ${quests.length} quests to core_scripts/generated-quests.sql`)
 }
 

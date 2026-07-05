@@ -11,6 +11,9 @@
     "check": "deno check --unstable-tsgo",
     "build": "deno run --allow-read --allow-write tasks/build.ts",
     "refresh-db": "deno run --env-file --allow-net --allow-read --allow-write --allow-env tasks/refresh_db.ts",
+    "sql": { "command": "deno task sql:apply", "dependencies": ["refresh-db"] },
+    "sql:apply": "DENO_DIR=/tmp/deno-cache deno run --env-file --location=http://19pvp.local --allow-read --allow-env --allow-net --allow-write tasks/refresh_sql.ts",
+    "sql:dry": "DENO_DIR=/tmp/deno-cache deno run --env-file --location=http://19pvp.local --allow-read --allow-env --allow-net --allow-write tasks/refresh_sql.ts --dry",
     "conf:all": {
       "dependencies": [
         "config:conf:ale",
