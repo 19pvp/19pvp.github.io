@@ -438,6 +438,7 @@ const parseStarterItems = (rows: ItemSheetRow[] | undefined) => {
 }
 
 const dbc = {
+  charStartOutfit: openDBC('CharStartOutfit'),
   item: openDBC('Item'),
   itemDisplay: openDBC('ItemDisplayInfo'),
   properties: openDBC('ItemRandomProperties'),
@@ -499,18 +500,45 @@ const startingInfoSpellSection = async () => {
 }
 
 const generateStartingInfoSql = async (starterItems: StarterItem[]) => {
-  const itemRows = starterItems.map((item) =>
-    `  (${item.classId}, ${item.itemId}, 1, ${sqlString(`${item.className}: ${item.name}`)})`
+  const starterClassItems = new Set(starterItems.map((item) => `${item.classId}:${item.itemId}`))
+  const removalRows: string[] = []
+  const removedOutfitItems = new Set<string>()
+
+  for (const outfit of dbc.charStartOutfit.values()) {
+    for (let index = 1; index <= 24; index++) {
+      const itemId = outfit[`ItemID_${index}` as keyof typeof outfit]
+      if (typeof itemId !== 'number' || itemId <= 0) continue
+
+      const classItemKey = `${outfit.ClassID}:${itemId}`
+      if (starterClassItems.has(classItemKey)) {
+        questWarnings.push(`starter item ${itemId} also exists in CharStartOutfit.dbc for class ${outfit.ClassID}`)
+        continue
+      }
+
+      const key = `${outfit.RaceID}:${outfit.ClassID}:${itemId}`
+      if (removedOutfitItems.has(key)) continue
+      removedOutfitItems.add(key)
+      removalRows.push(
+        `  (${outfit.RaceID}, ${outfit.ClassID}, ${itemId}, -1, ${sqlString(`remove DBC outfit item ${itemId}`)})`,
+      )
+    }
+  }
+
+  const starterRows = starterItems.map((item) =>
+    `  (0, ${item.classId}, ${item.itemId}, 1, ${sqlString(`${item.className}: ${item.name}`)})`
   )
+  const itemRows = [...removalRows, ...starterRows]
   const itemInsert = itemRows.length
-    ? `INSERT INTO \`starting_info_item\` (\`class\`, \`itemid\`, \`amount\`, \`note\`) VALUES
+    ? `INSERT INTO \`starting_info_item\` (\`race\`, \`class\`, \`itemid\`, \`amount\`, \`note\`) VALUES
 ${itemRows.join(',\n')};
 
 DELETE FROM \`playercreateinfo_item\`;
 INSERT INTO \`playercreateinfo_item\` (\`race\`, \`class\`, \`itemid\`, \`amount\`, \`Note\`)
 SELECT pci.\`race\`, pci.\`class\`, item.\`itemid\`, item.\`amount\`, CONCAT('19pvp starter sheet: ', item.\`note\`)
 FROM \`playercreateinfo\` pci
-JOIN \`starting_info_item\` item ON item.\`class\` = pci.\`class\`;`
+JOIN \`starting_info_item\` item
+  ON (item.\`race\` = 0 OR item.\`race\` = pci.\`race\`)
+  AND (item.\`class\` = 0 OR item.\`class\` = pci.\`class\`);`
     : `DELETE FROM \`playercreateinfo_item\`;
 -- No starter item rows found in the ITEM sheet.`
 
@@ -528,6 +556,7 @@ SET \`map\` = 530,
 
 DROP TEMPORARY TABLE IF EXISTS \`starting_info_item\`;
 CREATE TEMPORARY TABLE \`starting_info_item\` (
+  \`race\` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   \`class\` TINYINT UNSIGNED NOT NULL,
   \`itemid\` INT UNSIGNED NOT NULL,
   \`amount\` INT NOT NULL DEFAULT 1,
