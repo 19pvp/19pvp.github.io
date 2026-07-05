@@ -81,30 +81,128 @@ SET `subname` = CASE `entry`
 END
 WHERE `entry` IN (2804, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 32332, 32474, 35364, 35365);
 
-UPDATE `creature` SET `id1` = 14981, `id2` = 0, `id3` = 0 WHERE `guid` = 69933;
-UPDATE `creature` SET `id1` = 2804, `id2` = 0, `id3` = 0 WHERE `guid` = 69934;
-UPDATE `creature` SET `id1` = 12999, `id2` = 0, `id3` = 0 WHERE `guid` = 70019;
-UPDATE `creature` SET `id1` = 32332, `id2` = 0, `id3` = 0 WHERE `guid` = 71820;
+UPDATE `creature` SET `id` = 14981 WHERE `guid` = 69933;
+UPDATE `creature` SET `id` = 2804 WHERE `guid` = 69934;
+UPDATE `creature` SET `id` = 12999 WHERE `guid` = 70019;
+UPDATE `creature` SET `id` = 32332 WHERE `guid` = 71820;
 
 INSERT INTO `quest_template` (`ID`, `QuestType`, `QuestLevel`, `MinLevel`, `QuestSortID`, `QuestInfoID`, `SuggestedGroupNum`, `RequiredFactionId1`, `RequiredFactionId2`, `RequiredFactionValue1`, `RequiredFactionValue2`, `RewardNextQuest`, `RewardXPDifficulty`, `RewardMoney`, `RewardMoneyDifficulty`, `RewardDisplaySpell`, `RewardSpell`, `RewardHonor`, `RewardKillHonor`, `StartItem`, `Flags`, `RequiredPlayerKills`, `RewardItem1`, `RewardAmount1`, `RewardItem2`, `RewardAmount2`, `RewardItem3`, `RewardAmount3`, `RewardItem4`, `RewardAmount4`, `ItemDrop1`, `ItemDropQuantity1`, `ItemDrop2`, `ItemDropQuantity2`, `ItemDrop3`, `ItemDropQuantity3`, `ItemDrop4`, `ItemDropQuantity4`, `RewardChoiceItemID1`, `RewardChoiceItemQuantity1`, `RewardChoiceItemID2`, `RewardChoiceItemQuantity2`, `RewardChoiceItemID3`, `RewardChoiceItemQuantity3`, `RewardChoiceItemID4`, `RewardChoiceItemQuantity4`, `RewardChoiceItemID5`, `RewardChoiceItemQuantity5`, `RewardChoiceItemID6`, `RewardChoiceItemQuantity6`, `POIContinent`, `POIx`, `POIy`, `POIPriority`, `RewardTitle`, `RewardTalents`, `RewardArenaPoints`, `RewardFactionID1`, `RewardFactionValue1`, `RewardFactionOverride1`, `RewardFactionID2`, `RewardFactionValue2`, `RewardFactionOverride2`, `RewardFactionID3`, `RewardFactionValue3`, `RewardFactionOverride3`, `RewardFactionID4`, `RewardFactionValue4`, `RewardFactionOverride4`, `RewardFactionID5`, `RewardFactionValue5`, `RewardFactionOverride5`, `TimeAllowed`, `AllowableRaces`, `LogTitle`, `LogDescription`, `QuestDescription`, `AreaDescription`, `QuestCompletionLog`, `RequiredNpcOrGo1`, `RequiredNpcOrGo2`, `RequiredNpcOrGo3`, `RequiredNpcOrGo4`, `RequiredNpcOrGoCount1`, `RequiredNpcOrGoCount2`, `RequiredNpcOrGoCount3`, `RequiredNpcOrGoCount4`, `RequiredItemId1`, `RequiredItemId2`, `RequiredItemId3`, `RequiredItemId4`, `RequiredItemId5`, `RequiredItemId6`, `RequiredItemCount1`, `RequiredItemCount2`, `RequiredItemCount3`, `RequiredItemCount4`, `RequiredItemCount5`, `RequiredItemCount6`, `Unknown0`, `ObjectiveText1`, `ObjectiveText2`, `ObjectiveText3`, `ObjectiveText4`, `VerifiedBuild`) VALUES
   (777000, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4113, 3066, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
   (777001, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777002, 0, 0, 0, 55428, 36937, 0, 0, 0, 0, 0, 8545, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Stayin\' alive', 'Speak with Zarevhi, the arcane healer and learn it\'s techniques.', 'Food won\'t keep you alive when you\'re bleeding out. Find the healer here in the Stormspire. They\'ll show you how to patch up your own leaks so you aren\'t constantly running back from the graveyard.', 'Find the arcane healer inside the Stormspire.', 'Find the arcane healer inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the arcane healer inside the Stormspire.', '', '', '', 0),
   (777002, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777003, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28463, 2, 28468, 2, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4202, 2999, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Gems for the Drip', 'Speak with Dealer Senzik to get your shiny gems.', 'Forget grinding dusty old librams and arcanums to pimp out your hats and legs. Instead, our top engineers cooked up special custom gems made specifically for your head and leg slots. You get the same insane stat boosts, but with way more variety to min-max your build! Go find Dealer Senzik the gem merchant right now and get shiny!', 'Find the gem merchant inside the Stormspire.', 'Find the gem merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the gem merchant inside the Stormspire.', '', '', '', 0),
-  (777003, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4190, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'An enchanting encounter', '[WIP] An enchanting encounter Progression text', '[WIP] An enchanting encounter Start text', 'Find the enchant merchant inside the Stormspire.', 'Find the enchant merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the enchant merchant inside the Stormspire.', '', '', '', 0),
-  (777004, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777005, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13966, 1, 18468, 1, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4145, 3057, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Prepared for battle', '[WIP] Prepared for battle Progression text', '[WIP] Prepared for battle Start text', 'Find the accessory merchant inside the Stormspire.', 'Find the accessory merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the accessory merchant inside the Stormspire.', '', '', '', 0),
-  (777005, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18706, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Glad to meet you', '[WIP] Glad to meet you Progression text', '[WIP] Glad to meet you Start text', 'Find former gladiator Audi the Needle inside the Stormspire.', 'Find former gladiator Audi the Needle inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find former gladiator Audi the Needle inside the Stormspire.', '', '', '', 0),
-  (777006, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 17500, 0, 0, 0, 1750, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Just queue Warsong Gluch already!', '[WIP] Just queue Warsong Gluch already! Start text', '[WIP] Just queue Warsong Gluch already! Start text', 'Find the field commander inside the Stormspire.', 'Find the field commander inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the field commander inside the Stormspire.', '', '', '', 0),
-  (777007, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55480, 36937, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Life blood R2', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777008, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55500, 36937, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Life blood R3', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777009, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 13209, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] AGM R2', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 18706, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777010, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 8663, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] AGM R3', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 13209, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777011, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 19024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] AGM R4', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 8663, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777012, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 14529, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] First Aid R2', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 8545, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777013, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 14530, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] First Aid R3', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 14529, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777014, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 5000, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Daily Honor Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777015, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 0, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 666, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Daily Arena Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777016, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 15000, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Weekly Honor Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777017, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 0, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Weekly Arena Quest', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0);
+  (777003, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4190, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'An enchanting encounter', 'Have you found Dealer Malij yet? The secrets of enchanting won\'t reveal themselves on their own. Seek them out and take your first step toward imbuing your equipment with extraordinary power.', 'Ah, a fresh face! Every seasoned adventurer eventually learns that steel alone won\'t carry them through the dangers ahead. The right enchantment can turn an ordinary weapon into a legendary one, or grant armor the resilience needed to survive impossible odds.
+
+If you\'re ready to unlock that power, seek out Dealer Malij. Few understand the art of enchanting as well as they do, and they\'re always willing to share their knowledge with those eager to learn.
+
+Find Dealer Malij and introduce yourself. Your journey into the world of enchanting begins there.', 'Find the enchant merchant inside the Stormspire.', 'Find the enchant merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the enchant merchant inside the Stormspire.', '', '', '', 0),
+  (777004, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777005, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13966, 1, 18468, 1, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4145, 3057, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Prepared for battle', 'Have you spoken with Dealer Rashaad yet? Take a look through their selection of accessories. The right ring, necklace, or trinket can provide the edge needed to overcome even the fiercest of enemies.', 'A true adventurer knows that weapons and armor are only part of what it takes to survive. Powerful rings, necklaces, enchanted cloaks, and mystical trinkets can grant incredible strength, resilience, and magical abilities that may turn the tide of any battle.
+
+Before venturing any farther, seek out Dealer Rashaad, our trusted Accessory Merchant. Their collection of rings, necklaces, cloaks, and trinkets may hold exactly what you need to prepare for the challenges ahead.', 'Find the accessory merchant inside the Stormspire.', 'Find the accessory merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the accessory merchant inside the Stormspire.', '', '', '', 0),
+  (777005, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18706, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Glad to meet you', 'Have you found Audi the Needle yet?
+
+She isn\'t difficult to recognize. Even in retirement, she carries herself like a seasoned fighter—calm, focused, and always watching.
+
+Seek her out within the Stormpike and make your introduction. Your journey as a true warrior is only beginning.', 'Every champion has a story, and every story begins with a single lesson.
+
+If you\'re looking to sharpen your skills, there\'s no better teacher than Audi the Needle, a former Gladiator whose speed and precision earned her a legendary reputation in the arena. Though she has long since retired from competition, many still seek her wisdom.
+
+You\'ll find Audi somewhere inside the Stormpike. Speak with her and introduce yourself. Listen well—those who survive the arena are rarely eager to waste words.
+
+Go now, and let her know I sent you.', 'Find former gladiator Audi the Needle inside the Stormspire.', 'Find former gladiator Audi the Needle inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find former gladiator Audi the Needle inside the Stormspire.', '', '', '', 0),
+  (777006, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 17500, 0, 0, 0, 1750, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Just queue Warsong Gluch already!', 'Still standing here?
+
+Warsong Gulch isn\'t going to queue itself. Every moment you hesitate is another opportunity for the enemy to claim victory.
+
+Join the queue, and show everyone that you\'re more than just another bystander.', 'You\'ve sharpened your blade, polished your armor, and spent enough time wandering the camp. The battlefield won\'t wait forever.
+
+If you seek glory, honor, and a worthy challenge, it\'s time to enter Warsong Gulch. There, the Horde and Alliance clash in an endless struggle to capture one another\'s flag, testing both courage and teamwork.
+
+Speak with "Image of Nexus-Prince Haramad" and enlist. The sooner you queue, the sooner you\'ll be fighting for victory.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', '', '', '', 0),
+  (777007, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55480, 36937, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Lifeblood - The Next Level', 'A stronger heal is worth more than you would imagine. Every improvement to your magic could mean the difference between victory and a long walk back from the grave.
+
+Return once you\'ve mastered Lifeblood Rank 2.', 'You\'ve survived this long because you\'ve learned to mend wounds as quickly as they\'re dealt. But every healer knows that standing still is the same as falling behind.
+
+The spell Lifeblood has served you well, yet its true potential remains untapped. With greater understanding comes greater healing, allowing you to keep both yourself and your allies standing when others would fall.
+
+Seek out the trainer and master Lifeblood Rank 2. Strengthening your healing magic is the next step toward becoming a true champion.', 'Speak to [WIP] and upgrade your Lifeblood to Rank 2.', 'Speak to [WIP] and upgrade your Lifeblood to Rank 2.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Lifeblood to Rank 2.', '', '', '', 0),
+  (777008, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55500, 36937, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Lifeblood - Maxing The Potential', 'Healing is more than restoring wounds; it is the art of preserving hope. With each improvement to Lifeblood, your control over restorative magic grows more precise and more potent.
+
+Continue your training and unlock the next stage of your healing abilities. Your allies will soon depend on the power you are about to wield.', 'Your command over Lifeblood Rank 2 has served you well, but true healers never stop honing their craft. Every battle fought and every ally saved has strengthened your connection to the life-giving energies that flow through this spell.
+
+It is time to push beyond your current limits. Focus your power, refine your technique, and elevate Lifeblood to Rank 3. Greater mastery means greater responsibility—and greater strength for those who stand beside you.', 'Speak to [WIP] and upgrade your Lifeblood to Rank 3.', 'Speak to [WIP] and upgrade your Lifeblood to Rank 3.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Lifeblood to Rank 3.', '', '', '', 0),
+  (777009, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13209, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 2', 'The Arena Grand Master resonates with growing power, but the transformation is not yet complete. Continue the upgrade process and focus your efforts. Great relics are not created through chance—they are earned through persistence and determination.
+
+Return once your Arena Grand Master has reached its next rank.', 'The Arena Grand Master has already proven its worth in battle, shielding you when the odds were stacked against you. But true power is never stagnant. Every victory, every hard-fought duel, and every challenge overcome has awakened the trinket\'s hidden potential.
+
+Its magic yearns to be refined. With the proper materials and your continued dedication, the Arena Grand Master can be forged into an even greater relic—one worthy of a seasoned champion.
+
+Take the next step. Strengthen your trinket and let your enemies witness the power of a true gladiator.', 'Speak to [WIP] and upgrade your Arena Grand Master trinket!', 'Speak to [WIP] and upgrade your Arena Grand Master trinket!', 0, 0, 0, 0, 0, 0, 0, 0, 18706, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Arena Grand Master trinket!', '', '', '', 0),
+  (777010, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8663, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 3', 'You\'re getting closer. I can already feel the trinket resonating with greater strength. The Arena Grand Master was forged for those who refuse to settle for yesterday\'s victories.
+
+Finish the upgrade and unlock the next stage of its power. A seasoned warrior is dangerous—but one who continues to grow is unstoppable.', 'Every true champion knows that power is never fully complete. Every victory, every close call, and every hard-fought battle has brought you to this moment.
+
+The trinket has absorbed enough experience to awaken its next potential. Strengthen it once more, and let your enemies witness what a true gladiator is capable of.
+
+Upgrade your Arena Grand Master to Rank 3.', 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', 0, 0, 0, 0, 0, 0, 0, 0, 13209, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', '', '', '', 0),
+  (777011, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 4', 'The trinket pulses with overwhelming power. Every victory brings it closer to perfection, yet it still yearns for one final display of your dominance.
+
+This is no longer about earning the title of Arena Grand Master.
+
+It is about becoming the champion others measure themselves against.
+
+Finish what you started, and let your legacy be etched into the arena forever.', 'You\'ve carried the Arena Grand Master through countless battles, proving your worth against every challenger who dared stand before you. The trinket has grown alongside you, absorbing the echoes of victory and the resolve of a true champion.
+
+Now only one step remains.
+
+The final ritual cannot be completed with strength alone. It demands unwavering determination, flawless execution, and the heart of a gladiator who refuses to yield. Should you succeed, the Arena Grand Master will awaken to its ultimate form—a relic worthy of legends, feared by enemies and admired by allies alike.
+
+Return only when the final trial has been conquered.', 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', 0, 0, 0, 0, 0, 0, 0, 0, 8663, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', '', '', '', 0),
+  (777012, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14529, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'First Aid! Becoming a Journeyman', 'Every seasoned healer began with a single bandage. The difference between an apprentice and a journeyman isn\'t talent—it\'s experience.
+
+Have you completed your training? Show me that you\'ve learned to treat the wounded with confidence, precision, and speed.', 'Bandages can save a life, but only in the hands of someone who knows how to use them. You\'ve mastered the basics of treating cuts and bruises, yet true healers must be ready for far worse. The wounded won\'t always have the luxury of magic at their side.
+
+If you wish to become a Journeyman in First Aid, you\'ll need to prove that your hands are as steady as your resolve. Study the techniques, prepare your supplies, and demonstrate that you\'re ready for the next stage of your training.
+
+Return once you\'ve completed your First Aid training. Then we\'ll see if you\'ve earned the title of Journeyman.', 'Speak to [WIP] and learn the ways of Journeyman First Aid.', 'Speak to [WIP] and learn the ways of Journeyman First Aid.', 0, 0, 0, 0, 0, 0, 0, 0, 8545, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and learn the ways of Journeyman First Aid.', '', '', '', 0),
+  (777013, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14530, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'First Aid! Becoming an Expert', 'Every stitch tells a story. Every bandage wrapped with precision is another life that may yet be saved.
+
+The road to becoming an Expert isn\'t about speed—it\'s about confidence, discipline, and knowing exactly what to do when the battlefield turns against you. Continue your training, and don\'t stop until your techniques become instinct.', 'You\'ve come a long way. Bandages that once took all your concentration are now second nature. A true healer in the field isn\'t measured by magic alone, but by the ability to keep allies alive when every second counts.
+
+It\'s time to advance beyond the basics. Master the techniques of an Expert medic and prove that your hands remain steady, even in the chaos of battle. Greater wounds demand greater skill—and soon, others will look to you when hope begins to fade.
+
+Train diligently, refine your craft, and return once you\'ve achieved the rank of Expert in First Aid.', 'Speak to [WIP] and learn the ways of Expert First Aid.', 'Speak to [WIP] and learn the ways of Expert First Aid.', 0, 0, 0, 0, 0, 0, 0, 0, 14529, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and learn the ways of Expert First Aid.', '', '', '', 0),
+  (777014, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 5000, 0, 0, 4096, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Daily - For the Glory of Honor', 'The war rages on, and every battle shapes the fate of Azeroth. Stay focused and never lose sight of your objective.
+
+True honor is earned through courage, determination, and the will to fight until the very end. Victory favors those who refuse to surrender.', 'The battlefield never rests, and neither should a true champion. Every clash, every victory, and every fallen foe adds another page to your legend.
+
+Today, you have another chance to prove your worth. Whether you stand shoulder to shoulder with allies or charge headlong into the fray alone, honor awaits those willing to fight for it.
+
+Go forth, warrior. Let your enemies remember your name, and return when your deeds have earned you the glory you seek.', 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Daily - For the Glory of Honor". ', 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Daily - For the Glory of Honor". ', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Daily - For the Glory of Honor". ', '', '', '', 0),
+  (777015, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 0, 0, 0, 4096, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 666, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Daily - The Arena', 'The roar of the crowd echoes through the Arena as champions clash steel against steel and spell against spell.
+
+Every match hones your instincts. Adapt to your opponents, trust your teammates, and never stop fighting until the final blow has been struck.
+
+Keep entering the Arena. Great warriors aren\'t forged in a single battle—they\'re forged through perseverance.', 'So, you think you\'re ready for real combat?
+
+The battlegrounds teach teamwork, but the Arena strips away every excuse. No sprawling battlefields, no reinforcements—just you, your allies, and the enemy standing before you.
+
+Victory isn\'t guaranteed, and defeat is often the greatest teacher. Step into the Arena and prove you have the courage to face worthy opponents head-on.
+
+Queue for [WIP] Arena matches today. Whether you claim victory or learn from defeat, every battle will sharpen your skills.', 'Complete [WIP] Arena matches for the day.', 'Complete [WIP] Arena matches for the day.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Complete [WIP] Arena matches for the day.', '', '', '', 0),
+  (777016, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 15000, 0, 0, 32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Weekly - For the Glory of Honor', 'The battles rage on, and your legend grows with every encounter. Whether victory comes easily or only after hardship, each step brings you closer to fulfilling your oath.
+
+Do not falter now. The greatest warriors are those who continue fighting long after others have surrendered. Finish what you started, and let your honor shine brighter than ever.', 'Honor is not earned through words—it is forged in battle. Every clash, every victory, and every sacrifice strengthens your legacy upon the battlefield.
+
+This week, prove that your resolve has not faded. Stand beside your allies, face your enemies without fear, and remind the realm why your name deserves to be remembered.
+
+Fight not for riches alone, but for the glory that only true champions can claim.', 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Weekly - For the Glory of Honor".', 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Weekly - For the Glory of Honor".', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Weekly - For the Glory of Honor".', '', '', '', 0),
+  (777017, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 0, 0, 0, 32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Weekly - The Arena', 'The arena waits for no one. Every match sharpens your instincts, every opponent teaches a lesson, and every battle brings you closer to mastering your craft.
+
+Stay focused and see all [WIP] arena matches through. Your weekly trial is not over yet.', 'The arena is where warriors are truly tested. Every battle demands skill, discipline, and the resolve to stand firm against worthy opponents.
+
+This week, I have a challenge worthy of your name. Step into the arena and see [WIP] matches through to their conclusion. Victory is always celebrated, but even defeat carries the lessons of a seasoned combatant.
+
+Prove your dedication, and return when your task is complete.', 'Complete [WIP] Arena matches for the week.', 'Complete [WIP] Arena matches for the week.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Complete [WIP] Arena matches for the week.', '', '', '', 0);
 
 INSERT INTO `quest_offer_reward` (`ID`, `Emote1`, `Emote2`, `Emote3`, `Emote4`, `EmoteDelay1`, `EmoteDelay2`, `EmoteDelay3`, `EmoteDelay4`, `RewardText`, `VerifiedBuild`) VALUES
   (777000, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire, traveler! Please, take a moment to rest, have a warm meal, and enjoy the artificial breeze. Your adventure in the dome starts now, but heed my words: do not step outside the glass. The twisting nether out there will tear a newcomer apart, and I’d prefer not to lose a customer so quickly.', 0),
@@ -114,26 +212,77 @@ INSERT INTO `quest_offer_reward` (`ID`, `Emote1`, `Emote2`, `Emote3`, `Emote4`, 
 I have some average gems are ready to fuse with your armor, but you must make a choice. Will you claim flawless accuracy so your strikes never falter, or supreme stamina to endure the heaviest blows?
 
 Choose your power, traveler, and let us begin our business!', 0),
-  (777003, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] An enchanting encounter End text', 0),
-  (777004, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Prepared for battle
-End text', 0),
-  (777005, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Glad to meet you
-End text', 0),
-  (777006, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Just queue Warsong Gluch already!
-End text', 0),
-  (777007, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Upgrade your lifeblood to R2
-End text !', 0),
-  (777008, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Upgrade your lifeblood to R3
-End text !', 0),
-  (777009, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] AGM R2 End Text', 0),
-  (777010, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] AGM R3 End Text', 0),
-  (777011, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] AGM R4 End Text', 0),
-  (777012, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] First Aid R2 End Text', 0),
-  (777013, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] First Aid R3 End Text', 0),
-  (777014, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Daily Honor Quest End Text', 0),
-  (777015, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Daily Arena Quest End Text', 0),
-  (777016, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Weekly Honor Quest End Text', 0),
-  (777017, 0, 0, 0, 0, 0, 0, 0, 0, '[WIP] Weekly Arena Quest End Text', 0);
+  (777003, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome! I heard someone would be stopping by. So, you\'re interested in the art of enchanting?
+
+You\'ve come to the right place. Whether you seek greater strength, sharper weapons, or sturdier armor, I can help you unlock the hidden potential within your gear.
+
+Every great hero eventually discovers that the smallest magical enhancement can make the greatest difference. Let\'s begin your enchanting journey.', 0),
+  (777004, 0, 0, 0, 0, 0, 0, 0, 0, 'Well done. You\'ve met with Dealer Rashaad and discovered the importance of magical accessories. A wise adventurer never overlooks the power of a finely crafted ring, an enchanted cloak, or a mystical trinket.', 0),
+  (777005, 0, 0, 0, 0, 0, 0, 0, 0, 'So, you\'re the one they sent to find me?
+
+I\'m Audi the Needle. I spent enough years fighting in the arena to know that raw strength only gets you so far. Timing, discipline, and patience—that\'s what separates a champion from another fallen contender.
+
+If you\'re willing to learn, perhaps I\'ll show you a few tricks. But remember... every gladiator starts as a stranger.
+
+Welcome to the Stormpike.', 0),
+  (777006, 0, 0, 0, 0, 0, 0, 0, 0, 'Excellent! Your name has been added to the roster.
+
+Now all that\'s left is to await the call to battle. When the gates open, fight with honor, protect your allies, and never let the enemy walk away with your flag.
+
+Good luck, champion. May your first steps into Warsong Gulch be the beginning of a long legacy of victories.', 0),
+  (777007, 0, 0, 0, 0, 0, 0, 0, 0, 'I can already feel the difference in your aura. Lifeblood now flows through you with greater power and control, restoring wounds with renewed strength.
+
+Never underestimate the value of a well-timed heal. As battles grow more dangerous, so too must your command of the life-giving arts.
+
+Well done. This is only the beginning of your journey toward true mastery.', 0),
+  (777008, 0, 0, 0, 0, 0, 0, 0, 0, 'Excellent work! Lifeblood has now reached Rank 3, and its restorative power has grown considerably. Your dedication to mastering the healing arts is paying off, making you an even greater asset on the battlefield.
+
+Remember, every rank brings new potential. Continue to strengthen your abilities, for the greatest healers are forged through constant growth and unwavering determination.', 0),
+  (777009, 0, 0, 0, 0, 0, 0, 0, 0, 'Excellent work. Your Arena Grand Master has evolved into a stronger artifact, its protective magic now more potent than before.
+
+This is more than an upgrade—it\'s a testament to your growth as a combatant. Treasure this relic, for every enhancement brings you one step closer to becoming an unstoppable force in the arena.
+
+Wear it proudly, champion. Greater challenges—and greater rewards—still await.', 0),
+  (777010, 0, 0, 0, 0, 0, 0, 0, 0, 'Remarkable. The Arena Grand Master now radiates with the confidence of a veteran champion. Its power has matured alongside your own, becoming a symbol of perseverance and mastery.
+
+Rank 3 is more than just an upgrade—it\'s proof that you\'ve earned your place among Azeroth\'s elite. Wear it with pride, and let every opponent know they\'re facing a true contender.', 0),
+  (777011, 0, 0, 0, 0, 0, 0, 0, 0, 'Incredible...
+
+The ritual is complete, and the Arena Grand Master has reached its final evolution. Its power is no longer dormant—it has fully awakened, resonating with every battle you\'ve fought and every opponent you\'ve overcome.
+
+Few possess the dedication to reach this point. Fewer still have the skill.
+
+Wear this trinket with pride. It is more than a piece of equipment; it is proof that you have mastered the arena and earned your place among its greatest champions.
+
+There are no higher ranks to attain.
+
+Only legends to surpass.', 0),
+  (777012, 0, 0, 0, 0, 0, 0, 0, 0, 'Excellent work! You\'ve proven that healing isn\'t just about magic—it\'s about preparation, knowledge, and keeping a steady hand when others need it most.
+
+From this day forward, you are recognized as a Journeyman of First Aid. Your bandages will mend more than wounds; they\'ll give your allies the strength to fight another battle.
+
+Continue honing your craft. The greatest healers are those who never stop learning.', 0),
+  (777013, 0, 0, 0, 0, 0, 0, 0, 0, 'Excellent work! Your knowledge of battlefield medicine has reached the level of an Expert. You\'ve proven that even without powerful spells, a skilled healer can mean the difference between victory and defeat.
+
+Carry your bandages with pride and never underestimate the value of a prepared medic. Your journey isn\'t over yet, but you\'ve taken another important step toward mastering the art of First Aid.', 0),
+  (777014, 0, 0, 0, 0, 0, 0, 0, 0, 'Outstanding work! You\'ve once again proven yourself as a formidable force on the battlefield.
+
+Your bravery has earned the respect of friend and foe alike. Accept this reward of 5,000 Honor and 50,000 Gold as payment for your service.
+
+Rest while you can, champion. Tomorrow, the call to battle will sound once more, and glory will await those bold enough to answer it.', 0),
+  (777015, 0, 0, 0, 0, 0, 0, 0, 0, 'You\'ve answered the Arena\'s call and stood your ground against determined foes.
+
+Every match you\'ve fought has strengthened your resolve and refined your combat instincts. Win or lose, you\'ve gained the experience that separates ordinary adventurers from true gladiators.
+
+Return tomorrow, challenger. The Arena always awaits those seeking honor, glory, and the next great battle.', 0),
+  (777016, 0, 0, 0, 0, 0, 0, 0, 0, 'Outstanding work. Once again, you\'ve proven that honor is more than a title—it\'s a way of life. Your victories have inspired your allies and struck fear into your enemies.
+
+Accept this reward of 15,000 Honor and 150,000 Gold as recognition of your unwavering dedication. Rest while you can, champion. Next week, the battlefield will call upon you once more, and glory will await those bold enough to answer.', 0),
+  (777017, 0, 0, 0, 0, 0, 0, 0, 0, 'Well fought, champion.
+
+20 arena matches is no small feat. You\'ve stood against determined foes, earned valuable experience, and strengthened your reputation among the combatants.
+
+Accept your reward with pride, and prepare yourself—the arena\'s call never grows silent, and another challenge awaits when the new week begins.', 0);
 
 INSERT INTO `quest_template_addon` (`ID`, `MaxLevel`, `AllowableClasses`, `SourceSpellID`, `PrevQuestID`, `NextQuestID`, `ExclusiveGroup`, `RewardMailTemplateID`, `RewardMailDelay`, `RequiredSkillID`, `RequiredSkillPoints`, `RequiredMinRepFaction`, `RequiredMaxRepFaction`, `RequiredMinRepValue`, `RequiredMaxRepValue`, `ProvidedItemCount`, `SpecialFlags`) VALUES
   (777000, 19, 0, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
@@ -158,21 +307,57 @@ INSERT INTO `quest_request_items` (`ID`, `EmoteOnComplete`, `EmoteOnIncomplete`,
   (777000, 0, 0, '', 0),
   (777001, 0, 0, 'Speak with Zarevhi, the arcane healer and learn it\'s techniques.', 0),
   (777002, 0, 0, 'Speak with Dealer Senzik to get your shiny gems.', 0),
-  (777003, 0, 0, '[WIP] An enchanting encounter Progression text', 0),
-  (777004, 0, 0, '[WIP] Prepared for battle Progression text', 0),
-  (777005, 0, 0, '[WIP] Glad to meet you Progression text', 0),
-  (777006, 0, 0, '[WIP] Just queue Warsong Gluch already! Start text', 0),
-  (777007, 0, 0, '', 0),
-  (777008, 0, 0, '', 0),
-  (777009, 0, 0, '', 0),
-  (777010, 0, 0, '', 0),
-  (777011, 0, 0, '', 0),
-  (777012, 0, 0, '', 0),
-  (777013, 0, 0, '', 0),
-  (777014, 0, 0, '', 0),
-  (777015, 0, 0, '', 0),
-  (777016, 0, 0, '', 0),
-  (777017, 0, 0, '', 0);
+  (777003, 0, 0, 'Have you found Dealer Malij yet? The secrets of enchanting won\'t reveal themselves on their own. Seek them out and take your first step toward imbuing your equipment with extraordinary power.', 0),
+  (777004, 0, 0, 'Have you spoken with Dealer Rashaad yet? Take a look through their selection of accessories. The right ring, necklace, or trinket can provide the edge needed to overcome even the fiercest of enemies.', 0),
+  (777005, 0, 0, 'Have you found Audi the Needle yet?
+
+She isn\'t difficult to recognize. Even in retirement, she carries herself like a seasoned fighter—calm, focused, and always watching.
+
+Seek her out within the Stormpike and make your introduction. Your journey as a true warrior is only beginning.', 0),
+  (777006, 0, 0, 'Still standing here?
+
+Warsong Gulch isn\'t going to queue itself. Every moment you hesitate is another opportunity for the enemy to claim victory.
+
+Join the queue, and show everyone that you\'re more than just another bystander.', 0),
+  (777007, 0, 0, 'A stronger heal is worth more than you would imagine. Every improvement to your magic could mean the difference between victory and a long walk back from the grave.
+
+Return once you\'ve mastered Lifeblood Rank 2.', 0),
+  (777008, 0, 0, 'Healing is more than restoring wounds; it is the art of preserving hope. With each improvement to Lifeblood, your control over restorative magic grows more precise and more potent.
+
+Continue your training and unlock the next stage of your healing abilities. Your allies will soon depend on the power you are about to wield.', 0),
+  (777009, 0, 0, 'The Arena Grand Master resonates with growing power, but the transformation is not yet complete. Continue the upgrade process and focus your efforts. Great relics are not created through chance—they are earned through persistence and determination.
+
+Return once your Arena Grand Master has reached its next rank.', 0),
+  (777010, 0, 0, 'You\'re getting closer. I can already feel the trinket resonating with greater strength. The Arena Grand Master was forged for those who refuse to settle for yesterday\'s victories.
+
+Finish the upgrade and unlock the next stage of its power. A seasoned warrior is dangerous—but one who continues to grow is unstoppable.', 0),
+  (777011, 0, 0, 'The trinket pulses with overwhelming power. Every victory brings it closer to perfection, yet it still yearns for one final display of your dominance.
+
+This is no longer about earning the title of Arena Grand Master.
+
+It is about becoming the champion others measure themselves against.
+
+Finish what you started, and let your legacy be etched into the arena forever.', 0),
+  (777012, 0, 0, 'Every seasoned healer began with a single bandage. The difference between an apprentice and a journeyman isn\'t talent—it\'s experience.
+
+Have you completed your training? Show me that you\'ve learned to treat the wounded with confidence, precision, and speed.', 0),
+  (777013, 0, 0, 'Every stitch tells a story. Every bandage wrapped with precision is another life that may yet be saved.
+
+The road to becoming an Expert isn\'t about speed—it\'s about confidence, discipline, and knowing exactly what to do when the battlefield turns against you. Continue your training, and don\'t stop until your techniques become instinct.', 0),
+  (777014, 0, 0, 'The war rages on, and every battle shapes the fate of Azeroth. Stay focused and never lose sight of your objective.
+
+True honor is earned through courage, determination, and the will to fight until the very end. Victory favors those who refuse to surrender.', 0),
+  (777015, 0, 0, 'The roar of the crowd echoes through the Arena as champions clash steel against steel and spell against spell.
+
+Every match hones your instincts. Adapt to your opponents, trust your teammates, and never stop fighting until the final blow has been struck.
+
+Keep entering the Arena. Great warriors aren\'t forged in a single battle—they\'re forged through perseverance.', 0),
+  (777016, 0, 0, 'The battles rage on, and your legend grows with every encounter. Whether victory comes easily or only after hardship, each step brings you closer to fulfilling your oath.
+
+Do not falter now. The greatest warriors are those who continue fighting long after others have surrendered. Finish what you started, and let your honor shine brighter than ever.', 0),
+  (777017, 0, 0, 'The arena waits for no one. Every match sharpens your instincts, every opponent teaches a lesson, and every battle brings you closer to mastering your craft.
+
+Stay focused and see all [WIP] arena matches through. Your weekly trial is not over yet.', 0);
 
 INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES
   (19531, 777000),

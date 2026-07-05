@@ -499,16 +499,16 @@ const wsgBot = (
 })
 
 const defaultWsgBotRoster: WsgBotRosterEntry[] = [
-  wsgBot(1, 'Aegwynn', 'human', 'priest', 'healer', 'discipline', 5, 'wsg-healer'),
-  wsgBot(1, 'Antonidas', 'human', 'mage', 'dps', 'frost', 1, 'wsg-ranged-dps'),
+  wsgBot(1, 'Lofi', 'human', 'priest', 'healer', 'discipline', 5, 'wsg-healer'),
+  wsgBot(1, 'Filo', 'human', 'mage', 'dps', 'frost', 1, 'wsg-ranged-dps'),
   wsgBot(1, 'Trarife', 'human', 'warrior', 'dps', 'arms', 2, 'wsg-melee-dps'),
-  wsgBot(1, 'Alleria', 'nightelf', 'hunter', 'dps', 'marksman', 3, 'wsg-ranged-dps'),
-  wsgBot(1, 'Malfurion', 'nightelf', 'druid', 'flag-carrier', 'feral', 4, 'wsg-flag-carrier'),
-  wsgBot(2, 'Velenar', 'undead', 'priest', 'healer', 'discipline', 5, 'wsg-healer'),
-  wsgBot(2, 'Kelthuzad', 'undead', 'mage', 'dps', 'frost', 1, 'wsg-ranged-dps'),
-  wsgBot(2, 'Saurfang', 'orc', 'warrior', 'dps', 'arms', 2, 'wsg-melee-dps'),
-  wsgBot(2, 'Rokhan', 'troll', 'hunter', 'dps', 'marksman', 3, 'wsg-ranged-dps'),
-  wsgBot(2, 'Hamuul', 'tauren', 'druid', 'flag-carrier', 'feral', 4, 'wsg-flag-carrier'),
+  wsgBot(1, 'Ilfo', 'nightelf', 'hunter', 'dps', 'marksman', 3, 'wsg-ranged-dps'),
+  wsgBot(1, 'Lifo', 'nightelf', 'druid', 'flag-carrier', 'feral', 4, 'wsg-flag-carrier'),
+  wsgBot(2, 'Foli', 'undead', 'priest', 'healer', 'discipline', 5, 'wsg-healer'),
+  wsgBot(2, 'Foil', 'undead', 'mage', 'dps', 'frost', 1, 'wsg-ranged-dps'),
+  wsgBot(2, 'Iolf', 'orc', 'warrior', 'dps', 'arms', 2, 'wsg-melee-dps'),
+  wsgBot(2, 'Iflo', 'troll', 'hunter', 'dps', 'marksman', 3, 'wsg-ranged-dps'),
+  wsgBot(2, 'Olfi', 'tauren', 'druid', 'flag-carrier', 'feral', 4, 'wsg-flag-carrier'),
 ]
 
 const parseOptionalPositiveInt = (value: string | undefined, label: string, rowLabel: string): number | undefined => {
@@ -1173,7 +1173,7 @@ const generateQuestSql = (
   const npcSubnameCase = npcSubnameRows.map(([id, subname]) => `  WHEN ${id} THEN ${sqlString(subname)}`).join('\n')
   const npcSpawnSwapRows = npcSpawnSwaps
     .map((swap) =>
-      `UPDATE \`creature\` SET \`id1\` = ${swap.id}, \`id2\` = 0, \`id3\` = 0 WHERE \`guid\` = ${swap.guid};`
+      `UPDATE \`creature\` SET \`id\` = ${swap.id} WHERE \`guid\` = ${swap.guid};`
     )
     .join('\n')
 
@@ -1731,33 +1731,20 @@ if (quests.length > 0) {
     `
 SELECT spawned.npc, spawned.map, spawned.position_x, spawned.position_y
 FROM (
-  SELECT id1 npc, map, position_x, position_y, guid
+  SELECT id npc, map, position_x, position_y, guid
   FROM \`${worldDb}\`.creature
-  WHERE map = 530 AND id1 IN (${takerIds.map(() => '?').join(', ')})
-  UNION ALL
-  SELECT id2 npc, map, position_x, position_y, guid
-  FROM \`${worldDb}\`.creature
-  WHERE map = 530 AND id2 IN (${takerIds.map(() => '?').join(', ')})
-  UNION ALL
-  SELECT id3 npc, map, position_x, position_y, guid
-  FROM \`${worldDb}\`.creature
-  WHERE map = 530 AND id3 IN (${takerIds.map(() => '?').join(', ')})
+  WHERE map = 530 AND id IN (${takerIds.map(() => '?').join(', ')})
 ) spawned
 INNER JOIN (
-  SELECT npc, MAX(guid) guid
-  FROM (
-    SELECT id1 npc, guid FROM \`${worldDb}\`.creature WHERE map = 530 AND id1 IN (${takerIds.map(() => '?').join(', ')})
-    UNION ALL
-    SELECT id2 npc, guid FROM \`${worldDb}\`.creature WHERE map = 530 AND id2 IN (${takerIds.map(() => '?').join(', ')})
-    UNION ALL
-    SELECT id3 npc, guid FROM \`${worldDb}\`.creature WHERE map = 530 AND id3 IN (${takerIds.map(() => '?').join(', ')})
-  ) spawns
-  GROUP BY npc
+  SELECT id npc, MAX(guid) guid
+  FROM \`${worldDb}\`.creature
+  WHERE map = 530 AND id IN (${takerIds.map(() => '?').join(', ')})
+  GROUP BY id
 ) latest
   ON latest.npc = spawned.npc AND latest.guid = spawned.guid
 ORDER BY npc
     `,
-    [...takerIds, ...takerIds, ...takerIds, ...takerIds, ...takerIds, ...takerIds],
+    [...takerIds, ...takerIds],
   ) as CreaturePositionRow[]
 
   const positionsByNpc = new Map(creaturePositionRows.map((row) => [Number(row.npc), row]))
