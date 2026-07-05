@@ -41,3 +41,19 @@
   `CLASSES` is a comma-separated list of class names for each starter item.
 - `config/worldserver.json` must keep `PlayerStart.CustomSpells` set to `1` for SQL-defined starting spells.
 - Keep managed core SQL unqualified by database name; `tasks/refresh_sql.ts` selects `WORLD_DB` before applying it.
+
+## Core References
+
+- Commands/runtime: `core/src/server/game/Chat/`; command maps are loaded from `World/World.cpp`.
+- Reload behavior: command handlers ultimately call loaders in `Globals/ObjectMgr.cpp`, `Loot/LootMgr.cpp`,
+  `DataStores/DBCStores.cpp`, or manager-specific files.
+- Script hooks: `core/src/server/game/Scripting/ScriptDefines/*Script.h`; start with `PlayerScript.h`,
+  `CreatureScript.h`, `ItemScript.h`, `WorldScript.h`.
+- Script dispatch: `core/src/server/game/Scripting/ScriptMgr.h` and `ScriptMgr.cpp`.
+- Config keys/defaults: `core/src/server/game/World/WorldConfig.cpp`; runtime access goes through `World/World.h`.
+- DBC loading: `core/src/server/game/DataStores/DBCStores.cpp` and `DBCStructure.h`.
+- DB-backed templates: `core/src/server/game/Globals/ObjectMgr.cpp` loads creatures, items, quests, and player create
+  info.
+- Character creation: `core/src/server/game/Entities/Player/Player.cpp`; use this for level 19 start level, location,
+  outfit order, custom spells, skills, ammo, and durability behavior.
+- Item rules/equipment: `core/src/server/game/Entities/Item/` and player equip checks in `Entities/Player/Player.cpp`.
