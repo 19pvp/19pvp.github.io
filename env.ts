@@ -2,6 +2,8 @@ import worldserverConfig from './config/worldserver.json' with { type: 'json' }
 import aleConfig from './config/ale.json' with { type: 'json' }
 import playerbotsConfig from './config/playerbots.json' with { type: 'json' }
 
+export const projectName = import.meta.dirname.split('/').at(-1)
+
 const distDir = 'core/env/dist'
 const dist = (path: string) => `${import.meta.dirname}/${distDir}/${path}`
 export const bin = (path: string) => dist(`bin/${path}`)

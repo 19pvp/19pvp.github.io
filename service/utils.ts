@@ -1,7 +1,10 @@
+import { env } from './env.ts'
+
 export const cors = {
-  'access-control-allow-origin': '*',
+  'access-control-allow-origin': env.WEB_ORIGIN,
   'access-control-allow-methods': 'GET, POST, OPTIONS',
   'access-control-allow-headers': 'content-type,last-event-id',
+  'access-control-allow-credentials': 'true',
 }
 
 const encoder = new TextEncoder()

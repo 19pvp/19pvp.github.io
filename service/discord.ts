@@ -1,6 +1,7 @@
 import { brightRed, cyan, green, magenta } from '@std/fmt/colors'
-const TOKEN = Deno.env.get('DISCORD_BOT_TOKEN')
-const GUILD_ID = Deno.env.get('DISCORD_GUILD_ID')
+import { env } from './env.ts'
+const TOKEN = env.DISCORD_TOKEN
+const GUILD_ID = env.DISCORD_GUILD_ID
 const authorization = `Bot ${TOKEN}`
 const apiUrl = 'https://discord.com/api/v10'
 
@@ -406,17 +407,13 @@ const validateDiscordToken = async () => {
   return true
 }
 
-if (!TOKEN) {
-  console.warn('DISCORD_TOKEN is not set; Discord gateway bridge is disabled')
-} else {
-  validateDiscordToken()
-    .then((valid) => {
-      if (valid) connect(0)
-    })
-    .catch((err) => {
-      console.error('Discord token validation failed before gateway connect', String(err))
-    })
-}
+validateDiscordToken()
+  .then((valid) => {
+    if (valid) connect(0)
+  })
+  .catch((err) => {
+    console.error('Discord token validation failed before gateway connect', String(err))
+  })
 
 const rest = async (pathname: string, params: DiscordRequestInit) => {
   if (params.body && typeof params.body !== 'string') {

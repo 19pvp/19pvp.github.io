@@ -1,4 +1,5 @@
-const TOKEN = Deno.env.get('GEMINI_TOKEN')
+import { env } from './env.ts'
+const TOKEN = env.GEMINI_TOKEN
 
 const prompt =
   "Write a very concise description of this image for blind peoples, max 20 words, less if possible, be informal and casual. Your answer must start with 'Image of', avoid ponctuation."

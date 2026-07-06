@@ -1,16 +1,17 @@
 import { json } from './utils.ts'
+import { env } from './env.ts'
 
-const CLIENT_ID = Deno.env.get('DISCORD_CLIENT_ID') || ''
-const CLIENT_SECRET = Deno.env.get('DISCORD_CLIENT_SECRET') || ''
-const GUILD_ID = Deno.env.get('DISCORD_GUILD_ID') || ''
-const BOT_TOKEN = Deno.env.get('DISCORD_TOKEN') || Deno.env.get('DISCORD_BOT_TOKEN') || ''
-const PUBLIC_BASE_URL = Deno.env.get('PUBLIC_BASE_URL') || ''
-const WEB_ORIGIN = Deno.env.get('WEB_ORIGIN')
+const CLIENT_ID = env.DISCORD_APP_ID
+const CLIENT_SECRET = env.DISCORD_CLIENT_SECRET
+const GUILD_ID = env.DISCORD_GUILD_ID
+const BOT_TOKEN = env.DISCORD_TOKEN
+const PUBLIC_BASE_URL = env.PUBLIC_BASE_URL
+const WEB_ORIGIN = env.WEB_ORIGIN
 
 const roleGMLevel: Record<string, number> = {
-  [Deno.env.get('GM_LEVEL_1') || '_1']: 1,
-  [Deno.env.get('GM_LEVEL_2') || '_2']: 2,
-  [Deno.env.get('GM_LEVEL_3') || '_3']: 3,
+  [env.GM_LEVEL_1]: 1,
+  [env.GM_LEVEL_2]: 2,
+  [env.GM_LEVEL_3]: 3,
 }
 
 // In-memory session store & temporary OAuth state store
@@ -62,11 +63,10 @@ export const checkAuth = async (req: Request) => {
 export const handleAuth = async (req: Request) => {
   const url = new URL(req.url)
 
-  // Configure CORS headers if WEB_ORIGIN is specified
-  const corsHeaders: Record<string, string> = {}
-  if (WEB_ORIGIN) {
-    corsHeaders['access-control-allow-origin'] = WEB_ORIGIN
-    corsHeaders['access-control-allow-credentials'] = 'true'
+  // Configure CORS headers (always present and non-empty)
+  const corsHeaders = {
+    'access-control-allow-origin': WEB_ORIGIN,
+    'access-control-allow-credentials': 'true',
   }
 
   if (url.pathname === '/auth/discord/login') {

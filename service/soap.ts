@@ -12,9 +12,11 @@ export type SoapResponse =
   | { success: true; output: SoapResult }
   | { error: number; output: unknown }
 
-const password = () => (Deno.env.get('PASSWORD') || '').slice(0, 16)
-const soapHost = () => Deno.env.get('SOAP_HOST') || unquote(worldserverConfig['SOAP.IP']) || '127.0.0.1'
-const soapPort = () => Deno.env.get('SOAP_PORT') || worldserverConfig['SOAP.Port'] || '7878'
+import { env } from './env.ts'
+
+const password = () => env.PASSWORD.slice(0, 16)
+const soapHost = () => env.SOAP_HOST || unquote(worldserverConfig['SOAP.IP']) || '127.0.0.1'
+const soapPort = () => env.SOAP_PORT || worldserverConfig['SOAP.Port'] || '7878'
 
 const makeSoapBody = (command: string) => `
 <?xml version="1.0" encoding="utf-8"?>

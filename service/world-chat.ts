@@ -6,14 +6,16 @@ import { describeImage } from './gemini.ts'
 import { handleInitialStateEvents, wowEvents } from './wow-events.ts'
 import { createAccount, getUsername, setGmLevel, setPassword, setUsernameAndPassword } from './account.ts'
 
-const botUserID = '766251453337436170' // App Id
-const guildId = Deno.env.get('DISCORD_GUILD_ID')
-const generalChannelId = Deno.env.get('DISCORD_GENERAL_CHANNEL_ID') || Deno.env.get('DISCORD_GUILD_ID')
-const gmCommandChannelId = Deno.env.get('DISCORD_GM_COMMAND_CHANNEL_ID') || '1519357383946535183'
+import { env } from './env.ts'
+
+const botUserID = env.DISCORD_APP_ID // App Id
+const guildId = env.DISCORD_GUILD_ID
+const generalChannelId = env.DISCORD_GENERAL_CHANNEL_ID
+const gmCommandChannelId = env.DISCORD_GM_COMMAND_CHANNEL_ID
 const roleGMLevel = {
-  [Deno.env.get('GM_LEVEL_1') || '_1']: 1,
-  [Deno.env.get('GM_LEVEL_2') || '_2']: 2,
-  [Deno.env.get('GM_LEVEL_3') || '_3']: 3,
+  [env.GM_LEVEL_1]: 1,
+  [env.GM_LEVEL_2]: 2,
+  [env.GM_LEVEL_3]: 3,
 }
 const MAX_ACCOUNT_USERNAME_LENGTH = 17
 const MAX_DISCORD_LOGIN_LENGTH = 255

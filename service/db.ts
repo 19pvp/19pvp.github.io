@@ -33,6 +33,8 @@ class RollbackValidation extends Error {
 
 const dbByConfig = new Map<string, Client>()
 
+import { env } from './env.ts'
+
 const validateDatabaseName = (name: string, label = 'database') => {
   if (!/^[a-zA-Z0-9_]+$/.test(name)) throw Error(`invalid ${label} ${name}`)
   return name
@@ -46,10 +48,10 @@ const databaseConfig = (info: unknown, label: string) => {
   }
 
   return {
-    hostname: Deno.env.get('DB_HOSTNAME') || hostname,
-    port: Number(Deno.env.get('DB_PORT') || port),
-    username: Deno.env.get('DB_USERNAME') || username,
-    password: Deno.env.get('DB_PASSWORD') || password,
+    hostname: env.DB_HOSTNAME || hostname,
+    port: env.DB_PORT !== 3306 ? env.DB_PORT : Number(port),
+    username: env.DB_USERNAME || username,
+    password: env.DB_PASSWORD || password,
     db: validateDatabaseName(db, label),
   }
 }
@@ -65,7 +67,7 @@ export const charactersDbName = charactersDb.db
 export const playerbotsDbName = playerbotsDb.db
 
 const dbConnect = {
-  poolSize: Number(Deno.env.get('DB_POOL_SIZE')) || 3,
+  poolSize: env.DB_POOL_SIZE,
 }
 
 type DatabaseConfig = typeof authDb

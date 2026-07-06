@@ -3,15 +3,14 @@ import { cors, json, runCommand, sse } from './utils.ts'
 import { watch } from '../tasks/config.ts'
 import { ac } from './soap.ts'
 import { checkAuth, handleAuth } from './auth.ts'
+import { env } from './env.ts'
 
-if (Deno.env.get('DISCORD_TOKEN')) {
-  void import('./world-chat.ts').catch((err) => {
-    console.error('Discord bridge failed to start', err)
-  })
-}
+void import('./world-chat.ts').catch((err) => {
+  console.error('Discord bridge failed to start', err)
+})
 
 const applyPatches = async () => {
-  const corePath = Deno.env.get('CORE_PATH') || '/root/services/19pvp/core'
+  const corePath = env.CORE_PATH
   const patchesDir = './patches'
 
   try {
@@ -50,7 +49,7 @@ const applyPatches = async () => {
 void applyPatches()
 
 const serviceJournalQuery = `_PID=${Deno.pid}`
-const worldserverServiceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pvp-worldserver'
+const worldserverServiceName = env.WORLDSERVER_SERVICE_NAME
 const worldserverJournalPath = `journalctl -u ${worldserverServiceName}`
 
 const systemctl = (...args: string[]) => runCommand('systemctl', args)

@@ -1,7 +1,9 @@
 import { auth, type SqlRow } from './db.ts'
 
+import { env } from './env.ts'
+
 // tables
-const worldId = Number(Deno.env.get('WORLD_ID')) || 1
+const worldId = env.WORLD_ID
 
 const eventTypes = [
   'COMMAND', // { player, target?, map, x, y, z, o, command }
