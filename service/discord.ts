@@ -157,6 +157,7 @@ const log = (type: unknown, d: DiscordPayload | null) => {
   const member = dd.member
   const author = dd.author
   const user = dd.user
+  const isPrivateMessage = type === 'MESSAGE_CREATE' && dd.channel_type === 1
   for (
     const key of [
       'v',
@@ -196,6 +197,7 @@ const log = (type: unknown, d: DiscordPayload | null) => {
     delete dd[key]
   }
 
+  isPrivateMessage && (dd.content = '[redacted private message]')
   const discordUser = user as { username?: string; id?: string } | undefined
   const discordMember = member as { nick?: string } | undefined
   const discordAuthor = author as { username?: string; id?: string } | undefined
@@ -411,7 +413,6 @@ if (!TOKEN) {
 }
 
 const rest = async (pathname: string, params: DiscordRequestInit) => {
-  console.log(pathname, params)
   if (params.body && typeof params.body !== 'string') {
     const headers = (params.headers || (params.headers = {})) as Record<string, string>
     const type = headers['content-type'] || headers['Content-Type']

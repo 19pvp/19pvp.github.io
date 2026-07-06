@@ -310,6 +310,11 @@ const handleAccountCommand = async (account: number, content: string) => {
 
   return await getAccountHelp(account)
 }
+
+const discordMarkdownToWowText = (content: string) =>
+  content
+    .replace(/\[([^\]]+)]\((https?:\/\/[^)\s]+)\)/g, '$1: $2')
+    .replace(/[*_~`]/g, '')
 /*
 const _messageCreateExample = {
   type: 0,
@@ -444,13 +449,13 @@ username <new username> <new password>
     }
   }))
 
-  const formattedMsg = unemojify(message.slice(0, 255))
+  const formattedMsg = unemojify(discordMarkdownToWowText(message).slice(0, 255))
   const fullMessage = [formattedMsg, ...attachement].filter((s) => s && s.trim()).join(' ').slice(0, 255)
   if (!fullMessage.length) return console.log('empty message, skipping.')
   console.log('[general]:', fullMessage)
   await auth.sql`
-    INSERT INTO discord_message (message, discord_id)
-    VALUES (${fullMessage}, ${id})
+    INSERT INTO discord_message (message, discord_id, discord_login, account_id)
+    VALUES (${fullMessage}, ${id}, ${userData.login}, ${userData.account})
   `
 })
 /*
