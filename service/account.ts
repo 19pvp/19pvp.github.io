@@ -161,3 +161,36 @@ export const setPassword = async (account: number | string, password: string) =>
 
   return { success: true, output: [`Password changed for account ${username}.`] }
 }
+
+export const setUsernameAndPassword = async (account: number | string, username: string, password: string) => {
+  const id = typeof account === 'string' ? (await getAccountByUsername(account)).id : account
+  const currentUsername = await getUsername(id)
+  if (!currentUsername) {
+    return { success: false, output: { message: `Account ${account} does not exist` } }
+  }
+
+  username = upperOnlyLatin(username.trim())
+  if (!username) {
+    return { success: false, output: { message: 'Username cannot be empty.' } }
+  }
+  if (username.length > MAX_ACCOUNT_USERNAME_LENGTH) {
+    return {
+      success: false,
+      output: { message: `Username can't be longer than ${MAX_ACCOUNT_USERNAME_LENGTH} characters.` },
+    }
+  }
+
+  const [existing] = await auth.sql`SELECT id FROM account WHERE username = ${username} AND id <> ${id}`
+  if (existing) {
+    return { success: false, output: { message: `Username ${username} is already taken.` } }
+  }
+
+  const registration = await makeRegistrationData(username, password)
+  await auth.sql`
+    UPDATE account
+    SET username=${username}, salt=UNHEX(${registration.salt}), verifier=UNHEX(${registration.verifier})
+    WHERE id=${id}
+  `
+
+  return { success: true, output: [`Username changed from ${currentUsername} to ${username}.`] }
+}

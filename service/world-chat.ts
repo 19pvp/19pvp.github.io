@@ -2,8 +2,9 @@ import { unemojify } from 'node-emoji'
 
 import { auth, type SqlRow } from './db.ts'
 import { discord } from './discord.ts'
-import { wowEvents } from './wow-events.ts'
-import { createAccount, setGmLevel, setPassword } from './account.ts'
+import { describeImage } from './gemini.ts'
+import { handleInitialStateEvents, wowEvents } from './wow-events.ts'
+import { createAccount, getUsername, setGmLevel, setPassword, setUsernameAndPassword } from './account.ts'
 
 const botUserID = '766251453337436170' // App Id
 const guildId = Deno.env.get('DISCORD_GUILD_ID')
@@ -87,8 +88,6 @@ const toDiscordLogin = (user: DiscordUser, login?: string | null) => {
 const activeUsers: Record<string, DiscordAccount> = {}
 const activeUsersByAccount: Record<number, DiscordAccount> = {}
 const activeUserSyncs = new Map<string, Promise<DiscordAccount | undefined>>()
-
-const describeImage = (_url: string) => ''
 
 const toDiscordAccount = (
   row: DiscordAccountRow,
@@ -267,6 +266,49 @@ const getDiscordDataForAccount = async (account: number) => {
   activeUsersByAccount[account] = currentUserData
   return currentUserData
 }
+
+const resultToMessage = (result: { success: boolean; output: unknown }) =>
+  result.success
+    ? (Array.isArray(result.output) ? result.output.join('\n') : String(result.output))
+    : `Unable to update account: ${
+      (typeof result.output === 'object' && result.output && 'message' in result.output
+        ? String(result.output.message)
+        : String(result.output)).trim()
+    }`
+
+const getAccountHelp = async (account: number) => {
+  const username = await getUsername(account)
+  return [
+    `Your username is: ${username || 'unknown'}`,
+    'Commands:',
+    'password <new password>',
+    'username <new username> <new password>',
+  ].join('\n')
+}
+
+const handleAccountCommand = async (account: number, content: string) => {
+  const parts = content.trim().split(/\s+/)
+  const command = (parts.shift() || '').toLowerCase()
+
+  if (!command || command === 'account' || command === 'help' || command === 'commands') {
+    return await getAccountHelp(account)
+  }
+
+  if (command === 'password') {
+    const password = parts.join(' ')
+    if (!password) return 'Usage: password <new password>'
+    return resultToMessage(await setPassword(account, password))
+  }
+
+  if (command === 'username') {
+    const username = parts.shift() || ''
+    const password = parts.join(' ')
+    if (!username || !password) return 'Usage: username <new username> <new password>'
+    return resultToMessage(await setUsernameAndPassword(account, username, password))
+  }
+
+  return await getAccountHelp(account)
+}
 /*
 const _messageCreateExample = {
   type: 0,
@@ -336,23 +378,19 @@ discord.on.MESSAGE_CREATE(async (event: DiscordMessage) => {
     if (!members.length) return
 
     const userData = await syncUserData(members[0], event.author)
-    const isPwdRequest = event.content.toLowerCase().indexOf('password')
-    if (isPwdRequest > -1) {
-      const password = event.content.slice(isPwdRequest + 'password'.length).trim()
+    const command = event.content.trim().split(/\s+/, 1)[0]?.toLowerCase()
+    if (command === 'password' || command === 'username') {
       if (!userData) return
-      const result = await setPassword(userData.account, password)
-      const content = result.success
-        ? `${(result.output as string[]).join('\n')}\nYour password is set to: ||\`${password}\`|| (click to reveal)`
-        : `Unable to set your password:\n${
-          ('message' in result.output ? result.output.message : String(result.output)).trim()
-        }`
-      return discord.rest.POST_CHANNEL_MESSAGE({ channel: event.channel_id, content })
+      return discord.rest.POST_CHANNEL_MESSAGE({
+        channel: event.channel_id,
+        content: await handleAccountCommand(userData.account, event.content),
+      })
     }
 
-    const content = `
-To change your password type \`password\` followed by the password you want.
-Example:
-> password SuperSecret69
+    const content = userData ? await getAccountHelp(userData.account) : `
+Commands:
+password <new password>
+username <new username> <new password>
 `
     return discord.rest.POST_CHANNEL_MESSAGE({ channel: event.channel_id, content })
   }
@@ -478,4 +516,8 @@ wowEvents.on.GENERAL_CHANNEL_MESSAGE(async ({ data }) => {
     message.replace(/\|Hitem:([^|]+)\|h\[([^\]]+)]\|h/, replaceItemLinks)
   }`
   await discord.rest.POST_CHANNEL_MESSAGE({ channel: generalChannelId, content })
+})
+
+handleInitialStateEvents().catch((err) => {
+  console.error('Failed to start WoW event polling', err)
 })
