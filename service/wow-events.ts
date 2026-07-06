@@ -45,12 +45,20 @@ export const wowEvents: {
   once: Record<WowEventType, () => Promise<WebEvent>>
 }
 
+type stackHandler = EventHandler | ((fn: EventHandler) => Set<EventHandler>)
+const stacks = new Map<stackHandler, Error>()
 for (const type of eventTypes) {
   const on = (ON[type] = new Set())
   const once = (ONCE[type] = new Set())
   const next = (fn: EventHandler) => once.add(fn)
-  wowEvents.on[type] = (fn) => on.add(fn)
-  wowEvents.once[type] = () => new Promise(next)
+  wowEvents.on[type] = (fn) => {
+    stacks.set(fn, Error('on wow-event failed'))
+    return on.add(fn)
+  }
+  wowEvents.once[type] = () => {
+    stacks.set(next, Error('once wow-event failed'))
+    return new Promise(next)
+  }
 }
 
 // await auth.sql`DROP TABLE web_events;`
@@ -113,6 +121,14 @@ const purgedEvents = new Set<string>([
 
 let polling = false
 
+const run = async (fn: EventHandler, event: WebEvent) => {
+  try {
+    await fn(event)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(`[${typeof err}: ${err}]`)
+    console.log(stacks.get(fn), msg)
+  }
+}
 const handleSingleEvent = async (event: WebEvent) => {
   try {
     event.start = Date.now()
@@ -120,11 +136,11 @@ const handleSingleEvent = async (event: WebEvent) => {
     event.at = event.at instanceof Date ? event.at.getTime() : event.at
     const on = ON[event.type]
     if (on) {
-      for (const fn of on) await fn(event)
+      for (const fn of on) await run(fn, event)
     }
     const once = ONCE[event.type]
     if (once) {
-      for (const fn of once) await fn(event)
+      for (const fn of once) await run(fn, event)
       once.clear()
     }
   } catch (err) {

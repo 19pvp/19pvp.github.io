@@ -15,7 +15,7 @@ index d8886ce..1d248bc 100644
          PLAYERHOOK_ON_LOGOUT,
          PLAYERHOOK_ON_CREATE,
          PLAYERHOOK_ON_SAVE,
-@@ -832,8 +834,31 @@ public:
+@@ -832,8 +834,32 @@ public:
          sALE->OnLogin(player);
      }
  

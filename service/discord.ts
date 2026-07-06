@@ -4,11 +4,6 @@ const GUILD_ID = Deno.env.get('DISCORD_GUILD_ID')
 const authorization = `Bot ${TOKEN}`
 const apiUrl = 'https://discord.com/api/v10'
 
-console.log('INIT DISCORD:', {
-  token: TOKEN.slice(0, 4) + '...' + TOKEN.slice(-4),
-  guild: GUILD_ID,
-})
-
 type DiscordPayload = Record<string, unknown>
 type DiscordHandler<T = unknown> = (data: T) => unknown
 type DiscordEventMap = Record<string, <T>(fn: DiscordHandler<T>) => Set<DiscordHandler>>

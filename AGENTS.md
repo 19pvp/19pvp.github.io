@@ -63,6 +63,8 @@
 - The API service in `service/server.ts` automatically applies `.patch` files from the `patches/` folder on startup.
 - Patches starting with `mod-` (e.g. `mod-playerbots.patch`) are automatically mapped and applied to
   `${CORE_PATH}/modules/[module-name]/`.
+- Patches should NEVER be edited directly you must do the changes on the matching repository locally and generate the
+  patch with git commands, ex: `git -C mod-ale diff > patches/mod-ale.patch`
 
 ## Architectural Decision Records (ADRs)
 
