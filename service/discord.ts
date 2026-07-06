@@ -360,6 +360,17 @@ const connect = (failCount: number) => {
 // DISCORD_CLIENT_SECRET
 type DiscordRequestInit = Omit<RequestInit, 'body'> & { body?: unknown }
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const discordFetch = async (url: string | URL, init?: RequestInit): Promise<Response> => {
+  const res = await fetch(url, init)
+  if (res.status !== 429) return res
+  const retryAfterHeader = res.headers.get('x-ratelimit-reset-after') || res.headers.get('retry-after')
+  const waitMs = (Number(retryAfterHeader) || 60) * 1000
+  console.warn(`[Discord API] Rate limited (429). Retrying in ${waitMs}ms...`)
+  await delay(waitMs)
+  return discordFetch(url, init)
+}
+
 const parseDiscordResponse = async (res: Response) => {
   const text = await res.text().catch(() => '')
   try {
@@ -371,7 +382,7 @@ const parseDiscordResponse = async (res: Response) => {
 
 const validateDiscordToken = async () => {
   if (!TOKEN) return false
-  const res = await fetch(`${apiUrl}/users/@me`, {
+  const res = await discordFetch(`${apiUrl}/users/@me`, {
     headers: { authorization },
     signal: AbortSignal.timeout(5000),
   })
@@ -418,7 +429,7 @@ const rest = async (pathname: string, params: DiscordRequestInit) => {
       params.body = JSON.stringify(params.body)
     }
   }
-  const res = await fetch(`${apiUrl}${pathname}`, params as RequestInit)
+  const res = await discordFetch(`${apiUrl}${pathname}`, params as RequestInit)
   // TODO: check the response headers
   // to see if I should attempt JSON parsing
   let response: unknown = await res.text()
@@ -455,7 +466,7 @@ discord.rest.GET_GUILD_MEMBERS = ({ guild, after = '0', limit = 1000 }) =>
   })
 
 const API = (method: string) => (url: string, init?: DiscordRequestInit) =>
-  fetch(`https://discord.com/api/v10${url}`, {
+  discordFetch(`https://discord.com/api/v10${url}`, {
     method,
     ...init,
     body: (init?.body == null

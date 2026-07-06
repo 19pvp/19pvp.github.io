@@ -454,8 +454,8 @@ username <new username> <new password>
   if (!fullMessage.length) return console.log('empty message, skipping.')
   console.log('[general]:', fullMessage)
   await auth.sql`
-    INSERT INTO discord_message (message, discord_id, account_id)
-    VALUES (${fullMessage}, ${id}, ${userData.account})
+    INSERT INTO discord_message (message, discord_id)
+    VALUES (${fullMessage}, ${id})
   `
 })
 /*
