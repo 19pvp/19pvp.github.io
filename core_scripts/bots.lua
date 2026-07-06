@@ -1,3 +1,5 @@
+print("[WSG Queue Debug] Loading bots.lua script...")
+
 local fixedRoster = {}
 
 -- Load the fixed roster from the database
@@ -8,7 +10,10 @@ local function LoadFixedRoster()
         repeat
             local name = query:GetString(0)
             table.insert(fixedRoster, name)
+            print("[WSG Queue Debug] Found configured bot in DB: " .. name)
         until not query:NextRow()
+    else
+        print("[WSG Queue Debug] Warning: No configured bots found in database or query failed.")
     end
     print("[Fixed Roster] Loaded " .. #fixedRoster .. " enabled bots from database.")
 end
@@ -33,10 +38,14 @@ end
 -- Event ID for Player Joining BG
 local PLAYER_EVENT_ON_PLAYER_JOIN_BG = 74
 
+print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_PLAYER_JOIN_BG (" .. PLAYER_EVENT_ON_PLAYER_JOIN_BG .. ")...")
+
 RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
     local name = player:GetName()
+    local isBot = player:IsBot()
+    print("[WSG Queue Debug] Event 74 (PLAYER_EVENT_ON_PLAYER_JOIN_BG) triggered for: " .. name .. " (IsBot: " .. tostring(isBot) .. ")")
     
-    if player:IsBot() then
+    if isBot then
         -- Log to server console
         print("[WSG Queue] Bot " .. name .. " has successfully queued for Warsong Gulch.")
         -- Log in-game
@@ -69,17 +78,21 @@ end)
 local PLAYER_EVENT_ON_ENTER_BG = 75
 local PLAYER_EVENT_ON_LEAVE_BG = 76
 
+print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_ENTER_BG (" .. PLAYER_EVENT_ON_ENTER_BG .. ")...")
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
     local name = player:GetName()
     local botText = player:IsBot() and "Bot" or "Player"
+    print("[WSG Queue Debug] Event 75 (PLAYER_EVENT_ON_ENTER_BG) triggered for: " .. name .. " on map: " .. mapId)
     local logMsg = "[BG Match] " .. botText .. " " .. name .. " entered Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")"
     print(logMsg)
     SendWorldMessage(logMsg)
 end)
 
+print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_LEAVE_BG (" .. PLAYER_EVENT_ON_LEAVE_BG .. ")...")
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId)
     local name = player:GetName()
     local botText = player:IsBot() and "Bot" or "Player"
+    print("[WSG Queue Debug] Event 76 (PLAYER_EVENT_ON_LEAVE_BG) triggered for: " .. name .. " on map: " .. mapId)
     local logMsg = "[BG Match] " .. botText .. " " .. name .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")"
     print(logMsg)
     SendWorldMessage(logMsg)
