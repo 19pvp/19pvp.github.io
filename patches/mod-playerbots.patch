@@ -1,5 +1,5 @@
 diff --git a/src/Bot/RandomPlayerbotMgr.cpp b/src/Bot/RandomPlayerbotMgr.cpp
-index a1064b4e..5a33263b 100644
+index a1064b4e..ed5d803c 100644
 --- a/src/Bot/RandomPlayerbotMgr.cpp
 +++ b/src/Bot/RandomPlayerbotMgr.cpp
 @@ -630,6 +630,29 @@ bool RandomPlayerbotMgr::IsAccountType(uint32 accountId, uint8 accountType)
@@ -32,11 +32,77 @@ index a1064b4e..5a33263b 100644
  // Logs-in bots in 4 phases. Phase 1 logs Alliance bots up to how much is expected according to the faction ratio,
  // and Phase 2 logs-in the remainder Horde bots to reach the total maxAllowedBotCount. If maxAllowedBotCount is not
  // reached after Phase 2, the function goes back to log-in Alliance bots and reach maxAllowedBotCount. This is done
+@@ -1334,6 +1357,9 @@ void RandomPlayerbotMgr::ScheduleChangeStrategy(uint32 bot, uint32 time)
+ 
+ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
+ {
++    if (IsFixedRosterBot(bot))
++        return false;
++
+     ObjectGuid botGUID = ObjectGuid::Create<HighGuid::Player>(bot);
+     Player* player = GetPlayerBot(botGUID);
+     PlayerbotAI* botAI = player ? GET_PLAYERBOT_AI(player) : nullptr;
+@@ -1444,6 +1470,8 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
+ 
+ bool RandomPlayerbotMgr::ProcessBot(Player* bot)
+ {
++    if (IsFixedRosterBot(bot->GetGUID().GetCounter()))
++        return false;
+ 
+     PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+     if (!botAI)
+@@ -2113,12 +2141,37 @@ bool RandomPlayerbotMgr::IsRandomBot(Player* bot)
+     return false;
+ }
+ 
++bool RandomPlayerbotMgr::IsFixedRosterBot(ObjectGuid::LowType bot)
++{
++    if (!_fixedRosterBotsLoaded)
++    {
++        _fixedRosterBotsLoaded = true;
++        _fixedRosterBots.clear();
++        QueryResult result = PlayerbotsDatabase.Query("SELECT guid FROM playerbots_fixed_roster_guid");
++        if (result)
++        {
++            do
++            {
++                Field* fields = result->Fetch();
++                _fixedRosterBots.insert(fields[0].Get<uint32>());
++            } while (result->NextRow());
++        }
++    }
++    return _fixedRosterBots.find(bot) != _fixedRosterBots.end();
++}
++
+ bool RandomPlayerbotMgr::IsRandomBot(ObjectGuid::LowType bot)
+ {
++    if (IsFixedRosterBot(bot))
++        return true;
++
+     ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(bot);
+     if (!sPlayerbotAIConfig.IsInRandomAccountList(sCharacterCache->GetCharacterAccountIdByGuid(guid)))
+         return false;
+ 
++    if (sPlayerbotAIConfig.minRandomBots == 0 && sPlayerbotAIConfig.maxRandomBots == 0)
++        return true;
++
+     if (std::find(currentBots.begin(), currentBots.end(), bot) != currentBots.end())
+         return true;
+ 
 diff --git a/src/Bot/RandomPlayerbotMgr.h b/src/Bot/RandomPlayerbotMgr.h
-index 91fcebb1..f041e28c 100644
+index 91fcebb1..45b22e30 100644
 --- a/src/Bot/RandomPlayerbotMgr.h
 +++ b/src/Bot/RandomPlayerbotMgr.h
-@@ -171,6 +171,7 @@ public:
+@@ -103,6 +103,8 @@ public:
+     static bool HandlePlayerbotConsoleCommand(ChatHandler* handler, char const* args);
+     bool IsRandomBot(Player* bot);
+     bool IsRandomBot(ObjectGuid::LowType bot);
++    bool IsFixedRosterBot(ObjectGuid::LowType bot);
++    void ClearFixedRosterCache() { _fixedRosterBotsLoaded = false; _fixedRosterBots.clear(); }
+     bool IsAddclassBot(Player* bot);
+     bool IsAddclassBot(ObjectGuid::LowType bot);
+     void Randomize(Player* bot);
+@@ -171,6 +173,7 @@ public:
      // Account type management
      void AssignAccountTypes();
      bool IsAccountType(uint32 accountId, uint8 accountType);
@@ -44,3 +110,12 @@ index 91fcebb1..f041e28c 100644
  
  protected:
      void OnBotLoginInternal(Player* const bot) override;
+@@ -249,6 +252,8 @@ private:
+     std::list<uint32> currentBots;
+     uint32 bgBotsCount;
+     uint32 playersLevel;
++    bool _fixedRosterBotsLoaded = false;
++    std::set<uint32> _fixedRosterBots;
+ 
+     // Account lists
+     std::vector<uint32> rndBotTypeAccounts;             // Accounts marked as RNDbot (type 1)

@@ -23,11 +23,11 @@ Bot gear is generated into `playerbots_fixed_roster_item`:
 - per-bot or class extras can be added in a `WSG_BOT_ITEM` tab with `ID`, optional `AMOUNT`, `SLOT` (`team-class`
   account key), numeric legacy `SLOT`, `TEAM`, and `CLASSES`
 
-Configured items are equipped or stored when a fixed roster bot logs in or when `.wsgbots reload` runs. Existing item
+Configured items are equipped or stored when a fixed roster bot logs in or when `.rosterbots reload` runs. Existing item
 counts are respected, so reloads/logins only add missing counts.
 
 After applying roster SQL, reload without restarting:
 
 ```text
-.wsgbots reload
+.rosterbots reload
 ```

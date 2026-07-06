@@ -62,3 +62,9 @@
 
 - The API service in `service/server.ts` automatically applies `.patch` files from the `patches/` folder on startup.
 - Patches starting with `mod-` (e.g. `mod-playerbots.patch`) are automatically mapped and applied to `${CORE_PATH}/modules/[module-name]/`.
+
+## Architectural Decision Records (ADRs)
+
+- Architectural and implementation decisions are stored in the `adr/` directory using the `adr/[yyyy-mm-dd]_[description].md` naming convention.
+- Consult these files before modifying integrated submodules (e.g. refer to [adr/2026-06-07_fixed-roster-implem.md](file:///home/cdenis/Documents/19pvp.github.io/adr/2026-06-07_fixed-roster-implem.md) when changing playerbot matchmaking or lifecycle hooks).
+

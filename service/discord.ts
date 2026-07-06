@@ -1,5 +1,5 @@
 import { brightRed, cyan, green, magenta } from '@std/fmt/colors'
-const TOKEN = Deno.env.get('DISCORD_TOKEN')
+const TOKEN = Deno.env.get('DISCORD_BOT_TOKEN')
 const GUILD_ID = Deno.env.get('DISCORD_GUILD_ID')
 const authorization = `Bot ${TOKEN}`
 const apiUrl = 'https://discord.com/api/v10'

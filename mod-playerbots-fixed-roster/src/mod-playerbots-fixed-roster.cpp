@@ -69,6 +69,7 @@ public:
 
     void LoadFromDB()
     {
+        sRandomPlayerbotMgr.ClearFixedRosterCache();
         _roster.clear();
 
         if (!_enabled)
@@ -533,12 +534,12 @@ public:
 
     ChatCommandTable GetCommands() const override
     {
-        static ChatCommandTable wsgBotsCommandTable = {
+        static ChatCommandTable rosterBotsCommandTable = {
             {"reload", HandleReloadCommand, SEC_GAMEMASTER, Console::Yes},
         };
 
         static ChatCommandTable commandTable = {
-            {"wsgbots", wsgBotsCommandTable},
+            {"rosterbots", rosterBotsCommandTable},
         };
 
         return commandTable;
