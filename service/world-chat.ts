@@ -454,8 +454,8 @@ username <new username> <new password>
   if (!fullMessage.length) return console.log('empty message, skipping.')
   console.log('[general]:', fullMessage)
   await auth.sql`
-    INSERT INTO discord_message (message, discord_id, discord_login, account_id)
-    VALUES (${fullMessage}, ${id}, ${userData.login}, ${userData.account})
+    INSERT INTO discord_message (message, discord_id, account_id)
+    VALUES (${fullMessage}, ${id}, ${userData.account})
   `
 })
 /*
@@ -535,7 +535,9 @@ wowEvents.on.COMMAND(async ({ data }) => {
   const account = Number(player.account)
   const user = account ? activeUsersByAccount[account] || (await getDiscordDataForAccount(account)) : undefined
   const mention = user ? `<@${user.id}> ` : ''
-  const content = `**GM:** ${mention}${String(player.name)}: \`${(command +' '+ JSON.stringify(rest)).replaceAll('`', '\\`')}\``
+  const content = `**GM:** ${mention}${String(player.name)}: \`${
+    (command + ' ' + JSON.stringify(rest)).replaceAll('`', '\\`')
+  }\``
   await discord.rest.POST_CHANNEL_MESSAGE({ channel: gmCommandChannelId, content })
 })
 

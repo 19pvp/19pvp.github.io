@@ -31,8 +31,8 @@ session id in an HttpOnly cookie.
    - **Why:** The browser should not receive Discord tokens, role lists as authority, or mutable session data. The
      `logs_session` cookie should be `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, and expire after 7 days.
 5. **Authorize by Existing GM Role Mapping:**
-   - **Why:** The Discord bridge already maps `GM_LEVEL_1`, `GM_LEVEL_2`, and `GM_LEVEL_3` role ids to GM levels. Reusing
-     that policy keeps admin access consistent across Discord chat sync and the logs UI.
+   - **Why:** The Discord bridge already maps `GM_LEVEL_1`, `GM_LEVEL_2`, and `GM_LEVEL_3` role ids to GM levels.
+     Reusing that policy keeps admin access consistent across Discord chat sync and the logs UI.
 6. **Protect Logs and Worldserver Routes Server-Side:**
    - **Why:** UI gating is not sufficient. The API should require a GM session for `/logs/events`, `/logs/search`,
      `/logs/file`, `/worldserver/status`, `/worldserver/events`, `/worldserver/start`, `/worldserver/stop`, and
@@ -56,8 +56,7 @@ session id in an HttpOnly cookie.
   - Validates `state`.
   - Exchanges `code` with `POST https://discord.com/api/oauth2/token`.
   - Fetches the Discord identity with `GET https://discord.com/api/v10/users/@me`.
-  - Fetches guild roles with
-    `GET https://discord.com/api/v10/guilds/{guild.id}/members/{user.id}` using the bot token.
+  - Fetches guild roles with `GET https://discord.com/api/v10/guilds/{guild.id}/members/{user.id}` using the bot token.
   - Creates an in-memory session when the user has a configured GM role.
   - Sets `logs_session` and redirects to `/`.
 - `GET /auth/me`
