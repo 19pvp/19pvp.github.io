@@ -23,8 +23,8 @@ session id in an HttpOnly cookie.
    - **Why:** Discord is already the identity and GM-role source for the project. The official authorization-code flow
      gives the browser a redirect-based login without exposing bot credentials or OAuth tokens to client JavaScript.
 2. **Validate OAuth State with a Short-Lived Cookie:**
-   - **Why:** The callback must reject missing or mismatched `state` values to prevent CSRF-style login attacks. A simple
-     cryptographic random string in a temporary HttpOnly cookie is checked against the callback parameter.
+   - **Why:** The callback must reject missing or mismatched `state` values to prevent CSRF-style login attacks. A
+     simple cryptographic random string in a temporary HttpOnly cookie is checked against the callback parameter.
 3. **Use In-Memory Sessions with Auto-Generated Secret:**
    - **Why:** This avoids a new database table and configuration overhead. The server generates a random session-signing
      secret in-memory at startup. Service restarts intentionally invalidate sessions and require re-login.

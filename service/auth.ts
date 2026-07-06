@@ -1,5 +1,6 @@
 import { json } from './utils.ts'
 import { env } from './env.ts'
+import { getCookies, setCookie } from '@std/http/cookie'
 
 const CLIENT_ID = env.DISCORD_APP_ID
 const CLIENT_SECRET = env.DISCORD_CLIENT_SECRET
@@ -24,7 +25,7 @@ const sessionSecret = crypto.randomUUID()
 const hashSessionId = async (id: string) => {
   const data = new TextEncoder().encode(id + sessionSecret)
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
+  return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 const getClientFingerprint = (req: Request) => {
@@ -34,10 +35,10 @@ const getClientFingerprint = (req: Request) => {
 }
 
 const getSession = async (req: Request) => {
-  const cookie = req.headers.get('cookie') || ''
-  const match = cookie.match(/logs_session=([^;]+)/)
-  if (!match) return null
-  const [sessionId, signature] = match[1].split('.')
+  const cookies = getCookies(req.headers)
+  const cookieValue = cookies['logs_session']
+  if (!cookieValue) return null
+  const [sessionId, signature] = cookieValue.split('.')
   if (!sessionId || !signature) return null
   const expectedSig = await hashSessionId(sessionId)
   if (signature !== expectedSig) return null
@@ -84,21 +85,31 @@ export const handleAuth = async (req: Request) => {
       state,
     })}`
 
+    const headers = new Headers({
+      'location': discordUrl,
+      ...corsHeaders,
+    })
+    setCookie(headers, {
+      name: 'discord_oauth_state',
+      value: state,
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+      maxAge: 300,
+    })
+
     return new Response(null, {
       status: 302,
-      headers: {
-        'location': discordUrl,
-        'set-cookie': `discord_oauth_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=300`,
-        ...corsHeaders,
-      },
+      headers,
     })
   }
 
   if (url.pathname === '/auth/discord/callback') {
     const code = url.searchParams.get('code') || ''
     const state = url.searchParams.get('state') || ''
-    const cookie = req.headers.get('cookie') || ''
-    const stateCookie = cookie.match(/discord_oauth_state=([^;]+)/)?.[1] || ''
+    const cookies = getCookies(req.headers)
+    const stateCookie = cookies['discord_oauth_state'] || ''
 
     if (!state || state !== stateCookie || !states.has(state)) {
       return json({ error: 'CSRF state verification failed' }, { status: 400, headers: corsHeaders })
@@ -161,14 +172,32 @@ export const handleAuth = async (req: Request) => {
       fingerprint: getClientFingerprint(req),
     })
 
+    const headers = new Headers({
+      'location': WEB_ORIGIN,
+      ...corsHeaders,
+    })
+    setCookie(headers, {
+      name: 'logs_session',
+      value: `${sessionId}.${signature}`,
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+      maxAge: 86400,
+    })
+    setCookie(headers, {
+      name: 'discord_oauth_state',
+      value: '',
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+      maxAge: 0,
+    })
+
     return new Response(null, {
       status: 302,
-      headers: {
-        'location': WEB_ORIGIN,
-        'set-cookie': `logs_session=${sessionId}.${signature}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`,
-        'set-cookie-2': `discord_oauth_state=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
-        ...corsHeaders,
-      },
+      headers,
     })
   }
 
@@ -185,17 +214,24 @@ export const handleAuth = async (req: Request) => {
   }
 
   if (url.pathname === '/auth/logout' && req.method === 'POST') {
-    const cookie = req.headers.get('cookie') || ''
-    const sessionId = cookie.match(/logs_session=([^.;]+)/)?.[1]
+    const cookies = getCookies(req.headers)
+    const sessionId = cookies['logs_session']?.split('.')?.[0]
     if (sessionId) {
       sessions.delete(sessionId)
     }
+    const headers = new Headers(corsHeaders)
+    setCookie(headers, {
+      name: 'logs_session',
+      value: '',
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+      maxAge: 0,
+    })
     return new Response(null, {
       status: 200,
-      headers: {
-        'set-cookie': `logs_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
-        ...corsHeaders,
-      },
+      headers,
     })
   }
 

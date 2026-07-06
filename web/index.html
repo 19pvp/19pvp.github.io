@@ -667,7 +667,9 @@
 
       const action = async (name) => {
         const method = name === 'status' ? 'GET' : 'POST'
-        const result = await fetch(`${api}/worldserver/${name}`, { method, credentials: 'include' }).then((res) => res.json())
+        const result = await fetch(`${api}/worldserver/${name}`, { method, credentials: 'include' }).then((res) =>
+          res.json()
+        )
         append(`${name}: ${JSON.stringify(result)}`)
       }
 
@@ -718,7 +720,7 @@
 
     const checkAuth = async () => {
       try {
-        const status = await fetch(`${api}/auth/me`, { credentials: 'include' }).then(res => res.json())
+        const status = await fetch(`${api}/auth/me`, { credentials: 'include' }).then((res) => res.json())
         if (status.authenticated) {
           startApp()
         } else {
