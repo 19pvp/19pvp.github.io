@@ -2,6 +2,7 @@ import { TextLineStream } from '@std/streams'
 import { cors, json, runCommand, sse } from './utils.ts'
 import { watch } from '../tasks/config.ts'
 import { ac } from './soap.ts'
+import { checkAuth, handleAuth } from './auth.ts'
 
 if (Deno.env.get('DISCORD_TOKEN')) {
   void import('./world-chat.ts').catch((err) => {
@@ -628,6 +629,19 @@ export default {
       const url = new URL(req.url)
 
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
+
+      const authRes = await handleAuth(req)
+      if (authRes) return authRes
+
+      if (
+        url.pathname.startsWith('/logs/') ||
+        url.pathname.startsWith('/worldserver/')
+      ) {
+        if (!(await checkAuth(req))) {
+          return json({ error: 'Unauthorized' }, { status: 401 })
+        }
+      }
+
       if (url.pathname === '/logs/file') return await logFile(req)
       if (url.pathname === '/logs/events') return logEvents(req)
       if (url.pathname === '/logs/search') return await logSearch(req)

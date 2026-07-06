@@ -22,14 +22,15 @@ session id in an HttpOnly cookie.
 1. **Use Discord OAuth Authorization-Code Login:**
    - **Why:** Discord is already the identity and GM-role source for the project. The official authorization-code flow
      gives the browser a redirect-based login without exposing bot credentials or OAuth tokens to client JavaScript.
-2. **Validate OAuth State with a Short-Lived Signed Cookie:**
-   - **Why:** The callback must reject missing or mismatched `state` values to prevent CSRF-style login attacks.
-3. **Use In-Memory Sessions for v1:**
-   - **Why:** This avoids a new database table while still allowing server-side session revocation and private token
-     storage. Service restarts intentionally invalidate sessions and require re-login.
+2. **Validate OAuth State with a Short-Lived Cookie:**
+   - **Why:** The callback must reject missing or mismatched `state` values to prevent CSRF-style login attacks. A simple
+     cryptographic random string in a temporary HttpOnly cookie is checked against the callback parameter.
+3. **Use In-Memory Sessions with Auto-Generated Secret:**
+   - **Why:** This avoids a new database table and configuration overhead. The server generates a random session-signing
+     secret in-memory at startup. Service restarts intentionally invalidate sessions and require re-login.
 4. **Store Only a Signed Opaque Session Id in the Browser:**
    - **Why:** The browser should not receive Discord tokens, role lists as authority, or mutable session data. The
-     `logs_session` cookie should be `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, and expire after 7 days.
+     `logs_session` cookie should be `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, and expire after 24 hours.
 5. **Authorize by Existing GM Role Mapping:**
    - **Why:** The Discord bridge already maps `GM_LEVEL_1`, `GM_LEVEL_2`, and `GM_LEVEL_3` role ids to GM levels.
      Reusing that policy keeps admin access consistent across Discord chat sync and the logs UI.
@@ -40,6 +41,9 @@ session id in an HttpOnly cookie.
 7. **Gate the Browser UI Before Starting Requests:**
    - **Why:** `web/index.html` should call `/auth/me` first and avoid opening EventSource connections or fetching
      logs/status until the server confirms an authorized GM session.
+8. **Validate Client Fingerprint:**
+   - **Why:** Session verification should check the client's IP address/User-Agent signature against the session record
+     created during callback. Any mismatch immediately invalidates the session.
 
 ## Constraints
 
@@ -50,20 +54,20 @@ session id in an HttpOnly cookie.
 
 - `GET /auth/discord/login`
   - Creates a short-lived OAuth `state`.
-  - Sets `discord_oauth_state` as an HttpOnly signed cookie.
+  - Sets `discord_oauth_state` as an HttpOnly cookie.
   - Redirects to Discord's OAuth authorize URL with `scope=identify`.
 - `GET /auth/discord/callback`
   - Validates `state`.
   - Exchanges `code` with `POST https://discord.com/api/oauth2/token`.
   - Fetches the Discord identity with `GET https://discord.com/api/v10/users/@me`.
   - Fetches guild roles with `GET https://discord.com/api/v10/guilds/{guild.id}/members/{user.id}` using the bot token.
-  - Creates an in-memory session when the user has a configured GM role.
+  - Creates an in-memory session (with IP/User-Agent hash) when the user has a configured GM role.
+  - Discord OAuth tokens are discarded immediately after this mapping and are not stored.
   - Sets `logs_session` and redirects to `/`.
 - `GET /auth/me`
   - Returns `{ authenticated, user, roles, gmLevel }`.
 - `POST /auth/logout`
   - Deletes the in-memory session.
-  - Best-effort revokes the Discord access token.
   - Clears `logs_session`.
 
 ## Configuration
@@ -74,7 +78,6 @@ Required environment variables:
 - `DISCORD_CLIENT_SECRET`
 - `DISCORD_GUILD_ID`
 - `DISCORD_TOKEN`
-- `SESSION_SECRET`
 - `PUBLIC_BASE_URL`
 
 Optional environment variable:
@@ -106,6 +109,11 @@ ${PUBLIC_BASE_URL}/auth/discord/callback
 - **Why Rejected:** The current admin UI exposes worldserver controls alongside logs. Keeping those routes public would
   leave the most operationally sensitive actions unauthenticated.
 
+### 4. Storing or Revoking Discord Access Tokens
+
+- **Why Rejected:** Revoking access tokens at logout requires session persistence or tracking active tokens. Discarding
+  the Discord token immediately after callback prevents storing extra state and simplifies logout.
+
 ## Weird Behaviors & Things to Keep in Mind
 
 - **Restart Invalidates Sessions:** In-memory sessions are lost when the Deno service restarts.
@@ -127,5 +135,6 @@ ${PUBLIC_BASE_URL}/auth/discord/callback
 - Hit `/logs/events` directly without a valid cookie and confirm it returns `401`.
 - Call the callback with missing or invalid `state` and confirm it fails.
 - Log out and confirm protected endpoints return `401`.
+- Verify that changing IP or User-Agent during an active session invalidates access.
 - Restart the service and confirm the previous session no longer works.
 - Check service logs for accidental OAuth token, auth code, session cookie, or private-data output.

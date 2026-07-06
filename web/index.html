@@ -319,6 +319,7 @@
       <button id="search">Search</button>
       <button id="raw">Download</button>
       <button id="clear">Clear</button>
+      <button id="logout" style="margin-left: auto;">Logout</button>
     </footer>
     <script type="module">
     const api = 'https://19pvp.devazuka.com'
@@ -329,7 +330,6 @@
     const serverStatus = document.querySelector('#serverStatus')
     const statusText = document.querySelector('#statusText')
     const statusMeta = document.querySelector('#statusMeta')
-    const path = document.querySelector('#path')
     const logs = document.querySelector('#logs')
     const lines = document.querySelector('#lines')
     const priority = document.querySelector('#priority')
@@ -578,7 +578,7 @@
 
     const connectWorldserverStatus = () => {
       statusSource?.close()
-      statusSource = new EventSource(`${api}/worldserver/events`)
+      statusSource = new EventSource(`${api}/worldserver/events`, { withCredentials: true })
       statusSource.onmessage = (event) => updateWorldserverStatus(JSON.parse(event.data))
       statusSource.onerror = () => {
         if (statusSource?.readyState === EventSource.CLOSED) updateWorldserverStatus({ state: 'stopped' })
@@ -644,7 +644,7 @@
       range.value = currentRange
       source?.close()
       resetOutput()
-      source = new EventSource(`${api}/logs/events?${logParams()}`)
+      source = new EventSource(`${api}/logs/events?${logParams()}`, { withCredentials: true })
       source.onmessage = (event) => {
         const data = JSON.parse(event.data)
         if (data.type === 'heartbeat') return updateIdleSpacer()
@@ -656,60 +656,85 @@
       }
     }
 
-    document.querySelector('#search').onclick = async () => {
-      source?.close()
-      resetOutput()
-      const lines = await fetch(`${api}/logs/search?${logParams({ q: query.value })}`)
-        .then((res) => res.json())
-      lines.forEach((line) => append(line, 'system'))
+    const startApp = () => {
+      document.querySelector('#search').onclick = async () => {
+        source?.close()
+        resetOutput()
+        const lines = await fetch(`${api}/logs/search?${logParams({ q: query.value })}`, { credentials: 'include' })
+          .then((res) => res.json())
+        lines.forEach((line) => append(line, 'system'))
+      }
+
+      const action = async (name) => {
+        const method = name === 'status' ? 'GET' : 'POST'
+        const result = await fetch(`${api}/worldserver/${name}`, { method, credentials: 'include' }).then((res) => res.json())
+        append(`${name}: ${JSON.stringify(result)}`)
+      }
+
+      raw.onclick = () => {
+        const log = currentLog === 'all' ? 'server' : currentLog
+        open(`${api}/logs/file?${logParams({ log })}`, '_blank', 'noopener')
+      }
+      document.querySelector('#clear').onclick = () => {
+        resetOutput()
+      }
+      logs.onchange = () => {
+        currentLog = logs.value
+        setUrlParam('log', currentLog, 'all')
+        connectLogs()
+      }
+      lines.onchange = () => {
+        currentLines = lines.value
+        setUrlParam('lines', currentLines, '500')
+        connectLogs()
+      }
+      priority.onchange = () => {
+        currentPriority = priority.value
+        setUrlParam('priority', currentPriority)
+        connectLogs()
+      }
+      range.onchange = () => {
+        currentRange = range.value
+        setUrlParam('range', currentRange)
+        connectLogs()
+      }
+      document.querySelector('#start').onclick = () => action('start')
+      document.querySelector('#stop').onclick = () => action('stop')
+      document.querySelector('#kill').onclick = () => action('kill')
+      document.querySelector('#logout').onclick = async () => {
+        await fetch(`${api}/auth/logout`, { method: 'POST', credentials: 'include' })
+        location.reload()
+      }
+      query.onkeydown = (event) => {
+        if (event.key === 'Enter') {
+          document.querySelector('#search').click()
+          event.preventDefault()
+        }
+      }
+      connectLogs()
+      connectWorldserverStatus()
+      setInterval(updateIdleSpacer, 1000)
     }
 
-    const action = async (name) => {
-      const method = name === 'status' ? 'GET' : 'POST'
-      const result = await fetch(`${api}/worldserver/${name}`, { method }).then((res) => res.json())
-      append(`${name}: ${JSON.stringify(result)}`)
-    }
-
-    raw.onclick = () => {
-      const log = currentLog === 'all' ? 'server' : currentLog
-      open(`${api}/logs/file?${logParams({ log })}`, '_blank', 'noopener')
-    }
-    document.querySelector('#clear').onclick = () => {
-      resetOutput()
-    }
-    logs.onchange = () => {
-      currentLog = logs.value
-      setUrlParam('log', currentLog, 'all')
-      connectLogs()
-    }
-    lines.onchange = () => {
-      currentLines = lines.value
-      setUrlParam('lines', currentLines, '500')
-      connectLogs()
-    }
-    priority.onchange = () => {
-      currentPriority = priority.value
-      setUrlParam('priority', currentPriority)
-      connectLogs()
-    }
-    range.onchange = () => {
-      currentRange = range.value
-      setUrlParam('range', currentRange)
-      connectLogs()
-    }
-    document.querySelector('#status').onclick = () => action('status')
-    document.querySelector('#start').onclick = () => action('start')
-    document.querySelector('#stop').onclick = () => action('stop')
-    document.querySelector('#kill').onclick = () => action('kill')
-    query.onkeydown = (event) => {
-      if (event.key === 'Enter') {
-        document.querySelector('#search').click()
-        event.preventDefault()
+    const checkAuth = async () => {
+      try {
+        const status = await fetch(`${api}/auth/me`, { credentials: 'include' }).then(res => res.json())
+        if (status.authenticated) {
+          startApp()
+        } else {
+          document.querySelector('footer').innerHTML = `
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 15px;">
+              <strong>Authentication required to view logs and control worldserver</strong>
+              <button onclick="location.href='${api}/auth/discord/login'">Login with Discord</button>
+            </div>
+          `
+        }
+      } catch (err) {
+        append(`Connection error: ${String(err)}`, 'error')
       }
     }
-    connectLogs()
-    connectWorldserverStatus()
-    setInterval(updateIdleSpacer, 1000)
+
+    checkAuth()
     </script>
   </body>
 </html>

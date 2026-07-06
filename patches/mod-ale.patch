@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..59ca69b 100644
+index d8886ce..a5abeb8 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -42,7 +42,7 @@ index d8886ce..59ca69b 100644
          sALE->OnLogin(player);
      }
  
-+    static std::set<ObjectGuid> playersInBG;
++    std::set<ObjectGuid> playersInBG;
 +
 +    void OnPlayerJoinBG(Player* player) override
 +    {
