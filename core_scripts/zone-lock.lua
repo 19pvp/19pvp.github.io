@@ -83,7 +83,8 @@ end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, function (event, player, command, chatHandler)
   if player == nil then return end
-  -- SendWebEvent('COMMAND', player, { command = command })
+  if not player:IsGM() then return end
+  SendWebEvent('COMMAND', player, { command = command })
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function (event, player)

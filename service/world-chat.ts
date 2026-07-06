@@ -9,6 +9,7 @@ import { createAccount, getUsername, setGmLevel, setPassword, setUsernameAndPass
 const botUserID = '766251453337436170' // App Id
 const guildId = Deno.env.get('DISCORD_GUILD_ID')
 const generalChannelId = Deno.env.get('DISCORD_GENERAL_CHANNEL_ID') || Deno.env.get('DISCORD_GUILD_ID')
+const gmCommandChannelId = Deno.env.get('DISCORD_GM_COMMAND_CHANNEL_ID') || '1519357383946535183'
 const roleGMLevel = {
   [Deno.env.get('GM_LEVEL_1') || '_1']: 1,
   [Deno.env.get('GM_LEVEL_2') || '_2']: 2,
@@ -516,6 +517,21 @@ wowEvents.on.GENERAL_CHANNEL_MESSAGE(async ({ data }) => {
     message.replace(/\|Hitem:([^|]+)\|h\[([^\]]+)]\|h/, replaceItemLinks)
   }`
   await discord.rest.POST_CHANNEL_MESSAGE({ channel: generalChannelId, content })
+})
+
+wowEvents.on.COMMAND(async ({ data }) => {
+  if (!gmCommandChannelId || typeof data !== 'object' || !data) return
+  const { player, command } = data
+  if (
+    typeof player !== 'object' || !player || !('account' in player) || !('name' in player) ||
+    typeof command !== 'string'
+  ) return
+
+  const account = Number(player.account)
+  const user = account ? activeUsersByAccount[account] || (await getDiscordDataForAccount(account)) : undefined
+  const mention = user ? `<@${user.id}> ` : ''
+  const content = `**GM command** ${mention}${String(player.name)}: \`${command.replaceAll('`', '\\`')}\``
+  await discord.rest.POST_CHANNEL_MESSAGE({ channel: gmCommandChannelId, content })
 })
 
 handleInitialStateEvents().catch((err) => {
