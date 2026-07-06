@@ -526,7 +526,7 @@ wowEvents.on.GENERAL_CHANNEL_MESSAGE(async ({ data }) => {
 
 wowEvents.on.COMMAND(async ({ data }) => {
   if (!gmCommandChannelId || typeof data !== 'object' || !data) return
-  const { player, command } = data
+  const { player, command, ...rest } = data
   if (
     typeof player !== 'object' || !player || !('account' in player) || !('name' in player) ||
     typeof command !== 'string'
@@ -535,7 +535,7 @@ wowEvents.on.COMMAND(async ({ data }) => {
   const account = Number(player.account)
   const user = account ? activeUsersByAccount[account] || (await getDiscordDataForAccount(account)) : undefined
   const mention = user ? `<@${user.id}> ` : ''
-  const content = `**GM command** ${mention}${String(player.name)}: \`${command.replaceAll('`', '\\`')}\``
+  const content = `**GM:** ${mention}${String(player.name)}: \`${(command +' '+ JSON.stringify(rest)).replaceAll('`', '\\`')}\``
   await discord.rest.POST_CHANNEL_MESSAGE({ channel: gmCommandChannelId, content })
 })
 

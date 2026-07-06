@@ -50,12 +50,13 @@ diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
 index c0acc01..d1fb020 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
-@@ -566,6 +566,8 @@ ALERegister<Player> PlayerMethods[] =
+@@ -566,6 +566,9 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
 +    { "SetBotStrategy", &LuaPlayer::SetBotStrategy },
 +    { "HasBotStrategy", &LuaPlayer::HasBotStrategy },
++    { "JoinBattlegroundQueue", &LuaPlayer::JoinBattlegroundQueue },
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
@@ -90,7 +91,7 @@ index c39801f..d953d27 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -5175,6 +5177,74 @@ namespace LuaPlayer
+@@ -5175,6 +5177,115 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
@@ -160,6 +161,43 @@ index c39801f..d953d27 100644
 +        else if (stateVal == 2) state = BOT_STATE_DEAD;
 +
 +        ALE::Push(L, botAI->HasStrategy(strategyName, state));
++        return 1;
++    }
++
++    /**
++     * Queues the player/bot for a battleground.
++     *
++     * @param uint32 bgTypeId (e.g. 2 for Warsong Gulch)
++     * @param bool joinAsGroup (default is false)
++     * @return bool success
++     */
++    int JoinBattlegroundQueue(lua_State* L, Player* player)
++    {
++        if (!player)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        uint32 bgTypeIdVal = ALE::CHECKVAL<uint32>(L, 2);
++        bool joinAsGroup = ALE::CHECKVAL<bool>(L, 3, false);
++
++        BattlegroundTypeId bgTypeId = BattlegroundTypeId(bgTypeIdVal);
++        Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId);
++        if (!bg)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        WorldPacket packet(CMSG_BATTLEMASTER_JOIN, 20);
++        packet << player->GetGUID();
++        packet << uint32(bgTypeId);
++        packet << uint32(0); // instanceId (0 for any)
++        packet << uint8(joinAsGroup ? 1 : 0);
++
++        player->GetSession()->QueuePacket(new WorldPacket(packet));
++        ALE::Push(L, true);
 +        return 1;
 +    }
  };

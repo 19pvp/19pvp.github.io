@@ -81,9 +81,66 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function (event, player)
   end
 end)
 
+local BLACKLISTED_FIRST_WORDS = {
+  "info",
+  "reload",
+  "lookup",
+  "list",
+  "spellinfo",
+  "commands",
+  "help",
+  "gps",
+  "who",
+  "teleport",
+  "appear",
+  "account",
+}
+
+local BLACKLISTED_SUB_COMMANDS = {
+  ["gm"] = { "on", "off", "list", "ingame" },
+  ["server"] = { "info", "motd" },
+  ["npc"] = { "info" },
+  ["gobject"] = { "info" },
+  ["item"] = { "info" },
+  ["guild"] = { "info" },
+  ["character"] = { "info" },
+}
+
+local function isCommandBlacklisted(command)
+  local cmd_lower = command:lower()
+  
+  local first_word, second_word = cmd_lower:match("^(%S+)%s*(%S*)")
+  if not first_word then return false end
+
+  for _, bw in ipairs(BLACKLISTED_FIRST_WORDS) do
+    if bw:sub(1, #first_word) == first_word then
+      return true
+    end
+  end
+
+  for main_cmd, sub_cmds in pairs(BLACKLISTED_SUB_COMMANDS) do
+    if main_cmd:sub(1, #first_word) == first_word then
+      if second_word and #second_word > 0 then
+        for _, sub_cmd in ipairs(sub_cmds) do
+          if sub_cmd:sub(1, #second_word) == second_word then
+            return true
+          end
+        end
+      end
+    end
+  end
+
+  return false
+end
+
 RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, function (event, player, command, chatHandler)
   if player == nil then return end
   if not player:IsGM() then return end
+
+  if isCommandBlacklisted(command) then
+    return
+  end
+
   SendWebEvent('COMMAND', player, { command = command })
 end)
 
