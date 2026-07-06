@@ -164,7 +164,7 @@ export const handleAuth = async (req: Request) => {
     return new Response(null, {
       status: 302,
       headers: {
-        'location': '/',
+        'location': WEB_ORIGIN,
         'set-cookie': `logs_session=${sessionId}.${signature}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`,
         'set-cookie-2': `discord_oauth_state=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
         ...corsHeaders,
