@@ -53,11 +53,51 @@ const worldserverServiceName = Deno.env.get('WORLDSERVER_SERVICE_NAME') || '19pv
 const worldserverJournalPath = `journalctl -u ${worldserverServiceName}`
 
 const systemctl = (...args: string[]) => runCommand('systemctl', args)
+
+const parseSystemctlShow = (text: string) =>
+  Object.fromEntries(
+    text.split('\n').filter(Boolean).map((line) => {
+      const index = line.indexOf('=')
+      return index === -1 ? [line, ''] : [line.slice(0, index), line.slice(index + 1)]
+    }),
+  )
+
+const uptimeSeconds = async () => {
+  const text = await Deno.readTextFile('/proc/uptime').catch(() => '')
+  return Number(text.split(' ')[0]) || 0
+}
+
 const systemctlStatus = async () => {
-  const active = await systemctl('is-active', worldserverServiceName).catch(() => 'inactive')
-  const pidText = await systemctl('show', worldserverServiceName, '--property=MainPID', '--value').catch(() => '0')
-  const pid = Number(pidText) || null
-  return { running: active === 'active', active, pid, service: worldserverServiceName }
+  const show = parseSystemctlShow(
+    await systemctl(
+      'show',
+      worldserverServiceName,
+      '--property=ActiveState',
+      '--property=SubState',
+      '--property=MainPID',
+      '--property=MemoryCurrent',
+      '--property=ActiveEnterTimestampMonotonic',
+    ).catch(() => ''),
+  )
+  const active = show.ActiveState || 'inactive'
+  const pid = Number(show.MainPID) || null
+  const memory = Number(show.MemoryCurrent)
+  const activeSinceMonotonic = Number(show.ActiveEnterTimestampMonotonic) || 0
+  const uptime = await uptimeSeconds()
+  const startedFor = active === 'active' && activeSinceMonotonic && uptime
+    ? Math.max(0, Math.floor(uptime - activeSinceMonotonic / 1_000_000))
+    : null
+
+  return {
+    running: active === 'active',
+    state: active === 'activating' ? 'starting' : active === 'active' ? 'started' : 'stopped',
+    active,
+    subState: show.SubState || '',
+    pid,
+    memory: Number.isFinite(memory) && memory >= 0 ? memory : null,
+    startedFor,
+    service: worldserverServiceName,
+  }
 }
 
 type JournalSource = {
@@ -484,6 +524,73 @@ export const worldserverStatus = async () => {
   return json(await systemctlStatus())
 }
 
+const worldserverInfo = async (running: boolean) => {
+  if (!running) return null
+  const result = await ac`.server info`
+  return 'success' in result ? result.output : { error: result.error, output: String(result.output) }
+}
+
+export const worldserverEvents = () => {
+  let heartbeat: ReturnType<typeof setInterval> | undefined
+  let closed = false
+  let eventId = Date.now()
+  let lastInfoAt = 0
+  let info: unknown = null
+  const infoIntervalMs = 15_000
+
+  return new Response(
+    new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const send = (event: unknown) => {
+          if (closed) return
+
+          try {
+            controller.enqueue(sse(event, ++eventId))
+          } catch {
+            closed = true
+          }
+        }
+
+        const tick = async () => {
+          const status = await systemctlStatus()
+          const now = Date.now()
+          if (!status.running) {
+            info = null
+            lastInfoAt = 0
+          } else if (now - lastInfoAt >= infoIntervalMs) {
+            info = await worldserverInfo(status.running)
+            lastInfoAt = now
+          }
+          const ready = status.running && info !== null && !(typeof info === 'object' && info && 'error' in info)
+          send({
+            type: 'worldserver',
+            ...status,
+            state: status.running ? ready ? 'started' : 'starting' : 'stopped',
+            info,
+          })
+        }
+
+        await tick().catch((err) => send({ type: 'worldserver', state: 'stopped', error: String(err) }))
+        heartbeat = setInterval(() => {
+          void tick().catch((err) => send({ type: 'worldserver', state: 'stopped', error: String(err) }))
+        }, 5_000)
+      },
+      cancel() {
+        closed = true
+        if (heartbeat) clearInterval(heartbeat)
+      },
+    }),
+    {
+      headers: {
+        ...cors,
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+        connection: 'keep-alive',
+      },
+    },
+  )
+}
+
 export const worldserverStart = async () => {
   const status = await systemctlStatus()
   if (status.running) {
@@ -525,6 +632,7 @@ export default {
       if (url.pathname === '/logs/events') return logEvents(req)
       if (url.pathname === '/logs/search') return await logSearch(req)
       if (url.pathname === '/worldserver/status') return await worldserverStatus()
+      if (url.pathname === '/worldserver/events') return worldserverEvents()
       if (url.pathname === '/worldserver/start' && req.method === 'POST') return await worldserverStart()
       if (url.pathname === '/worldserver/stop' && req.method === 'POST') return await worldserverStop()
       if (url.pathname === '/worldserver/kill' && req.method === 'POST') return await worldserverStop('SIGKILL')

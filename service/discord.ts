@@ -1,6 +1,8 @@
 import { brightRed, cyan, green, magenta } from '@std/fmt/colors'
 const TOKEN = Deno.env.get('DISCORD_TOKEN')
 const GUILD_ID = Deno.env.get('DISCORD_GUILD_ID')
+const authorization = `Bot ${TOKEN}`
+const apiUrl = 'https://discord.com/api/v10'
 
 console.log('INIT DISCORD:', {
   token: TOKEN.slice(0, 4) + '...' + TOKEN.slice(-4),
@@ -278,6 +280,10 @@ const connect = (failCount: number) => {
         reason: event.reason,
       }),
     )
+    if (event.code === 4004) {
+      console.error('Discord gateway authentication failed; not reconnecting without a new token')
+      return
+    }
     reconnect()
   })
 
@@ -351,19 +357,58 @@ const connect = (failCount: number) => {
   })
 }
 
-if (TOKEN) {
-  connect(0)
-} else {
-  console.warn('DISCORD_TOKEN is not set; Discord gateway bridge is disabled')
-}
-
 // DISCORD_APP_ID
 // DISCORD_PUB_KEY
 // DISCORD_TOKEN
 // DISCORD_CLIENT_SECRET
-const authorization = `Bot ${TOKEN}`
-const apiUrl = 'https://discord.com/api/v10'
 type DiscordRequestInit = Omit<RequestInit, 'body'> & { body?: unknown }
+
+const parseDiscordResponse = async (res: Response) => {
+  const text = await res.text().catch(() => '')
+  try {
+    return JSON.parse(text)
+  } catch {
+    return text
+  }
+}
+
+const validateDiscordToken = async () => {
+  if (!TOKEN) return false
+  const res = await fetch(`${apiUrl}/users/@me`, {
+    headers: { authorization },
+    signal: AbortSignal.timeout(5000),
+  })
+  const response = await parseDiscordResponse(res)
+  if (!res.ok) {
+    console.error('Discord token validation failed', {
+      status: res.status,
+      statusText: res.statusText,
+      response,
+      tokenLength: TOKEN.length,
+    })
+    return false
+  }
+  const user = response as { id?: string; username?: string; bot?: boolean }
+  console.log('Discord token validated', {
+    id: user.id,
+    username: user.username,
+    bot: user.bot,
+    tokenLength: TOKEN.length,
+  })
+  return true
+}
+
+if (!TOKEN) {
+  console.warn('DISCORD_TOKEN is not set; Discord gateway bridge is disabled')
+} else {
+  validateDiscordToken()
+    .then((valid) => {
+      if (valid) connect(0)
+    })
+    .catch((err) => {
+      console.error('Discord token validation failed before gateway connect', String(err))
+    })
+}
 
 const rest = async (pathname: string, params: DiscordRequestInit) => {
   console.log(pathname, params)
