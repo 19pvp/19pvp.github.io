@@ -1,8 +1,13 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..deee66e 100644
+index d8886ce..1d248bc 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
-@@ -618,6 +618,7 @@ public:
+@@ -1,3 +1,4 @@
++#include <set>
+ #include "ALE.h"
+ #include "ALE_SC.h"
+ #include "Battleground.h"
+@@ -618,6 +619,7 @@ public:
          PLAYERHOOK_ON_TEXT_EMOTE,
          PLAYERHOOK_ON_SPELL_CAST,
          PLAYERHOOK_ON_LOGIN,
@@ -10,27 +15,50 @@ index d8886ce..deee66e 100644
          PLAYERHOOK_ON_LOGOUT,
          PLAYERHOOK_ON_CREATE,
          PLAYERHOOK_ON_SAVE,
-@@ -832,6 +833,11 @@ public:
+@@ -832,8 +834,31 @@ public:
          sALE->OnLogin(player);
      }
  
++    static std::set<ObjectGuid> playersInBG;
++
 +    void OnPlayerJoinBG(Player* player) override
 +    {
 +        sALE->OnPlayerJoinBG(player);
 +    }
 +
++    void OnMapChanged(Player* player) override
++    {
++        bool wasInBG = playersInBG.find(player->GetGUID()) != playersInBG.end();
++        bool nowInBG = player->InBattleground();
++        if (nowInBG && !wasInBG)
++        {
++            playersInBG.insert(player->GetGUID());
++            sALE->OnEnterBG(player, player->GetBattleground());
++        }
++        else if (!nowInBG && wasInBG)
++        {
++            playersInBG.erase(player->GetGUID());
++            sALE->OnLeaveBG(player, nullptr);
++        }
++    }
++
      void OnPlayerLogout(Player* player) override
      {
++        playersInBG.erase(player->GetGUID());
          sALE->OnLogout(player);
+     }
+ 
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
 index f83dd99..5d7d44f 100644
 --- a/src/LuaEngine/Hooks.h
 +++ b/src/LuaEngine/Hooks.h
-@@ -238,6 +238,7 @@ namespace Hooks
+@@ -238,6 +238,9 @@ namespace Hooks
          PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
          PLAYER_EVENT_ON_DEAL_DAMAGE                         =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
          PLAYER_EVENT_ON_RELEASED_GHOST                      =     73,       // (event, player)
 +        PLAYER_EVENT_ON_PLAYER_JOIN_BG                      =     74,       // (event, player)
++        PLAYER_EVENT_ON_ENTER_BG                            =     75,       // (event, player, mapId, instanceId)
++        PLAYER_EVENT_ON_LEAVE_BG                            =     76,       // (event, player, mapId, instanceId)
  
          PLAYER_EVENT_COUNT
      };
@@ -38,11 +66,13 @@ diff --git a/src/LuaEngine/LuaEngine.h b/src/LuaEngine/LuaEngine.h
 index a21640d..c48b308 100644
 --- a/src/LuaEngine/LuaEngine.h
 +++ b/src/LuaEngine/LuaEngine.h
-@@ -479,6 +479,7 @@ public:
+@@ -479,6 +479,9 @@ public:
      void OnTextEmote(Player* pPlayer, uint32 textEmote, uint32 emoteNum, ObjectGuid guid);
      void OnPlayerSpellCast(Player* pPlayer, Spell* pSpell, bool skipCheck);
      void OnLogin(Player* pPlayer);
 +    void OnPlayerJoinBG(Player* pPlayer);
++    void OnEnterBG(Player* pPlayer, Battleground* bg);
++    void OnLeaveBG(Player* pPlayer, Battleground* bg);
      void OnLogout(Player* pPlayer);
      void OnCreate(Player* pPlayer);
      void OnDelete(uint32 guid);
@@ -64,7 +94,7 @@ diff --git a/src/LuaEngine/hooks/PlayerHooks.cpp b/src/LuaEngine/hooks/PlayerHoo
 index 7649274..e15e283 100644
 --- a/src/LuaEngine/hooks/PlayerHooks.cpp
 +++ b/src/LuaEngine/hooks/PlayerHooks.cpp
-@@ -344,6 +344,13 @@ void ALE::OnLogin(Player* pPlayer)
+@@ -344,6 +344,27 @@ void ALE::OnLogin(Player* pPlayer)
      CallAllFunctions(PlayerEventBindings, key);
  }
  
@@ -72,6 +102,24 @@ index 7649274..e15e283 100644
 +{
 +    START_HOOK(PLAYER_EVENT_ON_PLAYER_JOIN_BG);
 +    Push(pPlayer);
++    CallAllFunctions(PlayerEventBindings, key);
++}
++
++void ALE::OnEnterBG(Player* pPlayer, Battleground* bg)
++{
++    START_HOOK(PLAYER_EVENT_ON_ENTER_BG);
++    Push(pPlayer);
++    Push(bg ? bg->GetMapId() : 0);
++    Push(bg ? bg->GetInstanceID() : 0);
++    CallAllFunctions(PlayerEventBindings, key);
++}
++
++void ALE::OnLeaveBG(Player* pPlayer, Battleground* bg)
++{
++    START_HOOK(PLAYER_EVENT_ON_LEAVE_BG);
++    Push(pPlayer);
++    Push(bg ? bg->GetMapId() : 0);
++    Push(bg ? bg->GetInstanceID() : 0);
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
 +

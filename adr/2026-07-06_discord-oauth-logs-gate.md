@@ -41,6 +41,11 @@ session id in an HttpOnly cookie.
    - **Why:** `web/index.html` should call `/auth/me` first and avoid opening EventSource connections or fetching
      logs/status until the server confirms an authorized GM session.
 
+## Constraints
+
+- All the interaction with discord must be made using the api exported from `service/discord.ts` file.
+- The new code should be in a new `service/auth.ts` file and have minimal impact on the rest of the codebase
+
 ## Planned API
 
 - `GET /auth/discord/login`

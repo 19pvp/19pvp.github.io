@@ -64,3 +64,24 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
         end
     end
 end)
+
+-- Event IDs for entering and leaving BG matches
+local PLAYER_EVENT_ON_ENTER_BG = 75
+local PLAYER_EVENT_ON_LEAVE_BG = 76
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
+    local name = player:GetName()
+    local botText = player:IsBot() and "Bot" or "Player"
+    local logMsg = "[BG Match] " .. botText .. " " .. name .. " entered Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")"
+    print(logMsg)
+    SendWorldMessage(logMsg)
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId)
+    local name = player:GetName()
+    local botText = player:IsBot() and "Bot" or "Player"
+    local logMsg = "[BG Match] " .. botText .. " " .. name .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")"
+    print(logMsg)
+    SendWorldMessage(logMsg)
+end)
+
