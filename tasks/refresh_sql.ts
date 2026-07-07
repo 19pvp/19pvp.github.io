@@ -3,7 +3,7 @@ import { applySqlFile } from './sql_utils.ts'
 const dry = Deno.args.includes('--dry')
 const force = Deno.args.includes('--force')
 const requestedFiles = Deno.args.filter((arg) => !arg.startsWith('--'))
-const generatedSqlDir = 'core_scripts'
+const generatedSqlDir = 'sql'
 const hashPrefix = 'generated-sql:sha1:'
 const worldDb = Deno.env.get('WORLD_DB') || '19pvp_world'
 if (!/^[a-zA-Z0-9_]+$/.test(worldDb)) throw Error(`invalid WORLD_DB ${worldDb}`)

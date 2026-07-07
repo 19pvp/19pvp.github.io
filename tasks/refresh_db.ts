@@ -746,10 +746,10 @@ const luaArray = <T>(values: T[], formatter: (value: T) => string) => `{ ${value
 const sqlString = (value: string) => `'${value.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`
 
 const startingInfoSpellSection = async () => {
-  const existing = await Deno.readTextFile('core_scripts/starting-info.sql').catch(() => '')
+  const existing = await Deno.readTextFile('sql/starting-info.sql').catch(() => '')
   const marker = 'DROP TEMPORARY TABLE IF EXISTS `starting_info_spell`;'
   const index = existing.indexOf(marker)
-  if (index === -1) throw Error(`core_scripts/starting-info.sql is missing ${marker}`)
+  if (index === -1) throw Error(`sql/starting-info.sql is missing ${marker}`)
   return existing.slice(index).trimEnd()
 }
 
@@ -1716,22 +1716,22 @@ console.log(
   } quest reward spells`,
 )
 
-await Deno.writeTextFile('core_scripts/generated-item-props.sql', generateItemPropsSql(itemUpdates))
-console.log('wrote item prop updates to core_scripts/generated-item-props.sql')
+await Deno.writeTextFile('sql/generated-item-props.sql', generateItemPropsSql(itemUpdates))
+console.log('wrote item prop updates to sql/generated-item-props.sql')
 
-await Deno.writeTextFile('core_scripts/generated-item-template.sql', generateItemTemplateSql(itemIds))
-console.log('wrote item template normalization to core_scripts/generated-item-template.sql')
+await Deno.writeTextFile('sql/generated-item-template.sql', generateItemTemplateSql(itemIds))
+console.log('wrote item template normalization to sql/generated-item-template.sql')
 
 await Deno.writeTextFile(
-  'core_scripts/generated-playerbots-fixed-roster.sql',
+  'sql/generated-playerbots-fixed-roster.sql',
   generateWsgBotRosterSql(wsgBotRoster, wsgBotItems),
 )
 console.log(
-  `wrote ${wsgBotRoster.length} WSG bot roster rows and ${wsgBotItems.length} item rows to core_scripts/generated-playerbots-fixed-roster.sql`,
+  `wrote ${wsgBotRoster.length} WSG bot roster rows and ${wsgBotItems.length} item rows to sql/generated-playerbots-fixed-roster.sql`,
 )
 
-await Deno.writeTextFile('core_scripts/starting-info.sql', await generateStartingInfoSql(starterItems))
-console.log(`wrote ${starterItems.length} starter item rows to core_scripts/starting-info.sql`)
+await Deno.writeTextFile('sql/starting-info.sql', await generateStartingInfoSql(starterItems))
+console.log(`wrote ${starterItems.length} starter item rows to sql/starting-info.sql`)
 
 if (quests.length > 0) {
   const takerIds = [...new Set(quests.map((quest) => quest.taker))].sort((a, b) => a - b)
@@ -1759,10 +1759,10 @@ ORDER BY npc
   }
 
   await Deno.writeTextFile(
-    'core_scripts/generated-quests.sql',
+    'sql/generated-quests.sql',
     generateQuestSql(quests, positionsByNpc, npcNames, npcSubnames, npcSpawnSwaps),
   )
-  console.log(`wrote ${quests.length} quests to core_scripts/generated-quests.sql`)
+  console.log(`wrote ${quests.length} quests to sql/generated-quests.sql`)
 }
 
 for (const warning of questWarnings) {
