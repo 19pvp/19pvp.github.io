@@ -3,740 +3,683 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>"
-    >
-    <title>19 PvP Logs</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>">
+    <title>19 PvP - Account Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-    :root {
-      color-scheme: dark;
-      font-family: monospace;
-    }
-
-    html {
-      min-height: 100%;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      min-height: 100dvh;
-      background: #101112;
-      color: #e6e1d8;
-      display: flex;
-      flex-direction: column;
-    }
-
-    footer {
-      position: sticky;
-      bottom: 0;
-      z-index: 10;
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 8px;
-      align-items: center;
-      overflow-x: auto;
-      padding: 10px;
-      background: #191b1d;
-      border-top: 1px solid #303236;
-    }
-
-    strong {
-      font: 600 13px/1.2 system-ui, sans-serif;
-      color: #f2c879;
-    }
-
-    input,
-    select,
-    button {
-      flex: 0 0 auto;
-      height: 34px;
-      box-sizing: border-box;
-      border: 1px solid #41444a;
-      background: #0c0d0e;
-      color: #f3f0ea;
-    }
-
-    input,
-    select {
-      min-width: 120px;
-      padding: 0 10px;
-    }
-
-    select,
-    button {
-      width: max-content;
-    }
-
-    #query {
-      flex: 1 1 140px;
-      width: 100%;
-      min-width: 140px;
-    }
-
-    button {
-      padding: 0 12px;
-      cursor: pointer;
-    }
-
-    .server-status {
-      flex: 0 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 34px;
-      font: 600 12px/1.2 system-ui, sans-serif;
-      color: #d8dde3;
-    }
-
-    .status-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: #8f969e;
-    }
-
-    .server-status[data-state='starting'] .status-dot {
-      background: #ffd15f;
-    }
-
-    .server-status[data-state='started'] .status-dot {
-      background: #83df9b;
-    }
-
-    .server-status[data-state='stopped'] .status-dot {
-      background: #ff7f7f;
-    }
-
-    #statusText {
-      color: #f3f0ea;
-    }
-
-    #statusMeta {
-      color: #9da5ae;
-      font-weight: 500;
-    }
-
-    main {
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      min-height: 100vh;
-      min-height: 100dvh;
-      flex: 1;
-      padding: 12px 10px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      font-size: 13px;
-      line-height: calc(1.45em - 3px);
-    }
-
-    .entry {
-      position: relative;
-      padding: 0px 10px 0px 164px;
-    }
-
-    .entry::before {
-      position: absolute;
-      left: 10px;
-      top: 2px;
-      content: attr(data-tag);
-      color: var(--tag-color, #cbbf9a);
-      font-weight: 700;
-    }
-
-    .entry::after {
-      position: absolute;
-      left: 82px;
-      top: 2px;
-      content: attr(data-time);
-      color: #7e858c;
-    }
-
-    .entry[data-log='server'] {
-      background: #10161e;
-      --tag-color: #7db1ff;
-    }
-    .entry[data-log='error'] {
-      background: #1b1111;
-      --tag-color: #ff8f8f;
-    }
-    .entry[data-log='service'] {
-      background: #17131f;
-      --tag-color: #c88cff;
-    }
-    .entry[data-log='all'] {
-      background: #131517;
-      --tag-color: #f2c879;
-    }
-    .entry[data-log='system'] {
-      background: #121418;
-      --tag-color: #d4d8df;
-    }
-
-    .entry.error {
-      --tag-color: #ff8f8f;
-    }
-
-    .entry[data-log='service']::before {
-      color: #dcabff;
-    }
-    .entry[data-log='server']::before {
-      color: #92c0ff;
-    }
-    .entry[data-log='error']::before {
-      color: #ffaaa9;
-    }
-    .entry[data-log='all']::before {
-      color: #ffe0a2;
-    }
-    .entry[data-log='system']::before {
-      color: #e1e5ea;
-    }
-
-    .idle-spacer {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 120px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      color: #8f969e;
-      font: 600 12px/1.4 system-ui, sans-serif;
-    }
-
-    .idle-spacer[hidden] {
-      display: none;
-    }
-
-    ::highlight(ansi-black) {
-      color: #7f858b;
-    }
-    ::highlight(ansi-red) {
-      color: #ff8d8d;
-    }
-    ::highlight(ansi-green) {
-      color: #8ee0a1;
-    }
-    ::highlight(ansi-yellow) {
-      color: #ffd98f;
-    }
-    ::highlight(ansi-blue) {
-      color: #8cbcff;
-    }
-    ::highlight(ansi-magenta) {
-      color: #d8a4ff;
-    }
-    ::highlight(ansi-cyan) {
-      color: #85e0e6;
-    }
-    ::highlight(ansi-white) {
-      color: #eef1f3;
-    }
-    ::highlight(ansi-bright-black) {
-      color: #a5adb5;
-    }
-    ::highlight(ansi-bright-red) {
-      color: #ffb3b3;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-green) {
-      color: #b7f0c3;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-yellow) {
-      color: #ffe7ad;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-blue) {
-      color: #b8d2ff;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-magenta) {
-      color: #e3c0ff;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-cyan) {
-      color: #b9eff2;
-      font-weight: 600;
-    }
-    ::highlight(ansi-bright-white) {
-      color: #ffffff;
-      font-weight: 600;
-    }
-
-    @media (max-width: 720px) {
-      #query {
-        min-width: 120px;
+      :root {
+        --bg-color: #0d0e12;
+        --card-bg: rgba(22, 24, 33, 0.7);
+        --border-color: rgba(255, 255, 255, 0.08);
+        --text-primary: #f3f4f6;
+        --text-secondary: #9ca3af;
+        --accent-color: #ffd15f;
+        --accent-hover: #ffe08a;
+        --discord-color: #5865f2;
+        --discord-hover: #4752c4;
+        --danger-color: #ef4444;
+        --success-color: #10b981;
+        --font-sans: 'Outfit', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
       }
-    }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow-x: hidden;
+        background-image: 
+          radial-gradient(circle at 10% 20%, rgba(88, 101, 242, 0.08) 0%, transparent 40%),
+          radial-gradient(circle at 90% 80%, rgba(255, 209, 95, 0.06) 0%, transparent 40%);
+        padding: 20px;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 800px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 40px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--discord-color), var(--accent-color));
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 35px;
+      }
+
+      .logo-icon {
+        font-size: 3.5rem;
+        margin-bottom: 15px;
+        display: inline-block;
+        filter: drop-shadow(0 0 15px rgba(255, 209, 95, 0.3));
+        animation: pulse 3s infinite alternate;
+      }
+
+      @keyframes pulse {
+        0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255, 209, 95, 0.2)); }
+        100% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(255, 209, 95, 0.5)); }
+      }
+
+      h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+      }
+
+      .subtitle {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        font-weight: 400;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        text-decoration: none;
+        gap: 10px;
+        width: 100%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .btn-discord {
+        background-color: var(--discord-color);
+        color: white;
+      }
+
+      .btn-discord:hover {
+        background-color: var(--discord-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
+      }
+
+      .btn-primary {
+        background-color: var(--accent-color);
+        color: #000000;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--accent-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 209, 95, 0.3);
+      }
+
+      .btn-secondary {
+        background-color: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+      }
+
+      .btn-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.15);
+      }
+
+      .btn-danger {
+        background-color: transparent;
+        color: var(--danger-color);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+
+      .btn-danger:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+        border-color: var(--danger-color);
+      }
+
+      .login-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        text-align: center;
+      }
+
+      .login-desc {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        max-width: 320px;
+        line-height: 1.5;
+      }
+
+      /* Logged In Dashboard Styling */
+      .dashboard {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+
+      .user-profile {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 2px solid var(--border-color);
+      }
+
+      .user-details h3 {
+        font-size: 1.15rem;
+        font-weight: 600;
+      }
+
+      .user-details span {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        display: block;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      @media (max-width: 600px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      input {
+        width: 100%;
+        height: 46px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0 15px;
+        color: white;
+        font-family: var(--font-mono);
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(255, 209, 95, 0.15);
+      }
+
+      .stats-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      .stat-card {
+        background: rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .stat-card span {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+      }
+
+      .stat-card strong {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent-color);
+      }
+
+      .section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .char-table-wrapper {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.1);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.9rem;
+      }
+
+      th, td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      th {
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .badge-online {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: var(--success-color);
+      }
+
+      .badge-offline {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary);
+      }
+
+      .footer-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+      }
+
+      .footer-actions .btn {
+        flex: 1;
+        min-width: 150px;
+      }
+
+      .status-banner {
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .status-success {
+        background-color: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        color: var(--success-color);
+        display: block;
+      }
+
+      .status-error {
+        background-color: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: var(--danger-color);
+        display: block;
+      }
+
+      .nav-links {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+      }
+
+      .admin-link {
+        color: var(--accent-color);
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.95rem;
+        border: 1px solid rgba(255, 209, 95, 0.3);
+        padding: 6px 14px;
+        border-radius: 8px;
+        background: rgba(255, 209, 95, 0.05);
+        transition: all 0.2s;
+      }
+
+      .admin-link:hover {
+        background: rgba(255, 209, 95, 0.15);
+        border-color: var(--accent-color);
+        transform: translateY(-1px);
+      }
     </style>
   </head>
   <body>
-    <main id="output"></main>
-    <div id="idle" class="idle-spacer" hidden></div>
-    <footer>
-      <div id="serverStatus" class="server-status" data-state="stopped">
-        <span class="status-dot"></span>
-        <span id="statusText">stopped</span>
-        <span id="statusMeta"></span>
+    <div class="container">
+      <div id="loading" style="text-align: center; padding: 40px 0;">
+        <div class="logo-icon">⚔️</div>
+        <h2>Loading portal...</h2>
       </div>
-      <button id="start">Start</button>
-      <button id="stop">Stop</button>
-      <button id="kill">Kill</button>
-      <select id="logs">
-        <option value="all">All logs</option>
-        <option value="server">Worldserver</option>
-        <option value="service">Service</option>
-      </select>
-      <select id="lines">
-        <option value="100">100 lines</option>
-        <option value="500">500 lines</option>
-        <option value="1000">1k lines</option>
-        <option value="5000">5k lines</option>
-        <option value="10000">10k lines</option>
-        <option value="all">All lines</option>
-      </select>
-      <select id="priority">
-        <option value="">All priorities</option>
-        <option value="err">Errors only</option>
-        <option value="warning">Warnings+</option>
-        <option value="notice">Notice+</option>
-        <option value="info">Info+</option>
-        <option value="debug">Debug+</option>
-      </select>
-      <select id="range">
-        <option value="">All dates</option>
-        <option value="today">Today</option>
-        <option value="week">This week</option>
-        <option value="month">This month</option>
-      </select>
-      <input id="query" placeholder="Search journal">
-      <button id="search">Search</button>
-      <button id="raw">Download</button>
-      <button id="clear">Clear</button>
-      <button id="logout" style="margin-left: auto;">Logout</button>
-    </footer>
-    <script type="module">
-    const api = location.origin
-    const output = document.querySelector('#output')
-    const idleSpacer = document.querySelector('#idle')
-    const query = document.querySelector('#query')
-    const raw = document.querySelector('#raw')
-    const serverStatus = document.querySelector('#serverStatus')
-    const statusText = document.querySelector('#statusText')
-    const statusMeta = document.querySelector('#statusMeta')
-    const logs = document.querySelector('#logs')
-    const lines = document.querySelector('#lines')
-    const priority = document.querySelector('#priority')
-    const range = document.querySelector('#range')
-    const ansiHighlights = new Map()
-    const supportsHighlights = Boolean(globalThis.CSS?.highlights && globalThis.Highlight && globalThis.Range)
-    const idleAfterMs = 30_000
-    const maxBatch = 100
-    const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
-    let source
-    let statusSource
-    const sourceOptions = new Set(['all', 'server', 'service'])
-    const lineOptions = new Set(['100', '500', '1000', '5000', '10000', 'all'])
-    const priorityOptions = new Set(['', 'err', 'warning', 'notice', 'info', 'debug'])
-    const rangeOptions = new Set(['', 'today', 'week', 'month'])
-    const initialParams = new URL(location.href).searchParams
-    const initialLog = initialParams.get('log')
-    const initialLines = initialParams.get('lines')
-    const initialPriority = initialParams.get('priority') || ''
-    const initialRange = initialParams.get('range') || ''
-    let currentLog = sourceOptions.has(initialLog) ? initialLog : 'all'
-    let currentLines = lineOptions.has(initialLines) ? initialLines : '500'
-    let currentPriority = priorityOptions.has(initialPriority) ? initialPriority : ''
-    let currentRange = rangeOptions.has(initialRange) ? initialRange : ''
-    let lastLogAt = 0
-    let pending = []
-    let pendingFrame = 0
 
-    const maxRows = () => currentLines === 'all' ? 20_000 : Number(currentLines) || 1_000
+      <div id="guestView" style="display: none;">
+        <div class="header">
+          <div class="logo-icon">⚔️</div>
+          <h1>19 PvP Server</h1>
+          <div class="subtitle">Level 19 Battleground Server Portal</div>
+        </div>
 
-    const clearAnsiHighlights = () => {
-      if (!supportsHighlights) return
-      for (const name of ansiHighlights.keys()) CSS.highlights.delete(name)
-      ansiHighlights.clear()
-    }
+        <div class="login-section">
+          <button id="discordLoginBtn" class="btn btn-discord">
+            <svg style="width: 20px; height: 20px; fill: currentColor;" viewBox="0 0 127.14 96.36">
+              <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.88-.65,1.72-1.34,2.51-2a75.58,75.58,0,0,0,73,0c.8.67,1.63,1.36,2.51,2a68.43,68.43,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31-18.83C129.07,50.12,122.81,27.35,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+            </svg>
+            Play Now
+          </button>
+          <div class="login-desc">
+            Connect with Discord to secure your account. You will automatically receive an invite to the 19pvp guild.
+          </div>
+        </div>
+      </div>
 
-    const highlightName = (token) => `ansi-${token}`
-
-    const ensureHighlight = (name) => {
-      if (!supportsHighlights) return null
-      let highlight = ansiHighlights.get(name)
-      if (!highlight) {
-        highlight = new Highlight()
-        ansiHighlights.set(name, highlight)
-        CSS.highlights.set(name, highlight)
-      }
-      return highlight
-    }
-
-    const ansiToken = (codes) => {
-      const palette = {
-        30: 'black',
-        31: 'red',
-        32: 'green',
-        33: 'yellow',
-        34: 'blue',
-        35: 'magenta',
-        36: 'cyan',
-        37: 'white',
-        90: 'bright-black',
-        91: 'bright-red',
-        92: 'bright-green',
-        93: 'bright-yellow',
-        94: 'bright-blue',
-        95: 'bright-magenta',
-        96: 'bright-cyan',
-        97: 'bright-white',
-      }
-      for (const code of codes) {
-        if (palette[code]) return palette[code]
-      }
-      return ''
-    }
-
-    const renderAnsi = (row, raw) => {
-      const text = []
-      const ranges = []
-      const state = { bright: false, fg: '' }
-      const ansi = /\x1b\[([0-9;]*)m/g
-      let last = 0
-      let plainLength = 0
-
-      const currentHighlight = () => {
-        if (!state.fg) return ''
-        return state.bright ? `bright-${state.fg}` : state.fg
-      }
-
-      const pushSegment = (segment) => {
-        if (!segment) return
-        const start = plainLength
-        text.push(segment)
-        plainLength += segment.length
-        const end = plainLength
-        const name = currentHighlight()
-        if (name) ranges.push({ start, end, name })
-      }
-
-      for (let match = ansi.exec(raw); match; match = ansi.exec(raw)) {
-        pushSegment(raw.slice(last, match.index))
-
-        const codes = match[1].split(';').filter(Boolean).map(Number)
-        if (!codes.length) codes.push(0)
-
-        for (const code of codes) {
-          if (code === 0) {
-            state.bright = false
-            state.fg = ''
-          } else if (code === 1) {
-            state.bright = true
-          } else if (code === 22) {
-            state.bright = false
-          } else if (code === 39) {
-            state.fg = ''
-          } else if (code >= 30 && code <= 37) {
-            state.fg = ansiToken([code])
-          } else if (code >= 90 && code <= 97) {
-            state.fg = ansiToken([code - 60])
-            state.bright = true
-          } else {
-            const token = ansiToken([code])
-            if (token) state.fg = token
-          }
-        }
-
-        last = match.index + match[0].length
-      }
-
-      pushSegment(raw.slice(last))
-
-      const node = document.createTextNode(text.join(''))
-      row.append(node)
-
-      for (const { start, end, name } of ranges) {
-        const highlight = ensureHighlight(highlightName(name))
-        if (!highlight) continue
-        const range = new Range()
-        range.setStart(node, start)
-        range.setEnd(node, end)
-        highlight.add(range)
-      }
-    }
-
-    const pruneRows = () => {
-      const limit = maxRows()
-      while (output.childElementCount > limit) output.firstElementChild?.remove()
-    }
-
-    const isNearBottom = () => window.innerHeight + scrollY >= document.body.scrollHeight - 80
-
-    const formatLogTime = (at) =>
-      at
-        ? new Date(at).toLocaleTimeString(undefined, {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        })
-        : ''
-
-    const appendNow = (line, className = '', meta = {}) => {
-      idleSpacer.hidden = true
-      lastLogAt = Date.now()
-      const row = document.createElement('div')
-      const tag = ['all', 'error', 'server', 'service', 'system'].includes(className) ? className : 'system'
-      row.className = `entry${tag ? ` ${tag}` : ''}`
-      row.dataset.log = tag
-      row.dataset.tag = tag
-      row.dataset.time = formatLogTime(meta.at)
-      if (meta.priority !== undefined && meta.priority !== null) row.dataset.priority = meta.priority
-      if (meta.transport) row.dataset.transport = meta.transport
-      renderAnsi(row, line)
-      output.append(row)
-      pruneRows()
-    }
-
-    const flushPending = () => {
-      pendingFrame = 0
-      const shouldStick = document.activeElement !== query && isNearBottom()
-      pending.sort((a, b) => (a[2]?.at || 0) - (b[2]?.at || 0))
-      const batch = pending.splice(0, maxBatch)
-      for (const [line, className, meta] of batch) appendNow(line, className, meta)
-      if (shouldStick) scrollTo(0, document.body.scrollHeight)
-      if (pending.length) pendingFrame = requestAnimationFrame(flushPending)
-    }
-
-    const append = (line, className = '', meta = {}) => {
-      pending.push([line, className, meta])
-      const limit = maxRows()
-      if (pending.length > limit) pending = pending.slice(-limit)
-      if (!pendingFrame) pendingFrame = requestAnimationFrame(flushPending)
-    }
-
-    const resetOutput = () => {
-      pending = []
-      if (pendingFrame) cancelAnimationFrame(pendingFrame)
-      pendingFrame = 0
-      output.textContent = ''
-      clearAnsiHighlights()
-      lastLogAt = 0
-      idleSpacer.hidden = true
-    }
-
-    const formatElapsed = (elapsedMs) => {
-      const seconds = Math.max(1, Math.floor(elapsedMs / 1000))
-      if (seconds < 60) return relativeTime.format(-seconds, 'second')
-      const minutes = Math.floor(seconds / 60)
-      if (minutes < 60) return relativeTime.format(-minutes, 'minute')
-      const hours = Math.floor(minutes / 60)
-      return relativeTime.format(-hours, 'hour')
-    }
-
-    const formatDuration = (seconds) => {
-      if (!Number.isFinite(seconds) || seconds < 0) return ''
-      const days = Math.floor(seconds / 86400)
-      const hours = Math.floor(seconds % 86400 / 3600)
-      const minutes = Math.floor(seconds % 3600 / 60)
-      if (days) return `${days}d ${hours}h`
-      if (hours) return `${hours}h ${minutes}m`
-      return `${minutes}m`
-    }
-
-    const formatMemory = (bytes) => {
-      if (!Number.isFinite(bytes) || bytes < 0) return ''
-      const gib = bytes / 1024 / 1024 / 1024
-      if (gib >= 1) return `${gib.toFixed(1)} GiB`
-      return `${(bytes / 1024 / 1024).toFixed(0)} MiB`
-    }
-
-    const formatServerInfo = (info) => {
-      if (!info) return ''
-      if (Array.isArray(info)) return info.join('\n')
-      return JSON.stringify(info)
-    }
-
-    const updateWorldserverStatus = (status) => {
-      const state = status.state || 'stopped'
-      serverStatus.dataset.state = state
-      statusText.textContent = state
-      const meta = [
-        status.startedFor ? `for ${formatDuration(status.startedFor)}` : '',
-        status.memory ? formatMemory(status.memory) : '',
-      ].filter(Boolean)
-      statusMeta.textContent = meta.join(' · ')
-      serverStatus.title = formatServerInfo(status.info)
-    }
-
-    const connectWorldserverStatus = () => {
-      statusSource?.close()
-      statusSource = new EventSource(`${api}/worldserver/events`, { withCredentials: true })
-      statusSource.onmessage = (event) => updateWorldserverStatus(JSON.parse(event.data))
-      statusSource.onerror = () => {
-        if (statusSource?.readyState === EventSource.CLOSED) updateWorldserverStatus({ state: 'stopped' })
-      }
-    }
-
-    const updateIdleSpacer = () => {
-      if (!lastLogAt || document.activeElement === query) {
-        idleSpacer.hidden = true
-        return
-      }
-      const elapsedMs = Date.now() - lastLogAt
-      if (elapsedMs < idleAfterMs) {
-        idleSpacer.hidden = true
-        return
-      }
-      idleSpacer.textContent = `Last log ${formatElapsed(elapsedMs)}`
-      idleSpacer.hidden = false
-    }
-
-    const accepts = (data) => currentLog === 'all' || data.file === currentLog || data.type !== 'log'
-
-    const appendEvent = (data) => {
-      if (data.error) {
-        append(data.error, 'error')
-        return
-      }
-
-      if (data.line) {
-        append(data.line, data.file || 'system', data)
-        return
-      }
-
-      if (data.message) {
-        append(data.message, ['worldserver', 'api'].includes(data.type) ? 'system' : data.type || 'system')
-        return
-      }
-
-      append(JSON.stringify(data), 'system')
-    }
-
-    const setUrlParam = (name, value, defaultValue = '') => {
-      const url = new URL(location.href)
-      value === defaultValue ? url.searchParams.delete(name) : url.searchParams.set(name, value)
-      history.replaceState(null, '', url)
-    }
-
-    const logParams = (extra = {}) => {
-      const params = new URLSearchParams({
-        log: currentLog,
-        lines: currentLines,
-        ...extra,
-      })
-      if (currentPriority) params.set('priority', currentPriority)
-      if (currentRange) params.set('range', currentRange)
-      return params
-    }
-
-    const connectLogs = () => {
-      logs.value = currentLog
-      lines.value = currentLines
-      priority.value = currentPriority
-      range.value = currentRange
-      source?.close()
-      resetOutput()
-      source = new EventSource(`${api}/logs/events?${logParams()}`, { withCredentials: true })
-      source.onmessage = (event) => {
-        const data = JSON.parse(event.data)
-        if (data.type === 'heartbeat') return updateIdleSpacer()
-        if (!accepts(data)) return
-        appendEvent(data)
-      }
-      source.onerror = () => {
-        if (source?.readyState === EventSource.CLOSED) append('Log stream closed', 'error')
-      }
-    }
-
-    const startApp = () => {
-      document.querySelector('#search').onclick = async () => {
-        source?.close()
-        resetOutput()
-        const lines = await fetch(`${api}/logs/search?${logParams({ q: query.value })}`, { credentials: 'include' })
-          .then((res) => res.json())
-        lines.forEach((line) => append(line, 'system'))
-      }
-
-      const action = async (name) => {
-        const method = name === 'status' ? 'GET' : 'POST'
-        const result = await fetch(`${api}/worldserver/${name}`, { method, credentials: 'include' }).then((res) =>
-          res.json()
-        )
-        append(`${name}: ${JSON.stringify(result)}`)
-      }
-
-      raw.onclick = () => {
-        const log = currentLog === 'all' ? 'server' : currentLog
-        open(`${api}/logs/file?${logParams({ log })}`, '_blank', 'noopener')
-      }
-      document.querySelector('#clear').onclick = () => {
-        resetOutput()
-      }
-      logs.onchange = () => {
-        currentLog = logs.value
-        setUrlParam('log', currentLog, 'all')
-        connectLogs()
-      }
-      lines.onchange = () => {
-        currentLines = lines.value
-        setUrlParam('lines', currentLines, '500')
-        connectLogs()
-      }
-      priority.onchange = () => {
-        currentPriority = priority.value
-        setUrlParam('priority', currentPriority)
-        connectLogs()
-      }
-      range.onchange = () => {
-        currentRange = range.value
-        setUrlParam('range', currentRange)
-        connectLogs()
-      }
-      document.querySelector('#start').onclick = () => action('start')
-      document.querySelector('#stop').onclick = () => action('stop')
-      document.querySelector('#kill').onclick = () => action('kill')
-      document.querySelector('#logout').onclick = async () => {
-        await fetch(`${api}/auth/logout`, { method: 'POST', credentials: 'include' })
-        location.reload()
-      }
-      query.onkeydown = (event) => {
-        if (event.key === 'Enter') {
-          document.querySelector('#search').click()
-          event.preventDefault()
-        }
-      }
-      connectLogs()
-      connectWorldserverStatus()
-      setInterval(updateIdleSpacer, 1000)
-    }
-
-    const checkAuth = async () => {
-      try {
-        const status = await fetch(`${api}/auth/me`, { credentials: 'include' }).then((res) => res.json())
-        if (status.authenticated) {
-          startApp()
-        } else {
-          document.querySelector('footer').innerHTML = `
-            <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 15px;">
-              <strong>Authentication required to view logs and control worldserver</strong>
-              <button onclick="location.href='${api}/auth/discord/login'">Login with Discord</button>
+      <div id="memberView" style="display: none;">
+        <div class="dashboard">
+          <div class="user-profile">
+            <div class="user-info">
+              <img id="userAvatar" class="avatar" src="" alt="Discord Avatar">
+              <div class="user-details">
+                <h3 id="discordName">Username</h3>
+                <span>Discord Member</span>
+              </div>
             </div>
-          `
-        }
-      } catch (err) {
-        append(`Connection error: ${String(err)}`, 'error')
-      }
-    }
+            <div id="adminNavContainer"></div>
+          </div>
 
-    checkAuth()
+          <div id="statusMsg" class="status-banner"></div>
+
+          <div>
+            <div class="section-title">🛡️ WoW Game Account</div>
+            <form id="accountForm">
+              <div class="form-grid">
+                <div class="input-group">
+                  <label for="wowUsername">Account Username</label>
+                  <input type="text" id="wowUsername" placeholder="CHOOSE A USERNAME" required minlength="3" maxlength="16" pattern="^[a-zA-Z0-9]+$" title="Only alphanumeric characters allowed">
+                </div>
+                <div class="input-group">
+                  <label for="wowPassword">Account Password</label>
+                  <input type="password" id="wowPassword" placeholder="••••••••••••" required minlength="4">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" style="margin-top: 20px;">
+                Save Account Credentials
+              </button>
+            </form>
+          </div>
+
+          <div id="charactersSection" style="display: none;">
+            <div class="section-title">⚔️ Your Characters</div>
+            <div class="char-table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Level</th>
+                    <th>Race</th>
+                    <th>Class</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="characterRows">
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="stats-container">
+            <div class="stat-card">
+              <span>Total Play Time</span>
+              <strong id="statPlayTime">0h</strong>
+            </div>
+            <div class="stat-card">
+              <span>Last Time Online</span>
+              <strong id="statLastOnline">Never</strong>
+            </div>
+          </div>
+
+          <div class="footer-actions">
+            <button id="logoutBtn" class="btn btn-danger">Disconnect</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      const api = location.origin;
+      const loading = document.getElementById('loading');
+      const guestView = document.getElementById('guestView');
+      const memberView = document.getElementById('memberView');
+      
+      const userAvatar = document.getElementById('userAvatar');
+      const discordName = document.getElementById('discordName');
+      const adminNavContainer = document.getElementById('adminNavContainer');
+      const wowUsername = document.getElementById('wowUsername');
+      const wowPassword = document.getElementById('wowPassword');
+      const accountForm = document.getElementById('accountForm');
+      
+      const charactersSection = document.getElementById('charactersSection');
+      const characterRows = document.getElementById('characterRows');
+      
+      const statPlayTime = document.getElementById('statPlayTime');
+      const statLastOnline = document.getElementById('statLastOnline');
+      
+      const discordLoginBtn = document.getElementById('discordLoginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const statusMsg = document.getElementById('statusMsg');
+
+      const classMap = {
+        1: 'Warrior', 2: 'Paladin', 3: 'Hunter', 4: 'Rogue', 5: 'Priest',
+        6: 'Death Knight', 7: 'Shaman', 8: 'Mage', 9: 'Warlock',
+        10: 'Monk', 11: 'Druid', 12: 'Demon Hunter'
+      };
+
+      const raceMap = {
+        1: 'Human', 2: 'Orc', 3: 'Dwarf', 4: 'Night Elf', 5: 'Undead',
+        6: 'Tauren', 7: 'Gnome', 8: 'Troll', 9: 'Goblin', 10: 'Blood Elf',
+        11: 'Draenei', 22: 'Worgen'
+      };
+
+      discordLoginBtn.onclick = () => {
+        location.href = `${api}/auth/discord/login`;
+      };
+
+      logoutBtn.onclick = async () => {
+        await fetch(`${api}/auth/logout`, { method: 'POST', credentials: 'include' });
+        location.reload();
+      };
+
+      const showStatus = (text, isError = false) => {
+        statusMsg.textContent = text;
+        statusMsg.className = `status-banner ${isError ? 'status-error' : 'status-success'}`;
+        statusMsg.style.display = 'block';
+        setTimeout(() => {
+          statusMsg.style.display = 'none';
+        }, 6000);
+      };
+
+      const formatPlayTime = (seconds) => {
+        if (!seconds) return '0h';
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        if (hours > 0) return `${hours}h ${mins}m`;
+        return `${mins}m`;
+      };
+
+      const formatLastOnline = (timestamp) => {
+        if (!timestamp) return 'Never';
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      };
+
+      accountForm.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const res = await fetch(`${api}/api/account`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: wowUsername.value,
+              password: wowPassword.value
+            }),
+            credentials: 'include'
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showStatus('WoW account credentials updated successfully!');
+            loadDashboard();
+          } else {
+            showStatus(data.error || 'Failed to update WoW account credentials.', true);
+          }
+        } catch (err) {
+          showStatus('Error communicating with the server.', true);
+        }
+      };
+
+      async function loadDashboard() {
+        try {
+          const res = await fetch(`${api}/api/account`, { credentials: 'include' });
+          const data = await res.json();
+          
+          loading.style.display = 'none';
+          
+          if (data.authenticated) {
+            guestView.style.display = 'none';
+            memberView.style.display = 'block';
+            
+            // Set Discord Avatar & Name
+            if (data.user.avatar) {
+              userAvatar.src = `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`;
+            } else {
+              userAvatar.src = `https://cdn.discordapp.com/embed/avatars/0.png`;
+            }
+            discordName.textContent = data.user.global_name || data.user.username;
+            
+            // Admin portal navigation link if user is GM
+            if (data.gmLevel >= 1) {
+              adminNavContainer.innerHTML = `<a href="/admin" class="admin-link">⚙️ Admin logs</a>`;
+            } else {
+              adminNavContainer.innerHTML = '';
+            }
+
+            // Populate form if wowAccount exists
+            if (data.wowAccount) {
+              wowUsername.value = data.wowAccount.username;
+              // Clear password field for security representation (users type to change)
+              wowPassword.placeholder = '•••••••••••• (Type to change)';
+              wowPassword.required = false; // Only required on initial creation
+            } else {
+              wowUsername.value = '';
+              wowPassword.placeholder = '••••••••••••';
+              wowPassword.required = true;
+            }
+
+            // Render stats
+            statPlayTime.textContent = formatPlayTime(data.stats.totalPlayTime);
+            statLastOnline.textContent = formatLastOnline(data.stats.lastTimeOnline);
+
+            // Render characters list
+            if (data.characters && data.characters.length > 0) {
+              charactersSection.style.display = 'block';
+              characterRows.innerHTML = data.characters.map(char => `
+                <tr>
+                  <td><strong>${char.name}</strong></td>
+                  <td>${char.level}</td>
+                  <td>${raceMap[char.race] || 'Unknown'}</td>
+                  <td>${classMap[char.class] || 'Unknown'}</td>
+                  <td>
+                    <span class="badge ${char.online ? 'badge-online' : 'badge-offline'}">
+                      ${char.online ? 'Online' : 'Offline'}
+                    </span>
+                  </td>
+                </tr>
+              `).join('');
+            } else {
+              charactersSection.style.display = 'none';
+            }
+          } else {
+            guestView.style.display = 'block';
+            memberView.style.display = 'none';
+          }
+        } catch (err) {
+          loading.style.display = 'none';
+          guestView.style.display = 'block';
+          memberView.style.display = 'none';
+        }
+      }
+
+      loadDashboard();
     </script>
   </body>
 </html>

@@ -2,11 +2,13 @@ import { TextLineStream } from '@std/streams'
 import { cors, json, runCommand, sse } from './utils.ts'
 import { watch } from '../tasks/config.ts'
 import { ac } from './soap.ts'
-import { checkAuth, handleAuth } from './auth.ts'
+import { checkAuth, handleAuth, getSession } from './auth.ts'
+import { getAccountDetails, setOrCreateAccount } from './account.ts'
 import { env } from './env.ts'
 
 // TODO: switch to { type: 'bytes' } once supported
 import indexHTML from '../web/index.html' with { type: 'text' }
+import adminHTML from '../web/admin.html' with { type: 'text' }
 
 void import('./world-chat.ts').catch((err) => {
   console.error('Discord bridge failed to start', err)
@@ -631,8 +633,53 @@ export default {
       const url = new URL(req.url)
 
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
-      if (url.pathname === '/' || url.pathname === '/index.html') {
+      if (url.pathname === '/') {
         return new Response(indexHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+      }
+      if (url.pathname === '/admin') {
+        return new Response(adminHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+      }
+
+      if (url.pathname === '/api/account') {
+        const session = await getSession(req)
+        if (!session) {
+          return json({ error: 'Unauthorized' }, { status: 401, headers: { 'access-control-allow-origin': env.PUBLIC_BASE_URL, 'access-control-allow-credentials': 'true' } })
+        }
+
+        const corsHeaders = {
+          'access-control-allow-origin': env.PUBLIC_BASE_URL,
+          'access-control-allow-credentials': 'true',
+        }
+
+        if (req.method === 'GET') {
+          const details = await getAccountDetails(session.discordId)
+          return json({
+            authenticated: true,
+            user: session.user,
+            gmLevel: session.gmLevel,
+            ...details
+          }, { headers: corsHeaders })
+        }
+
+        if (req.method === 'POST') {
+          try {
+            const body = await req.json()
+            const { username, password } = body
+            if (!username || !password) {
+              return json({ error: 'Username and password are required.' }, { status: 400, headers: corsHeaders })
+            }
+            const discordUser = session.user as { username?: string }
+            const discordUsername = discordUser?.username || 'Unknown'
+            const res = await setOrCreateAccount(session.discordId, discordUsername, username, password, session.gmLevel)
+            if (!res.success) {
+              const outputObj = res.output as { message?: string } | undefined
+              return json({ error: outputObj?.message || 'Failed to update account.' }, { status: 400, headers: corsHeaders })
+            }
+            return json(res, { headers: corsHeaders })
+          } catch (err) {
+            return json({ error: String(err) }, { status: 400, headers: corsHeaders })
+          }
+        }
       }
 
       const authRes = await handleAuth(req)

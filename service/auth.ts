@@ -1,11 +1,12 @@
 import { json } from './utils.ts'
 import { env } from './env.ts'
 import { getCookies, setCookie } from '@std/http/cookie'
+import { auth } from './db.ts'
+import { discord } from './discord.ts'
 
 const CLIENT_ID = env.DISCORD_APP_ID
 const CLIENT_SECRET = env.DISCORD_CLIENT_SECRET
 const GUILD_ID = env.DISCORD_GUILD_ID
-const BOT_TOKEN = env.DISCORD_TOKEN
 const BASE_URL = env.PUBLIC_BASE_URL
 
 const roleGMLevel: Record<string, number> = {
@@ -15,7 +16,7 @@ const roleGMLevel: Record<string, number> = {
 }
 
 // In-memory session store & temporary OAuth state store
-const sessions = new Map<string, { user: unknown; gmLevel: number; fingerprint: string }>()
+const sessions = new Map<string, { user: unknown; gmLevel: number; fingerprint: string; discordId: string }>()
 const states = new Set<string>()
 
 // Cryptographically secure random session signing secret generated once at startup
@@ -28,12 +29,10 @@ const hashSessionId = async (id: string) => {
 }
 
 const getClientFingerprint = (req: Request) => {
-  const ip = req.headers.get('x-forwarded-for') || ''
-  const ua = req.headers.get('user-agent') || ''
-  return `${ip}:${ua}`
+  return req.headers.get('user-agent') || ''
 }
 
-const getSession = async (req: Request) => {
+export const getSession = async (req: Request) => {
   const cookies = getCookies(req.headers)
   const cookieValue = cookies['logs_session']
   if (!cookieValue) return null
@@ -80,7 +79,7 @@ export const handleAuth = async (req: Request) => {
       client_id: CLIENT_ID,
       redirect_uri: redirectUri,
       response_type: 'code',
-      scope: 'identify',
+      scope: 'identify guilds.join',
       state,
     })}`
 
@@ -141,34 +140,49 @@ export const handleAuth = async (req: Request) => {
     }
     const user = await userRes.json()
 
-    // Fetch guild member
-    const memberRes = await fetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members/${user.id}`, {
-      headers: { authorization: `Bot ${BOT_TOKEN}` },
-    })
-    if (!memberRes.ok) {
-      return json({ error: 'Failed to fetch guild membership info' }, { status: 403, headers: corsHeaders })
+    // Invite/add user to the guild
+    try {
+      await discord.rest.PUT_GUILD_MEMBER({ guild: GUILD_ID, user: user.id, access_token })
+    } catch (err) {
+      console.error('Guild member join error:', err)
     }
-    const member = await memberRes.json()
 
-    // Determine GM level
+    // Fetch guild member to get roles
     let gmLevel = 0
-    for (const role of member.roles || []) {
-      const level = roleGMLevel[role]
-      if (level && level > gmLevel) {
-        gmLevel = level
+    try {
+      const member = await discord.rest.GET_GUILD_MEMBER({ guild: GUILD_ID, user: user.id }) as { roles?: string[] }
+      if (member && member.roles) {
+        for (const role of member.roles) {
+          const level = roleGMLevel[role]
+          if (level && level > gmLevel) {
+            gmLevel = level
+          }
+        }
       }
-    }
-
-    if (gmLevel < 1) {
-      return json({ error: 'Forbidden: No GM role mapped' }, { status: 403, headers: corsHeaders })
+    } catch (err) {
+      console.error('Failed to fetch guild membership info:', err)
     }
 
     const sessionId = crypto.randomUUID()
     const signature = await hashSessionId(sessionId)
+
+    // Ensure discord_account entry exists
+    const discordId = BigInt(user.id)
+    const [existingLink] = await auth.sql`
+      SELECT account_id FROM discord_account WHERE discord_id=${discordId}
+    `
+    if (!existingLink) {
+      await auth.sql`
+        INSERT INTO discord_account (discord_id, discord_login)
+        VALUES (${discordId}, ${user.username})
+      `
+    }
+
     sessions.set(sessionId, {
       user,
       gmLevel,
       fingerprint: getClientFingerprint(req),
+      discordId: user.id,
     })
 
     const headers = new Headers({
@@ -207,6 +221,7 @@ export const handleAuth = async (req: Request) => {
       authenticated: true,
       user: session.user,
       gmLevel: session.gmLevel,
+      discordId: session.discordId,
     }, { headers: corsHeaders })
   }
 

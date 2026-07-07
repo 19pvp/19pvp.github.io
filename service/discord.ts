@@ -462,6 +462,19 @@ discord.rest.GET_GUILD_MEMBERS = ({ guild, after = '0', limit = 1000 }) =>
     headers: { authorization },
   })
 
+discord.rest.PUT_GUILD_MEMBER = ({ guild, user, access_token }) =>
+  rest(`/guilds/${guild}/members/${user}`, {
+    method: 'PUT',
+    headers: { authorization },
+    body: { access_token },
+  })
+
+discord.rest.GET_GUILD_MEMBER = ({ guild, user }) =>
+  rest(`/guilds/${guild}/members/${user}`, {
+    method: 'GET',
+    headers: { authorization },
+  })
+
 const API = (method: string) => (url: string, init?: DiscordRequestInit) =>
   discordFetch(`https://discord.com/api/v10${url}`, {
     method,
