@@ -35,8 +35,36 @@ function IsRosterBotQueued(name)
     return false
 end
 
--- Event ID for Player Joining BG
 local PLAYER_EVENT_ON_PLAYER_JOIN_BG = 74
+local queueTimerEventId = nil
+
+local function ProcessBotQueue()
+    queueTimerEventId = nil
+    print("[WSG Queue] 60 seconds have passed. Queueing available bots:")
+    SendWorldMessage("[WSG Queue] 60 seconds elapsed. Bots are now joining the queue to force a match if needed.")
+    
+    for _, botName in ipairs(fixedRoster) do
+        local bot = GetPlayerByName(botName)
+        if bot then
+            local isQueued = bot:InBattlegroundQueue()
+            if not isQueued then
+                local success = bot:JoinBattlegroundQueue(2, false)
+                local status = success and "Successfully Queued" or "Failed to Queue"
+                local logLine = " - " .. botName .. " (Online) - " .. status
+                print(logLine)
+                SendWorldMessage(logLine)
+            else
+                local logLine = " - " .. botName .. " (Online) - Already Queued"
+                print(logLine)
+                SendWorldMessage(logLine)
+            end
+        else
+            local logLine = " - " .. botName .. " (Offline)"
+            print(logLine)
+            SendWorldMessage(logLine)
+        end
+    end
+end
 
 print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_PLAYER_JOIN_BG (" .. PLAYER_EVENT_ON_PLAYER_JOIN_BG .. ")...")
 
@@ -51,32 +79,15 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
         -- Log in-game
         SendWorldMessage("[WSG Queue] Bot " .. name .. " has successfully queued for Warsong Gulch.")
     else
-        -- Log to server console
-        print("[WSG Queue] Player " .. name .. " has queued for Warsong Gulch. Logging available bots:")
-        -- Log in-game
+        print("[WSG Queue] Player " .. name .. " has queued for Warsong Gulch.")
         SendWorldMessage("[WSG Queue] Player " .. name .. " has queued for Warsong Gulch.")
-        SendWorldMessage("[WSG Queue] Current Fixed Roster Queue Status:")
-        -- wierd
-        for _, botName in ipairs(fixedRoster) do
-            local bot = GetPlayerByName(botName)
-            if bot then
-                local isQueued = bot:InBattlegroundQueue()
-                if not isQueued then
-                    local success = bot:JoinBattlegroundQueue(2, false)
-                    local status = success and "Successfully Queued" or "Failed to Queue"
-                    local logLine = " - " .. botName .. " (Online) - " .. status
-                    print(logLine)
-                    SendWorldMessage(logLine)
-                else
-                    local logLine = " - " .. botName .. " (Online) - Already Queued"
-                    print(logLine)
-                    SendWorldMessage(logLine)
-                end
-            else
-                local logLine = " - " .. botName .. " (Offline)"
-                print(logLine)
-                SendWorldMessage(logLine)
-            end
+        
+        if not queueTimerEventId then
+            print("[WSG Queue] Starting 60-second timer before bots queue...")
+            SendWorldMessage("[WSG Queue] Waiting 60 seconds for real players to join before filling with bots...")
+            queueTimerEventId = CreateLuaEvent(ProcessBotQueue, 60000, 1)
+        else
+            print("[WSG Queue] Timer already running, waiting for it to finish.")
         end
     end
 end)
