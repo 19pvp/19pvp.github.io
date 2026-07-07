@@ -1331,42 +1331,49 @@ WHERE c.\`name\` <> r.\`name\`;
 
 const itemUpdateSql = (itemId: number, props: ItemProps) => {
   const assignments: string[] = []
+  
+  // 1. SIMPLE UPDATES (Assign if defined in sheet)
   assignments.push(`\`bonding\` = ${soulboundBonding}`)
+  
   if (props.name !== undefined) {
     assignments.push(`\`description\` = IF(\`name\` <> ${sqlString(props.name)}, '', \`description\`)`)
     assignments.push(`\`name\` = ${sqlString(props.name)}`)
   }
-  if (props.quality !== undefined) assignments.push(`\`Quality\` = ${props.quality}`)
 
-  for (let index = 0; index < 10; index++) {
-    const stat = props.stats[index]
-    assignments.push(`\`stat_type${index + 1}\` = ${stat?.type ?? 0}`)
-    assignments.push(`\`stat_value${index + 1}\` = ${stat?.value ?? 0}`)
+  if (props.quality !== undefined) {
+    assignments.push(`\`Quality\` = ${props.quality}`)
   }
 
-  for (const column of ['holy_res', 'fire_res', 'nature_res', 'frost_res', 'shadow_res', 'arcane_res']) {
-    assignments.push(`\`${column}\` = 0`)
-  }
-
-  for (let index = 1; index <= 5; index++) {
-    assignments.push(`\`spellid_${index}\` = 0`)
-    assignments.push(`\`spelltrigger_${index}\` = 0`)
-    assignments.push(`\`spellcharges_${index}\` = 0`)
-    assignments.push(`\`spellppmRate_${index}\` = 0`)
-    assignments.push(`\`spellcooldown_${index}\` = -1`)
-    assignments.push(`\`spellcategory_${index}\` = 0`)
-    assignments.push(`\`spellcategorycooldown_${index}\` = -1`)
+  if (props.stats && props.stats.length > 0) {
+    for (let index = 0; index < 10; index++) {
+      const stat = props.stats[index]
+      assignments.push(`\`stat_type${index + 1}\` = ${stat?.type ?? 0}`)
+      assignments.push(`\`stat_value${index + 1}\` = ${stat?.value ?? 0}`)
+    }
+    for (const column of ['holy_res', 'fire_res', 'nature_res', 'frost_res', 'shadow_res', 'arcane_res']) {
+      assignments.push(`\`${column}\` = 0`)
+    }
   }
 
   if (props.use !== undefined) {
+    for (let index = 1; index <= 5; index++) {
+      assignments.push(`\`spellid_${index}\` = 0`)
+      assignments.push(`\`spelltrigger_${index}\` = 0`)
+      assignments.push(`\`spellcharges_${index}\` = 0`)
+      assignments.push(`\`spellppmRate_${index}\` = 0`)
+      assignments.push(`\`spellcooldown_${index}\` = -1`)
+      assignments.push(`\`spellcategory_${index}\` = 0`)
+      assignments.push(`\`spellcategorycooldown_${index}\` = -1`)
+    }
+
     assignments.push(`\`spellid_1\` = ${props.use}`)
     assignments.push('`spelltrigger_1` = 0')
     assignments.push(`\`spellcategory_1\` = ${cdCategories[props.use] || props.use}`)
-  }
 
-  if (props.cd !== undefined) {
-    assignments.push(`\`spellcooldown_1\` = ${props.cd}`)
-    assignments.push(`\`spellcategorycooldown_1\` = ${props.cd}`)
+    if (props.cd !== undefined) {
+      assignments.push(`\`spellcooldown_1\` = ${props.cd}`)
+      assignments.push(`\`spellcategorycooldown_1\` = ${props.cd}`)
+    }
   }
 
   return `UPDATE \`item_template\`

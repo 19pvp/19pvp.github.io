@@ -1,8 +1,13 @@
 import { projectName } from '../env.ts'
+
+export const isServer = Deno.mainModule.endsWith('server.ts') || Deno.args.includes('serve')
+
 const get = (key: string, required = false, fallback = ''): string => {
   const value = Deno.env.get(key)
   if (required && !value) {
-    throw new Error(`Environment variable ${key} is required but missing.`)
+    if (isServer) {
+      throw new Error(`Environment variable ${key} is required but missing.`)
+    }
   }
   return value || fallback
 }

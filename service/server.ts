@@ -5,6 +5,9 @@ import { ac } from './soap.ts'
 import { checkAuth, handleAuth } from './auth.ts'
 import { env } from './env.ts'
 
+// TODO: switch to { type: 'bytes' } once supported
+import indexHTML from '../web/index.html' with { type: 'text' }
+
 void import('./world-chat.ts').catch((err) => {
   console.error('Discord bridge failed to start', err)
 })
@@ -628,10 +631,13 @@ export default {
       const url = new URL(req.url)
 
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
+      if (url.pathname === '/' || url.pathname === '/index.html') {
+        return new Response(indexHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+      }
 
       const authRes = await handleAuth(req)
       if (authRes) return authRes
-
+      if (url.pathname === '/worldserver/status') return await worldserverStatus()
       if (
         url.pathname.startsWith('/logs/') ||
         url.pathname.startsWith('/worldserver/')
@@ -644,7 +650,6 @@ export default {
       if (url.pathname === '/logs/file') return await logFile(req)
       if (url.pathname === '/logs/events') return logEvents(req)
       if (url.pathname === '/logs/search') return await logSearch(req)
-      if (url.pathname === '/worldserver/status') return await worldserverStatus()
       if (url.pathname === '/worldserver/events') return worldserverEvents()
       if (url.pathname === '/worldserver/start' && req.method === 'POST') return await worldserverStart()
       if (url.pathname === '/worldserver/stop' && req.method === 'POST') return await worldserverStop()

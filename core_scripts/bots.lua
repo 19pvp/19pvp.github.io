@@ -61,10 +61,17 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
             local bot = GetPlayerByName(botName)
             if bot then
                 local isQueued = bot:InBattlegroundQueue()
-                local status = isQueued and "Queued" or "Not Queued"
-                local logLine = " - " .. botName .. " (Online) - " .. status
-                print(logLine)
-                SendWorldMessage(logLine)
+                if not isQueued then
+                    local success = bot:JoinBattlegroundQueue(2, false)
+                    local status = success and "Successfully Queued" or "Failed to Queue"
+                    local logLine = " - " .. botName .. " (Online) - " .. status
+                    print(logLine)
+                    SendWorldMessage(logLine)
+                else
+                    local logLine = " - " .. botName .. " (Online) - Already Queued"
+                    print(logLine)
+                    SendWorldMessage(logLine)
+                end
             else
                 local logLine = " - " .. botName .. " (Offline)"
                 print(logLine)
