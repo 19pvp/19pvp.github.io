@@ -1331,10 +1331,10 @@ WHERE c.\`name\` <> r.\`name\`;
 
 const itemUpdateSql = (itemId: number, props: ItemProps) => {
   const assignments: string[] = []
-  
+
   // 1. SIMPLE UPDATES (Assign if defined in sheet)
   assignments.push(`\`bonding\` = ${soulboundBonding}`)
-  
+
   if (props.name !== undefined) {
     assignments.push(`\`description\` = IF(\`name\` <> ${sqlString(props.name)}, '', \`description\`)`)
     assignments.push(`\`name\` = ${sqlString(props.name)}`)

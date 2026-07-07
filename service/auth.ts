@@ -203,9 +203,7 @@ export const handleAuth = async (req: Request) => {
 
   if (url.pathname === '/auth/me') {
     const session = await getSession(req)
-    if (!session) {
-      return json({ authenticated: false }, { headers: corsHeaders })
-    }
+    if (!session) return json({ authenticated: false }, { headers: corsHeaders })
     return json({
       authenticated: true,
       user: session.user,
@@ -216,9 +214,7 @@ export const handleAuth = async (req: Request) => {
   if (url.pathname === '/auth/logout' && req.method === 'POST') {
     const cookies = getCookies(req.headers)
     const sessionId = cookies['logs_session']?.split('.')?.[0]
-    if (sessionId) {
-      sessions.delete(sessionId)
-    }
+    sessionId && sessions.delete(sessionId)
     const headers = new Headers(corsHeaders)
     setCookie(headers, {
       name: 'logs_session',

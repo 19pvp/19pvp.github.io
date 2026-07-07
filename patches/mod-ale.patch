@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..a5abeb8 100644
+index d8886ce..0e680af 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -10,7 +10,47 @@ index d8886ce..a5abeb8 100644
  #include "Chat.h"
  #include "ALEEventMgr.h"
  #include "Log.h"
-@@ -618,6 +619,7 @@ public:
+@@ -23,6 +24,7 @@
+ #include "Player.h"
+ #include "ScriptMgr.h"
+ #include "ScriptedGossip.h"
++#include "BattlegroundQueue.h"
+ 
+ class ALE_AllCreatureScript : public AllCreatureScript
+ {
+@@ -340,9 +342,18 @@ public:
+         ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_START,
+         ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_END,
+         ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_DESTROY,
+-        ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_CREATE
++        ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_CREATE,
++        ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_QUEUE_DISTRIBUTION,
++        ALLBATTLEGROUNDHOOK_ON_QUEUE_UPDATE_VALIDITY
+     }) { }
+ 
++    bool OnQueueUpdateValidity(BattlegroundQueue* /*queue*/, uint32 /*diff*/, BattlegroundTypeId bgTypeId, BattlegroundBracketId /*bracket_id*/, uint8 /*arenaType*/, bool /*isRated*/, uint32 /*arenaRating*/) override
++    {
++        if (bgTypeId == BATTLEGROUND_WS)
++            return false;
++        return true;
++    }
++
+     void OnBattlegroundStart(Battleground* bg) override
+     {
+         sALE->OnBGStart(bg, bg->GetBgTypeID(), bg->GetInstanceID());
+@@ -362,6 +373,11 @@ public:
+     {
+         sALE->OnBGCreate(bg, bg->GetBgTypeID(), bg->GetInstanceID());
+     }
++
++    bool OnBattlegroundQueueDistribution(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id, std::map<ObjectGuid, uint32>& distribution) override
++    {
++        return sALE->OnBGQueueDistribution(queue, bg, bracket_id, distribution);
++    }
+ };
+ 
+ class ALE_CommandSC : public CommandSC
+@@ -618,6 +634,7 @@ public:
          PLAYERHOOK_ON_TEXT_EMOTE,
          PLAYERHOOK_ON_SPELL_CAST,
          PLAYERHOOK_ON_LOGIN,
@@ -18,7 +58,7 @@ index d8886ce..a5abeb8 100644
          PLAYERHOOK_ON_LOGOUT,
          PLAYERHOOK_ON_CREATE,
          PLAYERHOOK_ON_SAVE,
-@@ -740,6 +742,19 @@ public:
+@@ -740,6 +757,19 @@ public:
      void OnPlayerMapChanged(Player* player) override
      {
          sALE->OnMapChanged(player);
@@ -38,7 +78,7 @@ index d8886ce..a5abeb8 100644
      }
  
      void OnPlayerGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action) override
-@@ -832,8 +847,17 @@ public:
+@@ -832,8 +862,17 @@ public:
          sALE->OnLogin(player);
      }
  
@@ -57,7 +97,7 @@ index d8886ce..a5abeb8 100644
      }
  
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
-index f83dd99..e24ea1b 100644
+index f83dd99..f5d75ad 100644
 --- a/src/LuaEngine/Hooks.h
 +++ b/src/LuaEngine/Hooks.h
 @@ -238,6 +238,9 @@ namespace Hooks
@@ -70,11 +110,27 @@ index f83dd99..e24ea1b 100644
  
          PLAYER_EVENT_COUNT
      };
+@@ -378,6 +381,7 @@ namespace Hooks
+         BG_EVENT_ON_END                                 = 2,    // (event, bg, bgId, instanceId, winner) - Needs to be added to TC
+         BG_EVENT_ON_CREATE                              = 3,    // (event, bg, bgId, instanceId) - Needs to be added to TC
+         BG_EVENT_ON_PRE_DESTROY                         = 4,    // (event, bg, bgId, instanceId) - Needs to be added to TC
++        BG_EVENT_ON_QUEUE_DISTRIBUTION                  = 5,    // (event, bg, bracketId, queueDistributionTable) - Can return true
+         BG_EVENT_COUNT
+     };
+ 
 diff --git a/src/LuaEngine/LuaEngine.h b/src/LuaEngine/LuaEngine.h
-index a21640d..dab827f 100644
+index a21640d..689e2ff 100644
 --- a/src/LuaEngine/LuaEngine.h
 +++ b/src/LuaEngine/LuaEngine.h
-@@ -479,6 +479,9 @@ public:
+@@ -44,6 +44,7 @@ class AuctionHouseObject;
+ struct AuctionEntry;
+ class Battleground;
+ typedef Battleground BattleGround;
++class BattlegroundQueue;
+ class Channel;
+ class Corpse;
+ class Creature;
+@@ -479,6 +480,9 @@ public:
      void OnTextEmote(Player* pPlayer, uint32 textEmote, uint32 emoteNum, ObjectGuid guid);
      void OnPlayerSpellCast(Player* pPlayer, Spell* pSpell, bool skipCheck);
      void OnLogin(Player* pPlayer);
@@ -84,25 +140,122 @@ index a21640d..dab827f 100644
      void OnLogout(Player* pPlayer);
      void OnCreate(Player* pPlayer);
      void OnDelete(uint32 guid);
+@@ -591,6 +595,7 @@ public:
+     void OnBGEnd(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId, TeamId winner);
+     void OnBGCreate(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
+     void OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
++    bool OnBGQueueDistribution(BattlegroundQueue* queue, BattleGround* bg, BattlegroundBracketId bracketId, std::map<ObjectGuid, uint32>& distribution);
+ 
+     /* Ticket */
+     void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..361ab8c 100644
+index c0acc01..3c39348 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
-@@ -566,6 +566,9 @@ ALERegister<Player> PlayerMethods[] =
+@@ -165,6 +165,10 @@ luaL_Reg GlobalMethods[] =
+     { "CreateLuaEvent", &LuaGlobalFunctions::CreateLuaEvent },
+     { "RemoveEventById", &LuaGlobalFunctions::RemoveEventById },
+     { "RemoveEvents", &LuaGlobalFunctions::RemoveEvents },
++    { "CreateBattleground", &LuaGlobalFunctions::CreateBattleground },
++    { "GetBattleground", &LuaGlobalFunctions::GetBattleground },
++    { "GetPlayersInQueue", &LuaGlobalFunctions::GetPlayersInQueue },
++    { "GetBattlegroundBracketIdByLevel", &LuaGlobalFunctions::GetBattlegroundBracketIdByLevel },
+     { "PerformIngameSpawn", &LuaGlobalFunctions::PerformIngameSpawn },
+     { "CreatePacket", &LuaGlobalFunctions::CreatePacket },
+     { "AddVendorItem", &LuaGlobalFunctions::AddVendorItem },
+@@ -566,6 +570,13 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
 +    { "SetBotStrategy", &LuaPlayer::SetBotStrategy },
 +    { "HasBotStrategy", &LuaPlayer::HasBotStrategy },
 +    { "JoinBattlegroundQueue", &LuaPlayer::JoinBattlegroundQueue },
++    { "InviteToBattleground", &LuaPlayer::InviteToBattleground },
++    { "AddToBattleground", &LuaPlayer::AddToBattleground },
++    { "RemoveFromBattlegroundQueue", &LuaPlayer::RemoveFromBattlegroundQueue },
++    { "GetBattlegroundQueueTeam", &LuaPlayer::GetBattlegroundQueueTeam },
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
+@@ -1380,6 +1391,8 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+     { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
+     { "GetWinner", &LuaBattleGround::GetWinner },
+     { "GetStatus", &LuaBattleGround::GetStatus },
++    { "EndBattleground", &LuaBattleGround::EndBattleground },
++    { "StartBattleground", &LuaBattleGround::StartBattleground },
+ 
+     { NULL, NULL }
+ };
+diff --git a/src/LuaEngine/hooks/BattleGroundHooks.cpp b/src/LuaEngine/hooks/BattleGroundHooks.cpp
+index ec70cf5..407b3b9 100644
+--- a/src/LuaEngine/hooks/BattleGroundHooks.cpp
++++ b/src/LuaEngine/hooks/BattleGroundHooks.cpp
+@@ -56,3 +56,60 @@ void ALE::OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instance
+     Push(instanceId);
+     CallAllFunctions(BGEventBindings, key);
+ }
++
++bool ALE::OnBGQueueDistribution(BattlegroundQueue* queue, BattleGround* bg, BattlegroundBracketId bracketId, std::map<ObjectGuid, uint32>& distribution)
++{
++    if (!ALEConfig::GetInstance().IsALEEnabled())
++        return false;
++
++    std::lock_guard<std::recursive_mutex> __guard(ALE::GetLock());
++
++    if (!L) return false;
++
++    lua_getglobal(L, "OnBattlegroundQueueDistribution");
++    if (lua_isfunction(L, -1))
++    {
++        Push(bg);
++        Push((uint32)bracketId);
++        
++        if (lua_pcall(L, 2, 1, 0) == 0)
++        {
++            bool handled = false;
++            if (lua_istable(L, -1))
++            {
++                handled = true;
++                lua_pushnil(L);
++                while (lua_next(L, -2) != 0)
++                {
++                    if (lua_isstring(L, -2) && lua_isnumber(L, -1))
++                    {
++                        std::string guidStr = lua_tostring(L, -2);
++                        uint32 teamId = lua_tonumber(L, -1);
++                        distribution[ObjectGuid(uint64(std::stoull(guidStr, nullptr, 0)))] = teamId;
++                    }
++                    else if (lua_isnumber(L, -2) && lua_isnumber(L, -1))
++                    {
++                        uint64 guidRaw = lua_tonumber(L, -2);
++                        uint32 teamId = lua_tonumber(L, -1);
++                        distribution[ObjectGuid(guidRaw)] = teamId;
++                    }
++                    lua_pop(L, 1);
++                }
++            }
++            lua_pop(L, 1);
++            return handled;
++        }
++        else
++        {
++            // pop error message
++            std::string err = lua_tostring(L, -1);
++            lua_pop(L, 1);
++            LOG_ERROR("eluna", "OnBattlegroundQueueDistribution error: {}", err);
++        }
++    }
++    else
++    {
++        lua_pop(L, 1);
++    }
++    return false;
++}
 diff --git a/src/LuaEngine/hooks/PlayerHooks.cpp b/src/LuaEngine/hooks/PlayerHooks.cpp
-index 7649274..41a1cf7 100644
+index 7649274..2b0fa3d 100644
 --- a/src/LuaEngine/hooks/PlayerHooks.cpp
 +++ b/src/LuaEngine/hooks/PlayerHooks.cpp
-@@ -344,6 +344,31 @@ void ALE::OnLogin(Player* pPlayer)
+@@ -344,6 +344,33 @@ void ALE::OnLogin(Player* pPlayer)
      CallAllFunctions(PlayerEventBindings, key);
  }
  
@@ -119,6 +272,7 @@ index 7649274..41a1cf7 100644
 +    Push(pPlayer);
 +    Push(bg ? bg->GetMapId() : 0);
 +    Push(bg ? bg->GetInstanceID() : 0);
++    Push(bg);
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
 +
@@ -128,14 +282,184 @@ index 7649274..41a1cf7 100644
 +    Push(pPlayer);
 +    Push(bg ? bg->GetMapId() : 0);
 +    Push(bg ? bg->GetInstanceID() : 0);
++    Push(bg);
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
 +
  void ALE::OnLogout(Player* pPlayer)
  {
      START_HOOK(PLAYER_EVENT_ON_LOGOUT);
+diff --git a/src/LuaEngine/methods/BattleGroundMethods.h b/src/LuaEngine/methods/BattleGroundMethods.h
+index 70e97bb..fe74899 100644
+--- a/src/LuaEngine/methods/BattleGroundMethods.h
++++ b/src/LuaEngine/methods/BattleGroundMethods.h
+@@ -209,5 +209,33 @@ namespace LuaBattleGround
+         ALE::Push(L, bg->GetStatus());
+         return 1;
+     }
++    /**
++     * Ends the [BattleGround] with the specified winner.
++     *
++     *     enum TeamId
++     *     {
++     *         TEAM_ALLIANCE = 0,
++     *         TEAM_HORDE = 1,
++     *         TEAM_NEUTRAL = 2
++     *     };
++     *
++     * @param uint32 winnerTeamId
++     */
++    int EndBattleground(lua_State* L, BattleGround* bg)
++    {
++        uint32 winnerTeamId = ALE::CHECKVAL<uint32>(L, 2);
++        bg->EndBattleground((TeamId)winnerTeamId);
++        return 0;
++    }
++
++    /**
++     * Starts the battleground (adds it to the active list and starts the join/prep timer).
++     */
++    int StartBattleground(lua_State* L, BattleGround* bg)
++    {
++        if (bg)
++            bg->StartBattleground();
++        return 0;
++    }
+ };
+ #endif
+diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
+index cebb7bc..9ffbe04 100644
+--- a/src/LuaEngine/methods/GlobalMethods.h
++++ b/src/LuaEngine/methods/GlobalMethods.h
+@@ -14,6 +14,7 @@
+ #include "GameTime.h"
+ #include "SharedDefines.h"
+ #include "OutdoorPvPMgr.h"
++#include "BattlegroundMgr.h"
+ #include "../../../../src/server/scripts/OutdoorPvP/OutdoorPvPNA.h"
+ 
+ 
+@@ -163,6 +164,118 @@ namespace LuaGlobalFunctions
+         return 1;
+     }
+ 
++    /**
++     * Creates a new Battleground instance of the given type and bracket.
++     *
++     * @param uint32 bgTypeId
++     * @param uint32 bracketId
++     * @return BattleGround
++     */
++    int CreateBattleground(lua_State* L)
++    {
++        uint32 bgTypeId = ALE::CHECKVAL<uint32>(L, 1);
++        uint32 bracketId = ALE::CHECKVAL<uint32>(L, 2);
++
++        Battleground* bgTemplate = BattlegroundMgr::instance()->GetBattlegroundTemplate((BattlegroundTypeId)bgTypeId);
++        if (!bgTemplate)
++        {
++            ALE::Push(L); // nil
++            return 1;
++        }
++
++        PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketById(bgTemplate->GetMapId(), (BattlegroundBracketId)bracketId);
++        if (!bracketEntry)
++        {
++            ALE::Push(L); // nil
++            return 1;
++        }
++
++        Battleground* bg = BattlegroundMgr::instance()->CreateNewBattleground((BattlegroundTypeId)bgTypeId, bracketEntry, 0, false);
++        ALE::Push(L, bg);
++        return 1;
++    }
++
++    /**
++     * Returns an active [BattleGround] instance by instanceId and bgTypeId.
++     *
++     * @param uint32 instanceId
++     * @param uint32 bgTypeId
++     * @return BattleGround
++     */
++    int GetBattleground(lua_State* L)
++    {
++        uint32 instanceId = ALE::CHECKVAL<uint32>(L, 1);
++        uint32 bgTypeIdVal = ALE::CHECKVAL<uint32>(L, 2);
++
++        Battleground* bg = sBattlegroundMgr->GetBattleground(instanceId, (BattlegroundTypeId)bgTypeIdVal);
++        ALE::Push(L, bg);
++        return 1;
++    }
++
++    /**
++     * Gets a table of all players currently in the queue for the specified bgTypeId.
++     *
++     * @param uint32 bgTypeId
++     * @param int32 bracketId (optional, default -1 for all)
++     * @return table players
++     */
++    int GetPlayersInQueue(lua_State* L)
++    {
++        uint32 bgTypeIdVal = ALE::CHECKVAL<uint32>(L, 1);
++        int32 bracketIdVal = ALE::CHECKVAL<int32>(L, 2, -1);
++
++        BattlegroundTypeId bgTypeId = BattlegroundTypeId(bgTypeIdVal);
++        BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bgTypeId, 0);
++        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
++
++        lua_newtable(L);
++        int index = 1;
++
++        for (auto const& [guid, ginfo] : bgQueue.m_QueuedPlayers)
++        {
++            if (bracketIdVal != -1 && ginfo->BracketId != bracketIdVal)
++                continue;
++
++            Player* player = ObjectAccessor::FindConnectedPlayer(guid);
++            if (player)
++            {
++                lua_pushinteger(L, index++);
++                ALE::Push(L, player);
++                lua_settable(L, -3);
++            }
++        }
++
++        return 1;
++    }
++
++    /**
++     * Gets the BattlegroundBracketId for the given bgTypeId and player level.
++     *
++     * @param uint32 bgTypeId
++     * @param uint32 level
++     * @return uint32 bracketId
++     */
++    int GetBattlegroundBracketIdByLevel(lua_State* L)
++    {
++        uint32 bgTypeIdVal = ALE::CHECKVAL<uint32>(L, 1);
++        uint32 level = ALE::CHECKVAL<uint32>(L, 2);
++
++        Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(BattlegroundTypeId(bgTypeIdVal));
++        if (!bg)
++        {
++            ALE::Push(L, 0);
++            return 1;
++        }
++
++        PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), level);
++        if (bracketEntry)
++            ALE::Push(L, (uint32)bracketEntry->GetBracketId());
++        else
++            ALE::Push(L, 0);
++
++        return 1;
++    }
++
+     /**
+      * Returns the instance ID of the Lua state. Returns 0 for continent maps and the world state.
+      *
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..c3cb699 100644
+index c39801f..3e304c6 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -10,6 +10,9 @@
@@ -148,7 +472,7 @@ index c39801f..c3cb699 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -5175,6 +5178,111 @@ namespace LuaPlayer
+@@ -5175,6 +5178,275 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
@@ -255,6 +579,170 @@ index c39801f..c3cb699 100644
 +
 +        player->GetSession()->QueuePacket(new WorldPacket(packet));
 +        ALE::Push(L, true);
++        return 1;
++    }
++
++    /**
++     * Instantly invites the player to a battleground on a specific team, bypassing normal queue logic.
++     *
++     * @param BattleGround bg The Battleground object
++     * @param uint32 teamId The team to place the player in (0 = Alliance, 1 = Horde)
++     * @return bool success
++     */
++    int InviteToBattleground(lua_State* L, Player* player)
++    {
++        Battleground* bg = ALE::CHECKOBJ<Battleground>(L, 2);
++        uint32 teamId = ALE::CHECKVAL<uint32>(L, 3);
++
++        if (!player || !bg || teamId >= PVP_TEAMS_COUNT)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bg->GetBgTypeID(), bg->GetArenaType());
++        
++        player->AddBattlegroundQueueId(bgQueueTypeId);
++        uint32 queueSlot = player->GetBattlegroundQueueIndex(bgQueueTypeId);
++        player->SetInviteForBattlegroundQueueType(bgQueueTypeId, bg->GetInstanceID());
++        bg->IncreaseInvitedCount((TeamId)teamId);
++
++        WorldPacket data;
++        sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, queueSlot, STATUS_WAIT_JOIN, INVITE_ACCEPT_WAIT_TIME, 0, bg->GetArenaType(), (TeamId)teamId);
++        player->GetSession()->SendPacket(&data);
++
++        ALE::Push(L, true);
++        return 1;
++    }
++
++    /**
++     * Instantly teleports and adds the player directly to a battleground, bypassing invitation accepting.
++     *
++     * @param BattleGround bg The Battleground object
++     * @param uint32 teamId The team to place the player in (0 = Alliance, 1 = Horde)
++     * @return bool success
++     */
++    int AddToBattleground(lua_State* L, Player* player)
++    {
++        Battleground* bg = ALE::CHECKOBJ<Battleground>(L, 2);
++        uint32 teamId = ALE::CHECKVAL<uint32>(L, 3);
++
++        if (!player || !bg || teamId >= PVP_TEAMS_COUNT)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        // Resurrect if dead
++        if (!player->IsAlive())
++        {
++            player->ResurrectPlayer(1.0f);
++            player->SpawnCorpseBones();
++        }
++
++        // Leave existing queues
++        for (uint8 i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
++        {
++            auto playerBgQueueTypeId = player->GetBattlegroundQueueTypeId(i);
++            if (playerBgQueueTypeId != BATTLEGROUND_QUEUE_NONE)
++            {
++                player->RemoveBattlegroundQueueId(playerBgQueueTypeId);
++                sBattlegroundMgr->GetBattlegroundQueue(playerBgQueueTypeId).RemovePlayer(player->GetGUID(), true);
++            }
++        }
++
++        // Leave existing battleground
++        if (Battleground* currentBg = player->GetBattleground())
++            currentBg->RemovePlayerAtLeave(player);
++
++        // Set entry point if not in battleground
++        if (!player->InBattleground())
++            player->SetEntryPoint();
++
++        BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bg->GetBgTypeID(), bg->GetArenaType());
++        player->AddBattlegroundQueueId(bgQueueTypeId);
++        uint32 queueSlot = player->GetBattlegroundQueueIndex(bgQueueTypeId);
++        player->SetInviteForBattlegroundQueueType(bgQueueTypeId, bg->GetInstanceID());
++        player->SetBattlegroundId(bg->GetInstanceID(), bg->GetBgTypeID(), queueSlot, true, false, (TeamId)teamId);
++
++        // Send status packet to client
++        WorldPacket data;
++        sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, queueSlot, STATUS_IN_PROGRESS, 0, bg->GetStartTime(), bg->GetArenaType(), (TeamId)teamId);
++        player->SendDirectMessage(&data);
++
++        // Teleport to the battleground map start position
++        sBattlegroundMgr->SendToBattleground(player, bg->GetInstanceID(), bg->GetBgTypeID());
++
++        ALE::Push(L, true);
++        return 1;
++    }
++
++    /**
++     * Removes the player/bot from the queue of the specified bgTypeId.
++     *
++     * @param uint32 bgTypeId
++     * @return bool success
++     */
++    int RemoveFromBattlegroundQueue(lua_State* L, Player* player)
++    {
++        if (!player)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        uint32 bgTypeIdVal = ALE::CHECKVAL<uint32>(L, 2);
++        BattlegroundTypeId bgTypeId = BattlegroundTypeId(bgTypeIdVal);
++        BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bgTypeId, 0);
++        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
++
++        if (player->InBattlegroundQueueForBattlegroundQueueType(bgQueueTypeId))
++        {
++            uint32 queueSlot = player->GetBattlegroundQueueIndex(bgQueueTypeId);
++            bgQueue.RemovePlayer(player->GetGUID(), true);
++            player->RemoveBattlegroundQueueId(bgQueueTypeId);
++
++            // Send status packet update to client
++            WorldPacket data;
++            sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, nullptr, queueSlot, STATUS_NONE, 0, 0, 0, TEAM_NEUTRAL);
++            player->SendDirectMessage(&data);
++
++            ALE::Push(L, true);
++            return 1;
++        }
++
++        ALE::Push(L, false);
++        return 1;
++    }
++
++    /**
++     * Gets the team ID the player is currently queued for in the specified battleground.
++     *
++     * @param uint32 bgTypeId
++     * @return uint32 teamId
++     */
++    int GetBattlegroundQueueTeam(lua_State* L, Player* player)
++    {
++        if (!player)
++        {
++            ALE::Push(L, (uint32)TEAM_NEUTRAL);
++            return 1;
++        }
++
++        uint32 bgTypeIdVal = ALE::CHECKVAL<uint32>(L, 2);
++        BattlegroundTypeId bgTypeId = BattlegroundTypeId(bgTypeIdVal);
++        BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bgTypeId, 0);
++        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
++
++        GroupQueueInfo ginfo;
++        if (bgQueue.GetPlayerGroupInfoData(player->GetGUID(), &ginfo))
++        {
++            ALE::Push(L, (uint32)ginfo.teamId);
++        }
++        else
++        {
++            ALE::Push(L, (uint32)player->GetTeamId());
++        }
 +        return 1;
 +    }
  };

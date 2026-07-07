@@ -8,16 +8,15 @@
   - `sql/generated-item-props.sql`: per-item property/stat/name/use-effect updates from the ITEM sheet.
   - `sql/generated-item-template.sql`: shared item normalization, level relaxation, armor restrictions, weapon
     restrictions, and shield restrictions.
-  - `sql/generated-quests.sql`: generated quest data plus NPC name/subname/spawn updates from the QUEST and NPC
-    sheets.
+  - `sql/generated-quests.sql`: generated quest data plus NPC name/subname/spawn updates from the QUEST and NPC sheets.
 - `deno task sql` runs `refresh-db` first, then applies changed generated SQL files.
 - `deno task sql:apply` applies changed generated SQL files without regenerating them first.
 - `deno task sql:dry` validates changed generated SQL files without applying or updating stored hashes.
 - The generated SQL runner stores SHA-1 hashes in Deno `localStorage`, using `DENO_DIR=/tmp/deno-cache` and
   `--location=http://19pvp.local` from `deno.json`.
 - With no positional file arguments, the runner checks every `sql/generated-*.sql` file.
-- With positional file arguments, it checks only those files. Filenames are resolved relative to `sql/`, so
-  these are equivalent:
+- With positional file arguments, it checks only those files. Filenames are resolved relative to `sql/`, so these are
+  equivalent:
   - `deno task sql:apply -- generated-item-template.sql`
   - `deno task sql:apply -- sql/generated-item-template.sql`
 - Use `--force` to rerun selected generated SQL files even when their stored SHA-1 hash matches.
@@ -57,6 +56,7 @@
 - Character creation: `core/src/server/game/Entities/Player/Player.cpp`; use this for level 19 start level, location,
   outfit order, custom spells, skills, ammo, and durability behavior.
 - Item rules/equipment: `core/src/server/game/Entities/Item/` and player equip checks in `Entities/Player/Player.cpp`.
+- Worldserver is not accessible locally and unreachable, prompt the user to get logs or status from it
 
 ## Automated Patches & Modules
 

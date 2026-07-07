@@ -1,0 +1,216 @@
+diff --git a/src/server/database/Updater/UpdateFetcher.cpp b/src/server/database/Updater/UpdateFetcher.cpp
+index f21841c0b..d81b35cd2 100644
+--- a/src/server/database/Updater/UpdateFetcher.cpp
++++ b/src/server/database/Updater/UpdateFetcher.cpp
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include "UpdateFetcher.h"
++#include "BuiltInConfig.h"
+ #include "CryptoHash.h"
+ #include "DBUpdater.h"
+ #include "Field.h"
+@@ -160,9 +161,10 @@ UpdateFetcher::DirectoryStorage UpdateFetcher::ReceiveIncludedDirectories() cons
+             moduleList.emplace_back(itr);
+ 
+         // data/sql
++        std::filesystem::path const modulesBasePath = std::filesystem::path(BuiltInConfig::GetSourceDirectory()) / "modules";
+         for (auto const& moduleName : moduleList)
+         {
+-            std::string path = _sourceDirectory->generic_string() + "/modules/" + moduleName + "/data/sql/"; // modules/mod-name/data/sql/
++            std::string path = (modulesBasePath / moduleName / "data/sql").generic_string(); // modules/mod-name/data/sql/
+             Path const p{path};
+             if (!is_directory(p))
+                 continue;
+@@ -176,7 +178,8 @@ UpdateFetcher::DirectoryStorage UpdateFetcher::ReceiveIncludedDirectories() cons
+                 std::filesystem::path dirPath = itr->path(); // modules/mod-name/data/sql/db-world
+                 std::string dirName = dirPath.filename().string(); // db-world
+ 
+-                if (dirName.find(_dbModuleName) == std::string::npos)
++                bool const isPlayerbotsAlias = _dbModuleName == "db_playerbot" && dirName.find("playerbots") != std::string::npos;
++                if (dirName.find(_dbModuleName) == std::string::npos && !isPlayerbotsAlias)
+                     continue;
+ 
+                 DirectoryEntry const entry = { dirPath, AppliedFileEntry::StateConvert("MODULE") };
+diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.cpp b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
+index 169f642ec..0d6bab3b5 100644
+--- a/src/server/game/Battlegrounds/BattlegroundQueue.cpp
++++ b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
+@@ -819,11 +819,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+             m_SelectionPools[TEAM_ALLIANCE].Init();
+             m_SelectionPools[TEAM_HORDE].Init();
+ 
+-            // call a function that does the job for us
+-            FillPlayersToBG(bg, bracket_id);
++            std::map<ObjectGuid, uint32> distribution;
++            if (sScriptMgr->OnBattlegroundQueueDistribution(this, bg, bracket_id, distribution))
++            {
++                // Script handled the distribution!
++                for (auto const& pair : distribution)
++                {
++                    ObjectGuid guid = pair.first;
++                    uint32 teamId = pair.second;
++
++                    auto qItr = m_QueuedPlayers.find(guid);
++                    if (qItr != m_QueuedPlayers.end() && qItr->second)
++                    {
++                        GroupQueueInfo* ginfo = qItr->second;
++                        if (ginfo->Players.size() > 1)
++                        {
++                            // Split player into their own group queue info
++                            ginfo->Players.erase(guid);
++
++                            GroupQueueInfo* newGinfo = new GroupQueueInfo;
++                            newGinfo->BgTypeId = ginfo->BgTypeId;
++                            newGinfo->ArenaType = ginfo->ArenaType;
++                            newGinfo->IsRated = ginfo->IsRated;
++                            newGinfo->IsInvitedToBGInstanceGUID = 0;
++                            newGinfo->JoinTime = ginfo->JoinTime;
++                            newGinfo->RemoveInviteTime = ginfo->RemoveInviteTime;
++                            newGinfo->teamId = (TeamId)teamId;
++                            newGinfo->ArenaTeamId = 0;
++                            newGinfo->ArenaMatchmakerRating = ginfo->ArenaMatchmakerRating;
++                            newGinfo->OpponentsTeamRating = ginfo->OpponentsTeamRating;
++                            newGinfo->Players.insert(guid);
++
++                            m_QueuedPlayers[guid] = newGinfo;
++
++                            // Normal matching (bypassing premade index for custom distribution)
++                            uint8 index = BG_QUEUE_NORMAL_ALLIANCE + teamId;
++                            m_QueuedGroups[bracket_id][index].push_back(newGinfo);
++
++                            InviteGroupToBG(newGinfo, bg, (TeamId)teamId);
++                        }
++                        else
++                        {
++                            InviteGroupToBG(ginfo, bg, (TeamId)teamId);
++                        }
++                    }
++                }
++            }
++            else
++            {
++                // call a function that does the job for us
++                FillPlayersToBG(bg, bracket_id);
+ 
+-            // now everything is set, invite players
+-            InviteAllGroupsToBg(bg);
++                // now everything is set, invite players
++                InviteAllGroupsToBg(bg);
++            }
+ 
+             if (!bg->HasFreeSlots())
+                 bg->RemoveFromBGFreeSlotQueue();
+@@ -899,8 +948,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+                 return;
+             }
+ 
+-            // invite players
+-            InviteAllGroupsToBg(bg);
++            std::map<ObjectGuid, uint32> distribution;
++            if (sScriptMgr->OnBattlegroundQueueDistribution(this, bg, bracket_id, distribution))
++            {
++                // Script handled the distribution! Clear selection pools from CheckNormalMatch
++                m_SelectionPools[TEAM_ALLIANCE].Init();
++                m_SelectionPools[TEAM_HORDE].Init();
++
++                for (auto const& pair : distribution)
++                {
++                    ObjectGuid guid = pair.first;
++                    uint32 teamId = pair.second;
++
++                    auto qItr = m_QueuedPlayers.find(guid);
++                    if (qItr != m_QueuedPlayers.end() && qItr->second)
++                    {
++                        GroupQueueInfo* ginfo = qItr->second;
++                        if (ginfo->Players.size() > 1)
++                        {
++                            // Split player into their own group queue info
++                            ginfo->Players.erase(guid);
++
++                            GroupQueueInfo* newGinfo = new GroupQueueInfo;
++                            newGinfo->BgTypeId = ginfo->BgTypeId;
++                            newGinfo->ArenaType = ginfo->ArenaType;
++                            newGinfo->IsRated = ginfo->IsRated;
++                            newGinfo->IsInvitedToBGInstanceGUID = 0;
++                            newGinfo->JoinTime = ginfo->JoinTime;
++                            newGinfo->RemoveInviteTime = ginfo->RemoveInviteTime;
++                            newGinfo->teamId = (TeamId)teamId;
++                            newGinfo->ArenaTeamId = 0;
++                            newGinfo->ArenaMatchmakerRating = ginfo->ArenaMatchmakerRating;
++                            newGinfo->OpponentsTeamRating = ginfo->OpponentsTeamRating;
++                            newGinfo->Players.insert(guid);
++
++                            m_QueuedPlayers[guid] = newGinfo;
++
++                            // Normal matching (bypassing premade index for custom distribution)
++                            uint8 index = BG_QUEUE_NORMAL_ALLIANCE + teamId;
++                            m_QueuedGroups[bracket_id][index].push_back(newGinfo);
++
++                            InviteGroupToBG(newGinfo, bg, (TeamId)teamId);
++                        }
++                        else
++                        {
++                            InviteGroupToBG(ginfo, bg, (TeamId)teamId);
++                        }
++                    }
++                }
++            }
++            else
++            {
++                // Default native C++ behavior (CheckNormalMatch already filled m_SelectionPools)
++                InviteAllGroupsToBg(bg);
++            }
+ 
+             bg->StartBattleground();
+         }
+diff --git a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
+index 9881a25f0..246cd3a8a 100644
+--- a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
++++ b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
+@@ -67,6 +67,12 @@ void ScriptMgr::OnAddGroup(BattlegroundQueue* queue, GroupQueueInfo* ginfo, uint
+ bool ScriptMgr::CanFillPlayersToBG(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id)
+ {
+     CALL_ENABLED_BOOLEAN_HOOKS(AllBattlegroundScript, ALLBATTLEGROUNDHOOK_CAN_FILL_PLAYERS_TO_BG, !script->CanFillPlayersToBG(queue, bg, bracket_id));
++    return true;
++}
++
++bool ScriptMgr::OnBattlegroundQueueDistribution(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id, std::map<ObjectGuid, uint32>& distribution)
++{
++    CALL_ENABLED_BOOLEAN_HOOKS_WITH_DEFAULT_FALSE(AllBattlegroundScript, ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_QUEUE_DISTRIBUTION, script->OnBattlegroundQueueDistribution(queue, bg, bracket_id, distribution));
+ }
+ 
+ bool ScriptMgr::IsCheckNormalMatch(BattlegroundQueue* queue, Battleground* bgTemplate, BattlegroundBracketId bracket_id, uint32 minPlayers, uint32 maxPlayers)
+diff --git a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.h b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.h
+index 108f3cf7f..21a2bd6fc 100644
+--- a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.h
++++ b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.h
+@@ -43,6 +43,7 @@ enum AllBattlegroundHook
+     ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_CREATE,
+     ALLBATTLEGROUNDHOOK_CAN_ADD_GROUP_TO_MATCHING_POOL,
+     ALLBATTLEGROUNDHOOK_GET_PLAYER_MATCHMAKING_RATING,
++    ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_QUEUE_DISTRIBUTION,
+     ALLBATTLEGROUNDHOOK_END
+ };
+ 
+@@ -92,6 +93,8 @@ public:
+ 
+     [[nodiscard]] virtual bool CanFillPlayersToBG(BattlegroundQueue* /*queue*/, Battleground* /*bg*/, BattlegroundBracketId /*bracket_id*/) { return true; }
+ 
++    [[nodiscard]] virtual bool OnBattlegroundQueueDistribution(BattlegroundQueue* /*queue*/, Battleground* /*bg*/, BattlegroundBracketId /*bracket_id*/, std::map<ObjectGuid, uint32>& /*distribution*/) { return false; }
++
+     [[nodiscard]] virtual bool IsCheckNormalMatch(BattlegroundQueue* /*queue*/, Battleground* /*bgTemplate*/, BattlegroundBracketId /*bracket_id*/, uint32 /*minPlayers*/, uint32 /*maxPlayers*/) { return false; };
+ 
+     [[nodiscard]] virtual bool CanSendMessageBGQueue(BattlegroundQueue* /*queue*/, Player* /*leader*/, Battleground* /*bg*/, PvPDifficultyEntry const* /*bracketEntry*/) { return true; }
+diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
+index 9fd4ff356..fe6d5b66e 100644
+--- a/src/server/game/Scripting/ScriptMgr.h
++++ b/src/server/game/Scripting/ScriptMgr.h
+@@ -625,6 +625,7 @@ public: /* BGScript */
+     void OnAddGroup(BattlegroundQueue* queue, GroupQueueInfo* ginfo, uint32& index, Player* leader, Group* group, BattlegroundTypeId bgTypeId, PvPDifficultyEntry const* bracketEntry,
+         uint8 arenaType, bool isRated, bool isPremade, uint32 arenaRating, uint32 matchmakerRating, uint32 arenaTeamId, uint32 opponentsArenaTeamId);
+     bool CanFillPlayersToBG(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id);
++    bool OnBattlegroundQueueDistribution(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id, std::map<ObjectGuid, uint32>& distribution);
+     bool IsCheckNormalMatch(BattlegroundQueue* queue, Battleground* bgTemplate, BattlegroundBracketId bracket_id, uint32 minPlayers, uint32 maxPlayers);
+     bool CanSendMessageBGQueue(BattlegroundQueue* queue, Player* leader, Battleground* bg, PvPDifficultyEntry const* bracketEntry);
+     bool OnBeforeSendJoinMessageArenaQueue(BattlegroundQueue* queue, Player* leader, GroupQueueInfo* ginfo, PvPDifficultyEntry const* bracketEntry, bool isRated);
