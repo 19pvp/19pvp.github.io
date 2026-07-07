@@ -187,7 +187,7 @@ index c0acc01..3c39348 100644
      { NULL, NULL }
  };
 diff --git a/src/LuaEngine/hooks/BattleGroundHooks.cpp b/src/LuaEngine/hooks/BattleGroundHooks.cpp
-index ec70cf5..407b3b9 100644
+index ec70cf5..af65ac0 100644
 --- a/src/LuaEngine/hooks/BattleGroundHooks.cpp
 +++ b/src/LuaEngine/hooks/BattleGroundHooks.cpp
 @@ -56,3 +56,60 @@ void ALE::OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instance
@@ -195,7 +195,7 @@ index ec70cf5..407b3b9 100644
      CallAllFunctions(BGEventBindings, key);
  }
 +
-+bool ALE::OnBGQueueDistribution(BattlegroundQueue* queue, BattleGround* bg, BattlegroundBracketId bracketId, std::map<ObjectGuid, uint32>& distribution)
++bool ALE::OnBGQueueDistribution(BattlegroundQueue* /*queue*/, BattleGround* bg, BattlegroundBracketId bracketId, std::map<ObjectGuid, uint32>& distribution)
 +{
 +    if (!ALEConfig::GetInstance().IsALEEnabled())
 +        return false;
@@ -290,7 +290,7 @@ index 7649274..2b0fa3d 100644
  {
      START_HOOK(PLAYER_EVENT_ON_LOGOUT);
 diff --git a/src/LuaEngine/methods/BattleGroundMethods.h b/src/LuaEngine/methods/BattleGroundMethods.h
-index 70e97bb..fe74899 100644
+index 70e97bb..e155db1 100644
 --- a/src/LuaEngine/methods/BattleGroundMethods.h
 +++ b/src/LuaEngine/methods/BattleGroundMethods.h
 @@ -209,5 +209,33 @@ namespace LuaBattleGround
@@ -319,7 +319,7 @@ index 70e97bb..fe74899 100644
 +    /**
 +     * Starts the battleground (adds it to the active list and starts the join/prep timer).
 +     */
-+    int StartBattleground(lua_State* L, BattleGround* bg)
++    int StartBattleground(lua_State* /*L*/, BattleGround* bg)
 +    {
 +        if (bg)
 +            bg->StartBattleground();
