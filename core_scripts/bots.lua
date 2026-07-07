@@ -60,7 +60,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
         for _, botName in ipairs(fixedRoster) do
             local bot = GetPlayerByName(botName)
             if bot then
-                local isQueued = bot:InBattleGroundQueue()
+                local isQueued = bot:InBattlegroundQueue()
                 local status = isQueued and "Queued" or "Not Queued"
                 local logLine = " - " .. botName .. " (Online) - " .. status
                 print(logLine)
