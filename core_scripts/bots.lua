@@ -56,7 +56,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
         -- Log in-game
         SendWorldMessage("[WSG Queue] Player " .. name .. " has queued for Warsong Gulch.")
         SendWorldMessage("[WSG Queue] Current Fixed Roster Queue Status:")
-
+        -- wierd
         for _, botName in ipairs(fixedRoster) do
             local bot = GetPlayerByName(botName)
             if bot then
