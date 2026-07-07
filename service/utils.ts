@@ -1,7 +1,7 @@
 import { env } from './env.ts'
 
 export const cors = {
-  'access-control-allow-origin': env.WEB_ORIGIN,
+  'access-control-allow-origin': env.PUBLIC_BASE_URL,
   'access-control-allow-methods': 'GET, POST, OPTIONS',
   'access-control-allow-headers': 'content-type,last-event-id',
   'access-control-allow-credentials': 'true',

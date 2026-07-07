@@ -6,8 +6,7 @@ const CLIENT_ID = env.DISCORD_APP_ID
 const CLIENT_SECRET = env.DISCORD_CLIENT_SECRET
 const GUILD_ID = env.DISCORD_GUILD_ID
 const BOT_TOKEN = env.DISCORD_TOKEN
-const PUBLIC_BASE_URL = env.PUBLIC_BASE_URL
-const WEB_ORIGIN = env.WEB_ORIGIN
+const BASE_URL = env.PUBLIC_BASE_URL
 
 const roleGMLevel: Record<string, number> = {
   [env.GM_LEVEL_1]: 1,
@@ -66,7 +65,7 @@ export const handleAuth = async (req: Request) => {
 
   // Configure CORS headers (always present and non-empty)
   const corsHeaders = {
-    'access-control-allow-origin': WEB_ORIGIN,
+    'access-control-allow-origin': BASE_URL,
     'access-control-allow-credentials': 'true',
   }
 
@@ -76,7 +75,7 @@ export const handleAuth = async (req: Request) => {
     // Clear state after 5 mins
     setTimeout(() => states.delete(state), 5 * 60 * 1000)
 
-    const redirectUri = `${PUBLIC_BASE_URL}/auth/discord/callback`
+    const redirectUri = `${BASE_URL}/auth/discord/callback`
     const discordUrl = `https://discord.com/api/oauth2/authorize?${new URLSearchParams({
       client_id: CLIENT_ID,
       redirect_uri: redirectUri,
@@ -125,7 +124,7 @@ export const handleAuth = async (req: Request) => {
         client_secret: CLIENT_SECRET,
         grant_type: 'authorization_code',
         code,
-        redirect_uri: `${PUBLIC_BASE_URL}/auth/discord/callback`,
+        redirect_uri: `${BASE_URL}/auth/discord/callback`,
       }),
     })
     if (!tokenRes.ok) {
@@ -173,7 +172,7 @@ export const handleAuth = async (req: Request) => {
     })
 
     const headers = new Headers({
-      'location': WEB_ORIGIN,
+      'location': BASE_URL,
       ...corsHeaders,
     })
     setCookie(headers, {

@@ -29,7 +29,6 @@ export const env = {
   DISCORD_GUILD_ID: get('DISCORD_GUILD_ID', true),
   DISCORD_TOKEN: get('DISCORD_BOT_TOKEN', true),
   PUBLIC_BASE_URL: `https://${projectName}.devazuka.com`,
-  WEB_ORIGIN: get('WEB_ORIGIN') || get('ORIGIN', true),
 
   // Auth / GM Role Configuration
   GM_LEVEL_1: get('GM_LEVEL_1', false, '_1'),
