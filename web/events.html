@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
+    <title>19 PvP – Event Audit</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0d0e12;
+        --surface: #16181f;
+        --surface2: #1e2029;
+        --border: rgba(255,255,255,0.07);
+        --text: #e8eaf0;
+        --muted: #6b7280;
+        --accent: #ffd15f;
+        --accent-dim: rgba(255,209,95,0.12);
+        --green: #10b981;
+        --red: #ef4444;
+        --font: 'Inter', system-ui, sans-serif;
+        --mono: 'JetBrains Mono', 'Fira Code', monospace;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        font-size: 13px;
+        line-height: 1.5;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ---- top bar ---- */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      header h1 { font-size: 15px; font-weight: 700; white-space: nowrap; }
+      header h1 span { color: var(--accent); }
+      .controls { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; align-items: center; }
+      select, input[type=text] {
+        height: 32px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 6px;
+        padding: 0 10px;
+        font-size: 12px;
+        font-family: inherit;
+      }
+      select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+      #typeFilter { min-width: 160px; }
+      #search { flex: 1; min-width: 180px; }
+      .badge-count {
+        background: var(--accent-dim);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 99px;
+        white-space: nowrap;
+      }
+
+      /* ---- btn ---- */
+      .btn {
+        height: 32px;
+        padding: 0 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        text-decoration: none;
+        transition: background .15s, border-color .15s;
+      }
+      .btn-ghost { background: transparent; color: var(--text); }
+      .btn-ghost:hover { background: var(--surface2); }
+      .btn-nav { background: var(--surface2); color: var(--muted); border-color: var(--border); }
+      .btn-nav:hover { color: var(--text); }
+
+      /* ---- tabs ---- */
+      .tab-row { display: flex; gap: 4px; }
+      .tab {
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        background: transparent;
+        color: var(--muted);
+        transition: all .15s;
+      }
+      .tab.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(255,209,95,0.3); }
+      .tab:hover:not(.active) { background: var(--surface2); color: var(--text); }
+
+      /* ---- table ---- */
+      main { flex: 1; overflow: auto; padding: 16px; }
+      .table-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+      table { width: 100%; border-collapse: collapse; }
+      thead th {
+        background: var(--surface);
+        padding: 9px 12px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+        user-select: none;
+        white-space: nowrap;
+      }
+      thead th.sortable { cursor: pointer; }
+      thead th.sortable:hover { color: var(--text); }
+      thead th.sort-asc::after { content: ' ▲'; font-size: 9px; }
+      thead th.sort-desc::after { content: ' ▼'; font-size: 9px; }
+      tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+      tbody tr:last-child { border-bottom: none; }
+      tbody tr:hover { background: rgba(255,255,255,0.025); }
+      td { padding: 8px 12px; vertical-align: top; }
+
+      .type-badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 700;
+        font-family: var(--mono);
+        white-space: nowrap;
+      }
+
+      .data-cell {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        max-width: 360px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+      }
+      .data-cell:hover { color: var(--text); }
+      .data-cell.expanded { white-space: pre-wrap; overflow: visible; text-overflow: unset; max-width: none; }
+
+      .ts { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+      .ts strong { color: var(--text); font-weight: 500; }
+
+      .empty-state {
+        text-align: center;
+        color: var(--muted);
+        padding: 60px 20px;
+        font-size: 14px;
+      }
+      .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+      /* ---- footer ---- */
+      footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .pagination { display: flex; gap: 6px; align-items: center; }
+      .page-info { color: var(--muted); font-size: 12px; }
+      .ml-auto { margin-left: auto; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>⚔️ 19PvP <span>Events</span></h1>
+      <div class="controls">
+        <div class="tab-row">
+          <button class="tab active" id="tabActive" onclick="switchTable('active')">Active</button>
+          <button class="tab" id="tabArchive" onclick="switchTable('archive')">Archive</button>
+        </div>
+        <select id="typeFilter" onchange="reload()">
+          <option value="">All types</option>
+        </select>
+        <input id="search" type="text" placeholder="Search data / type…" oninput="debounceReload()">
+        <span class="badge-count" id="totalCount">0 events</span>
+      </div>
+      <a href="/admin" class="btn btn-nav">⚙ Admin</a>
+      <a href="/" class="btn btn-nav">← Home</a>
+    </header>
+
+    <main>
+      <div id="tableArea"></div>
+    </main>
+
+    <footer>
+      <div class="pagination">
+        <button class="btn btn-ghost" id="btnPrev" onclick="prevPage()">‹ Prev</button>
+        <span class="page-info" id="pageInfo">—</span>
+        <button class="btn btn-ghost" id="btnNext" onclick="nextPage()">Next ›</button>
+      </div>
+      <span class="ml-auto" style="color:var(--muted);font-size:12px">Read-only — events are managed by the server</span>
+    </footer>
+
+    <script type="module">
+      const api = location.origin
+      const PAGE_SIZE = 50
+
+      let tableMode = 'active'
+      let page = 0
+      let total = 0
+      let allEvents = []
+      let sortCol = 'id'
+      let sortDir = 'desc'
+      let searchTimer = null
+
+      const typeColors = {
+        LOGIN:                       ['#86efac','#14532d'],
+        LOGOUT:                      ['#6ee7b7','#064e3b'],
+        STARTUP:                     ['#93c5fd','#1e3a5f'],
+        SHUTDOWN:                    ['#f9a8d4','#500724'],
+        COMMAND:                     ['#fde68a','#4d3700'],
+        BATTLEGROUND_JOIN:           ['#c4b5fd','#2e1065'],
+        BATTLEGROUND_LEAVE:          ['#d8b4fe','#3b0764'],
+        BATTLEGROUND_START:          ['#a78bfa','#2e1065'],
+        BATTLEGROUND_END:            ['#7c3aed','#1e0048'],
+        PVP_KILL:                    ['#f87171','#450a0a'],
+        QUEUE_STATE:                 ['#fb923c','#431407'],
+        PLAYER_LOCATION:             ['#94a3b8','#1e293b'],
+        LUCKY_FISHING_HAT_OBTAINED:  ['#fbbf24','#451a03'],
+        ARENA_GRAND_MASTER_OBTAINED: ['#f59e0b','#451a03'],
+        GENERAL_CHANNEL_MESSAGE:     ['#67e8f9','#164e63'],
+      }
+
+      const typeBadge = (type) => {
+        const [fg, bg] = typeColors[type] || ['#d1d5db','#1f2937']
+        return `<span class="type-badge" style="color:${fg};background:${bg}20;outline:1px solid ${fg}20">${type}</span>`
+      }
+
+      const fmtDate = (ts) => {
+        if (!ts) return '<span style="color:var(--muted)">—</span>'
+        const d = new Date(ts)
+        const date = d.toLocaleDateString(undefined, { month:'short', day:'numeric' })
+        const time = d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false })
+        return `<span class="ts"><strong>${time}</strong> ${date}</span>`
+      }
+
+      window.switchTable = (mode) => {
+        tableMode = mode
+        page = 0
+        document.getElementById('tabActive').className = `tab${mode==='active'?' active':''}`
+        document.getElementById('tabArchive').className = `tab${mode==='archive'?' active':''}`
+        reload()
+      }
+
+      window.prevPage = () => { if (page > 0) { page--; reload() } }
+      window.nextPage = () => { if ((page+1)*PAGE_SIZE < total) { page++; reload() } }
+
+      window.debounceReload = () => {
+        clearTimeout(searchTimer)
+        searchTimer = setTimeout(reload, 300)
+      }
+
+      window.toggleData = (id) => {
+        const el = document.getElementById(`data-${id}`)
+        if (el) el.classList.toggle('expanded')
+      }
+
+      function sortBy(col) {
+        if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc'
+        else { sortCol = col; sortDir = col === 'id' ? 'desc' : 'asc' }
+        reload()
+      }
+
+      function th(col, label) {
+        const cls = sortCol === col ? ` sortable sort-${sortDir}` : ' sortable'
+        return `<th class="${cls.trim()}" onclick="sortBy('${col}')">${label}</th>`
+      }
+
+      function renderTable() {
+        const area = document.getElementById('tableArea')
+
+        if (allEvents.length === 0) {
+          area.innerHTML = `<div class="empty-state"><div class="icon">📭</div>No events found</div>`
+          return
+        }
+
+        let html = `<div class="table-wrap"><table>
+          <thead><tr>
+            ${th('id','ID')}
+            ${th('type','Type')}
+            ${th('at','Time')}
+            <th>Data</th>
+            ${th('end','Ended')}
+          </tr></thead>
+          <tbody>`
+
+        for (const ev of allEvents) {
+          html += `<tr>
+            <td class="ts">#${ev.id}</td>
+            <td>${typeBadge(ev.type)}</td>
+            <td>${fmtDate(ev.at)}</td>
+            <td><div id="data-${ev.id}" class="data-cell" onclick="toggleData(${ev.id})">${ev.data ? JSON.stringify(ev.data) : '<span style="color:var(--muted)">null</span>'}</div></td>
+            <td>${fmtDate(ev.end)}</td>
+          </tr>`
+        }
+
+        html += '</tbody></table></div>'
+        area.innerHTML = html
+      }
+
+      async function reload() {
+        const type = document.getElementById('typeFilter').value
+        const search = document.getElementById('search').value
+        const table = tableMode === 'archive' ? 'archive' : 'active'
+
+        const params = new URLSearchParams({
+          table,
+          offset: page * PAGE_SIZE,
+          limit: PAGE_SIZE,
+          sort: sortCol,
+          dir: sortDir,
+          ...(type ? { type } : {}),
+          ...(search ? { search } : {}),
+        })
+
+        try {
+          const res = await fetch(`${api}/api/events?${params}`, { credentials: 'include' })
+          if (res.status === 401) { location.href = '/'; return }
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error)
+
+          allEvents = data.events
+          total = data.total
+
+          // populate type filter on first load
+          if (document.getElementById('typeFilter').options.length <= 1) {
+            const types = data.types || []
+            const sel = document.getElementById('typeFilter')
+            types.forEach(t => {
+              const o = document.createElement('option')
+              o.value = t; o.textContent = t; sel.appendChild(o)
+            })
+          }
+
+          document.getElementById('totalCount').textContent = `${total.toLocaleString()} event${total!==1?'s':''}`
+
+          const from = total === 0 ? 0 : page * PAGE_SIZE + 1
+          const to = Math.min((page+1)*PAGE_SIZE, total)
+          document.getElementById('pageInfo').textContent = total === 0 ? 'No results' : `${from}–${to} of ${total}`
+          document.getElementById('btnPrev').disabled = page === 0
+          document.getElementById('btnNext').disabled = (page+1)*PAGE_SIZE >= total
+
+          renderTable()
+        } catch (err) {
+          document.getElementById('tableArea').innerHTML =
+            `<div class="empty-state"><div class="icon">⚠️</div>${err.message}</div>`
+        }
+      }
+
+      reload()
+    </script>
+  </body>
+</html>

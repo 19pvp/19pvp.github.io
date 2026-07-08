@@ -4,11 +4,13 @@ import { watch } from '../tasks/config.ts'
 import { ac } from './soap.ts'
 import { checkAuth, handleAuth, getSession } from './auth.ts'
 import { getAccountDetails, setOrCreateAccount } from './account.ts'
+import { auth } from './db.ts'
 import { env } from './env.ts'
 
 // TODO: switch to { type: 'bytes' } once supported
 import indexHTML from '../web/index.html' with { type: 'text' }
 import adminHTML from '../web/admin.html' with { type: 'text' }
+import eventsHTML from '../web/events.html' with { type: 'text' }
 
 void import('./world-chat.ts').catch((err) => {
   console.error('Discord bridge failed to start', err)
@@ -639,6 +641,9 @@ export default {
       if (url.pathname === '/admin') {
         return new Response(adminHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
+      if (url.pathname === '/events') {
+        return new Response(eventsHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+      }
 
       if (url.pathname === '/api/account') {
         const session = await getSession(req)
@@ -679,6 +684,57 @@ export default {
           } catch (err) {
             return json({ error: String(err) }, { status: 400, headers: corsHeaders })
           }
+        }
+      }
+
+      if (url.pathname === '/api/events') {
+        if (!(await checkAuth(req))) {
+          return json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        if (req.method === 'GET') {
+          const table = url.searchParams.get('table') === 'archive' ? 'web_events_archive' : 'web_events'
+          const type = url.searchParams.get('type') || ''
+          const search = url.searchParams.get('search') || ''
+          const sortParam = url.searchParams.get('sort') || 'id'
+          const dirParam = url.searchParams.get('dir') === 'asc' ? 'ASC' : 'DESC'
+          const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0)
+          const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit')) || 50))
+          const col = ['id','type','at','end'].includes(sortParam) ? sortParam : 'id'
+
+          const typeFilter = type ? `AND type = ${JSON.stringify(type)}` : ''
+          const searchFilter = search
+            ? `AND (type LIKE ${JSON.stringify('%'+search+'%')} OR JSON_UNQUOTE(data) LIKE ${JSON.stringify('%'+search+'%')})`
+            : ''
+
+          const events = await auth.raw.sql`
+            SELECT id, type, at, end, data
+            FROM ${table}
+            WHERE 1=1 ${typeFilter} ${searchFilter}
+            ORDER BY ${col} ${dirParam}
+            LIMIT ${limit} OFFSET ${offset}
+          `
+
+          const [{ total }] = await auth.raw.sql`
+            SELECT COUNT(*) AS total FROM ${table}
+            WHERE 1=1 ${typeFilter} ${searchFilter}
+          `
+
+          const types = (await auth.raw.sql`
+            SELECT DISTINCT type FROM web_events
+            UNION SELECT DISTINCT type FROM web_events_archive
+            ORDER BY type
+          `).map((r) => String(r.type))
+
+          const eventsOut = events.map((r) => ({
+            id: Number(r.id),
+            type: String(r.type),
+            at: r.at instanceof Date ? r.at.getTime() : Number(r.at),
+            end: r.end instanceof Date ? r.end.getTime() : (r.end ? Number(r.end) : null),
+            data: r.data ? (typeof r.data === 'string' ? JSON.parse(r.data) : r.data) : null,
+          }))
+
+          return json({ events: eventsOut, total: Number(total), types })
         }
       }
 

@@ -39,7 +39,7 @@ function isPlayerAllowed(player)
   return areas ~= nil and areas[player:GetAreaId()]
 end
 
-local AURA_MIST = 54119
+-- local AURA_MIST = 54119 -- not working well, to fix or skip
 local AURA_PREPARATION = 44521
 local AURA_ASPHYXIATION = 71665
 function resetCooldownInBattleground(player)
@@ -52,14 +52,14 @@ function restrictPlayerArea(player)
   if isPlayerAllowed(player) then
     if player:HasAura(AURA_ASPHYXIATION) then
       player:RemoveAura(AURA_ASPHYXIATION)
-      player:RemoveAura(AURA_MIST)
+      -- player:RemoveAura(AURA_MIST)
     end
     return
   end
 
   if not player:HasAura(AURA_ASPHYXIATION) then
     player:AddAura(AURA_ASPHYXIATION, player)
-    player:AddAura(AURA_MIST, player)
+    -- player:AddAura(AURA_MIST, player)
   end
 end
 
@@ -79,4 +79,9 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function (event, player)
   else
     TeleportStartingZone(player)
   end
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function (event, player)
+  if isPlayerAllowed(player) then return end
+  TeleportMainGraveyard(player)
 end)

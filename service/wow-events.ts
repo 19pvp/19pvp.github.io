@@ -167,7 +167,10 @@ async function handleNewEvents() {
         await auth.sql`UPDATE web_events SET start=NOW(3) WHERE id=${event.id} AND start IS NULL`
         await handleSingleEvent(event)
         if (purgedEvents.has(event.type)) {
-          await auth.sql`DELETE FROM web_events WHERE id=${event.id}`
+          await auth.transaction.sql`
+            INSERT IGNORE INTO web_events_archive SELECT * FROM web_events WHERE id=${event.id};
+            DELETE FROM web_events WHERE id=${event.id};
+          `
           event.purged = true
         } else {
           await auth.sql`UPDATE web_events SET end=NOW(3) WHERE id=${event.id}`

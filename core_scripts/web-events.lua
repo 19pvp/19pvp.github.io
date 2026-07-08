@@ -212,11 +212,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, function (event, player, command, c
   SendWebEvent('COMMAND', player, { command = command })
 end)
 
-RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function (event, player)
-  if isPlayerAllowed(player) then return end
-  TeleportMainGraveyard(player)
-end)
-
 RegisterPlayerEvent(PLAYER_EVENT_ON_KILL_PLAYER, function (event, killer, killed)
   if killed:IsBot() then return end
   if killer:GetAccountId() == killed:GetAccountId() then return end
