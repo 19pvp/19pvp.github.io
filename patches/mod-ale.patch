@@ -157,7 +157,7 @@ index a21640d..0eafcfe 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..3c39348 100644
+index c0acc01..465a877 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -165,6 +165,10 @@ luaL_Reg GlobalMethods[] =
@@ -171,7 +171,7 @@ index c0acc01..3c39348 100644
      { "PerformIngameSpawn", &LuaGlobalFunctions::PerformIngameSpawn },
      { "CreatePacket", &LuaGlobalFunctions::CreatePacket },
      { "AddVendorItem", &LuaGlobalFunctions::AddVendorItem },
-@@ -566,6 +570,13 @@ ALERegister<Player> PlayerMethods[] =
+@@ -566,6 +570,14 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
@@ -182,10 +182,11 @@ index c0acc01..3c39348 100644
 +    { "AddToBattleground", &LuaPlayer::AddToBattleground },
 +    { "RemoveFromBattlegroundQueue", &LuaPlayer::RemoveFromBattlegroundQueue },
 +    { "GetBattlegroundQueueTeam", &LuaPlayer::GetBattlegroundQueueTeam },
++    { "GetBattlegroundQueueJoinTime", &LuaPlayer::GetBattlegroundQueueJoinTime },
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -1380,6 +1391,8 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1392,8 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -485,7 +486,7 @@ index cebb7bc..d6f6836 100644
       * </pre>
       *
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..3e304c6 100644
+index c39801f..cf0b90e 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -10,6 +10,9 @@
@@ -498,7 +499,7 @@ index c39801f..3e304c6 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -5175,6 +5178,275 @@ namespace LuaPlayer
+@@ -5175,6 +5178,306 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
@@ -768,6 +769,37 @@ index c39801f..3e304c6 100644
 +        else
 +        {
 +            ALE::Push(L, (uint32)player->GetTeamId());
++        }
++        return 1;
++    }
++
++    /**
++     * Gets the join time of the player in the battleground queue for the given bgTypeId.
++     *
++     * @param uint32 bgTypeId
++     * @return uint32 joinTime
++     */
++    int GetBattlegroundQueueJoinTime(lua_State* L, Player* player)
++    {
++        if (!player)
++        {
++            ALE::Push(L, 0);
++            return 1;
++        }
++
++        uint32 bgTypeIdVal = ALE::CHECKVAL<uint32>(L, 2);
++        BattlegroundTypeId bgTypeId = BattlegroundTypeId(bgTypeIdVal);
++        BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bgTypeId, 0);
++        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
++
++        GroupQueueInfo ginfo;
++        if (bgQueue.GetPlayerGroupInfoData(player->GetGUID(), &ginfo))
++        {
++            ALE::Push(L, ginfo.JoinTime);
++        }
++        else
++        {
++            ALE::Push(L, 0);
 +        }
 +        return 1;
 +    }

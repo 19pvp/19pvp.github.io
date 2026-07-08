@@ -180,57 +180,36 @@ local function ProcessAndStartMatch()
     SendWorldMessage("[WSG Queue] Match is starting! Teams balanced: Alliance (" .. (allianceRealCount + #allianceBots) .. ") vs Horde (" .. (hordeRealCount + #hordeBots) .. ")")
 end
 
-local queueJoinTimes = {} -- playerGuidString -> joinMSTime
-
 local function UpdateWSGQueue()
-    SendWorldMessage("[WSG Queue]: UpdateWSGQueue start")
     local bgTypeId = 2 -- Warsong Gulch
     local level = 19
     local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
     if not bracketId then
-        SendWorldMessage("[WSG Queue]: no bracket id")
         return
     end
 
     -- 1. Get current queued players
     local queuedPlayers = GetPlayersInQueue(bgTypeId, bracketId)
-    local currentQueuedGuids = {}
     local realPlayersCount = 0
     local currentTime = GetCurrTime()
 
-    -- 2. Process currently queued players
+    -- 2. Find the longest wait time from the actual C++ join times
+    local shouldProc = false
+    local longestWait = 0
+
     for _, player in ipairs(queuedPlayers) do
         if not player:IsBot() then
             realPlayersCount = realPlayersCount + 1
-            local guid = tostring(player:GetGUID())
-            currentQueuedGuids[guid] = true
-
-            -- Record join time if not already tracked
-            if not queueJoinTimes[guid] then
-                queueJoinTimes[guid] = currentTime
-                print("[WSG Queue] Tracked player " .. player:GetName() .. " in queue since " .. currentTime)
+            local joinTime = player:GetBattlegroundQueueJoinTime(bgTypeId)
+            if joinTime > 0 then
+                local waitTime = currentTime - joinTime
+                if waitTime >= 60000 then
+                    shouldProc = true
+                end
+                if waitTime > longestWait then
+                    longestWait = waitTime
+                end
             end
-        end
-    end
-
-    -- 3. Remove players who are no longer in the queue from our tracking table
-    for guid, _ in pairs(queueJoinTimes) do
-        if not currentQueuedGuids[guid] then
-            print("[WSG Queue] Player GUID " .. guid .. " left the queue. Untracking.")
-            queueJoinTimes[guid] = nil
-        end
-    end
-
-    -- 4. Check if any real player has been waiting for 60 seconds or more
-    local shouldProc = false
-    local longestWait = 0
-    for guid, joinTime in pairs(queueJoinTimes) do
-        local waitTime = currentTime - joinTime
-        if waitTime >= 60000 then
-            shouldProc = true
-        end
-        if waitTime > longestWait then
-            longestWait = waitTime
         end
     end
 
@@ -244,11 +223,8 @@ local function UpdateWSGQueue()
         end
     end
 
-    -- 5. If a player has waited 60 seconds, trigger the match starting process
+    -- 3. If any player has been in the queue for 60 seconds or more, trigger match start
     if shouldProc and realPlayersCount > 0 then
-        SendWorldMessage("[WSG Queue]: should proc BG")
-        -- Clear queue join times so we don't double-trigger
-        queueJoinTimes = {}
         ProcessAndStartMatch()
     end
 end
