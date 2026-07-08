@@ -150,6 +150,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function (event, player)
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_KILL_PLAYER, function (event, killer, killed)
+  if killed:IsBot() then return end
   if killer:GetAccountId() == killed:GetAccountId() then return end
   if killer:InBattleground() or killer:InArena() then return end
   SendWebEvent('PVP_KILL', killer, {

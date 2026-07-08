@@ -157,7 +157,7 @@ index a21640d..0eafcfe 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..465a877 100644
+index c0acc01..99859a4 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -165,6 +165,10 @@ luaL_Reg GlobalMethods[] =
@@ -186,11 +186,12 @@ index c0acc01..465a877 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -1380,6 +1392,8 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1392,9 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
 +    { "EndBattleground", &LuaBattleGround::EndBattleground },
++    { "SetEndTime", &LuaBattleGround::SetEndTime },
 +    { "StartBattleground", &LuaBattleGround::StartBattleground },
  
      { NULL, NULL }
@@ -306,10 +307,10 @@ index 7649274..338663d 100644
  {
      START_HOOK(PLAYER_EVENT_ON_LOGOUT);
 diff --git a/src/LuaEngine/methods/BattleGroundMethods.h b/src/LuaEngine/methods/BattleGroundMethods.h
-index 70e97bb..e155db1 100644
+index 70e97bb..a2991ca 100644
 --- a/src/LuaEngine/methods/BattleGroundMethods.h
 +++ b/src/LuaEngine/methods/BattleGroundMethods.h
-@@ -209,5 +209,33 @@ namespace LuaBattleGround
+@@ -209,5 +209,44 @@ namespace LuaBattleGround
          ALE::Push(L, bg->GetStatus());
          return 1;
      }
@@ -329,6 +330,17 @@ index 70e97bb..e155db1 100644
 +    {
 +        uint32 winnerTeamId = ALE::CHECKVAL<uint32>(L, 2);
 +        bg->EndBattleground((TeamId)winnerTeamId);
++        return 0;
++    }
++    /**
++     * Sets the remaining end time (cleanup countdown) for the battleground.
++     *
++     * @param uint32 endTime (in milliseconds)
++     */
++    int SetEndTime(lua_State* L, BattleGround* bg)
++    {
++        uint32 endTime = ALE::CHECKVAL<uint32>(L, 2);
++        bg->SetEndTime(endTime);
 +        return 0;
 +    }
 +

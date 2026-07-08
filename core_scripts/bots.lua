@@ -321,6 +321,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
                     end
 
                     bg:EndBattleground(2) -- End with NEUTRAL to clean up the BG instance
+                    bg:SetEndTime(1)      -- Force immediate cleanup (1ms countdown)
                 else
                     print("[WSG Queue] " .. realPlayersCount .. " real player(s) still remaining in BG.")
                 end
