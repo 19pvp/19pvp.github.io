@@ -40,9 +40,7 @@ local queueTimerEventId = nil
 
 local function ProcessAndStartMatch()
     queueTimerEventId = nil
-    print("[WSG Queue] 60 seconds have passed. Reorganizing queue and starting balanced match...")
-    SendWorldMessage("[WSG Queue] 60 seconds elapsed. Balancing teams and starting the match...")
-
+    
     local bgTypeId = 2 -- Warsong Gulch
     local level = 19
     local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
@@ -52,15 +50,7 @@ local function ProcessAndStartMatch()
         return
     end
 
-    -- 1. Create a new Battleground instance
-    local bg = CreateBattleground(bgTypeId, bracketId)
-    if not bg then
-        print("[WSG Queue] Error: Failed to create battleground instance")
-        SendWorldMessage("[WSG Queue] Error: Failed to create battleground instance")
-        return
-    end
-
-    -- 2. Get all players in the queue for this bracket
+    -- 1. Get all players in the queue for this bracket and check if there are real players
     local queuedPlayers = GetPlayersInQueue(bgTypeId, bracketId)
     local playersByTeam = {
         [0] = {}, -- Alliance
@@ -80,14 +70,24 @@ local function ProcessAndStartMatch()
         end
     end
 
-    print("[WSG Queue] Found " .. realPlayersCount .. " real players queued (Alliance: " .. #playersByTeam[0] .. ", Horde: " .. #playersByTeam[1] .. ")")
-
-    -- If no real players queued, we shouldn't start a match
+    -- If no real players queued, cancel silently without spamming world announcements
     if realPlayersCount == 0 then
         print("[WSG Queue] No real players in queue, cancelling match creation.")
-        bg:EndBattleground(2) -- End with NEUTRAL (which deletes/cleans up the BG instance)
         return
     end
+
+    print("[WSG Queue] 60 seconds have passed. Reorganizing queue and starting balanced match...")
+    SendWorldMessage("[WSG Queue] 60 seconds elapsed. Balancing teams and starting the match...")
+
+    -- 2. Create a new Battleground instance
+    local bg = CreateBattleground(bgTypeId, bracketId)
+    if not bg then
+        print("[WSG Queue] Error: Failed to create battleground instance")
+        SendWorldMessage("[WSG Queue] Error: Failed to create battleground instance")
+        return
+    end
+
+    print("[WSG Queue] Found " .. realPlayersCount .. " real players queued (Alliance: " .. #playersByTeam[0] .. ", Horde: " .. #playersByTeam[1] .. ")")
 
     -- 3. Balance the real players across the two teams
     -- To keep the teams as balanced as possible, we alternate placing all queued real players
@@ -227,4 +227,39 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
     local logMsg = "[BG Match] " .. botText .. " " .. name .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")"
     print(logMsg)
     SendWorldMessage(logMsg)
+
+    -- If a real player is leaving, check if there are any real players left in this BG instance
+    if not player:IsBot() then
+        local bg = GetBattleground(instanceId, mapId)
+        if bg then
+            local map = bg:GetMap()
+            if map then
+                local players = map:GetPlayers()
+                local realPlayersCount = 0
+                for _, p in ipairs(players) do
+                    -- Count all other real players still in the battleground
+                    if p:GetName() ~= name and not p:IsBot() then
+                        realPlayersCount = realPlayersCount + 1
+                    end
+                end
+
+                if realPlayersCount == 0 then
+                    print("[WSG Queue] No real players remaining in BG map " .. mapId .. " (Instance " .. instanceId .. "). Ending match and removing bots...")
+                    SendWorldMessage("[WSG Queue] No real players remaining. Closing battleground match.")
+                    
+                    -- Kick all remaining bots out of the battleground
+                    for _, p in ipairs(players) do
+                        if p:IsBot() then
+                            print("[WSG Queue] Kicking bot " .. p:GetName() .. " from battleground.")
+                            p:LeaveBattleground()
+                        end
+                    end
+
+                    bg:EndBattleground(2) -- End with NEUTRAL to clean up the BG instance
+                else
+                    print("[WSG Queue] " .. realPlayersCount .. " real player(s) still remaining in BG.")
+                end
+            end
+        end
+    end
 end)
