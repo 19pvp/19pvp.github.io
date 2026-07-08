@@ -145,6 +145,7 @@ const handleSingleEvent = async (event: WebEvent) => {
       for (const fn of once) await run(fn, event)
       once.clear()
     }
+    console.log('event handled:', event)
   } catch (err) {
     console.log('Unable to handle event')
     console.log(event)
