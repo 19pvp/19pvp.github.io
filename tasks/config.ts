@@ -24,7 +24,10 @@ const fetchText = async (url: string) => {
 
 const typeOfLine = (line: string) => {
   if (line[0] !== '#' && line[0] !== '[') return 'property'
-  if (/# \S/.test(line)) return 'category'
+  if (/# \S/.test(line)) {
+    if (/[a-z]/.test(line)) return 'message'
+    return 'category'
+  }
   if (/# {4}\S/.test(line)) return 'key'
   if (/# {5,}\S/.test(line)) return 'message'
   return ''
@@ -36,11 +39,18 @@ const parseConf = (text: string) => {
   let cat = ''
   let descriptions: Array<{ key?: string; msg?: string }> = []
   let desc: { key?: string; msg?: string } = {}
+  let pendingMsg = ''
 
   for (const raw of text.split('\n')) {
     const line = raw.trim()
+    
+    if (!line) {
+      pendingMsg = ''
+      continue
+    }
+
     const type = typeOfLine(line)
-    if (!type || !line) continue
+    if (!type) continue
 
     if (type !== 'message' && prev === 'message') {
       descriptions.push(desc)
@@ -51,14 +61,19 @@ const parseConf = (text: string) => {
       const [key, ...valueParts] = line.split('=')
       const name = key.trim()
       const match = descriptions.find((item) => item.key === name.toLowerCase())
-      conf[name] = { key: name, value: valueParts.join('=').trim(), cat, description: match?.msg }
+      const description = match?.msg || pendingMsg
+      conf[name] = { key: name, value: valueParts.join('=').trim(), cat, description }
+      pendingMsg = ''
     } else if (type === 'category') {
       cat = line.slice(1).split(/ +#$/)[0].trim()
       descriptions = []
+      pendingMsg = ''
     } else if (type === 'key') {
       desc.key = line.slice(5).split(' ')[0].toLowerCase()
     } else if (type === 'message') {
-      desc.msg = desc.msg ? `${desc.msg}\n${line.slice(9)}` : line.slice(9)
+      const msgText = line.startsWith('#     ') ? line.slice(9) : line.slice(2)
+      desc.msg = desc.msg ? `${desc.msg}\n${msgText}` : msgText
+      pendingMsg = pendingMsg ? `${pendingMsg}\n${msgText}` : msgText
     }
 
     prev = type

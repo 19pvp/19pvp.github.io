@@ -2,7 +2,10 @@ import { projectName } from '../env.ts'
 
 export const isServer = Deno.mainModule.endsWith('server.ts') || Deno.args.includes('serve')
 
+const envAccessGranted = Deno.permissions.querySync({ name: "env" }).status === 'granted'
+
 const get = (key: string, required = false, fallback = ''): string => {
+  if (!envAccessGranted) return fallback
   const value = Deno.env.get(key)
   if (required && !value) {
     if (isServer) {
@@ -13,6 +16,7 @@ const get = (key: string, required = false, fallback = ''): string => {
 }
 
 const getNumber = (key: string, fallback: number): number => {
+  if (!envAccessGranted) return fallback
   const value = Deno.env.get(key)
   if (!value) return fallback
   const parsed = Number(value)

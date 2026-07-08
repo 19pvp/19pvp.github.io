@@ -60,11 +60,10 @@ content:
           Description: Database connection settings for the world server.
 
           Example:     "hostname;port;username;password;database"
-                       ".;somenumber;username;password;database" - (Use named pipes on Windows
-                                                                   "enable-named-pipe" to [mysqld]
-                                                                   section my.ini)
-                       ".;/path/to/unix_socket;username;password;database" - (use Unix sockets on
-                                                                             Unix/Linux)
+                       ".;somenumber;username;password;database"
+                       (Use named pipes on Windows "enable-named-pipe" to [mysqld] section my.ini)
+                       ".;/path/to/unix_socket;username;password;database"
+                       (Use Unix sockets on Unix/Linux)
           Default:     "127.0.0.1;3306;acore;acore;acore_auth"       -
           (LoginDatabaseInfo)
                        "127.0.0.1;3306;acore;acore;acore_world"      - (WorldDatabaseInfo)
@@ -250,13 +249,13 @@ content:
         type: string
         description: |-
           Description: A mask that describes which databases should be updated.
-          Following flags are available
-             DATABASE_LOGIN     = 1, // Auth database
-             DATABASE_CHARACTER = 2, // Character database
-             DATABASE_WORLD     = 4, // World database
-          Default:     7  - (All enabled)
-                       4  - (Enable world only)
-                       0  - (All disabled)
+          Note:        Following flags are available
+                       DATABASE_LOGIN     = 1, Auth database
+                       DATABASE_CHARACTER = 2, Character database
+                       DATABASE_WORLD     = 4, World database
+          Default:     7 - (All enabled)
+                       4 - (Enable world only)
+                       0 - (All disabled)
         default: '7'
       - name: Updates.AutoSetup
         label: Updates Auto Setup
@@ -438,11 +437,11 @@ content:
         description: |-
           Description: Number of threads to be used for the global thread pool
                        The thread pool is currently used for:
-                        - Signal handling
-                        - Remote access
-                        - Database keep-alive ping
-                        - Core freeze check
-                        - World socket networking
+                       - Signal handling
+                       - Remote access
+                       - Database keep-alive ping
+                       - Core freeze check
+                       - World socket networking
           Default:     2
         default: '2'
       - name: UseProcessors
@@ -452,11 +451,11 @@ content:
           Description: Processors mask for Windows and Linux based
           multi-processor systems.
 
-          Example:  For a computer with 3 CPUs:
-                       1 - 1st CPU only
-                       2 - 2nd CPU only
-                       4 - 3rd CPU only
-                       6 - 2nd + 3rd CPUs, because "2 | 4" -> 6
+          Example:     For a computer with 3 CPUs:
+                       1  - 1st CPU only
+                       2  - 2nd CPU only
+                       4  - 3rd CPU only
+                       6  - 2nd + 3rd CPUs, because "2 | 4" -> 6
           Default:     0  - (Selected by OS)
                        1+ - (Bit mask value of selected processors)
         default: '0'
@@ -474,8 +473,8 @@ content:
         description: |-
           Description: Compression level for client update packages
           Range:       1-9
-          Default:     1   - (Speed)
-                       9   - (Best compression)
+          Default:     1 - (Speed)
+                       9 - (Best compression)
         default: '1'
       - name: PacketLogFile
         label: Packet Log File
@@ -507,7 +506,13 @@ content:
       - name: RecordUpdateTimeDiffInterval
         label: Record Update Time Diff Interval
         type: string
-        description: LOGGING
+        description: >-
+          Description: Time (in milliseconds) update time diff is written to the
+          log file.
+                       Update diff can be used as a performance indicator. Diff < 300: good
+                       performance. Diff > 600 bad performance, may be caused by high CPU usage.
+          Default:     300000 - (Enabled, 5 minutes)
+                       0      - (Disabled)
         default: '300000'
       - name: MinRecordUpdateTimeDiff
         label: Min Record Update Time Diff
@@ -521,7 +526,7 @@ content:
           Description: The path to your IP2Location database CSV file.
           Example:     "C:/acore/IP2LOCATION-LITE-DB1.CSV"
                        "/home/acore/IP2LOCATION-LITE-DB1.CSV"
-          Default:     ""  - (Disabled)
+          Default:     "" - (Disabled)
         default: '""'
       - name: AllowLoggingIPAddressesInDatabase
         label: Allow Logging IPAddresses In Database
@@ -587,7 +592,9 @@ content:
       - name: Logger.diff
         label: Logger Diff
         type: string
-        description: 'Appender.Dev=2,5,0,Dev.log,a'
+        description: |-
+          Logger.metric=2,Console Server
+          Logger.commands.gm=4,Console GM
         default: '3,Console Server'
       - name: Logger.mmaps
         label: Logger Mmaps
@@ -711,7 +718,11 @@ content:
       - name: BirthdayTime
         label: Birthday Time
         type: string
-        description: SERVER
+        description: >-
+          Description: Set to date of project's birth in UNIX time. By default
+          Thu Oct 2, 2008
+
+          Default:     1222964635
         default: '1222964635'
       - name: PlayerLimit
         label: Player Limit
@@ -719,9 +730,11 @@ content:
         description: >-
           Description: Maximum number of players in the world. Excluding Mods,
           GMs and Admins.
-            Important: If you want to block players and only allow Mods, GMs or Admins to join the
+
+          Important:   If you want to block players and only allow Mods, GMs or
+          Admins to join the
                        server, use the DB field "auth.realmlist.allowedSecurityLevel".
-              Default: 1000 - (Enabled)
+          Default:     1000 - (Enabled)
                        1+   - (Enabled)
                        0    - (Disabled, No limit)
         default: '1000'
@@ -754,7 +767,7 @@ content:
           Description: Server realm zone. Set allowed alphabet in character,
           etc. names.
 
-          Default      1  - (Development   - any language)
+          Default:     1  - (Development   - any language)
                        2  - (United States - extended-Latin)
                        3  - (Oceanic       - extended-Latin)
                        4  - (Latin America - extended-Latin)
@@ -871,12 +884,26 @@ content:
       - name: DisconnectToleranceInterval
         label: Disconnect Tolerance Interval
         type: string
-        description: SERVER
+        description: >-
+          Description: Allows to skip queue after being disconnected for a given
+          number of seconds.
+
+          Default:     0
         default: '0'
       - name: EnableLoginAfterDC
         label: Enable Login After DC
         type: string
-        description: SERVER
+        description: >-
+          Description: After not logging out properly (clicking Logout and
+          waiting 20 seconds),
+                       characters stay in game world for a full minute, even if the client connection was closed.
+                       Such behaviour prevents for example exploiting boss encounters by alt+f4
+                       and skipping crucial boss abilities, or escaping opponents in PvP.
+                       This setting is used to allow/disallow players to log back into characters that are left in world.
+          Default:     1 - (by clicking "Enter World" player will log back into
+          a character that is already in world)
+                       0 - (by clicking "Enter World" player will get an error message when trying to log into a character
+                           that is left in world, and has to wait a minute for the character to be removed from world)
         default: '1'
       - name: MinWorldUpdateTime
         label: Min World Update Time
@@ -899,8 +926,13 @@ content:
         label: Max Core Stuck Time
         type: string
         description: >-
-          Note: If enabled and the setting is too low, it can cause unexpected
-          crash.
+          Description: Time (in seconds) before the server is forced to crash if
+          it is frozen.
+                       FreezeDetector
+          Default:     0   - (Disabled)
+                       10+ - (Enabled, Recommended 30+)
+          Note:        If enabled and the setting is too low, it can cause
+          unexpected crash.
         default: '0'
       - name: SaveRespawnTimeImmediately
         label: Save Respawn Time Immediately
@@ -924,22 +956,31 @@ content:
         label: Show Kick In World
         type: string
         description: >-
-          Note: If enabled and the setting is too low, it can cause unexpected
-          crash.
+          Description: Determines whether a message is broadcast to the entire
+          server when a
+                       player gets kicked
+          Default:     0 - (Disabled)
+                       1 - (Enabled)
         default: '0'
       - name: ShowMuteInWorld
         label: Show Mute In World
         type: string
         description: >-
-          Note: If enabled and the setting is too low, it can cause unexpected
-          crash.
+          Description: Determines whether a message is broadcast to the entire
+          server when a
+                       player gets muted.
+          Default:     0 - (Disabled)
+                       1 - (Enabled)
         default: '0'
       - name: ShowBanInWorld
         label: Show Ban In World
         type: string
         description: >-
-          Note: If enabled and the setting is too low, it can cause unexpected
-          crash.
+          Description: Determines whether a message is broadcast to the entire
+          server when a
+                       player gets banned.
+          Default:     0 - (Disabled)
+                       1 - (Enabled)
         default: '0'
       - name: MaxWhoListReturns
         label: Max Who List Returns
@@ -955,9 +996,9 @@ content:
         type: string
         description: |-
           Description: Prevent players AFK from being logged out
-          Default:     0  - (Disabled)
-                       1  - (Enabled, prevent players AFK from being logged out in Sanctuary zones)
-                       2  - (Enabled, prevent players AFK from being logged out in all zones)
+          Default:     0 - (Disabled)
+                       1 - (Enabled, prevent players AFK from being logged out in Sanctuary zones)
+                       2 - (Enabled, prevent players AFK from being logged out in all zones)
         default: '0'
       - name: PacketSpoof.BanMode
         label: Packet Spoof Ban Mode
@@ -966,9 +1007,9 @@ content:
           Description: If PacketSpoof.Policy equals 2, this will determine the
           ban mode.
 
-          Values:     0 - Ban Account
-                      1 - Ban IP
-          Note: Banning by character not supported for logical reasons.
+          Values:      0 - Ban Account
+                       1 - Ban IP
+          Note:        Banning by character not supported for logical reasons.
         default: '0'
       - name: PacketSpoof.BanDuration
         label: Packet Spoof Ban Duration
@@ -1122,7 +1163,7 @@ content:
                        For instances default ~170.
                        Max: 250
                        Min limit is max aggro radius (45) * Rate.Creature.Aggro
-          Default:     100  - (Visibility.Distance.Continents)
+          Default:     100 - (Visibility.Distance.Continents)
                        170 - (Visibility.Distance.Instances)
                        250 - (Visibility.Distance.BGArenas)
         default: '250'
@@ -1424,11 +1465,11 @@ content:
         type: string
         description: |-
           Description: Required security level for water breathing.
-          Default:     4  - (Disabled)
-                       0  - (Enabled, Everyone)
-                       1  - (Enabled, Mods/GMs/Admins)
-                       2  - (Enabled, GMs/Admins)
-                       3  - (Enabled, Admins)
+          Default:     4 - (Disabled)
+                       0 - (Enabled, Everyone)
+                       1 - (Enabled, Mods/GMs/Admins)
+                       2 - (Enabled, GMs/Admins)
+                       3 - (Enabled, Admins)
         default: '4'
       - name: AllFlightPaths
         label: All Flight Paths
@@ -1512,6 +1553,105 @@ content:
                        3  - (Enabled, Admins)
                        4  - (Disabled)
         default: '1'
+      - name: Trial.LevelCap
+        label: Trial Level Cap
+        type: string
+        description: >-
+          Description: Maximum level a trial account can reach. XP gain stops
+          once this level is reached.
+
+          Default:     20
+                       0  - (Disabled, no cap)
+        default: '20'
+      - name: Trial.MoneyCap
+        label: Trial Money Cap
+        type: string
+        description: |-
+          Description: Maximum money a trial account can hold, in copper.
+          Default:     100000 - (10 gold)
+                       0      - (Disabled, no cap)
+        default: '100000'
+      - name: Trial.TradeSkillCap
+        label: Trial Trade Skill Cap
+        type: string
+        description: >-
+          Description: Maximum value any profession skill can reach on a trial
+          account.
+
+          Default:     100
+                       0   - (Disabled, no cap)
+        default: '100'
+      - name: Trial.Restriction.Chat
+        label: Trial Restriction Chat
+        type: string
+        description: >-
+          Description: Restrict trial accounts from using whisper/channel/guild
+          chats.
+                       Whispers are only allowed when the trial player is on the recipients friendslist
+                       or when the trial account was messaged first.
+          Default:     1 - (Enabled)
+                       0 - (Disabled)
+        default: '1'
+      - name: Trial.Restriction.Mail
+        label: Trial Restriction Mail
+        type: string
+        description: |-
+          Description: Restrict trial accounts from sending mail.
+          Default:     1 - (Enabled)
+                       0 - (Disabled)
+        default: '1'
+      - name: Trial.Restriction.Trade
+        label: Trial Restriction Trade
+        type: string
+        description: >-
+          Description: Restrict trial accounts from initiating or being the
+          target of in-game trade.
+
+          Default:     1 - (Enabled)
+                       0 - (Disabled)
+        default: '1'
+      - name: Trial.Restriction.Auction
+        label: Trial Restriction Auction
+        type: string
+        description: >-
+          Description: Restrict trial accounts from selling, bidding, or
+          cancelling auctions at the auction house.
+
+          Default:     1 - (Enabled)
+                       0 - (Disabled)
+        default: '1'
+      - name: Trial.Restriction.Party
+        label: Trial Restriction Party
+        type: string
+        description: >-
+          Description: Restrict trial accounts from inviting players to a party,
+          and from accepting
+                       an invite to a party whose existing members are above Trial.LevelCap.
+                       The join check is skipped when Trial.LevelCap is 0.
+          Default:     1 - (Enabled)
+                       0 - (Disabled)
+        default: '1'
+      - name: Trial.Restriction.Guild
+        label: Trial Restriction Guild
+        type: string
+        description: >-
+          Description: Restrict trial accounts from joining a guild (accepting
+          an invite) and from
+                       creating one (buying, signing, or turning in a guild charter).
+          Default:     1 - (Enabled)
+                       0 - (Disabled)
+        default: '1'
+      - name: Trial.Restriction.Queue
+        label: Trial Restriction Queue
+        type: string
+        description: >-
+          Description: Force trial accounts through the world session queue even
+          if their account
+                       flags would otherwise grant skip-queue priority. The RBAC_PERM_SKIP_QUEUE
+                       permission and recent-disconnect grace are still honored.
+          Default:     1 - (Enabled)
+                       0 - (Disabled)
+        default: '1'
       - name: PlayerSaveInterval
         label: Player Save Interval
         type: string
@@ -1559,11 +1699,12 @@ content:
                        CLEANING_FLAG_SPELLS                = 0x4
                        CLEANING_FLAG_TALENTS               = 0x8
                        CLEANING_FLAG_QUESTSTATUS           = 0x10
-                       Before use this feature, make a backup of your database.
+          Note:        Before use this feature, make a backup of your database.
+
           Example:     14 - (CLEANING_FLAG_SKILLS + CLEANING_FLAG_SPELLS +
           CLEANING_FLAG_TALENTS
-                             2+4+8 => 14. This will clean up skills, talents and spells will
-                             remain enabled after the next cleanup)
+                            2+4+8 => 14. This will clean up skills, talents and spells will
+                            remain enabled after the next cleanup)
           Default:     0  - (All cleanup methods will be disabled after the next
           cleanup)
         default: '0'
@@ -1576,11 +1717,10 @@ content:
 
           Default:     1 - (Enabled, enforce valid spells)
                        0 - (Disabled, allow invalid spells)
-          Disabling this and then having your character learn spells which
-          require DBC edits can result in the character not being saved in the
-          database
-
-          Disable AT YOUR OWN RISK
+          Note:        Disabling this and then having your character learn
+          spells which require DBC edits can result in the character not being
+          saved in the database
+                       Disable AT YOUR OWN RISK
         default: '1'
       - name: CharDelete.Method
         label: Char Delete Method
@@ -1636,12 +1776,20 @@ content:
       - name: StrictNames.Reserved
         label: Strict Names Reserved
         type: string
-        description: CHARACTER CREATION
+        description: |-
+          Description: Use the Reserved Filter from DBC.
+                       Prevents Player, Pet & Charter names from containing reserved names.
+          Default:     1 - Enabled
+                       0 - Disabled
         default: '1'
       - name: StrictNames.Profanity
         label: Strict Names Profanity
         type: string
-        description: CHARACTER CREATION
+        description: |-
+          Description: Use the Profanity Filter from DBC.
+                       Prevents Player, Pet & Charter names from containing profanity.
+          Default:     1 - Enabled
+                       0 - Disabled
         default: '1'
       - name: StrictPlayerNames
         label: Strict Player Names
@@ -1654,9 +1802,10 @@ content:
           check)
                        1 - (Enabled, Strictly basic Latin characters)
                        2 - (Enabled, Strictly realm zone specific, See RealmZone setting,
-                           Note: Client needs to have the appropriate fonts installed which support
-                           the charset. For non-official localization, custom fonts need to be
-                           placed in clientdir/Fonts.)
+          Note:        Client needs to have the appropriate fonts installed
+          which support
+                       the charset. For non-official localization, custom fonts need to be
+                       placed in clientdir/Fonts.)
                        3 - (Enabled, Basic Latin characters + server timezone specific)
         default: '0'
       - name: StrictPetNames
@@ -1669,9 +1818,10 @@ content:
           check)
                        1 - (Enabled, Strictly basic Latin characters)
                        2 - (Enabled, Strictly realm zone specific, See RealmZone setting,
-                           Note: Client needs to have the appropriate fonts installed which support
-                           the charset. For non-official localization, custom fonts need to be
-                           placed in clientdir/Fonts.)
+          Note:        Client needs to have the appropriate fonts installed
+          which support
+                       the charset. For non-official localization, custom fonts need to be
+                       placed in clientdir/Fonts.)
                        3 - (Enabled, Basic Latin characters + server timezone specific)
         default: '0'
       - name: CharacterCreating.Disabled
@@ -1818,12 +1968,19 @@ content:
       - name: PlayerStart.String
         label: Player Start String
         type: string
-        description: CHARACTER CREATION
+        description: >-
+          Description: String to be displayed at first login of newly created
+          characters.
+
+          Default:     "" - (Disabled)
         default: '""'
       - name: EnablePlayerSettings
         label: Enable Player Settings
         type: string
-        description: CHARACTER
+        description: |-
+          Description: Enables the usage of character specific settings.
+          Default:     0 - Disabled
+                       1 - Enabled
         default: '0'
       - name: MaxPlayerLevel
         label: Max Player Level
@@ -1969,9 +2126,9 @@ content:
         type: string
         description: |-
           Description: Resting points grow rates.
-          Default:     1 - (Rate.Rest.InGame)
-                       1 - (Rate.Rest.Offline.InTavernOrCity)
-                       1 - (Rate.Rest.Offline.InWilderness)
+          Default:     1   - (Rate.Rest.InGame)
+                       1   - (Rate.Rest.Offline.InTavernOrCity)
+                       1   - (Rate.Rest.Offline.InWilderness)
                        1.5 - (Rate.Rest.MaxBonus)
         default: '1.5'
       - name: Rate.MissChanceMultiplier.TargetCreature
@@ -1992,11 +2149,13 @@ content:
           player,
                        the chance to hit is determined by the formula: 94 - (levelDiff - 2) * Rate.MissChanceMultiplier
                        The higher the Rate.MissChanceMultiplier constant, the higher is the chance to miss.
-                       Note: this does not affect when the player is less than 3 levels different than the target,
+          Note:        this does not affect when the player is less than 3
+          levels different than the target,
                        where this (linear) formula is used instead to calculate the hit chance: 96 - levelDiff.
                        You can set Rate.MissChanceMultiplier.OnlyAffectsPlayer to 1 if you only want to affect the MissChance
                        for player casters only. This way you won't be affecting creature missing chance.
-                       Example: if you want the chance to keep growing linearly, use 1.
+          Example:     if you want the chance to keep growing linearly, use 1.
+
           Default:     Rate.MissChanceMultiplier.TargetCreature = 11
                        Rate.MissChanceMultiplier.TargetPlayer = 7
                        Rate.MissChanceMultiplier.OnlyAffectsPlayer = 0
@@ -2004,7 +2163,11 @@ content:
       - name: LevelReq.Trade
         label: Level Req Trade
         type: string
-        description: CHARACTER
+        description: >-
+          Description: Level requirement for characters to be able to initiate a
+          trade.
+
+          Default:     1
         default: '1'
       - name: NoResetTalentsCost
         label: No Reset Talents Cost
@@ -2325,9 +2488,7 @@ content:
         description: >-
           Description: Modifies the amount of experience required to level up a
           pet.
-
-          he lower the rate the less experience is required.
-
+                       The lower the rate the less experience is required.
           Default:     0.05
         default: '0.05'
       - name: MaxHonorPoints
@@ -2344,7 +2505,7 @@ content:
           Description: Convert excess honor points into money if players got
           more points than allowed after changing the honor cap.
                        Honor points will be converted into copper according to the value set in this config.
-          Default: 0 - Disabled
+          Default:     0 - Disabled
         default: '0'
       - name: StartHonorPoints
         label: Start Honor Points
@@ -2527,9 +2688,9 @@ content:
         description: |-
           Description: Starting level for resurrection sickness.
           Example:     11 - (Level 1-10 characters will not be affected,
-                             Level 11-19 characters will be affected for 1 minute,
-                             Level 20-MaxPlayerLevel characters will be affected for 10 minutes)
-           Default:    11               - (Enabled, See Example)
+                            Level 11-19 characters will be affected for 1 minute,
+                            Level 20-MaxPlayerLevel characters will be affected for 10 minutes)
+          Default:     11               - (Enabled, see Example)
                        MaxPlayerLevel+1 - (Disabled)
                        -10              - (Enabled, Level 1+ characters have 10 minute duration)
         default: '11'
@@ -2591,25 +2752,15 @@ content:
         description: >-
           Description: Saving items into database that have quality greater or
           equal to ItemDelete.Quality
-
-          ID | Color | Quality
-
-          0  | Grey  | Poor
-
-          1  | White | Common
-
-          2  | Green | Uncommon
-
-          3  | Blue  | Rare
-
-          4  | Purple| Epic
-
-          5  | Orange| Legendary
-
-          6  | Red   | Artifact
-
-          7  | Gold  | Bind to Account
-
+                       | ID | Color  | Quality         |
+                       |  0 |   Grey |            Poor |
+                       |  1 |  White |          Common |
+                       |  2 |  Green |        Uncommon |
+                       |  3 |   Blue |            Rare |
+                       |  4 | Purple |            Epic |
+                       |  5 | Orange |       Legendary |
+                       |  6 |    Red |        Artifact |
+                       |  7 |   Gold | Bind to Account |
           Default:     3
         default: '3'
       - name: ItemDelete.ItemLevel
@@ -2632,7 +2783,12 @@ content:
       - name: DBC.EnforceItemAttributes
         label: DBC Enforce Item Attributes
         type: string
-        description: ITEM
+        description: >-
+          Description: Disallow overriding item attributes stored in DBC files
+          with values from the database
+
+          Default:     0 - Off, Use DB values
+                       1 - On, Enforce DBC Values (default)
         default: '1'
       - name: Rate.Drop.Item.Poor
         label: Rate Drop Item Poor
@@ -2710,12 +2866,20 @@ content:
       - name: LootNeedBeforeGreedILvlRestriction
         label: Loot Need Before Greed ILvl Restriction
         type: string
-        description: ITEM
+        description: >-
+          Description: Specify level restriction for items below player's
+          subclass in Need Before Greed loot mode in DF groups
+
+          Default:     70
+                       0  - Disabled
         default: '70'
       - name: Item.SetItemTradeable
         label: Item Set Item Tradeable
         type: string
-        description: ITEM
+        description: |-
+          Description: Enabled/Disabled trading BoP items among raid members.
+          Default:     1 - (Set BoP items tradeable timer to 2 hours)
+                       0 - (Disable trading BoP items among raid members)
         default: '1'
       - name: Quests.EnableQuestTracker
         label: Quests Enable Quest Tracker
@@ -2724,13 +2888,16 @@ content:
           Description: Store data in the database about quest completion and
           abandonment to help finding bugged quests.
 
-          Default:     0  - (Disabled)
-                       1  - (Enabled)
+          Default:     0 - (Disabled)
+                       1 - (Enabled)
         default: '0'
       - name: QuestPOI.Enabled
         label: Quest POI Enabled
         type: string
-        description: QUEST
+        description: |-
+          Description: Show points of interest on the map
+          Default:     1 - Enabled
+                       0 - Disabled
         default: '1'
       - name: Quests.LowLevelHideDiff
         label: Quests Low Level Hide Diff
@@ -2807,7 +2974,12 @@ content:
       - name: MonsterSight
         label: Monster Sight
         type: string
-        description: CREATURE
+        description: >-
+          Description: The maximum distance in yards that a "monster" creature
+          can see
+                       regardless of level difference (through CreatureAI::IsVisible).
+                       Increases CONFIG_SIGHT_MONSTER to 50 yards. Used to be 20 yards.
+          Default:     50.000000
         default: '50.000000'
       - name: Rate.Creature.Aggro
         label: Rate Creature Aggro
@@ -3060,7 +3232,7 @@ content:
           Description: Time (in milliseconds) during which creature will not
           move after
                        interaction with player.
-          Default: 180000
+          Default:     180000
         default: '180000'
       - name: WaypointMovementStopTimeForPlayer
         label: Waypoint Movement Stop Time For Player
@@ -3222,25 +3394,28 @@ content:
       - name: LeaveGroupOnLogout.Enabled
         label: Leave Group On Logout Enabled
         type: string
-        description: GROUP
+        description: |-
+          Description: Should the player leave their group when they log out?
+                       (It does not affect raids or dungeon finder groups)
+          Default:     0 - (Disabled)
         default: '0'
       - name: Group.Raid.LevelRestriction
         label: Group Raid Level Restriction
         type: string
-        description: |2-
-           Group members need to the same, or higher level than the specified value.
-          imum level is 10.
-          Default: 10
+        description: >-
+          Description: The Group members need to the same, or higher level than
+          the specified value.
+                       Minimum level is 10.
+          Default:     10
         default: '10'
       - name: Group.RandomRollMaximum
         label: Group Random Roll Maximum
         type: string
-        description: >2-
-           maximum value for use with the client '/roll' command.
-          zzlike and maximum value is 1000000. (Based on Classic and 3.3.5a
-          client testing respectively)
-
-          Default: 1000000
+        description: >-
+          Description: The maximum value for use with the client '/roll'
+          command.
+                       Blizzlike and maximum value is 1000000. (Based on Classic and 3.3.5a client testing respectively)
+          Default:     1000000
         default: '1000000'
       - name: Instance.GMSummonPlayer
         label: Instance GMSummon Player
@@ -3279,7 +3454,14 @@ content:
       - name: Instance.ResetTimeRelativeTimestamp
         label: Instance Reset Time Relative Timestamp
         type: string
-        description: INSTANCE
+        description: >-
+          Description: Needed for displaying valid instance reset times in
+          ingame calendar.
+                       This timestamp should be set to a date in the past (midnight) on which
+                       both 3-day and 7-day raids were reset.
+          Default:     1135814400 - (Thu, 29 Dec 2005 00:00:00 GMT - meaning
+          that 7-day raid reset falls on Thursdays,
+                                    while 3-day reset falls on "Thu 29 Dec 2005", "Sun 01 Jan 2006", "Wed 04 Jan 2006", and so on)
         default: '1135814400'
       - name: Rate.InstanceResetTime
         label: Rate Instance Reset Time
@@ -3311,7 +3493,12 @@ content:
       - name: Instance.SharedNormalHeroicId
         label: Instance Shared Normal Heroic Id
         type: string
-        description: INSTANCE
+        description: >-
+          Description: Forces ICC and RS Normal and Heroic to share lockouts. 
+          ToC is uneffected and Normal and Heroic will be separate.
+
+          Default:     1 - Enable
+                       0 - Disable
         default: '1'
       - name: DungeonAccessRequirements.PrintMode
         label: Dungeon Access Requirements Print Mode
@@ -3344,41 +3531,66 @@ content:
           Description: Display an extra message from acore_strings in the chat
           after printing the dungeon access requirements.
                        To enable it set the ID of your desired string from the table acore_strings
-          Default:     0 - (Disabled)
+          Default:     0  - (Disabled)
                        1+ - (Enabled)
         default: '0'
       - name: JoinBGAndLFG.Enable
         label: Join BGAnd LFG Enable
         type: string
-        description: DUNGEON AND BATTLEGROUND FINDER
+        description: |-
+          Description: Allow queueing for BG and LFG at the same time.
+          Default:     0 - Disabled
+                       1 - Enabled
         default: '0'
       - name: LFG.MailItemOnFullInventory
         label: LFG Mail Item On Full Inventory
         type: string
-        description: DUNGEON AND BATTLEGROUND FINDER
+        description: >-
+          Description: When a player wins a group roll but their inventory is
+          full, mail
+                       the item to them instead of leaving it on the corpse.
+          Default:     0 - Disabled
+                       1 - Only in LFG/RDF groups
+                       2 - In all group types
         default: '0'
       - name: DungeonFinder.OptionsMask
         label: Dungeon Finder Options Mask
         type: string
-        description: DUNGEON AND BATTLEGROUND FINDER
+        description: |-
+          Description: Dungeon and raid finder system.
+                       Value is a bitmask consisting of:
+                       LFG_OPTION_ENABLE_DUNGEON_FINDER  = 1, Enable the dungeon finder browser
+                       LFG_OPTION_ENABLE_RAID_BROWSER    = 2, Enable the raid browser
+                       LFG_OPTION_ENABLE_SEASONAL_BOSSES = 4, Enable seasonal bosses
+          Default:     5
         default: '5'
       - name: LFG.Location.All
         label: LFG Location All
         type: string
         description: |-
-          ludes satellite to search for work elsewhere LFG
-          Default: 0 - Disable
-                   1 - Enable
+          Description: Includes satellite to search for work elsewhere LFG
+          Default:     0 - Disable
+                       1 - Enable
         default: '0'
       - name: LFG.MaxKickCount
         label: LFG Max Kick Count
         type: string
-        description: DUNGEON AND BATTLEGROUND FINDER
+        description: >-
+          Description: Specify the maximum number of kicks allowed in LFG groups
+          (max 3 kicks)
+
+          Default:     2
+                       0 - Disabled (kicks are never allowed)
         default: '2'
       - name: LFG.KickPreventionTimer
         label: LFG Kick Prevention Timer
         type: string
-        description: DUNGEON AND BATTLEGROUND FINDER
+        description: >-
+          Description: Specify for how long players are prevented from being
+          kicked after just joining LFG groups
+
+          Default:     900 secs (15 minutes)
+                       0 - Disabled
         default: '900'
       - name: DungeonAccessRequirements.LFGLevelDBCOverride
         label: Dungeon Access Requirements LFGLevel DBCOverride
@@ -3438,9 +3650,10 @@ content:
           check)
                        1 - (Enabled, Strictly basic Latin characters)
                        2 - (Enabled, Strictly realm zone specific, See RealmZone setting,
-                           Note: Client needs to have the appropriate fonts installed which support
-                           the charset. For non-official localization, custom fonts need to be
-                           placed in clientdir/Fonts.
+          Note:        Client needs to have the appropriate fonts installed
+          which support
+                       the charset. For non-official localization, custom fonts need to be
+                       placed in clientdir/Fonts.
                        3 - (Enabled, Basic Latin characters + server timezone specific)
         default: '0'
       - name: Guild.EventLogRecordsCount
@@ -3493,12 +3706,22 @@ content:
       - name: Guild.AllowMultipleGuildMaster
         label: Guild Allow Multiple Guild Master
         type: string
-        description: GUILD
+        description: >-
+          Description: Allow more than one guild master. Additional Guild
+          Masters must be set using
+                       the ".guild rank" command.
+          Default:     0 - (Disabled)
+                       1 - (Enabled)
         default: '0'
       - name: Guild.BankInitialTabs
         label: Guild Bank Initial Tabs
         type: string
-        description: GUILD
+        description: >-
+          Description: Changes the amounts of available tabs of the guild bank
+          on guild creation
+
+          Default:     0   (no tabs given for free)
+                       1-6 (amount of tabs of the guild bank at guild creation)
         default: '0'
       - name: Guild.BankTabCost0
         label: Guild Bank Tab Cost0
@@ -3533,52 +3756,88 @@ content:
       - name: Guild.MemberLimit
         label: Guild Member Limit
         type: string
-        description: GUILD
+        description: >-
+          Description: Do not allow inviting new players to the guild if the
+          member limit is met or exceeded.
+
+          Default:     0 - Disabled
         default: '0'
       - name: FFAPvPTimer
         label: FFAPv PTimer
         type: string
-        description: FFAPVP
+        description: >-
+          Description: Specify time offset when player unset FFAPvP flag when
+          leaving FFAPvP area. (e.g. Gurubashi Arena)
+
+          Default:     30 sec
         default: '30'
       - name: OutdoorPvPCaptureRate
         label: Outdoor Pv PCapture Rate
         type: string
-        description: OUTDOORPVP
+        description: >-
+          Description: Specify rate multiplier for outdoor PvP capture points.
+          (e.g. Eastern Plaguelands, Hellfire Peninsula)
+
+          Default:     1.0
         default: '1.0'
       - name: Wintergrasp.Enable
         label: Wintergrasp Enable
         type: string
-        description: WINTERGRASP
+        description: >-
+          Description: Enable the Wintergrasp battlefield.
+
+          Default:     1 - (Enabled, Experimental as of still being in
+          development)
+                       0 - (Battleground disabled, Wintergrasp world processing still occurs)
+                       2 - (Disable all Wintergrasp processing)
         default: '1'
       - name: Wintergrasp.PlayerMax
         label: Wintergrasp Player Max
         type: string
-        description: WINTERGRASP
+        description: >-
+          Description: Maximum number of players allowed in Wintergrasp per
+          team.
+
+          Default:     120
         default: '120'
       - name: Wintergrasp.PlayerMin
         label: Wintergrasp Player Min
         type: string
-        description: WINTERGRASP
+        description: >-
+          Description: Minimum number of players required for Wintergrasp per
+          team.
+
+          Default:     0
         default: '0'
       - name: Wintergrasp.PlayerMinLvl
         label: Wintergrasp Player Min Lvl
         type: string
-        description: WINTERGRASP
+        description: |-
+          Description: Required character level for the Wintergrasp battle.
+          Default:     75
         default: '75'
       - name: Wintergrasp.BattleTimer
         label: Wintergrasp Battle Timer
         type: string
-        description: WINTERGRASP
+        description: |-
+          Description: Time (in minutes) for the Wintergrasp battle to last.
+          Default:     30
         default: '30'
       - name: Wintergrasp.NoBattleTimer
         label: Wintergrasp No Battle Timer
         type: string
-        description: WINTERGRASP
+        description: |-
+          Description: Time (in minutes) between Wintergrasp battles.
+          Default:     150
         default: '150'
       - name: Wintergrasp.CrashRestartTimer
         label: Wintergrasp Crash Restart Timer
         type: string
-        description: WINTERGRASP
+        description: >-
+          Description: Time (in minutes) to delay the restart of Wintergrasp if
+          the world server
+                       crashed during a running battle.
+          Default:     10
         default: '10'
       - name: Wintergrasp.SkipBattleSessionCount
         label: Wintergrasp Skip Battle Session Count
@@ -3601,10 +3860,7 @@ content:
         description: >-
           Description: Time (in seconds) for battleground preparation phase.
           Strand of the Ancients will be
-
-          the exception and will always use the default 120 seconds timer, due
-          to its boat timing mechanic.
-
+                       the exception and will always use the default 120 seconds timer, due to its boat timing mechanic.
           Default:     120
         default: '120'
       - name: Battleground.CastDeserter
@@ -3632,7 +3888,7 @@ content:
           Description: Limit the QueueAnnouncer starting from a certain level.
                        When limited, it announces only if there are at least MinPlayers queued (see below)
                        At 80 it only limits RBG, at lower level only limits Warsong Gulch.
-          Default:     0 - (Disabled, no limits)
+          Default:     0  - (Disabled, no limits)
                        10 - (Enabled for all, because BGs start at 10)
                        20 - (Enabled for 20 and higher)
                        80 - (Enabled only for 80)
@@ -3736,17 +3992,19 @@ content:
 
           Default:     0 - (Normal, Invite as much players to battlegrounds as
           queued,
-                            Don't bother with balance)
+                           Don't bother with balance)
                        1 - (Experimental, Don't allow to invite much more players
-                            of one faction)
+                           of one faction)
                        2 - (Experimental, Try to have even teams)
         default: '0'
       - name: Battleground.ReportAFK.Timer
         label: Battleground Report AFK Timer
         type: string
-        description: |2-
-           Description: After a few minutes that battle started you can report the player.
-           Default:     4
+        description: >-
+          Description: After a few minutes that battle started you can report
+          the player.
+
+          Default:     4
         default: '4'
       - name: Battleground.ReportAFK
         label: Battleground Report AFK
@@ -3807,7 +4065,14 @@ content:
       - name: Battleground.RewardLoserHonorLast
         label: Battleground Reward Loser Honor Last
         type: string
-        description: BATTLEGROUND
+        description: |-
+          Description: Random Battlegrounds / call to the arms rewards
+          Default:     30 - Battleground.RewardWinnerHonorFirst
+                       25 - Battleground.RewardWinnerArenaFirst
+                       15 - Battleground.RewardWinnerHonorLast
+                       0  - Battleground.RewardWinnerArenaLast
+                       5  - Battleground.RewardLoserHonorFirst
+                       5  - Battleground.RewardLoserHonorLast
         default: '5'
       - name: Battleground.PlayerRespawn
         label: Battleground Player Respawn
@@ -4069,14 +4334,19 @@ content:
         type: string
         description: |-
           Description: Amount of money (in Copper) the petitions costs.
-          Default:     800000 - (80 Gold)
+          Default:     800000  - (80 Gold)
                        1200000 - (120 Gold)
                        2000000 - (200 Gold)
         default: '2000000'
       - name: MaxAllowedMMRDrop
         label: Max Allowed MMRDrop
         type: string
-        description: ARENA
+        description: >-
+          Description: Some players continuously lose arena matches to lower
+          their MMR and then fight with weaker opponents.
+                       This setting prevents lowering MMR too much from max achieved MMR.
+                       Eg. if max achieved MMR for a character was 2400, with default setting (MaxAllowedMMRDrop = 500) the character can't get below 1900 MMR no matter what.
+          Default:     500
         default: '500'
       - name: MailDeliveryDelay
         label: Mail Delivery Delay
@@ -4095,12 +4365,18 @@ content:
       - name: IsContinentTransport.Enabled
         label: Is Continent Transport Enabled
         type: string
-        description: TRANSPORT
+        description: |-
+          Description: Controls the continent transport (ships, zeppelins etc..)
+          Default:     1 - (Enabled)
         default: '1'
       - name: IsPreloadedContinentTransport.Enabled
         label: Is Preloaded Continent Transport Enabled
         type: string
-        description: TRANSPORT
+        description: |-
+          Description: Should we preload the transport?
+                       (Not recommended on low-end servers as it consumes 100% more ram)
+                       and it's not really necessary to be enabled.
+          Default:     0 - (Disabled)
         default: '0'
       - name: StrictChannelNames
         label: Strict Channel Names
@@ -4112,9 +4388,10 @@ content:
           check)
                        1 - (Enabled, Strictly basic Latin characters)
                        2 - (Enabled, Strictly realm zone specific, See RealmZone setting,
-                           Note: Client needs to have the appropriate fonts installed which support
-                           the charset. For non-official localization, custom fonts need to be
-                           placed in clientdir/Fonts.
+          Note:        Client needs to have the appropriate fonts installed
+          which support
+                       the charset. For non-official localization, custom fonts need to be
+                       placed in clientdir/Fonts.
                        3 - (Enabled, Basic Latin characters + server timezone specific)
         default: '0'
       - name: AddonChannel
@@ -4192,7 +4469,7 @@ content:
           player gets muted.
 
           Default:     100 - (Enabled)
-                       0  - (Disabled)
+                       0   - (Disabled)
         default: '100'
       - name: ChatFlood.AddonMessageDelay
         label: Chat Flood Addon Message Delay
@@ -4254,13 +4531,11 @@ content:
         label: Channel Moderation GMLevel
         type: string
         description: >-
-          Min GM account security level required for executing moderator in-game
-          commands in the channels
-
-          This also bypasses password prompts on joining channels which require
-          password
-                   0 (in-game channel moderator privileges only)
-          Default: 1 (enabled for moderators and above)
+          Description: Min GM account security level required for executing
+          moderator in-game commands in the channels
+                       This also bypasses password prompts on joining channels which require password
+                       0 (in-game channel moderator privileges only)
+          Default:     1 (enabled for moderators and above)
         default: '1'
       - name: ChatLevelReq.Channel
         label: Chat Level Req Channel
@@ -4434,7 +4709,14 @@ content:
       - name: ChangeFaction.MaxMoney
         label: Change Faction Max Money
         type: string
-        description: FACTION INTERACTION
+        description: >-
+          Description: Maximum amount of gold allowed on the character to
+          perform a faction change.
+
+          Default:      0 - Disabled
+                       >0 - Enabled (money in copper)
+          Example:     If set to 10000, the maximum amount of money allowed on
+          the character would be 1 gold.
         default: '0'
       - name: RecruitAFriend.MaxLevel
         label: Recruit AFriend Max Level
@@ -4512,12 +4794,18 @@ content:
       - name: AuctionHouse.WorkerThreads
         label: Auction House Worker Threads
         type: string
-        description: AUCTION HOUSE
+        description: |-
+          Description: Count of auctionhouse searcher worker threads to spawn
+          Default:     1
         default: '1'
       - name: LevelReq.Auction
         label: Level Req Auction
         type: string
-        description: AUCTION HOUSE
+        description: >-
+          Description: Level requirement for characters to be able to use the
+          auction house.
+
+          Default:     1
         default: '1'
       - name: Rate.Auction.Time
         label: Rate Auction Time
@@ -4543,23 +4831,47 @@ content:
       - name: PlayerDump.DisallowPaths
         label: Player Dump Disallow Paths
         type: string
-        description: PLAYER DUMP
+        description: |-
+          Description: Disallow using paths in PlayerDump output files
+          Default:     1
         default: '1'
       - name: PlayerDump.DisallowOverwrite
         label: Player Dump Disallow Overwrite
         type: string
-        description: PLAYER DUMP
+        description: |-
+          Description: Disallow overwriting existing files with PlayerDump
+          Default:     1
         default: '1'
-      - name: ICC.Buff.Horde
-        label: ICC Buff Horde
-        type: string
-        description: CUSTOM
-        default: '73822'
       - name: ICC.Buff.Alliance
         label: ICC Buff Alliance
         type: string
         description: CUSTOM
         default: '73828'
+      - name: ICC.Buff.Horde
+        label: ICC Buff Horde
+        type: string
+        description: >-
+          Description: Specify ICC buff
+
+          Note:        It is necessary to restart the server after changing the
+          values!
+
+          Example:     | Spell IDs | Amount | Faction  |
+                       |     73762 |     5% | Alliance |
+                       |     73824 |    10% | Alliance |
+                       |     73825 |    15% | Alliance |
+                       |     73826 |    20% | Alliance |
+                       |     73827 |    25% | Alliance |
+                       |     73828 |    30% | Alliance |
+                       |     73816 |     5% |    Horde |
+                       |     73818 |    10% |    Horde |
+                       |     73819 |    15% |    Horde |
+                       |     73820 |    20% |    Horde |
+                       |     73821 |    25% |    Horde |
+                       |     73822 |    30% |    Horde |
+          Default:     ICC.Buff.Alliance = 73828
+                       ICC.Buff.Horde    = 73822
+        default: '73822'
       - name: WipeGunshipBlizzlike.Enable
         label: Wipe Gunship Blizzlike Enable
         type: string
@@ -4570,17 +4882,27 @@ content:
       - name: Minigob.Manabonk.Enable
         label: Minigob Manabonk Enable
         type: string
-        description: CUSTOM
+        description: |-
+          Description: Enable/ Disable Minigob Manabonk
+          Default:     1
         default: '1'
       - name: Calculate.Creature.Zone.Area.Data
         label: Calculate Creature Zone Area Data
         type: string
-        description: CUSTOM
+        description: >-
+          Description: Calculate at loading creature zoneId / areaId and save in
+          creature table
+                       WARNING: SLOW WORLD SERVER STARTUP. Should only be used for debugging.
+          Default:     0 - (Do not show)
         default: '0'
       - name: Calculate.Gameoject.Zone.Area.Data
         label: Calculate Gameoject Zone Area Data
         type: string
-        description: CUSTOM
+        description: >-
+          Description: Calculate at loading gameobject zoneId / areaId and save
+          in gameobject table
+                       WARNING: SLOW WORLD SERVER STARTUP. Should only be used for debugging.
+          Default:     0 - (Do not show)
         default: '0'
       - name: DailyRBGArenaPoints.MinLevel
         label: Daily RBGArena Points Min Level
@@ -4589,7 +4911,7 @@ content:
           Description: Allows gaining arena points on the first RBG win at level
           70.
 
-          Default: 71 - (Blizzlike)
+          Default:     71 - (Blizzlike)
         default: '71'
       - name: MunchingBlizzlike.Enabled
         label: Munching Blizzlike Enabled
@@ -4598,7 +4920,7 @@ content:
           Description: Enable the Blizzlike implementation of munching with e.g.
           Warrior's Rend or Mage's Ignite
 
-          Default: 1 - (Blizzlike)
+          Default:     1 - (Blizzlike)
         default: '1'
       - name: Daze.Enabled
         label: Daze Enabled
@@ -4607,7 +4929,7 @@ content:
           Description: Enable or disable the chance for mob melee attacks to
           daze the victim.
 
-          Default: 1 - (Blizzlike)
+          Default:     1 - (Blizzlike)
         default: '1'
       - name: InfiniteAmmo.Enabled
         label: Infinite Ammo Enabled
@@ -4616,7 +4938,7 @@ content:
           Description: Enable or disable ammo consumption for ranged attacks and
           thrown weapons.
 
-          Default: 0 - (Blizzlike)
+          Default:     0 - (Blizzlike)
         default: '0'
       - name: Debug.Battleground
         label: Debug Battleground
@@ -4625,8 +4947,8 @@ content:
           Description: Enable or disable Battleground 1v0 mode. (If enabled, the
           in-game command is disabled.)
 
-          Default: 0 - (Disabled)
-                   1 - (Enabled)
+          Default:     0 - (Disabled)
+                       1 - (Enabled)
         default: '0'
       - name: Debug.Arena
         label: Debug Arena
@@ -4635,8 +4957,8 @@ content:
           Description: Enable or disable Arena 1v1 mode. (If enabled, the
           in-game command is disabled.)
 
-          Default: 0 - (Disabled)
-                   1 - (Enabled)
+          Default:     0 - (Disabled)
+                       1 - (Enabled)
         default: '0'
       - name: Debug.LFG
         label: Debug LFG
@@ -4645,8 +4967,8 @@ content:
           Description: Enable or disable LFG 1 player queue mode. (If enabled,
           the in-game command is disabled.)
 
-          Default: 0 - (Disabled)
-                   1 - (Enabled)
+          Default:     0 - (Disabled)
+                       1 - (Enabled)
         default: '0'
       - name: Respawn.DynamicRateCreature
         label: Respawn Dynamic Rate Creature
@@ -4658,8 +4980,8 @@ content:
                        As player count exceeds this value, respawn times decrease proportionally
                        (e.g., at double the player count, respawn times are halved; at triple the player count, respawns happen three times as fast).
                        Does not affect instanced creatures, bosses, or quest givers.
-                       Formula: adjustFactor = rate / playerCount
-                                RespawnTime = RespawnTime * adjustFactor
+          Formula:     adjustFactor = rate / playerCount
+                       RespawnTime = RespawnTime * adjustFactor
           Default:     1 (Disabled)
         default: '1'
       - name: Respawn.DynamicMinimumCreature
@@ -4681,8 +5003,8 @@ content:
                        As player count exceeds this value, respawn times decrease proportionally
                        (e.g., at double the player count, respawn times are halved; at triple the player count, respawns happen three times as fast).
                        Does not affect instanced objects or quest givers.
-                       Formula: adjustFactor = rate / playerCount
-                                RespawnTime = RespawnTime * adjustFactor
+          Formula:     adjustFactor = rate / playerCount
+                       RespawnTime = RespawnTime * adjustFactor
           Default:     1 (Disabled)
         default: '1'
       - name: Respawn.DynamicMinimumGameObject
@@ -4758,7 +5080,60 @@ content:
       - name: Appender.ALELog
         label: Appender ALELog
         type: string
-        description: LOGGING SYSTEM SETTINGS
+        description: |-
+          Description: Defines 'where to log'.
+          Format:      Type,LogLevel,Flags,optional1,optional2,optional3
+                       Type
+                           0 - (None)
+                           1 - (Console)
+                           2 - (File)
+                           3 - (DB)
+                       LogLevel
+                           0 - (Disabled)
+                           1 - (Fatal)
+                           2 - (Error)
+                           3 - (Warning)
+                           4 - (Info)
+                           5 - (Debug)
+                           6 - (Trace)
+                       Flags:
+                           0 - None
+                           1 - Prefix Timestamp to the text
+                           2 - Prefix Log Level to the text
+                           4 - Prefix Log Filter type to the text
+                           8 - Append timestamp to the log file name. Format: YYYY-MM-DD_HH-MM-SS
+                               (Only used with Type = 2)
+                          16 - Make a backup of existing file before overwrite
+                               (Only used with Mode = w)
+                       Colors (read as optional1 if Type = Console)
+                           Format: "fatal error warn info debug trace"
+                           0 - BLACK
+                           1 - RED
+                           2 - GREEN
+                           3 - BROWN
+                           4 - BLUE
+                           5 - MAGENTA
+                           6 - CYAN
+                           7 - GREY
+                           8 - YELLOW
+                           9 - LRED
+                          10 - LGREEN
+                          11 - LBLUE
+                          12 - LMAGENTA
+                          13 - LCYAN
+                          14 - WHITE
+                           Example: "1 9 3 6 5 8"
+                       File: Name of the file (read as optional1 if Type = File)
+                           Allows to use one "%s" to create dynamic files
+                       Mode: Mode to open the file (read as optional2 if Type = File)
+                            a - (Append)
+                            w - (Overwrite)
+                       MaxFileSize: Maximum file size of the log file before creating a new log file
+                       (read as optional3 if Type = File)
+                           Size is measured in bytes expressed in a 64-bit unsigned integer.
+                           Maximum value is 4294967295 (4 GB). Leave blank for no limit.
+                           NOTE: Does not work with dynamic filenames.
+                           Example:  536870912 (512 MB)
         default: '2,5,0,ALE.log,w'
       - name: Appender.ALEConsole
         label: Appender ALEConsole
@@ -4768,7 +5143,19 @@ content:
       - name: Logger.ALE
         label: Logger ALE
         type: string
-        description: LOGGING SYSTEM SETTINGS
+        description: |-
+          Description: Defines 'What to log'
+          Format:      LogLevel,AppenderList
+                       LogLevel
+                           0 - (Disabled)
+                           1 - (Fatal)
+                           2 - (Error)
+                           3 - (Warning)
+                           4 - (Info)
+                           5 - (Debug)
+                           6 - (Trace)
+                       AppenderList: List of appenders linked to logger
+                       (Using spaces as separator).
         default: '4,ALELog ALEConsole'
   - name: playerbots
     label: Playerbots Config
@@ -4793,34 +5180,67 @@ content:
       - name: AiPlayerbot.MaxRandomBots
         label: Ai Playerbot Max Random Bots
         type: string
-        description: Randombot count
+        description: GENERAL SETTINGS
         default: '500'
       - name: AiPlayerbot.RandomBotAccountCount
         label: Ai Playerbot Random Bot Account Count
         type: string
-        description: 'Default: 0 (automatic)'
+        description: >-
+          Randombot accounts
+
+          Set to 0 to automatically calculate needed accounts based on
+          MaxRandomBots, EnablePeriodicOnlineOffline
+
+          and its ratio, and AddClassAccountPoolSize. Set manually if you want
+          to create more accounts than needed.
+
+          If the manual value is less than the required, the system will
+          override it with the required value.
+
+          Default: 0 (automatic)
         default: '0'
       - name: AiPlayerbot.AddClassAccountPoolSize
         label: Ai Playerbot Add Class Account Pool Size
         type: string
-        description: '10 bots (or 9 if WotLK is disabled), one bot for each class.'
+        description: >-
+          Addclass accounts
+
+          Number of accounts created for bots reserved for the addclass command.
+          As with randombots, each account has
+
+          10 bots (or 9 if WotLK is disabled), one bot for each class.
         default: '50'
       - name: AiPlayerbot.RandomBotAccountPrefix
         label: Ai Playerbot Random Bot Account Prefix
         type: string
-        description: Do not change this prefix while there are existing bot accounts.
+        description: |-
+          Prefix for created bot accounts (of any type).
+          Do not change this prefix while there are existing bot accounts.
         default: '"rndbot"'
       - name: AiPlayerbot.DeleteRandomBotAccounts
         label: Ai Playerbot Delete Random Bot Accounts
         type: string
         description: >-
+          Delete all randombot accounts
+
+          To apply this, set the number to 1 and run the Worldserver. Once
+          deletion is complete, if you would
+
           like to recreate randombots, set the number back to 0 and rerun the
           Worldserver.
         default: '0'
       - name: AiPlayerbot.DisabledWithoutRealPlayer
         label: Ai Playerbot Disabled Without Real Player
         type: string
-        description: log out 300 seconds (default) after all real players log out
+        description: >-
+          Disable randombots when no real players are logged in
+
+          Default: 0 (randombots will login when server starts)
+
+          If enabled, randombots will only log in 30 seconds (default) after a
+          real player logs in, and will
+
+          log out 300 seconds (default) after all real players log out
         default: '0'
       - name: AiPlayerbot.DisabledWithoutRealPlayerLoginDelay
         label: Ai Playerbot Disabled Without Real Player Login Delay
@@ -4840,17 +5260,28 @@ content:
       - name: AiPlayerbot.AddClassCommand
         label: Ai Playerbot Add Class Command
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Enable/Disable creating bots by addclass command (0 = GM only, 1 =
+          enabled)
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.GroupInvitationPermission
         label: Ai Playerbot Group Invitation Permission
         type: string
-        description: 'Default: 1 (accept based on level)'
+        description: >-
+          Bot group invitation permission level (0 = GM only, 1 = accept based
+          on level, 2 = always accept)
+
+          Default: 1 (accept based on level)
         default: '1'
       - name: AiPlayerbot.KeepAltsInGroup
         label: Ai Playerbot Keep Alts In Group
         type: string
-        description: 1 = enabled (prevents bots from automatically leaving the group)
+        description: |-
+          Keep altbots in the party even when the master leaves
+          0 = disabled (default behavior)
+          1 = enabled (prevents bots from automatically leaving the group)
         default: '0'
       - name: AiPlayerbot.BotAutologin
         label: Ai Playerbot Bot Autologin
@@ -4875,7 +5306,16 @@ content:
       - name: AiPlayerbot.RandomBotGuildNearby
         label: Ai Playerbot Random Bot Guild Nearby
         type: string
-        description: 'Default: 0 (disabled)'
+        description: >-
+          Randombots will create guilds with nearby randombots
+
+          Note: currently, randombots will not invite more bots after a guild is
+          created,
+
+          meaning randombot guilds will have only the 10 initial randombots
+          needed to sign the charter
+
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.RandomBotGuildCount
         label: Ai Playerbot Random Bot Guild Count
@@ -4917,73 +5357,124 @@ content:
         label: Ai Playerbot Self Bot Level
         type: string
         description: >-
+          Player can be activated as a bot (selfbot)
+
           Selfbot permission level (0 = disabled, 1 = GM only (default), 2 = all
           players, 3 = activate on login)
         default: '1'
       - name: AiPlayerbot.AutoInitOnly
         label: Ai Playerbot Auto Init Only
         type: string
-        description: 'Default: 0 (non-GM player can use any intialization commands)'
+        description: >-
+          Non-GM player can only use init=auto to initialize bots based on their
+          own level and gearscore
+
+          Default: 0 (non-GM player can use any intialization commands)
         default: '0'
       - name: AiPlayerbot.ResetInstanceIdForAltBots
         label: Ai Playerbot Reset Instance Id For Alt Bots
         type: string
-        description: 'Default: 0'
+        description: |-
+          Allow .bot refresh=raid to unbind instances on player-created alt
+          bots (non-addclass bots). When 0, refresh=raid is denied on alts
+          with "non-addclass bot" error. UnbindInstance is DB-light, no lag
+          risk from enabling this.
+          Default: 0
         default: '0'
       - name: AiPlayerbot.AutoInitEquipLevelLimitRatio
         label: Ai Playerbot Auto Init Equip Level Limit Ratio
         type: string
-        description: 'Default: 1.0 (same with the player)'
+        description: |-
+          The upper limit ratio of bot equipment level for init=auto
+          Default: 1.0 (same with the player)
         default: '1.0'
       - name: AiPlayerbot.AllowLearnTrainerSpells
         label: Ai Playerbot Allow Learn Trainer Spells
         type: string
-        description: 'Default: 1 - (enabled)'
+        description: >-
+          AllowLearnTrainerSpells
+
+          Description: Allow the bot to learn trainers' spells as long as it has
+          the money.
+
+          Default: 1 - (enabled)
         default: '1'
       - name: AiPlayerbot.AllowSummonInCombat
         label: Ai Playerbot Allow Summon In Combat
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Enable/Disable summoning bots when the master is in combat
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.AllowSummonWhenMasterIsDead
         label: Ai Playerbot Allow Summon When Master Is Dead
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Enable/Disable summoning bots when the master is dead
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.AllowSummonWhenBotIsDead
         label: Ai Playerbot Allow Summon When Bot Is Dead
         type: string
-        description: 'Default: 1 (always)'
+        description: >-
+          Enable/Disable summoning bots when they are dead (0 = only when the
+          bots are ghosts, 1 = always)
+
+          Default: 1 (always)
         default: '1'
       - name: AiPlayerbot.ReviveBotWhenSummoned
         label: Ai Playerbot Revive Bot When Summoned
         type: string
-        description: 'Default: 1 (disabled in combat)'
+        description: >-
+          Enable/Disable reviving bots when summoning them (0 = disabled, 1 =
+          disabled in combat, 2 = enabled)
+
+          Default: 1 (disabled in combat)
         default: '1'
       - name: AiPlayerbot.BotRepairWhenSummon
         label: Ai Playerbot Bot Repair When Summon
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Enable/Disable bots repairing gear when summoned
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.UseGroundMountAtMinLevel
         label: Ai Playerbot Use Ground Mount At Min Level
         type: string
-        description: 'Default: 20'
+        description: |-
+          Defines at what level a bot will naturally use its 60% ground mount
+          Note: was level 20 during WotLK, 30 during TBC, 40 during Vanilla
+          Default: 20
         default: '20'
       - name: AiPlayerbot.UseFastGroundMountAtMinLevel
         label: Ai Playerbot Use Fast Ground Mount At Min Level
         type: string
-        description: 'Default: 40'
+        description: >-
+          Defines at what level a bot will naturally use its 100% fast ground
+          mount
+
+          Note: was level 40 during WotLK, 60 during Vanilla
+
+          Default: 40
         default: '40'
       - name: AiPlayerbot.UseFlyMountAtMinLevel
         label: Ai Playerbot Use Fly Mount At Min Level
         type: string
-        description: 'Default: 60'
+        description: |-
+          Defines at what level a bot will naturally use its 150% flying mount
+          Note: was level 60 during WotLK, 70 during TBC
+          Default: 60
         default: '60'
       - name: AiPlayerbot.UseFastFlyMountAtMinLevel
         label: Ai Playerbot Use Fast Fly Mount At Min Level
         type: string
-        description: 'Default: 70'
+        description: >-
+          Defines at what level a bot will naturally use its 280% fast flying
+          mount
+
+          Note: was level 70 during WotLK and TBC
+
+          Default: 70
         default: '70'
       - name: AiPlayerbot.RandomBotShowHelmet
         label: Ai Playerbot Random Bot Show Helmet
@@ -4998,12 +5489,18 @@ content:
       - name: AiPlayerbot.AutoEquipUpgradeLoot
         label: Ai Playerbot Auto Equip Upgrade Loot
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Toggles whether altbots will automatically equip items in their
+          inventory that are sufficient upgrades
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.EquipUpgradeThreshold
         label: Ai Playerbot Equip Upgrade Threshold
         type: string
         description: >-
+          Threshold for auto equipping upgrades
+
           Default: 1.1 (Equip when the equipment score of the new item is 1.1
           times higher than the currently equipped item)
         default: '1.1'
@@ -5015,32 +5512,74 @@ content:
       - name: AiPlayerbot.FreeMethodLoot
         label: Ai Playerbot Free Method Loot
         type: string
-        description: 'Default: 0 (disabled)'
+        description: |-
+          Bots keep looting when loot system is set to free for all
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.LootNeedRollLevel
         label: Ai Playerbot Loot Need Roll Level
         type: string
-        description: 'Default: 1 (greed)'
+        description: >-
+          Bots' Roll level bots will use for items they Need (0 = pass, 1 =
+          greed, 2 = need)
+
+          Default: 1 (greed)
         default: '1'
       - name: AiPlayerbot.LootGreedRollLevel
         label: Ai Playerbot Loot Greed Roll Level
         type: string
-        description: 'Default: 0 (disabled - bots only NEED or PASS)'
+        description: |-
+          Enable bots to roll GREED on items (global toggle)
+          If disabled, bots will PASS instead of GREED on all items
+          Default: 0 (disabled - bots only NEED or PASS)
         default: '0'
       - name: AiPlayerbot.LootRollRecipe
         label: Ai Playerbot Loot Roll Recipe
         type: string
-        description: 'Default: 0 (disabled)'
+        description: >-
+          Enable bots to roll on recipes. Will NEED on learnable profession
+          recipes they don't already know
+
+          Bots will roll GREED on BoE recipes they can't learn if LootRollGreed
+          is enabled.
+
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.LootRollDisenchant
         label: Ai Playerbot Loot Roll Disenchant
         type: string
-        description: 'Default: 0 (disabled)'
+        description: >-
+          Bots with enchanting will roll DISENCHANT instead of GREED on
+          disenchantable items
+
+          If disabled, bots will GREED on disenchantable items instead
+
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.DisallowedGameObjects
         label: Ai Playerbot Disallowed Game Objects
         type: string
         description: >-
+          A list of GameObject GUIDs that bots will not interact with.
+
+          List of default GUIDs:
+
+          QuestItems:
+
+          Blood of Heroes = 176213, Defias Gunpowder = 17155, Waterlogged
+          Envelope = 2656, Baelog's Chest = 123329, Half-Buried Bottle = 2560
+
+          Chests:
+
+          Large Solid Chest = 74448, Box of Assorted Parts = 19020, Food Crate =
+          3719, Water Barrel = 3658, Barrel of Milk = 3705, Barrel of sweet
+          Nectar = 3706, Tattered Chest = 105579, Large bettered Chest = 75293,
+          Solid Chest = 2857, Battered Foodlocker = 179490, Witch Doctor's Chest
+          = 141596, Relic Coffer = 160836, Dark Coffer = 160845, Fengus's Chest
+          = 179516, Supply Crate = 176224/181085, Malor's Strongbox = 176112
+
+          Other:
+
           Shallow Grave (Zul'Farrak) = 128308/128403, Grim Guzzler Boar
           (Blackrock Depths) = 165739, Dark Iron Ale Mug (Blackrock Depths) =
           165738, Father Flame (Blackrock Spire) = 175245, Unforged Runic
@@ -5066,12 +5605,22 @@ content:
       - name: AiPlayerbot.DisableMoveSplinePath
         label: Ai Playerbot Disable Move Spline Path
         type: string
-        description: 'Default: 0 - MoveSplinePath enabled'
+        description: >-
+          Enable/disable use of MoveSplinePath for bot movement
+
+          Disabling will result in more erratic movement but is required for
+          stuns, snares, and roots to work on bots
+
+          Default: 0 - MoveSplinePath enabled
+            1 - MoveSplinePath disabled in BG/Arena only
+            2 - MoveSplinePath disabled everywhere
         default: '0'
       - name: AiPlayerbot.MaxMovementSearchTime
         label: Ai Playerbot Max Movement Search Time
         type: string
-        description: 'Default: 3'
+        description: |-
+          Max search time for movement (higher for better movement on slopes)
+          Default: 3
         default: '3'
       - name: AiPlayerbot.ExpireActionTime
         label: Ai Playerbot Expire Action Time
@@ -5258,23 +5807,35 @@ content:
         label: Ai Playerbot Auto Pick Reward
         type: string
         description: >-
+          Bots pick their quest rewards
+
           yes = picks the most useful item, no = list all rewards, ask = pick
           useful item and lists if multiple
         default: 'yes'
       - name: AiPlayerbot.SyncQuestWithPlayer
         label: Ai Playerbot Sync Quest With Player
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Sync quests with player (bots will complete quests the moment you hand
+          them in and will not loot quest items.)
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.SyncQuestForPlayer
         label: Ai Playerbot Sync Quest For Player
         type: string
-        description: 'Default: 0 (disabled)'
+        description: >-
+          Bots will auto-complete quests for the player when handing in bots'
+          quests
+
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.DropObsoleteQuests
         label: Ai Playerbot Drop Obsolete Quests
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Bots will drop obsolete quests
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.ApplyInstanceStrategies
         label: Ai Playerbot Apply Instance Strategies
@@ -5286,7 +5847,9 @@ content:
       - name: AiPlayerbot.AutoAvoidAoe
         label: Ai Playerbot Auto Avoid Aoe
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Enable auto avoid aoe strategy
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.MaxAoeAvoidRadius
         label: Ai Playerbot Max Aoe Avoid Radius
@@ -5301,23 +5864,74 @@ content:
       - name: AiPlayerbot.AutoSaveMana
         label: Ai Playerbot Auto Save Mana
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Enable healer bot save mana strategy
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.SaveManaThreshold
         label: Ai Playerbot Save Mana Threshold
         type: string
-        description: 'Default: 60 (60%)'
+        description: |-
+          Healer bot save mana threshold
+          Default: 60 (60%)
         default: '60'
       - name: AiPlayerbot.AutoGreaterBlessings
         label: Ai Playerbot Auto Greater Blessings
         type: string
-        description: 'Default: 1 (raid only)'
+        description: >-
+          Enable Paladin bots to use greater blessings, with the blessing used
+          being based on the
+
+          number of Paladins in the raid/group and the spec of the recipient.
+          Priorities for each
+
+          spec are hardcoded in GreaterBlessingActions.h.
+
+          0 = disabled
+
+          1 = enabled in raid groups only
+
+          2 = enabled in all groups
+
+          Default: 1 (raid only)
         default: '1'
       - name: AiPlayerbot.AutoPartyBuffs
         label: Ai Playerbot Auto Party Buffs
         type: string
-        description: 'Default: 2 (all groups)'
+        description: >-
+          Enable bots to use group reagent buffs: Gift of the Wild, Arcane
+          Brilliance,
+
+          Prayer of Fortitude, Prayer of Spirit, and Prayer of Shadow
+          Protection.
+
+          0 = disabled
+
+          1 = enabled in raid groups only
+
+          2 = enabled in all groups
+
+          Default: 2 (all groups)
         default: '2'
+      - name: AiPlayerbot.TellWhenMissingBuffReagents
+        label: Ai Playerbot Tell When Missing Buff Reagents
+        type: string
+        description: >-
+          Bots tell the group when they attempt to use a reagent-based greater
+          blessing or group buff
+
+          but have to fall back to the single-target version because they are
+          out of reagents.
+
+          Default: 1 (enabled)
+        default: '1'
+      - name: AiPlayerbot.MissingBuffReagentMessageCooldown
+        label: Ai Playerbot Missing Buff Reagent Message Cooldown
+        type: string
+        description: |-
+          Cooldown for the missing buff reagent message, in seconds.
+          Default: 300 (5 minutes)
+        default: '300'
       - name: AiPlayerbot.FleeingEnabled
         label: Ai Playerbot Fleeing Enabled
         type: string
@@ -5326,12 +5940,26 @@ content:
       - name: AiPlayerbot.MaintenanceCommand
         label: Ai Playerbot Maintenance Command
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Enable/Disable maintenance command
+
+          Learn all available spells and skills, assign talent points, refresh
+          consumables, repair, enchant equipment, socket gems, etc.
+
+          Applies if bot's level is above AiPlayerbot.MinEnchantingBotLevel
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.AltMaintenanceAmmo
         label: Ai Playerbot Alt Maintenance Ammo
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Enable/Disable specific maintenance command functionality for altbots
+
+          Disable to prevent players from giving free bags, spells, skill
+          levels, etc. to their altbots
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.AltMaintenanceFood
         label: Ai Playerbot Alt Maintenance Food
@@ -5448,37 +6076,169 @@ content:
       - name: AiPlayerbot.AutoGearCommand
         label: Ai Playerbot Auto Gear Command
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Enable/Disable autogear command, which automatically upgrades bots'
+          gear
+
+          The quality is limited by AutoGearQualityLimit and AutoGearScoreLimit
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.AutoGearCommandAltBots
         label: Ai Playerbot Auto Gear Command Alt Bots
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Enable/Disable autogear command on altbots
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.AutoGearBisCommand
         label: Ai Playerbot Auto Gear Bis Command
         type: string
-        description: 'Default: 0 (disabled)'
+        description: >-
+          If 1 (enabled) chat command: autogear bis, gives bots BiS gear from
+          the playerbots_bis_gear table
+
+          whose item-level floor matches AutoGearScoreLimit (e.g. 290 = ICC, 245
+          = ToC,
+
+          125 = Kara, 78 = MC). See the AutoGearScoreLimit comment below for the
+          full list.
+
+          chat command: autogear bis x, (x must be positive integer) will give
+          items based on value of x.
+
+          If x is bigger than AutoGearScoreLimit, bis wont be given, if lower it
+          will match x when giving items.
+
+          Commands falls back to autogear when no tier matches or the table is
+          empty for the bot's class/spec.
+
+          Requires AutoGearQualityLimit = 4 and AutoGearCommand = 1.
+
+          If AutoGearCommandAltBots = 1 it will be anbled for alt bots.
+
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.AutoGearQualityLimit
         label: Ai Playerbot Auto Gear Quality Limit
         type: string
-        description: 'Default: 3 (rare)'
+        description: >-
+          Equipment quality limitation for autogear command (1 = normal, 2 =
+          uncommon, 3 = rare, 4 = epic, 5 = legendary)
+
+          Default: 3 (rare)
         default: '3'
       - name: AiPlayerbot.AutoGearScoreLimit
         label: Ai Playerbot Auto Gear Score Limit
         type: string
-        description: 'Default: 0 (no limit)'
+        description: >-
+          Max iLVL Tier 4 = 120 | Tier 5 = 133 | Tier 6 = 164
+
+          Max iLVL Phase 1(Kara, Gruul, Mag) = 125 | Phase 2(SSC, TK, ZA) = 141
+          | Phase 3(Hyjal, BT) = 156 | Phase 4(Sunwell) = 164
+
+          WotLK
+
+          Max iLVL Tier 7(10/25) = 200/213 | Tier 8(10/25) = 225/232 | Tier
+          9(10/25) = 232/245 | Tier 10(10/25/HC) = 251/264/290
+
+          Max iLVL Phase 1(Naxx) = 224 | Phase 2(Ulduar) = 245 | Phase 3(ToC) =
+          258 | Phase 4(ICC) = 290
+
+          Default: 0 (no limit)
         default: '0'
       - name: AiPlayerbot.BotCheats
         label: Ai Playerbot Bot Cheats
         type: string
-        description: 'Default: food, taxi, and raid are enabled'
+        description: >-
+          Enable/Disable cheats for bots
+
+          "food" (bots eat or drink without using food or drinks from their
+          inventory)
+
+          "gold" (bots have infinite gold)
+
+          "health" (bots immediately regenerate lost health)
+
+          "mana" (bots have infinite mana)
+
+          "power" (bots have infinite energy, rage, and runic power)
+
+          "taxi" (bots may use all flight paths, though they will not actually
+          learn them)
+
+          "raid" (bots use certain cheats implemented into raid strategies)
+
+          To use multiple cheats, separate them by commas below (e.g., to enable
+          all, use "gold,health,mana,power,raid,taxi")
+
+          Default: food, taxi, and raid are enabled
         default: '"food,taxi,raid"'
       - name: AiPlayerbot.AttunementQuests
         label: Ai Playerbot Attunement Quests
         type: string
-        description: '- 10985, A Distraction for Akama'
+        description: >-
+          List of attunement quests (comma-separated list of quest IDs) that are
+          automatically completed for all bots.
+
+          While mod-playerbots does not restore removed attunement requirements,
+          other mods, such as mod-individual-progression, may do so.
+
+          This is meant to exclude bots from such requirements.
+
+          Defaults:
+
+          Caverns of Time - Part 1
+
+          - 10279, To The Master's Lair
+
+          - 10277, The Caverns of Time
+
+          Caverns of Time - Part 2 (Escape from Durnholde Keep)
+
+          - 10282, Old Hillsbrad
+
+          - 10283, Taretha's Diversion
+
+          - 10284, Escape from Durnholde
+
+          - 10285, Return to Andormu
+
+          Caverns of Time - Part 2 (The Black Morass)
+
+          - 10296, The Black Morass
+
+          - 10297, The Opening of the Dark Portal
+
+          - 10298, Hero of the Brood
+
+          Magister's Terrace
+
+          - 11481, Crisis at the Sunwell
+
+          - 11482, Duty Calls
+
+          - 11488, Magisters' Terrace
+
+          - 11490, The Scryer's Scryer
+
+          - 11492, Hard to Kill
+
+          Serpentshrine Cavern
+
+          - 10901, The Cudgel of Kar'desh
+
+          Tempest Keep: The Eye
+
+          - 10888, Trial of the Naaru: Magtheridon
+
+          Battle for Mount Hyjal (Hyjal Summit)
+
+          - 10445, The Vials of Eternity
+
+          Black Temple
+
+          - 10985, A Distraction for Akama
         default: >-
           10279,10277,10282,10283,10284,10285,10296,10297,10298,11481,11482,11488,11490,11492,10901,10888,10445,10985
       - name: AiPlayerbot.BotTaxiDelayMinMs
@@ -5510,12 +6270,25 @@ content:
       - name: AiPlayerbot.ClassMatchingProfessionChance
         label: Ai Playerbot Class Matching Profession Chance
         type: string
-        description: 'Default: 30'
+        description: >-
+          Percentage of randombots in each class bucket that receive a
+          class-matching
+
+          weighted profession combination. The remaining randombots use the
+          weighted
+
+          random sane-pair profession pool.
+
+          Default: 30
         default: '30'
       - name: AiPlayerbot.EnableFishingWithMaster
         label: Ai Playerbot Enable Fishing With Master
         type: string
-        description: 'Default: 1 (Enabled)'
+        description: >-
+          Automatically adds the 'master fishing' strategy to bots that have the
+          fishing skill when the bots master fishes.
+
+          Default: 1 (Enabled)
         default: '1'
       - name: AiPlayerbot.FishingDistanceFromMaster
         label: Ai Playerbot Fishing Distance From Master
@@ -5527,7 +6300,11 @@ content:
       - name: AiPlayerbot.FishingDistance
         label: Ai Playerbot Fishing Distance
         type: string
-        description: Currently not relevant since masterless bots will not fish
+        description: >-
+          Distance from itself (in yards) that a bot without a master will
+          search for water to fish
+
+          Currently not relevant since masterless bots will not fish
         default: '40.0'
       - name: AiPlayerbot.EndFishingWithMaster
         label: Ai Playerbot End Fishing With Master
@@ -5554,27 +6331,47 @@ content:
       - name: AiPlayerbot.SyncLevelWithPlayers
         label: Ai Playerbot Sync Level With Players
         type: string
-        description: 'Default: 0 (disabled)'
+        description: |-
+          Sync max randombot level with max level of online players
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.PreQuests
         label: Ai Playerbot Pre Quests
         type: string
-        description: 'Default: 0 (disabled)'
+        description: |-
+          Mark many quests ≤ bot level as complete (slows down bot creation)
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.RandomBotJoinLfg
         label: Ai Playerbot Random Bot Join Lfg
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Enable LFG for randombots
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.EnablePeriodicOnlineOffline
         label: Ai Playerbot Enable Periodic Online Offline
         type: string
-        description: 'Default: 0 (disabled, the set of online bots remains fixed)'
+        description: >-
+          Enable/Disable periodic online - offline of randombots to mimic the
+          real-world scenario where not all players are online simultaneously
+
+          When enabled, randombots are randomly selected to go online or offline
+          periodically from a larger set
+
+          Default: 0 (disabled, the set of online bots remains fixed)
         default: '0'
       - name: AiPlayerbot.PeriodicOnlineOfflineRatio
         label: Ai Playerbot Periodic Online Offline Ratio
         type: string
         description: >-
+          Defines the ratio between the total number of randombots (including
+          offline ones) and the number of randombots currently online
+          (MaxRandomBots)
+
+          This setting must greater than 1.0 and only applies when
+          EnablePeriodicOnlineOffline
+
           Default: 2.0 (total number of bots is twice the number of
           MaxRandomBots)
         default: '2.0'
@@ -5596,12 +6393,25 @@ content:
       - name: AiPlayerbot.LimitTalentsExpansion
         label: Ai Playerbot Limit Talents Expansion
         type: string
-        description: 'Default: 0 (disabled)'
+        description: >-
+          Enable simulated expansion limitation for talents and glyphs
+
+          If enabled, limits talent trees to 6 rows plus the middle talent of
+          the 7th row for bots until level 61
+
+          and 8 rows plus the middle talent of the 9th row for bots from level
+          61 until level 71
+
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.EnableRandomBotTrading
         label: Ai Playerbot Enable Random Bot Trading
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Configure randombot trading (0: Disabled, 1: Enabled, 2: Only Buy, 3:
+          Only Sell)
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.TradeActionExcludedPrefixes
         label: Ai Playerbot Trade Action Excluded Prefixes
@@ -5613,12 +6423,20 @@ content:
       - name: AiPlayerbot.BotSendMailEnabled
         label: Ai Playerbot Bot Send Mail Enabled
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Allow bots to send mail. When disabled, bots will not mail items or
+          money in
+
+          response to chat commands ("send mail").
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.DisableRandomLevels
         label: Ai Playerbot Disable Random Levels
         type: string
         description: >-
+          Disable randombots being generated with a random level
+
           If disabled, every randombot starts on a specified level (but can
           still level up by killing mobs and questing)
         default: '0'
@@ -5632,54 +6450,98 @@ content:
       - name: AiPlayerbot.RandomBotMinLevelChance
         label: Ai Playerbot Random Bot Min Level Chance
         type: string
-        description: 'Default: 0.1 (10%)'
+        description: |-
+          Chance randombot has min level on first randomize
+          Default: 0.1 (10%)
         default: '0.1'
       - name: AiPlayerbot.RandomBotMaxLevelChance
         label: Ai Playerbot Random Bot Max Level Chance
         type: string
-        description: Default 0.1 (10%)
+        description: |-
+          Chance randombot has max level on first randomize
+          Default 0.1 (10%)
         default: '0.1'
       - name: AiPlayerbot.RandomBotFixedLevel
         label: Ai Playerbot Random Bot Fixed Level
         type: string
-        description: 'Default: 0 (disabled)'
+        description: |-
+          Fix the level of randombots (they won't level up)
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.DowngradeMaxLevelBot
         label: Ai Playerbot Downgrade Max Level Bot
         type: string
-        description: 'Default: 0 (disabled)'
+        description: |-
+          Set RandomBotMaxLevel bots to RandomBotMinLevel
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.RandomBotXPRate
         label: Ai Playerbot Random Bot XPRate
         type: string
-        description: Server XP Rate * AiPlayerbot.RandomBotXPRate
+        description: |-
+          Set XP rate for randombots (Default: 1.0)
+          Server XP Rate * AiPlayerbot.RandomBotXPRate
         default: '1.0'
       - name: AiPlayerbot.AutoUpgradeEquip
         label: Ai Playerbot Auto Upgrade Equip
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Randombots automatically receive upgraded equipment on levelup
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.EquipAndSpecPersistence
         label: Ai Playerbot Equip And Spec Persistence
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Enable/disable which (if any) randombots preserve their current
+          equipment and spec during login
+
+          and periodic randomization (i.e., persistence).
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.EquipAndSpecPersistenceLevel
         label: Ai Playerbot Equip And Spec Persistence Level
         type: string
         description: >-
+          If EquipAndSpecPersistence is enabled, equipment and talent
+          persistence will affect randombots of this
+
+          level or higher.
+
           Default: 1 (enable persistence for randombots of at least level 1
           (i.e., all levels))
         default: '1'
       - name: AiPlayerbot.RandomGearQualityLimit
         label: Ai Playerbot Random Gear Quality Limit
         type: string
-        description: 'Default: 3 (rare)'
+        description: >-
+          Equipment quality limitation for randombots (1 = normal, 2 = uncommon,
+          3 = rare, 4 = epic, 5 = legendary)
+
+          This also sets the maximum quality that can be generated by autogear
+          for randombots and altbots
+
+          Default: 3 (rare)
         default: '3'
       - name: AiPlayerbot.RandomGearScoreLimit
         label: Ai Playerbot Random Gear Score Limit
         type: string
-        description: 'Default: 0 (no limit)'
+        description: >-
+          Max iLVL Tier 4 = 120 | Tier 5 = 133 | Tier 6 = 164
+
+          Max iLVL Phase 1(Kara, Gruul, Mag) = 125 | Phase 2(SSC, TK, ZA) = 141
+          | Phase 3(Hyjal, BT) = 156 | Phase 4(Sunwell) = 164
+
+          WotLK
+
+          Max iLVL Tier 7(10/25) = 200/213 | Tier 8(10/25) = 225/232 | Tier
+          9(10/25) = 232/245 | Tier 10(10/25/HC) = 251/264/290
+
+          Max iLVL Phase 1(Naxx) = 224 | Phase 2(Ulduar) = 245 | Phase 3(ToC) =
+          258 | Phase 4(ICC) = 290
+
+          Default: 0 (no limit)
         default: '0'
       - name: AiPlayerbot.PreferClassArmorType
         label: Ai Playerbot Prefer Class Armor Type
@@ -5689,59 +6551,110 @@ content:
       - name: AiPlayerbot.PreferredSpecWeapons
         label: Ai Playerbot Preferred Spec Weapons
         type: string
-        description: 'Default: 0 (disabled)'
+        description: >-
+          When enabled, bots prefer spec-appropriate weapons based on speed and
+          weapon type during autogear.
+
+          Examples: Arms Warriors favor slow 2H axes/polearms (Axe
+          Specialization), Combat Rogues
+
+          favor a slow MH with a fast OH, and Enhancement Shamans favor
+          synchronized slow 1H weapons.
+
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.MinEnchantingBotLevel
         label: Ai Playerbot Min Enchanting Bot Level
         type: string
-        description: 'Default: 60'
+        description: >-
+          Set minimum level of bots that will enchant and socket gems into their
+          equipment with maintenance
+
+          If greater than RandomBotMaxlevel, bots will not automatically enchant
+          equipment or socket gems
+
+          Default: 60
         default: '60'
       - name: AiPlayerbot.LimitEnchantExpansion
         label: Ai Playerbot Limit Enchant Expansion
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Enable expansion limitation for bot enchants and gems
+
+          If enabled, bots will not use TBC enchants until level 61 or WotLK
+          enchants and gems until level 71
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.LimitGearExpansion
         label: Ai Playerbot Limit Gear Expansion
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Enable expansion limitation for gear
+
+          If enabled, bots will not equip TBC gear until level 61 or WotLK gear
+          until level 71
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.RandomGearLoweringChance
         label: Ai Playerbot Random Gear Lowering Chance
         type: string
-        description: Set between 0 (0%) and 1 (100%)
+        description: |-
+          Chance randombot will have less-than-optimized generated gear
+          Set between 0 (0%) and 1 (100%)
         default: '0'
       - name: AiPlayerbot.UnobtainableItems
         label: Ai Playerbot Unobtainable Items
         type: string
         description: >-
+          Unobtainable or unusable items (comma-separated list of item IDs)
+
           Defaults: Chilton Wand (12468), Frenzyheart Insignia of Fury
           test/on-use row (44869),
+             Oracle Talisman of Ablution test/on-use row (44870), Totem of the Earthen Ring (46978)
         default: '12468,44869,44870,46978'
       - name: AiPlayerbot.GearScoreCheck
         label: Ai Playerbot Gear Score Check
         type: string
-        description: 'Default: 0 (disabled)'
+        description: >-
+          Randombots check player's gearscore level and deny the group
+          invitation if it's too low
+
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.HunterWolfPet
         label: Ai Playerbot Hunter Wolf Pet
         type: string
-        description: 'Default: 0 (disabled)'
+        description: >-
+          Only set wolf pets for hunters for optimal raid performance (0 =
+          disabled, 1 = enabled only for max-level bots, 2 = enabled)
+
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.DefaultPetStance
         label: Ai Playerbot Default Pet Stance
         type: string
-        description: 'Default: 1 (Defensive)'
+        description: |-
+          Default pet stance when a bot summons a pet
+          0 = Passive, 1 = Defensive, 2 = Aggressive
+          Default: 1 (Defensive)
         default: '1'
       - name: AiPlayerbot.PetChatCommandDebug
         label: Ai Playerbot Pet Chat Command Debug
         type: string
-        description: Default = 0 (disabled)
+        description: |-
+          Enable/disable debug messages about pet commands
+          0 = Disabled, 1 = Enabled
+          Default = 0 (disabled)
         default: '0'
       - name: AiPlayerbot.ExcludedHunterPetFamilies
         label: Ai Playerbot Excluded Hunter Pet Families
         type: string
         description: >-
+          Prohibit hunter bots from creating pets with any family ID listed
+          below in ExcludedHunterPetFamilies
+
           See the creature_family database table for all pet families by ID
           (note: ID for spiders is 3)
         default: '""'
@@ -5749,20 +6662,59 @@ content:
         label: Ai Playerbot Bot Active Alone
         type: string
         description: >-
+          BotActiveAlone
+
+          - Controls how many bots are active when no real players are nearby.
+
+          - Think of it as a rough percentage: 10 means approximately 10% of
+          bots will be active.
+
+          - The active bots rotate: every <DurationSeconds> a different set of
+          bots takes a turn.
+
+          - The real number of active bots will always be higher than this
+          value, because bots in
+
+          - Set to 100 (with SmartScale off) = all bots always active. Maximum
+          server load.
+
+          - Set to 0 = only bots that match a force rule below will be active.
+
+          BotActiveAloneDurationSeconds
+
+          - How often the active roster rotates (in seconds). A different group
+          of bots wakes up
+
           - This is a minimum, not exact. If a bot is in combat or meets any
           force rule when the
         default: '10'
       - name: AiPlayerbot.BotActiveAloneDurationSeconds
         label: Ai Playerbot Bot Active Alone Duration Seconds
         type: string
-        description: >-
-          - This is a minimum, not exact. If a bot is in combat or meets any
-          force rule when the
+        description: ACTIVITY
         default: '30'
       - name: AiPlayerbot.BotActiveAloneForceWhenInRadius
         label: Ai Playerbot Bot Active Alone Force When In Radius
         type: string
-        description: 'Bots are also always forced active (not configurable) when:'
+        description: >-
+          Force-active rules (1 = on, 0 = off)
+
+          These override the percentage above. If any of these conditions is
+          true, the bot stays active.
+
+          InRadius  - A real player is within this many yards (set to 0 to
+          disable).
+
+          InZone    - A real player is in the same zone (e.g. Elwynn Forest).
+
+          InMap     - A real player is on the same continent (e.g. Eastern
+          Kingdoms).
+
+          IsFriend  - A real player has this bot on their friends list.
+
+          InGuild   - This bot is in a guild that has a real player in it.
+
+          Bots are also always forced active (not configurable) when:
         default: '150'
       - name: AiPlayerbot.BotActiveAloneForceWhenInZone
         label: Ai Playerbot Bot Active Alone Force When In Zone
@@ -5788,6 +6740,22 @@ content:
         label: Ai Playerbot Bot Active Alone Smart Scale
         type: string
         description: >-
+          SmartScale — automatically reduces active bots when the server is
+          struggling.
+
+          Monitors the server's update time (how long each server tick takes in
+          milliseconds).
+
+          When the server slows down, fewer bots are kept active to reduce load.
+
+          mple: BotActiveAlone=10, floor=50, ceiling=200
+
+          erver at 50ms  → ~10% active (no reduction)
+
+          erver at 125ms → ~5% active (half reduction)
+
+          erver at 200ms → 0% active (only forced bots remain)
+
           MinLevel/MaxLevel — only bots within this level range are affected by
           SmartScale.
         default: '1'
@@ -5828,12 +6796,16 @@ content:
       - name: AiPlayerbot.RandomBotGroupNearby
         label: Ai Playerbot Random Bot Group Nearby
         type: string
-        description: 'Note: Currently not functioning properly'
+        description: |-
+          Randombots will group with nearby randombots to do shared quests
+          Note: Currently not functioning properly
         default: '0'
       - name: AiPlayerbot.AutoDoQuests
         label: Ai Playerbot Auto Do Quests
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Randombots will pick quests on their own and try to complete them
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.RandomBotQuestItems
         label: Ai Playerbot Random Bot Quest Items
@@ -5845,22 +6817,32 @@ content:
       - name: AiPlayerbot.AutoLearnQuestSpells
         label: Ai Playerbot Auto Learn Quest Spells
         type: string
-        description: 'Default: 0 (disabled)'
-        default: '0'
+        description: |-
+          Randombots automatically learn class quest reward spells on levelup
+          Default: 1 (enabled)
+        default: '1'
       - name: AiPlayerbot.AutoLearnTrainerSpells
         label: Ai Playerbot Auto Learn Trainer Spells
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Randombots automatically learn trainable spells on levelup
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.AutoPickTalents
         label: Ai Playerbot Auto Pick Talents
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Randombots automatically spend talent points on levelup
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.RandomBotSpellIds
         label: Ai Playerbot Random Bot Spell Ids
         type: string
-        description: 'Default: 54197 (Cold Weather Flying)'
+        description: >-
+          Spells every randombot will learn automatically and every altbot will
+          learn with maintenance
+
+          Default: 54197 (Cold Weather Flying)
         default: '"54197"'
       - name: AiPlayerbot.OpenGoSpell
         label: Ai Playerbot Open Go Spell
@@ -5870,7 +6852,15 @@ content:
       - name: AiPlayerbot.RandomBotCombatStrategies
         label: Ai Playerbot Random Bot Combat Strategies
         type: string
-        description: 'Example: "+threat,-potions"'
+        description: >-
+          Additional randombot strategies
+
+          Strategies added here are applied to all randombots, in addition (or
+          subtraction) to spec/role-based default strategies.
+
+          These rules are processed after the defaults.
+
+          Example: "+threat,-potions"
         default: '""'
       - name: AiPlayerbot.RandomBotNonCombatStrategies
         label: Ai Playerbot Random Bot Non Combat Strategies
@@ -5880,7 +6870,13 @@ content:
       - name: AiPlayerbot.CombatStrategies
         label: Ai Playerbot Combat Strategies
         type: string
-        description: These rules are processed after the defaults.
+        description: >-
+          Additional altbot strategies
+
+          Strategies added here are applied to all altbots, in addition (or
+          subtraction) to spec/role-based default strategies.
+
+          These rules are processed after the defaults.
         default: '""'
       - name: AiPlayerbot.NonCombatStrategies
         label: Ai Playerbot Non Combat Strategies
@@ -5890,12 +6886,17 @@ content:
       - name: AiPlayerbot.HealerDPSMapRestriction
         label: Ai Playerbot Healer DPSMap Restriction
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Remove "healer dps" strategy on the maps specified below.
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.RestrictedHealerDPSMaps
         label: Ai Playerbot Restricted Healer DPSMaps
         type: string
         description: >-
+          List of Map IDs where "healer dps" strategy will be removed if
+          AiPlayerbot.HealerDPSMapRestriction is enabled
+
           Default: (Dungeon and Raid maps)
           "33,34,36,43,47,48,70,90,109,129,209,229,230,329,349,389,429,1001,1004,1007,269,540,542,543,545,546,547,552,553,554,555,556,557,558,560,585,574,575,576,578,595,599,600,601,602,604,608,619,632,650,658,668,409,469,509,531,532,534,544,548,550,564,565,580,249,533,603,615,616,624,631,649,724"
         default: >-
@@ -5903,12 +6904,42 @@ content:
       - name: AiPlayerbot.EnableNewRpgStrategy
         label: Ai Playerbot Enable New Rpg Strategy
         type: string
-        description: 'Default: 1 (enabled)'
+        description: >-
+          Randombots will behave more like real players (experimental)
+
+          This option will override AiPlayerbot.AutoDoQuests,
+          RandomBotTeleLowerLevel, and RandomBotTeleHigherLevel
+
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.RpgStatusProbWeight.WanderRandom
         label: Ai Playerbot Rpg Status Prob Weight Wander Random
         type: string
         description: >-
+          Control probability weights for RPG status of bots. Takes effect only
+          when the status meets its premise.​
+
+          Sum of weights need not be 100. Set to 0 to disable the status.
+
+          WanderRandom  (Default: 15  Move randomly nearby to find and kill
+          mobs)
+
+          WanderNpc     (Default: 20  Randomly interact with nearby NPCs​)
+
+          GoGrind       (Default: 15  Go to nearby level-appropriate locations
+          to grind for killing mobs)
+
+          GoCamp        (Default: 10  Return to a nearby camp depending on
+          innkeeper/flightmaster)​
+
+          DoQuest       (Default: 60  Select quest from the quest log and head
+          to the location to attempt completion​)
+
+          TravelFlight  (Default: 15  Go to the nearest flightmaster and fly to
+          a level-appropriate area)
+
+          Rest          (Default: 5   Take a break for a while and do nothing)
+
           OutdoorPvp    (Default: 10  Participate in outdoor PvP capture points
           if already in an outdoor PvP zone)
         default: '15'
@@ -5964,7 +6995,29 @@ content:
       - name: AiPlayerbot.ZoneBracket.1
         label: Ai Playerbot Zone Bracket 1
         type: string
-        description: 'Azuremyst Isle         (Zone ID: 3524    Default Min,Max:  5,12)'
+        description: >-
+          Bots' minimum and maximum level when teleporting in and out of a zone,
+          according to the new RPG strategy
+
+          Format: AiPlayerbot.ZoneBracket.zoneID = minLevel,maxLevel
+
+          Classic WoW - Low-level zones:
+
+          Dun Morogh             (Zone ID:    1    Default Min,Max:  5,12)
+
+          Elwynn Forest          (Zone ID:   12    Default Min,Max:  5,12)
+
+          Durotar                (Zone ID:   14    Default Min,Max:  5,12)
+
+          Tirisfal Glades        (Zone ID:   85    Default Min,Max:  5,12)
+
+          Teldrassil             (Zone ID:  141    Default Min,Max:  5,12)
+
+          Mulgore                (Zone ID:  215    Default Min,Max:  5,12)
+
+          Eversong Woods         (Zone ID: 3430    Default Min,Max:  5,12)
+
+          Azuremyst Isle         (Zone ID: 3524    Default Min,Max:  5,12)
         default: '5,12'
       - name: AiPlayerbot.ZoneBracket.12
         label: Ai Playerbot Zone Bracket 12
@@ -6004,7 +7057,15 @@ content:
       - name: AiPlayerbot.ZoneBracket.17
         label: Ai Playerbot Zone Bracket 17
         type: string
-        description: 'Bloodmyst Isle         (Zone ID: 3525    Default Min,Max: 10,21)'
+        description: |-
+          Classic WoW - Mid-level zones:
+          Barrens                (Zone ID:   17    Default Min,Max: 10,25)
+          Loch Modan             (Zone ID:   38    Default Min,Max: 10,20)
+          Westfall               (Zone ID:   40    Default Min,Max: 10,21)
+          Silverpine Forest      (Zone ID:  130    Default Min,Max: 10,23)
+          Darkshore              (Zone ID:  148    Default Min,Max: 10,21)
+          Ghostlands             (Zone ID: 3433    Default Min,Max: 10,22)
+          Bloodmyst Isle         (Zone ID: 3525    Default Min,Max: 10,21)
         default: '10,25'
       - name: AiPlayerbot.ZoneBracket.38
         label: Ai Playerbot Zone Bracket 38
@@ -6039,7 +7100,15 @@ content:
       - name: AiPlayerbot.ZoneBracket.10
         label: Ai Playerbot Zone Bracket 10
         type: string
-        description: 'Stonetalon Mountains   (Zone ID:  406    Default Min,Max: 16,29)'
+        description: |-
+          Classic WoW - High-level zones:
+          Duskwood               (Zone ID:   10    Default Min,Max: 19,33)
+          Wetlands               (Zone ID:   11    Default Min,Max: 21,30)
+          Redridge Mountains     (Zone ID:   44    Default Min,Max: 16,28)
+          Hillsbrad Foothills    (Zone ID:  267    Default Min,Max: 20,34)
+          Ashenvale              (Zone ID:  331    Default Min,Max: 18,33)
+          Thousand Needles       (Zone ID:  400    Default Min,Max: 24,36)
+          Stonetalon Mountains   (Zone ID:  406    Default Min,Max: 16,29)
         default: '19,33'
       - name: AiPlayerbot.ZoneBracket.11
         label: Ai Playerbot Zone Bracket 11
@@ -6074,7 +7143,19 @@ content:
       - name: AiPlayerbot.ZoneBracket.3
         label: Ai Playerbot Zone Bracket 3
         type: string
-        description: 'Tanaris                (Zone ID:  440    Default Min,Max: 41,52)'
+        description: |-
+          Classic WoW - Higher-level zones:
+          Badlands               (Zone ID:    3    Default Min,Max: 36,46)
+          Swamp of Sorrows       (Zone ID:    8    Default Min,Max: 36,46)
+          Dustwallow Marsh       (Zone ID:   15    Default Min,Max: 35,46)
+          Azshara                (Zone ID:   16    Default Min,Max: 45,52)
+          Stranglethorn Vale     (Zone ID:   33    Default Min,Max: 32,47)
+          Arathi Highlands       (Zone ID:   45    Default Min,Max: 30,42)
+          Hinterlands            (Zone ID:   47    Default Min,Max: 42,51)
+          Searing Gorge          (Zone ID:   51    Default Min,Max: 45,51)
+          Feralas                (Zone ID:  357    Default Min,Max: 40,52)
+          Desolace               (Zone ID:  405    Default Min,Max: 30,41)
+          Tanaris                (Zone ID:  440    Default Min,Max: 41,52)
         default: '36,46'
       - name: AiPlayerbot.ZoneBracket.8
         label: Ai Playerbot Zone Bracket 8
@@ -6129,7 +7210,16 @@ content:
       - name: AiPlayerbot.ZoneBracket.4
         label: Ai Playerbot Zone Bracket 4
         type: string
-        description: 'Silithus               (Zone ID: 1377    Default Min,Max: 54,63)'
+        description: |-
+          Classic WoW - Top-level zones:
+          Blasted Lands          (Zone ID:    4    Default Min,Max: 52,57)
+          Western Plaguelands    (Zone ID:   28    Default Min,Max: 50,60)
+          Burning Steppes        (Zone ID:   46    Default Min,Max: 51,60)
+          Eastern Plaguelands    (Zone ID:  139    Default Min,Max: 54,62)
+          Felwood                (Zone ID:  361    Default Min,Max: 47,57)
+          Un'Goro Crater         (Zone ID:  490    Default Min,Max: 49,56)
+          Winterspring           (Zone ID:  618    Default Min,Max: 54,61)
+          Silithus               (Zone ID: 1377    Default Min,Max: 54,63)
         default: '52,57'
       - name: AiPlayerbot.ZoneBracket.28
         label: Ai Playerbot Zone Bracket 28
@@ -6169,7 +7259,16 @@ content:
       - name: AiPlayerbot.ZoneBracket.3483
         label: Ai Playerbot Zone Bracket 3483
         type: string
-        description: 'Isle of Quel''Danas     (Zone ID: 4080    Default Min,Max: 68,73)'
+        description: |-
+          The Burning Crusade - Zones:
+          Hellfire Peninsula     (Zone ID: 3483    Default Min,Max: 58,66)
+          Nagrand                (Zone ID: 3518    Default Min,Max: 64,70)
+          Terokkar Forest        (Zone ID: 3519    Default Min,Max: 62,73)
+          Shadowmoon Valley      (Zone ID: 3520    Default Min,Max: 66,73)
+          Zangarmarsh            (Zone ID: 3521    Default Min,Max: 60,67)
+          Blade's Edge Mountains (Zone ID: 3522    Default Min,Max: 64,73)
+          Netherstorm            (Zone ID: 3523    Default Min,Max: 67,73)
+          Isle of Quel'Danas     (Zone ID: 4080    Default Min,Max: 68,73)
         default: '58,66'
       - name: AiPlayerbot.ZoneBracket.3518
         label: Ai Playerbot Zone Bracket 3518
@@ -6209,7 +7308,18 @@ content:
       - name: AiPlayerbot.ZoneBracket.65
         label: Ai Playerbot Zone Bracket 65
         type: string
-        description: 'Wintergrasp            (Zone ID: 4197    Default Min,Max: 79,80)'
+        description: |-
+          Wrath of the Lich King - Zones:
+          Dragonblight           (Zone ID:   65    Default Min,Max: 71,77)
+          Zul'Drak               (Zone ID:   66    Default Min,Max: 74,80)
+          Storm Peaks            (Zone ID:   67    Default Min,Max: 77,80)
+          Icecrown Glacier       (Zone ID:  210    Default Min,Max: 77,80)
+          Grizzly Hills          (Zone ID:  394    Default Min,Max: 72,78)
+          Howling Fjord          (Zone ID:  495    Default Min,Max: 68,74)
+          Crystalsong Forest     (Zone ID: 2817    Default Min,Max: 77,80)
+          Borean Tundra          (Zone ID: 3537    Default Min,Max: 68,75)
+          Sholazar Basin         (Zone ID: 3711    Default Min,Max: 75,80)
+          Wintergrasp            (Zone ID: 4197    Default Min,Max: 79,80)
         default: '71,77'
       - name: AiPlayerbot.ZoneBracket.66
         label: Ai Playerbot Zone Bracket 66
@@ -6260,18 +7370,25 @@ content:
         label: Ai Playerbot Random Bot Maps
         type: string
         description: >-
+          Map IDs where bots can be teleported to
+
           Defaults: 0 = Eastern Kingdoms, 1 = Kalimdor, 530 = Outland, 571 =
           Northrend
         default: '0,1,530,571'
       - name: AiPlayerbot.ProbTeleToBankers
         label: Ai Playerbot Prob Tele To Bankers
         type: string
-        description: 'Default: 0.25'
+        description: |-
+          Probability bots teleport to banker (city)
+          Default: 0.25
         default: '0.25'
       - name: AiPlayerbot.EnableWeightTeleToCityBankers
         label: Ai Playerbot Enable Weight Tele To City Bankers
         type: string
         description: >-
+          Control probability weights for bots teleporting to Capital city
+          bankers
+
           Sum of weights need not be 100. Set to 0 to disable teleporting to the
           city.
         default: '1'
@@ -6353,19 +7470,34 @@ content:
       - name: AiPlayerbot.RandomBotTeleLowerLevel
         label: Ai Playerbot Random Bot Tele Lower Level
         type: string
-        description: 'Default: 1 (randombot will leave if they are more than 1 level lower)'
+        description: >-
+          How many levels below the lowest-level creature in a zone, can a bot
+          be
+
+          This will have no effect if AiPlayerbot.EnableNewRpgStrategy is
+          enabled
+
+          Default: 1 (randombot will leave if they are more than 1 level lower)
         default: '1'
       - name: AiPlayerbot.RandomBotTeleHigherLevel
         label: Ai Playerbot Random Bot Tele Higher Level
         type: string
         description: >-
+          How many levels above the highest-level creature in a zone, can a bot
+          be
+
+          This will have no effect if AiPlayerbot.EnableNewRpgStrategy is
+          enabled
+
           Default: 3 (randombot will leave if they are more than 3 levels
           higher)
         default: '3'
       - name: AiPlayerbot.AutoTeleportForLevel
         label: Ai Playerbot Auto Teleport For Level
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Bots automatically teleport to another place for leveling on levelup
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.RandomBotJoinBG
         label: Ai Playerbot Random Bot Join BG
@@ -6382,7 +7514,13 @@ content:
       - name: AiPlayerbot.RandomBotAutoJoinWSBrackets
         label: Ai Playerbot Random Bot Auto Join WSBrackets
         type: string
-        description: 'AiPlayerbot.RandomBotAutoJoinICBrackets = 0,1'
+        description: |-
+          Battleground bracket range possibilities:
+          AiPlayerbot.RandomBotAutoJoinWSBrackets = 0,1,2,3,4,5,6,7
+          AiPlayerbot.RandomBotAutoJoinABBrackets = 0,1,2,3,4,5,6
+          AiPlayerbot.RandomBotAutoJoinAVBrackets = 0,1,2,3
+          AiPlayerbot.RandomBotAutoJoinEYBrackets = 0,1,2
+          AiPlayerbot.RandomBotAutoJoinICBrackets = 0,1
         default: '7'
       - name: AiPlayerbot.RandomBotAutoJoinABBrackets
         label: Ai Playerbot Random Bot Auto Join ABBrackets
@@ -6433,6 +7571,8 @@ content:
         label: Ai Playerbot Random Bot Auto Join Arena Bracket
         type: string
         description: >-
+          Arena bracket (single bracket only):
+
           Custom code changes are required for lower-level arena brackets to
           function properly.
         default: '14'
@@ -6454,7 +7594,20 @@ content:
       - name: AiPlayerbot.RandomBotArenaTeam2v2Count
         label: Ai Playerbot Random Bot Arena Team2v2Count
         type: string
-        description: 'Default: 2v2: 10 (20 Bots), 3v3: 10 (30 bots), 5v5: 5 (25 bots)'
+        description: >-
+          Randombot arena team count
+
+          Teams are created when bots are initialized on server restart.
+
+          You may need to first delete all arena teams, then reinitialize bots.
+
+          Warning: Reinitializing bots completely resets them (command in game:
+          .playerbots rndbot init)
+
+          Bots only join one arena team to avoid queueing issues. Take that into
+          account when increasing count.
+
+          Default: 2v2: 10 (20 Bots), 3v3: 10 (30 bots), 5v5: 5 (25 bots)
         default: '10'
       - name: AiPlayerbot.RandomBotArenaTeam3v3Count
         label: Ai Playerbot Random Bot Arena Team3v3Count
@@ -6469,12 +7622,14 @@ content:
       - name: AiPlayerbot.RandomBotArenaTeamMaxRating
         label: Ai Playerbot Random Bot Arena Team Max Rating
         type: string
-        description: 'Default: Max: 2000, Min: 1000'
+        description: |-
+          Arena rating is randomized on team creation.
+          Default: Max: 2000, Min: 1000
         default: '2000'
       - name: AiPlayerbot.RandomBotArenaTeamMinRating
         label: Ai Playerbot Random Bot Arena Team Min Rating
         type: string
-        description: 'Default: Max: 2000, Min: 1000'
+        description: BATTLEGROUNDS & ARENAS & PVP
         default: '1000'
       - name: AiPlayerbot.DeleteRandomBotArenaTeams
         label: Ai Playerbot Delete Random Bot Arena Teams
@@ -6505,12 +7660,18 @@ content:
       - name: AiPlayerbot.RandomBotUpdateInterval
         label: Ai Playerbot Random Bot Update Interval
         type: string
-        description: 'Default: 20'
+        description: |-
+          How often (in seconds) the randombot manager runs its main update loop
+          Default: 20
         default: '20'
       - name: AiPlayerbot.RandomBotCountChangeMinInterval
         label: Ai Playerbot Random Bot Count Change Min Interval
         type: string
-        description: 'Defaults: 1800 (min), 7200 (max)'
+        description: >-
+          Minimum and maximum seconds before the manager re-evaluates and
+          adjusts total randombot count
+
+          Defaults: 1800 (min), 7200 (max)
         default: '1800'
       - name: AiPlayerbot.RandomBotCountChangeMaxInterval
         label: Ai Playerbot Random Bot Count Change Max Interval
@@ -6520,17 +7681,31 @@ content:
       - name: AiPlayerbot.MinRandomBotInWorldTime
         label: Ai Playerbot Min Random Bot In World Time
         type: string
-        description: 'Defaults: 600 (min), 28800 (max)'
+        description: >-
+          Minimum and maximum seconds a randombot will stay online before
+          logging out
+
+          Defaults: 600 (min), 28800 (max)
         default: '600'
       - name: AiPlayerbot.MaxRandomBotInWorldTime
         label: Ai Playerbot Max Random Bot In World Time
         type: string
-        description: 'Defaults: 600 (min), 28800 (max)'
+        description: RANDOMBOT TIMING AND BEHAVIOR
         default: '28800'
       - name: AiPlayerbot.MinRandomBotRandomizeTime
         label: Ai Playerbot Min Random Bot Randomize Time
         type: string
-        description: 'Defaults: 7200 (min - 2 hours), 1209600 (max - 14 days)'
+        description: >-
+          Some aspects of randombots are periodically randomized while they are
+          logged in and idle,
+
+          including their inventories and, if EquipAndSpecPersistence is
+          disabled, their equipment and specs.
+
+          This config sets the minimum and maximum seconds between such
+          randomization events.
+
+          Defaults: 7200 (min - 2 hours), 1209600 (max - 14 days)
         default: '7200'
       - name: AiPlayerbot.MaxRandomBotRandomizeTime
         label: Ai Playerbot Max Random Bot Randomize Time
@@ -6540,32 +7715,46 @@ content:
       - name: AiPlayerbot.RandomBotsPerInterval
         label: Ai Playerbot Random Bots Per Interval
         type: string
-        description: 'Default: 60'
+        description: >-
+          Number of bots processed (login, logout, update) per manager update
+          cycle
+
+          Default: 60
         default: '60'
       - name: AiPlayerbot.MinRandomBotReviveTime
         label: Ai Playerbot Min Random Bot Revive Time
         type: string
-        description: 'Defaults: 60 (min), 300 (max)'
+        description: |-
+          Minimum and maximum seconds after death before a bot revives
+          Defaults: 60 (min), 300 (max)
         default: '60'
       - name: AiPlayerbot.MaxRandomBotReviveTime
         label: Ai Playerbot Max Random Bot Revive Time
         type: string
-        description: 'Defaults: 60 (min), 300 (max)'
+        description: RANDOMBOT TIMING AND BEHAVIOR
         default: '300'
       - name: AiPlayerbot.MinRandomBotTeleportInterval
         label: Ai Playerbot Min Random Bot Teleport Interval
         type: string
-        description: 'Defaults: 3600 (min), 18000 (max)'
+        description: >-
+          Minimum and maximum seconds between bot teleports to new areas or
+          zones
+
+          Defaults: 3600 (min), 18000 (max)
         default: '3600'
       - name: AiPlayerbot.MaxRandomBotTeleportInterval
         label: Ai Playerbot Max Random Bot Teleport Interval
         type: string
-        description: 'Defaults: 3600 (min), 18000 (max)'
+        description: RANDOMBOT TIMING AND BEHAVIOR
         default: '18000'
       - name: AiPlayerbot.PermanentlyInWorldTime
         label: Ai Playerbot Permanently In World Time
         type: string
-        description: 'Default: 31104000'
+        description: >-
+          Number of seconds bots flagged as permanent stay in the world
+          (31,104,000 ≈ 1 year)
+
+          Default: 31104000
         default: '31104000'
       - name: AiPlayerbot.PremadeSpecName.1.0
         label: Ai Playerbot Premade Spec Name 1 0
@@ -8668,7 +9857,9 @@ content:
       - name: AiPlayerbot.TellWhenAvoidAoe
         label: Ai Playerbot Tell When Avoid Aoe
         type: string
-        description: 'Default: 0 (disabled)'
+        description: |-
+          Tell which spell is avoiding (experimental)
+          Default: 0 (disabled)
         default: '0'
       - name: AiPlayerbot.PerfMonEnabled
         label: Ai Playerbot Perf Mon Enabled
@@ -8688,7 +9879,13 @@ content:
       - name: AiPlayerbot.EnableAutoTradeOnItemMention
         label: Ai Playerbot Enable Auto Trade On Item Mention
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Enable automatic item count/trade trigger when a chat message contains
+          item-related keywords. When enabled (1), mentioning items in chat
+          (e.g. "food", "potion", "ammo") will automatically show inventory and
+          open a trade window with the bot. Explicit "c" and "t" commands still
+          work regardless of this setting.
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.RandomBotTalk
         label: Ai Playerbot Random Bot Talk
@@ -8738,12 +9935,25 @@ content:
       - name: AiPlayerbot.EnableBroadcasts
         label: Ai Playerbot Enable Broadcasts
         type: string
-        description: 'Default: 1 (enabled)'
+        description: |-
+          Enable/disable broadcasts globally
+          Default: 1 (enabled)
         default: '1'
       - name: AiPlayerbot.BroadcastToGuildGlobalChance
         label: Ai Playerbot Broadcast To Guild Global Chance
         type: string
-        description: Setting all channel broadcasts to 0 will disable most broadcasts
+        description: >-
+          All broadcast chances should be in range 0-30000
+
+          Value of 0 will disable this particular broadcast
+
+          Setting value to 30000 does not guarantee the broadcast, as there are
+          some internal randoms as well
+
+          Setting channel broadcast chance to 0 will re-route most broadcasts to
+          other available channels
+
+          Setting all channel broadcasts to 0 will disable most broadcasts
         default: '30000'
       - name: AiPlayerbot.BroadcastToWorldGlobalChance
         label: Ai Playerbot Broadcast To World Global Chance
@@ -8783,7 +9993,9 @@ content:
       - name: AiPlayerbot.BroadcastChanceLootingItemPoor
         label: Ai Playerbot Broadcast Chance Looting Item Poor
         type: string
-        description: Setting one of these to 0 will disable the particular broadcast
+        description: |-
+          Individual settings
+          Setting one of these to 0 will disable the particular broadcast
         default: '30'
       - name: AiPlayerbot.BroadcastChanceLootingItemNormal
         label: Ai Playerbot Broadcast Chance Looting Item Normal
@@ -8959,6 +10171,8 @@ content:
         label: Ai Playerbot Allowed Log Files
         type: string
         description: >-
+          Custom config to allow logfiles to be created.
+
           Example: AiPlayerbot.AllowedLogFiles =
           travelNodes.csv,travelPaths.csv,TravelNodeStore.h,bot_movement.csv,bot_location.csv
         default: '""'
