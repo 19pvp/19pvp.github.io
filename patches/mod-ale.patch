@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..0e680af 100644
+index d8886ce..4043d7a 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -50,15 +50,16 @@ index d8886ce..0e680af 100644
  };
  
  class ALE_CommandSC : public CommandSC
-@@ -618,6 +634,7 @@ public:
+@@ -618,6 +634,8 @@ public:
          PLAYERHOOK_ON_TEXT_EMOTE,
          PLAYERHOOK_ON_SPELL_CAST,
          PLAYERHOOK_ON_LOGIN,
 +        PLAYERHOOK_ON_PLAYER_JOIN_BG,
++        PLAYERHOOK_ON_PLAYER_LEAVE_BG_QUEUE,
          PLAYERHOOK_ON_LOGOUT,
          PLAYERHOOK_ON_CREATE,
          PLAYERHOOK_ON_SAVE,
-@@ -740,6 +757,19 @@ public:
+@@ -740,6 +758,19 @@ public:
      void OnPlayerMapChanged(Player* player) override
      {
          sALE->OnMapChanged(player);
@@ -78,7 +79,7 @@ index d8886ce..0e680af 100644
      }
  
      void OnPlayerGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action) override
-@@ -832,8 +862,17 @@ public:
+@@ -832,8 +863,22 @@ public:
          sALE->OnLogin(player);
      }
  
@@ -89,6 +90,11 @@ index d8886ce..0e680af 100644
 +        sALE->OnPlayerJoinBG(player);
 +    }
 +
++    void OnPlayerLeaveBGQueue(Player* player) override
++    {
++        sALE->OnPlayerLeaveBGQueue(player);
++    }
++
 +
      void OnPlayerLogout(Player* player) override
      {
@@ -97,20 +103,21 @@ index d8886ce..0e680af 100644
      }
  
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
-index f83dd99..f5d75ad 100644
+index f83dd99..d7fd3b2 100644
 --- a/src/LuaEngine/Hooks.h
 +++ b/src/LuaEngine/Hooks.h
-@@ -238,6 +238,9 @@ namespace Hooks
+@@ -238,6 +238,10 @@ namespace Hooks
          PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
          PLAYER_EVENT_ON_DEAL_DAMAGE                         =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
          PLAYER_EVENT_ON_RELEASED_GHOST                      =     73,       // (event, player)
 +        PLAYER_EVENT_ON_PLAYER_JOIN_BG                      =     74,       // (event, player)
 +        PLAYER_EVENT_ON_ENTER_BG                            =     75,       // (event, player, mapId, instanceId)
 +        PLAYER_EVENT_ON_LEAVE_BG                            =     76,       // (event, player, mapId, instanceId)
++        PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE               =     77,       // (event, player)
  
          PLAYER_EVENT_COUNT
      };
-@@ -378,6 +381,7 @@ namespace Hooks
+@@ -378,6 +382,7 @@ namespace Hooks
          BG_EVENT_ON_END                                 = 2,    // (event, bg, bgId, instanceId, winner) - Needs to be added to TC
          BG_EVENT_ON_CREATE                              = 3,    // (event, bg, bgId, instanceId) - Needs to be added to TC
          BG_EVENT_ON_PRE_DESTROY                         = 4,    // (event, bg, bgId, instanceId) - Needs to be added to TC
@@ -119,7 +126,7 @@ index f83dd99..f5d75ad 100644
      };
  
 diff --git a/src/LuaEngine/LuaEngine.h b/src/LuaEngine/LuaEngine.h
-index a21640d..689e2ff 100644
+index a21640d..0eafcfe 100644
 --- a/src/LuaEngine/LuaEngine.h
 +++ b/src/LuaEngine/LuaEngine.h
 @@ -44,6 +44,7 @@ class AuctionHouseObject;
@@ -130,17 +137,18 @@ index a21640d..689e2ff 100644
  class Channel;
  class Corpse;
  class Creature;
-@@ -479,6 +480,9 @@ public:
+@@ -479,6 +480,10 @@ public:
      void OnTextEmote(Player* pPlayer, uint32 textEmote, uint32 emoteNum, ObjectGuid guid);
      void OnPlayerSpellCast(Player* pPlayer, Spell* pSpell, bool skipCheck);
      void OnLogin(Player* pPlayer);
 +    void OnPlayerJoinBG(Player* pPlayer);
++    void OnPlayerLeaveBGQueue(Player* pPlayer);
 +    void OnEnterBG(Player* pPlayer, Battleground* bg);
 +    void OnLeaveBG(Player* pPlayer, Battleground* bg);
      void OnLogout(Player* pPlayer);
      void OnCreate(Player* pPlayer);
      void OnDelete(uint32 guid);
-@@ -591,6 +595,7 @@ public:
+@@ -591,6 +596,7 @@ public:
      void OnBGEnd(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId, TeamId winner);
      void OnBGCreate(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
      void OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
@@ -252,16 +260,23 @@ index ec70cf5..af65ac0 100644
 +    return false;
 +}
 diff --git a/src/LuaEngine/hooks/PlayerHooks.cpp b/src/LuaEngine/hooks/PlayerHooks.cpp
-index 7649274..2b0fa3d 100644
+index 7649274..338663d 100644
 --- a/src/LuaEngine/hooks/PlayerHooks.cpp
 +++ b/src/LuaEngine/hooks/PlayerHooks.cpp
-@@ -344,6 +344,33 @@ void ALE::OnLogin(Player* pPlayer)
+@@ -344,6 +344,40 @@ void ALE::OnLogin(Player* pPlayer)
      CallAllFunctions(PlayerEventBindings, key);
  }
  
 +void ALE::OnPlayerJoinBG(Player* pPlayer)
 +{
 +    START_HOOK(PLAYER_EVENT_ON_PLAYER_JOIN_BG);
++    Push(pPlayer);
++    CallAllFunctions(PlayerEventBindings, key);
++}
++
++void ALE::OnPlayerLeaveBGQueue(Player* pPlayer)
++{
++    START_HOOK(PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE);
 +    Push(pPlayer);
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
@@ -328,7 +343,7 @@ index 70e97bb..e155db1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..9ffbe04 100644
+index cebb7bc..d6f6836 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,7 @@
@@ -442,7 +457,7 @@ index cebb7bc..9ffbe04 100644
 +        Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(BattlegroundTypeId(bgTypeIdVal));
 +        if (!bg)
 +        {
-+            ALE::Push(L, 0);
++            ALE::Push(L); // nil
 +            return 1;
 +        }
 +
@@ -450,13 +465,24 @@ index cebb7bc..9ffbe04 100644
 +        if (bracketEntry)
 +            ALE::Push(L, (uint32)bracketEntry->GetBracketId());
 +        else
-+            ALE::Push(L, 0);
++            ALE::Push(L); // nil
 +
 +        return 1;
 +    }
 +
      /**
       * Returns the instance ID of the Lua state. Returns 0 for continent maps and the world state.
+      *
+@@ -794,6 +907,10 @@ namespace LuaGlobalFunctions
+      *     PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                 =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
+      *     PLAYER_EVENT_ON_DEAL_DAMAGE                          =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
+      *     PLAYER_EVENT_ON_RELEASED_GHOST                       =     73,       // (event, player)
++     *     PLAYER_EVENT_ON_PLAYER_JOIN_BG                      =     74,       // (event, player)
++     *     PLAYER_EVENT_ON_ENTER_BG                            =     75,       // (event, player, mapId, instanceId)
++     *     PLAYER_EVENT_ON_LEAVE_BG                            =     76,       // (event, player, mapId, instanceId)
++     *     PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE               =     77,       // (event, player)
+      * };
+      * </pre>
       *
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
 index c39801f..3e304c6 100644

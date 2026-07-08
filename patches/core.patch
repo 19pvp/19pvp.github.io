@@ -33,10 +33,22 @@ index f21841c0b..d81b35cd2 100644
  
                  DirectoryEntry const entry = { dirPath, AppliedFileEntry::StateConvert("MODULE") };
 diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.cpp b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
-index 169f642ec..0d6bab3b5 100644
+index 169f642ec..941ec8e48 100644
 --- a/src/server/game/Battlegrounds/BattlegroundQueue.cpp
 +++ b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
-@@ -819,11 +819,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+@@ -279,6 +279,11 @@ void BattlegroundQueue::RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount)
+ 
+     GroupQueueInfo* groupInfo = itr->second;
+ 
++    if (Player* player = ObjectAccessor::FindConnectedPlayer(guid))
++    {
++        sScriptMgr->OnPlayerLeaveBGQueue(player);
++    }
++
+     uint32 _bracketId = groupInfo->BracketId;
+     uint32 _groupType = groupInfo->GroupType;
+ 
+@@ -819,11 +824,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
              m_SelectionPools[TEAM_ALLIANCE].Init();
              m_SelectionPools[TEAM_HORDE].Init();
  
@@ -101,7 +113,7 @@ index 169f642ec..0d6bab3b5 100644
  
              if (!bg->HasFreeSlots())
                  bg->RemoveFromBGFreeSlotQueue();
-@@ -899,8 +948,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+@@ -899,8 +953,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
                  return;
              }
  
@@ -202,11 +214,57 @@ index 108f3cf7f..21a2bd6fc 100644
      [[nodiscard]] virtual bool IsCheckNormalMatch(BattlegroundQueue* /*queue*/, Battleground* /*bgTemplate*/, BattlegroundBracketId /*bracket_id*/, uint32 /*minPlayers*/, uint32 /*maxPlayers*/) { return false; };
  
      [[nodiscard]] virtual bool CanSendMessageBGQueue(BattlegroundQueue* /*queue*/, Player* /*leader*/, Battleground* /*bg*/, PvPDifficultyEntry const* /*bracketEntry*/) { return true; }
+diff --git a/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp b/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
+index 5ee4be5e1..7051ba5e2 100644
+--- a/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
++++ b/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
+@@ -353,6 +353,11 @@ void ScriptMgr::OnPlayerJoinBG(Player* player)
+     CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PLAYER_JOIN_BG, script->OnPlayerJoinBG(player));
+ }
+ 
++void ScriptMgr::OnPlayerLeaveBGQueue(Player* player)
++{
++    CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PLAYER_LEAVE_BG_QUEUE, script->OnPlayerLeaveBGQueue(player));
++}
++
+ void ScriptMgr::OnPlayerJoinArena(Player* player)
+ {
+     CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PLAYER_JOIN_ARENA, script->OnPlayerJoinArena(player));
+diff --git a/src/server/game/Scripting/ScriptDefines/PlayerScript.h b/src/server/game/Scripting/ScriptDefines/PlayerScript.h
+index b718b81c5..579492da0 100644
+--- a/src/server/game/Scripting/ScriptDefines/PlayerScript.h
++++ b/src/server/game/Scripting/ScriptDefines/PlayerScript.h
+@@ -98,6 +98,7 @@ enum PlayerHook
+     PLAYERHOOK_ON_EQUIP,
+     PLAYERHOOK_ON_UNEQUIP_ITEM,
+     PLAYERHOOK_ON_PLAYER_JOIN_BG,
++    PLAYERHOOK_ON_PLAYER_LEAVE_BG_QUEUE,
+     PLAYERHOOK_ON_PLAYER_JOIN_ARENA,
+     PLAYERHOOK_GET_CUSTOM_GET_ARENA_TEAM_ID,
+     PLAYERHOOK_GET_CUSTOM_ARENA_PERSONAL_RATING,
+@@ -419,6 +420,9 @@ public:
+     // After player enters queue for BG
+     virtual void OnPlayerJoinBG(Player* /*player*/) { }
+ 
++    // After player leaves queue for BG
++    virtual void OnPlayerLeaveBGQueue(Player* /*player*/) { }
++
+     // After player enters queue for Arena
+     virtual void OnPlayerJoinArena(Player* /*player*/) { }
+ 
 diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
-index 9fd4ff356..fe6d5b66e 100644
+index 9fd4ff356..8677ae12b 100644
 --- a/src/server/game/Scripting/ScriptMgr.h
 +++ b/src/server/game/Scripting/ScriptMgr.h
-@@ -625,6 +625,7 @@ public: /* BGScript */
+@@ -376,6 +376,7 @@ public: /* PlayerScript */
+     void OnPlayerEquip(Player* player, Item* it, uint8 bag, uint8 slot, bool update);
+     void OnPlayerUnequip(Player* player, Item* it);
+     void OnPlayerJoinBG(Player* player);
++    void OnPlayerLeaveBGQueue(Player* player);
+     void OnPlayerJoinArena(Player* player);
+     void OnPlayerGetMaxPersonalArenaRatingRequirement(Player const* player, uint32 minSlot, uint32& maxArenaRating) const;
+     void OnPlayerLootItem(Player* player, Item* item, uint32 count, ObjectGuid lootguid);
+@@ -625,6 +626,7 @@ public: /* BGScript */
      void OnAddGroup(BattlegroundQueue* queue, GroupQueueInfo* ginfo, uint32& index, Player* leader, Group* group, BattlegroundTypeId bgTypeId, PvPDifficultyEntry const* bracketEntry,
          uint8 arenaType, bool isRated, bool isPremade, uint32 arenaRating, uint32 matchmakerRating, uint32 arenaTeamId, uint32 opponentsArenaTeamId);
      bool CanFillPlayersToBG(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id);

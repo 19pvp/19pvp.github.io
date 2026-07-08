@@ -445,15 +445,10 @@ public:
 
         _timer = _checkMs;
 
-        uint32 onlineCount = 0;
-        uint32 attemptedCount = 0;
-        uint32 skippedGuidCount = 0;
-
         for (WsgFixedRosterEntry const& entry : _roster)
         {
             if (entry.guid == 0)
             {
-                skippedGuidCount++;
                 LOG_WARN("playerbots", "[WsgFixedBots] Bot {} has GUID 0, skipping login.", entry.name);
                 continue;
             }
@@ -463,7 +458,6 @@ public:
 
             if (bot && bot->IsInWorld())
             {
-                onlineCount++;
                 LOG_DEBUG("playerbots", "[WsgFixedBots] Bot {} (GUID {}) is already online.", entry.name, entry.guid);
                 continue;
             }
@@ -473,7 +467,6 @@ public:
                      entry.name, entry.guid, cacheAccountId);
             LogLoginDiagnostics(entry, guid, cacheAccountId);
 
-            attemptedCount++;
             sRandomPlayerbotMgr.RegisterManualRandomBot(entry.guid, cacheAccountId);
             sRandomPlayerbotMgr.AddPlayerBot(guid, 0);
 

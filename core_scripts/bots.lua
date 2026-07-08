@@ -180,6 +180,82 @@ local function ProcessAndStartMatch()
     SendWorldMessage("[WSG Queue] Match is starting! Teams balanced: Alliance (" .. (allianceRealCount + #allianceBots) .. ") vs Horde (" .. (hordeRealCount + #hordeBots) .. ")")
 end
 
+local queueJoinTimes = {} -- playerGuidString -> joinMSTime
+
+local function UpdateWSGQueue()
+    SendWorldMessage("[WSG Queue]: UpdateWSGQueue start")
+    local bgTypeId = 2 -- Warsong Gulch
+    local level = 19
+    local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
+    if not bracketId then
+        SendWorldMessage("[WSG Queue]: no bracket id")
+        return
+    end
+
+    -- 1. Get current queued players
+    local queuedPlayers = GetPlayersInQueue(bgTypeId, bracketId)
+    local currentQueuedGuids = {}
+    local realPlayersCount = 0
+    local currentTime = GetCurrTime()
+
+    -- 2. Process currently queued players
+    for _, player in ipairs(queuedPlayers) do
+        if not player:IsBot() then
+            realPlayersCount = realPlayersCount + 1
+            local guid = tostring(player:GetGUID())
+            currentQueuedGuids[guid] = true
+
+            -- Record join time if not already tracked
+            if not queueJoinTimes[guid] then
+                queueJoinTimes[guid] = currentTime
+                print("[WSG Queue] Tracked player " .. player:GetName() .. " in queue since " .. currentTime)
+            end
+        end
+    end
+
+    -- 3. Remove players who are no longer in the queue from our tracking table
+    for guid, _ in pairs(queueJoinTimes) do
+        if not currentQueuedGuids[guid] then
+            print("[WSG Queue] Player GUID " .. guid .. " left the queue. Untracking.")
+            queueJoinTimes[guid] = nil
+        end
+    end
+
+    -- 4. Check if any real player has been waiting for 60 seconds or more
+    local shouldProc = false
+    local longestWait = 0
+    for guid, joinTime in pairs(queueJoinTimes) do
+        local waitTime = currentTime - joinTime
+        if waitTime >= 60000 then
+            shouldProc = true
+        end
+        if waitTime > longestWait then
+            longestWait = waitTime
+        end
+    end
+
+    -- Periodically print status if there are players waiting
+    local waitSeconds = math.floor(longestWait / 1000)
+    if realPlayersCount > 0 and waitSeconds > 0 and waitSeconds % 10 == 0 then
+        local timeLeft = 60 - waitSeconds
+        if timeLeft > 0 then
+            print("[WSG Queue] Queue active. " .. realPlayersCount .. " player(s) waiting. Time left to proc: " .. timeLeft .. "s")
+            SendWorldMessage("[WSG Queue] " .. realPlayersCount .. " player(s) waiting in queue. Match starts in " .. timeLeft .. "s.")
+        end
+    end
+
+    -- 5. If a player has waited 60 seconds, trigger the match starting process
+    if shouldProc and realPlayersCount > 0 then
+        SendWorldMessage("[WSG Queue]: should proc BG")
+        -- Clear queue join times so we don't double-trigger
+        queueJoinTimes = {}
+        ProcessAndStartMatch()
+    end
+end
+
+-- Create a recurring event to poll the queue every 1 second (1000ms)
+CreateLuaEvent(UpdateWSGQueue, 1000, 0)
+
 print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_PLAYER_JOIN_BG (" .. PLAYER_EVENT_ON_PLAYER_JOIN_BG .. ")...")
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
@@ -188,26 +264,27 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
     print("[WSG Queue Debug] Event 74 (PLAYER_EVENT_ON_PLAYER_JOIN_BG) triggered for: " .. name .. " (IsBot: " .. tostring(isBot) .. ")")
     
     if isBot then
-        -- Log to server console
         print("[WSG Queue] Bot " .. name .. " has successfully queued for Warsong Gulch.")
         SendWorldMessage("[WSG Queue] Bot " .. name .. " has successfully queued for Warsong Gulch.")
     else
         print("[WSG Queue] Player " .. name .. " has queued for Warsong Gulch.")
-        SendWorldMessage("[WSG Queue] Player " .. name .. " has queued for Warsong Gulch.")
-        
-        if not queueTimerEventId then
-            print("[WSG Queue] Starting 60-second timer before balancing and starting match...")
-            SendWorldMessage("[WSG Queue] Waiting 60 seconds for real players to join before starting match...")
-            queueTimerEventId = CreateLuaEvent(ProcessAndStartMatch, 60000, 1)
-        else
-            print("[WSG Queue] Timer already running, waiting for it to finish.")
-        end
+        SendWorldMessage("[WSG Queue] Player " .. name .. " has queued for Warsong Gulch. Match starts in 60s.")
     end
 end)
 
 -- Event IDs for entering and leaving BG matches
 local PLAYER_EVENT_ON_ENTER_BG = 75
 local PLAYER_EVENT_ON_LEAVE_BG = 76
+local PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE = 77
+
+print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE (" .. PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE .. ")...")
+RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE, function(event, player)
+    local name = player:GetName()
+    local isBot = player:IsBot()
+    local botText = isBot and "Bot" or "Player"
+    print("[WSG Queue] " .. botText .. " " .. name .. " has left the queue.")
+    SendWorldMessage("[WSG Queue] " .. botText .. " " .. name .. " has left the queue.")
+end)
 
 print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_ENTER_BG (" .. PLAYER_EVENT_ON_ENTER_BG .. ")...")
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
