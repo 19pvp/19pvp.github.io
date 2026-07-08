@@ -1185,6 +1185,7 @@ DELETE FROM quest_poi WHERE ${poiWhere};
 DELETE FROM quest_poi_points WHERE ${poiWhere};
 
 UPDATE \`item_template\` SET \`AllowableClass\` = -1 WHERE (\`entry\` = 18468);
+UPDATE \`item_template\` SET \`socketColor_1\` = 4, \`socketContent_1\` = 1 WHERE (\`InventoryType\` IN (1, 7));
 
 UPDATE \`creature_template\` SET \`npcflag\` = \`npcflag\` | 2 WHERE \`entry\` IN (${
     [...new Set(quests.flatMap((quest) => [quest.giver, quest.taker]))].sort((a, b) => a - b).join(', ')

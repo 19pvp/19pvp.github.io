@@ -148,3 +148,114 @@ RegisterServerEvent(WORLD_EVENT_ON_UPDATE, function (event, diff)
   elapsed = 0
   AuthDBQueryAsync(query_check_new_messages, DisplayNewMessages)
 end)
+
+local BLACKLISTED_FIRST_WORDS = {
+  "info",
+  "reload",
+  "lookup",
+  "list",
+  "spellinfo",
+  "commands",
+  "help",
+  "gps",
+  "who",
+  "teleport",
+  "appear",
+  "account",
+}
+
+local BLACKLISTED_SUB_COMMANDS = {
+  ["gm"] = { "on", "off", "list", "ingame" },
+  ["server"] = { "info", "motd" },
+  ["npc"] = { "info" },
+  ["gobject"] = { "info" },
+  ["item"] = { "info" },
+  ["guild"] = { "info" },
+  ["character"] = { "info" },
+}
+
+local function isCommandBlacklisted(command)
+  local cmd_lower = command:lower()
+  
+  local first_word, second_word = cmd_lower:match("^(%S+)%s*(%S*)")
+  if not first_word then return false end
+
+  for _, bw in ipairs(BLACKLISTED_FIRST_WORDS) do
+    if bw:sub(1, #first_word) == first_word then
+      return true
+    end
+  end
+
+  for main_cmd, sub_cmds in pairs(BLACKLISTED_SUB_COMMANDS) do
+    if main_cmd:sub(1, #first_word) == first_word then
+      if second_word and #second_word > 0 then
+        for _, sub_cmd in ipairs(sub_cmds) do
+          if sub_cmd:sub(1, #second_word) == second_word then
+            return true
+          end
+        end
+      end
+    end
+  end
+
+  return false
+end
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, function (event, player, command, chatHandler)
+  if player == nil then return end
+  if not player:IsGM() then return end
+
+  if isCommandBlacklisted(command) then
+    return
+  end
+
+  SendWebEvent('COMMAND', player, { command = command })
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function (event, player)
+  if isPlayerAllowed(player) then return end
+  TeleportMainGraveyard(player)
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_KILL_PLAYER, function (event, killer, killed)
+  if killed:IsBot() then return end
+  if killer:GetAccountId() == killed:GetAccountId() then return end
+  if killer:InBattleground() or killer:InArena() then return end
+  SendWebEvent('PVP_KILL', killer, {
+    victim = FormatPlayer(killed),
+    map = killed:GetMapId(),
+    x = killed:GetX(),
+    y = killed:GetY(),
+    z = killed:GetZ(),
+  })
+  killer:AddItem(5075) -- blood shard
+end)
+
+RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
+  local mapId = bg:GetMapId()
+  local map = GetMapById(mapId, instanceId)
+  if not map then return end
+  local tokenId = (map:IsArena() and 37836) or (map:IsBattleground() and 20558)
+  if not tokenId then return end
+  for _, player in ipairs(map:GetPlayers()) do
+    if player:GetTeam() == winner then
+      player:AddItem(tokenId, 3)
+    else
+      player:AddItem(tokenId, 1)
+    end
+  end
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId)
+  if player:IsBot() then return end
+  local bg = GetBattleground(instanceId, mapId)
+  if bg then
+    local status = bg:GetStatus()
+    if status < 4 then -- STATUS_WAIT_LEAVE is 4
+      SendWebEvent('BG_DESERT', player, {
+        map = mapId,
+        instanceId = instanceId,
+      })
+    end
+  end
+end)

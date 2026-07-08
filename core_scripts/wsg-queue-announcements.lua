@@ -1,5 +1,3 @@
-local PLAYER_EVENT_ON_PLAYER_JOIN_BG = 74
-
 RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
     local isBot = player:IsBot()
     local botText = "Player"
