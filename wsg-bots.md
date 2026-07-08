@@ -126,3 +126,26 @@ First implementation should:
 3. Queue enough bots to make WSG start.
 4. Prefer real players over bots when slots are limited.
 5. Log every bot queue/join/leave decision clearly.
+
+
+## Bots stuff
+- Bots should never be switched factions, that should never be needed.
+- We should only swith player faction for balance purpose, prefer not to.
+- STEP 1: We have to try to balance the number of players & bots in each side
+- Groups are preferences, not requirements
+
+- Bots should not eat graccu but normal player food
+- Bots should use bandages
+- Bots should have a "reaction delay"
+- Druid should FC & use travel form
+- Bots gear should be less stam -> more damage (except the druid)
+- Bots should never try to resurect
+- Bots should not enter until a player join
+- Bots should leave queue if no players are in queue anymore
+- Bots should call things hapening near them
+ - EFC on me
+ - EFC leaving tunnel
+ - INC in defense
+
+
+Idea: flexible queue, if more than 20 ppl queue during the delay we spawn an arathi bassin

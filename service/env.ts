@@ -2,7 +2,7 @@ import { projectName } from '../env.ts'
 
 export const isServer = Deno.mainModule.endsWith('server.ts') || Deno.args.includes('serve')
 
-const envAccessGranted = Deno.permissions.querySync({ name: "env" }).status === 'granted'
+const envAccessGranted = Deno.permissions.querySync({ name: "env" }).state === 'granted'
 
 const get = (key: string, required = false, fallback = ''): string => {
   if (!envAccessGranted) return fallback

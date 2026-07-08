@@ -11,6 +11,7 @@
     "check": "deno check --unstable-tsgo",
     "build": "deno run --allow-read --allow-write tasks/build.ts",
     "compile": "cd core && nix --extra-experimental-features \"nix-command flakes\" develop -c ./acore.sh compiler build",
+    "compile:backup": "[ -f core/env/dist/bin/worldserver ] && cp core/env/dist/bin/worldserver core/env/dist/bin/worldserver.$(date +%Y%m%d_%H%M%S) ; deno task compile",
     "patches:generate": "git -C mod-ale diff > patches/mod-ale.patch && git -C mod-playerbots diff > patches/mod-playerbots.patch && git -C core diff > patches/core.patch",
     "refresh-db": "deno run --env-file --allow-net --allow-read --allow-write --allow-env tasks/refresh_db.ts",
     "sql": { "command": "deno task sql:apply", "dependencies": ["refresh-db"] },
