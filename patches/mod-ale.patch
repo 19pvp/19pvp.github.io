@@ -157,7 +157,7 @@ index a21640d..0eafcfe 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..99859a4 100644
+index c0acc01..3547adf 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -165,6 +165,10 @@ luaL_Reg GlobalMethods[] =
@@ -186,12 +186,13 @@ index c0acc01..99859a4 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -1380,6 +1392,9 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1392,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
 +    { "EndBattleground", &LuaBattleGround::EndBattleground },
 +    { "SetEndTime", &LuaBattleGround::SetEndTime },
++    { "GetPlayerScore", &LuaBattleGround::GetPlayerScore },
 +    { "StartBattleground", &LuaBattleGround::StartBattleground },
  
      { NULL, NULL }
@@ -307,10 +308,10 @@ index 7649274..338663d 100644
  {
      START_HOOK(PLAYER_EVENT_ON_LOGOUT);
 diff --git a/src/LuaEngine/methods/BattleGroundMethods.h b/src/LuaEngine/methods/BattleGroundMethods.h
-index 70e97bb..a2991ca 100644
+index 70e97bb..e32c8b1 100644
 --- a/src/LuaEngine/methods/BattleGroundMethods.h
 +++ b/src/LuaEngine/methods/BattleGroundMethods.h
-@@ -209,5 +209,44 @@ namespace LuaBattleGround
+@@ -209,5 +209,110 @@ namespace LuaBattleGround
          ALE::Push(L, bg->GetStatus());
          return 1;
      }
@@ -342,6 +343,72 @@ index 70e97bb..a2991ca 100644
 +        uint32 endTime = ALE::CHECKVAL<uint32>(L, 2);
 +        bg->SetEndTime(endTime);
 +        return 0;
++    }
++
++    /**
++     * Retrieves the battleground score statistics for a player.
++     *
++     * @param Player player
++     * @return table score { killingBlows, deaths, honorableKills, bonusHonor, damageDone, healingDone, flagCaptures, flagReturns } or nil
++     */
++    int GetPlayerScore(lua_State* L, BattleGround* bg)
++    {
++        Player* player = ALE::CHECKOBJ<Player>(L, 2);
++        if (!bg || !player)
++        {
++            lua_pushnil(L);
++            return 1;
++        }
++
++        auto const* scoreMap = bg->GetPlayerScores();
++        if (!scoreMap)
++        {
++            lua_pushnil(L);
++            return 1;
++        }
++
++        auto it = scoreMap->find(player->GetGUID().GetCounter());
++        if (it == scoreMap->end())
++        {
++            lua_pushnil(L);
++            return 1;
++        }
++
++        BattlegroundScore* score = it->second;
++        if (!score)
++        {
++            lua_pushnil(L);
++            return 1;
++        }
++
++        lua_newtable(L);
++        int tbl = lua_gettop(L);
++
++        ALE::Push(L, score->GetKillingBlows());
++        lua_setfield(L, tbl, "killingBlows");
++
++        ALE::Push(L, score->GetDeaths());
++        lua_setfield(L, tbl, "deaths");
++
++        ALE::Push(L, score->GetHonorableKills());
++        lua_setfield(L, tbl, "honorableKills");
++
++        ALE::Push(L, score->GetBonusHonor());
++        lua_setfield(L, tbl, "bonusHonor");
++
++        ALE::Push(L, score->GetDamageDone());
++        lua_setfield(L, tbl, "damageDone");
++
++        ALE::Push(L, score->GetHealingDone());
++        lua_setfield(L, tbl, "healingDone");
++
++        ALE::Push(L, score->GetAttr1());
++        lua_setfield(L, tbl, "flagCaptures");
++
++        ALE::Push(L, score->GetAttr2());
++        lua_setfield(L, tbl, "flagReturns");
++
++        return 1;
 +    }
 +
 +    /**

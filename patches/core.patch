@@ -176,6 +176,27 @@ index 169f642ec..941ec8e48 100644
  
              bg->StartBattleground();
          }
+diff --git a/src/server/game/Battlegrounds/BattlegroundScore.h b/src/server/game/Battlegrounds/BattlegroundScore.h
+index de0663cdc..e5d906547 100644
+--- a/src/server/game/Battlegrounds/BattlegroundScore.h
++++ b/src/server/game/Battlegrounds/BattlegroundScore.h
+@@ -102,6 +102,7 @@ struct AC_GAME_API BattlegroundScore
+     // For Logging purpose
+     virtual std::string ToString() const { return ""; }
+ 
++    public:
+     [[nodiscard]] uint32 GetDeaths() const          { return Deaths; }
+     [[nodiscard]] uint32 GetHonorableKills() const  { return HonorableKills; }
+     [[nodiscard]] uint32 GetBonusHonor() const      { return BonusHonor; }
+@@ -112,6 +113,8 @@ struct AC_GAME_API BattlegroundScore
+     [[nodiscard]] virtual uint32 GetAttr4() const { return 0; }
+     [[nodiscard]] virtual uint32 GetAttr5() const { return 0; }
+ 
++    protected:
++
+     ObjectGuid PlayerGuid;
+ 
+     // Default score, present in every type
 diff --git a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
 index 9881a25f0..246cd3a8a 100644
 --- a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp

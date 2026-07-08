@@ -235,27 +235,13 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
   local mapId = bg:GetMapId()
   local map = GetMapById(mapId, instanceId)
   if not map then return end
-  local tokenId = (map:IsArena() and 37836) or (map:IsBattleground() and 20558)
-  if not tokenId then return end
-  for _, player in ipairs(map:GetPlayers()) do
-    if player:GetTeam() == winner then
-      player:AddItem(tokenId, 3)
-    else
-      player:AddItem(tokenId, 1)
-    end
-  end
-end)
-
-RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId)
-  if player:IsBot() then return end
-  local bg = GetBattleground(instanceId, mapId)
-  if bg then
-    local status = bg:GetStatus()
-    if status < 4 then -- STATUS_WAIT_LEAVE is 4
-      SendWebEvent('BG_DESERT', player, {
-        map = mapId,
-        instanceId = instanceId,
-      })
-    end
-  end
+  -- local tokenId = (map:IsArena() and 37836) or (map:IsBattleground() and 20558)
+  -- if not tokenId then return end
+  -- for _, player in ipairs(map:GetPlayers()) do
+  --   if player:GetTeam() == winner then
+  --     player:AddItem(tokenId, 3)
+  --   else
+  --     player:AddItem(tokenId, 1)
+  --   end
+  -- end
 end)
