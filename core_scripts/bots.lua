@@ -108,16 +108,27 @@ local function ProcessAndStartMatch()
     local allianceRealCount = #balancedRealPlayers[0]
     local hordeRealCount = #balancedRealPlayers[1]
 
-    -- Target players per team is 10 for WSG (or GetMaxPlayersPerTeam())
-    local maxPlayersPerTeam = bg:GetMaxPlayersPerTeam()
-    local targetPlayersCount = maxPlayersPerTeam
+    -- Target players per team is 5 for the minimum start quota (leaving 5 spots open on each side)
+    local targetPlayersCount = 5
 
-    -- 4. Gather available online roster bots
-    local availableBots = {}
+    -- 4. Gather available online roster bots, grouped by native faction (0 = Alliance, 1 = Horde)
+    local availableBots = {
+        [0] = {}, -- Alliance
+        [1] = {}  -- Horde
+    }
+    print("[WSG Queue Debug] Gathering available bots. Roster size: " .. #fixedRoster)
     for _, botName in ipairs(fixedRoster) do
         local bot = GetPlayerByName(botName)
-        if bot and not bot:InBattleground() and not bot:InBattlegroundQueue() then
-            table.insert(availableBots, bot)
+        if not bot then
+            print("[WSG Queue Debug] Bot " .. botName .. " is OFFLINE.")
+        else
+            local map = bot:GetMap()
+            local inBg = map and (map:IsBattleground() or map:IsArena())
+            print("[WSG Queue Debug] Bot " .. botName .. " is ONLINE. In BG: " .. tostring(inBg))
+            if not inBg then
+                local team = bot:GetTeam()
+                table.insert(availableBots[team], bot)
+            end
         end
     end
 
@@ -129,29 +140,32 @@ local function ProcessAndStartMatch()
     print("[WSG Queue] Alliance: " .. allianceRealCount .. " real players, " .. allianceBotsNeeded .. " bots needed")
     print("[WSG Queue] Horde: " .. hordeRealCount .. " real players, " .. hordeBotsNeeded .. " bots needed")
 
-    -- Distribute bots to Alliance
+    -- Distribute bots to Alliance (using native Alliance bots)
     local allianceBots = {}
     for i = 1, allianceBotsNeeded do
-        if #availableBots > 0 then
-            local bot = table.remove(availableBots, 1)
+        if #availableBots[0] > 0 then
+            local bot = table.remove(availableBots[0], 1)
             table.insert(allianceBots, bot)
         else
             break
         end
     end
 
-    -- Distribute bots to Horde
+    -- Distribute bots to Horde (using native Horde bots)
     local hordeBots = {}
     for i = 1, hordeBotsNeeded do
-        if #availableBots > 0 then
-            local bot = table.remove(availableBots, 1)
+        if #availableBots[1] > 0 then
+            local bot = table.remove(availableBots[1], 1)
             table.insert(hordeBots, bot)
         else
             break
         end
     end
 
-    -- 6. Add real players to the BG instance
+    -- 6. Register and start the battleground instance (must be done before adding players so the instance is registered for teleportation)
+    bg:StartBattleground()
+
+    -- 7. Add real players to the BG instance
     for _, player in ipairs(balancedRealPlayers[0]) do
         print("[WSG Queue] Adding player " .. player:GetName() .. " to Alliance")
         player:AddToBattleground(bg, 0)
@@ -161,7 +175,7 @@ local function ProcessAndStartMatch()
         player:AddToBattleground(bg, 1)
     end
 
-    -- 7. Add bots to the BG instance
+    -- 8. Add bots to the BG instance
     for _, bot in ipairs(allianceBots) do
         print("[WSG Queue] Adding bot " .. bot:GetName() .. " to Alliance")
         bot:AddToBattleground(bg, 0)
@@ -175,8 +189,6 @@ local function ProcessAndStartMatch()
         bot:SetBotStrategy("+bg", 1)
     end
 
-    -- 8. Register and start the battleground preparation countdown
-    bg:StartBattleground()
     SendWorldMessage("[WSG Queue] Match is starting! Teams balanced: Alliance (" .. (allianceRealCount + #allianceBots) .. ") vs Horde (" .. (hordeRealCount + #hordeBots) .. ")")
 end
 
