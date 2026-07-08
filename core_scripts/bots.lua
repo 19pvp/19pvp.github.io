@@ -44,7 +44,7 @@ local function ProcessAndStartMatch()
     local bgTypeId = 2 -- Warsong Gulch
     local level = 19
     local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
-    if not bracketId or bracketId == 0 then
+    if not bracketId then
         print("[WSG Queue] Error: Could not find bracket ID for level " .. level)
         SendWorldMessage("[WSG Queue] Error: Could not find bracket ID for level " .. level)
         return
