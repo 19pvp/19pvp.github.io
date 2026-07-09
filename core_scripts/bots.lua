@@ -35,199 +35,99 @@ function IsRosterBotQueued(name)
     return false
 end
 
-local PLAYER_EVENT_ON_PLAYER_JOIN_BG = 74
-local queueTimerEventId = nil
-
-local function ProcessAndStartMatch()
-    queueTimerEventId = nil
-    
-    local bgTypeId = 2 -- Warsong Gulch
-    local level = 19
-    local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
-    if not bracketId then
-        print("[WSG Queue] Error: Could not find bracket ID for level " .. level)
-        SendWorldMessage("[WSG Queue] Error: Could not find bracket ID for level " .. level)
-        return
-    end
-
-    -- 1. Get all players in the queue for this bracket and check if there are real players
-    local queuedPlayers = GetPlayersInQueue(bgTypeId, bracketId)
-    local playersByTeam = {
-        [0] = {}, -- Alliance
-        [1] = {}  -- Horde
-    }
-
-    local realPlayersCount = 0
+local bgTypeId = 2 -- Warsong Gulch
+local level = 19
+local minPlayersPerTeam = 5
+local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
+local teamNames = { [0] = "alliance", [1] = "horde" }
+local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
+    ShuffleTable(queuedPlayers)
+    local playersByTeam = { [0] = {}, [1] = {} }
+    local balancedRealPlayers = { [0] = {}, [1] = {} }
     for _, player in ipairs(queuedPlayers) do
-        if not player:IsBot() then
-            realPlayersCount = realPlayersCount + 1
-            local queuedTeam = player:GetBattlegroundQueueTeam(bgTypeId)
-            -- Default to player's actual team if neutral/invalid
-            if queuedTeam ~= 0 and queuedTeam ~= 1 then
-                queuedTeam = player:GetTeam()
-            end
-            table.insert(playersByTeam[queuedTeam], player)
-        end
+        table.insert(playersByTeam[player:GetTeam()], player)
     end
 
-    -- If no real players queued, cancel silently without spamming world announcements
-    if realPlayersCount == 0 then
-        print("[WSG Queue] No real players in queue, cancelling match creation.")
-        return
-    end
-
-    print("[WSG Queue] 60 seconds have passed. Reorganizing queue and starting balanced match...")
-    SendWorldMessage("[WSG Queue] 60 seconds elapsed. Balancing teams and starting the match...")
-
-    -- 2. Create a new Battleground instance
     local bg = CreateBattleground(bgTypeId, bracketId)
     if not bg then
         print("[WSG Queue] Error: Failed to create battleground instance")
-        SendWorldMessage("[WSG Queue] Error: Failed to create battleground instance")
         return
     end
+
+    bg:StartBattleground()
 
     print("[WSG Queue] Found " .. realPlayersCount .. " real players queued (Alliance: " .. #playersByTeam[0] .. ", Horde: " .. #playersByTeam[1] .. ")")
 
-    -- 3. Balance the real players across the two teams
-    -- To keep the teams as balanced as possible, we alternate placing all queued real players
-    local allRealPlayers = {}
-    for _, p in ipairs(playersByTeam[0]) do table.insert(allRealPlayers, p) end
-    for _, p in ipairs(playersByTeam[1]) do table.insert(allRealPlayers, p) end
+    -- All of the smaller team is added as-is
+    local smallTeam = #playersByTeam[0] > #playersByTeam[1] and 1 or 0
+    local largeTeam = smallTeam == 0 and 1 or 0
+    for i, player in ipairs(playersByTeam[smallTeam]) do
+        player:InviteToBattleground(bg, smallTeam)
+        table.insert(balancedRealPlayers[smallTeam], player)
+    end
 
-    local balancedRealPlayers = {
-        [0] = {}, -- Alliance
-        [1] = {}  -- Horde
-    }
-
-    for i, player in ipairs(allRealPlayers) do
-        local teamId = (i % 2 == 1) and 0 or 1
+    -- The first retainCount players from the bigger team stay on largeTeam (keeping balance at ±1)
+    -- Excess players beyond that alternate between teams
+    -- TODO: try to preserve groups, randomize the rest so overflow is not always the same players
+    local retainCount = #playersByTeam[smallTeam] + 1
+    for i, player in ipairs(playersByTeam[largeTeam]) do
+        local teamId = largeTeam
+        if i > retainCount then
+            teamId = (i - retainCount) % 2 == 1 and largeTeam or smallTeam
+        end
+        player:InviteToBattleground(bg, teamId)
         table.insert(balancedRealPlayers[teamId], player)
     end
 
-    local allianceRealCount = #balancedRealPlayers[0]
-    local hordeRealCount = #balancedRealPlayers[1]
-
-    -- Target players per team is 5 for the minimum start quota (leaving 5 spots open on each side)
-    local targetPlayersCount = 5
+    local teamBotsNeeded = {
+        [0] = minPlayersPerTeam - #balancedRealPlayers[0],
+        [1] = minPlayersPerTeam - #balancedRealPlayers[1],
+    }
 
     -- 4. Gather available online roster bots, grouped by native faction (0 = Alliance, 1 = Horde)
-    local availableBots = {
-        [0] = {}, -- Alliance
-        [1] = {}  -- Horde
-    }
-    print("[WSG Queue Debug] Gathering available bots. Roster size: " .. #fixedRoster)
+    -- TODO: try to give bots that would help with missing classes, balancing the roster
+    -- we should never have bots in 2 different games once a game team gets more than 5 participants bots should leave
+    ShuffleTable(fixedRoster)
     for _, botName in ipairs(fixedRoster) do
         local bot = GetPlayerByName(botName)
-        if not bot then
-            print("[WSG Queue Debug] Bot " .. botName .. " is OFFLINE.")
-        else
-            local map = bot:GetMap()
-            local inBg = map and (map:IsBattleground() or map:IsArena())
-            print("[WSG Queue Debug] Bot " .. botName .. " is ONLINE. In BG: " .. tostring(inBg))
-            if not inBg then
-                local team = bot:GetTeam()
-                table.insert(availableBots[team], bot)
+        if bot then
+            local team = bot:GetTeam()
+            if teamBotsNeeded[team] > 0 then
+                bot:AddToBattleground(bg, team)
+                bot:SetBotStrategy("+bg", 1)
+                print("[WSG Queue] Adding bot " .. bot:GetName() .. " to ".. teamNames[team])
+                teamBotsNeeded[team] = teamBotsNeeded[team] - 1
             end
-        end
-    end
-
-    -- 5. Calculate how many bots we need for each team to reach the target quota
-    local allianceBotsNeeded = targetPlayersCount - allianceRealCount
-    local hordeBotsNeeded = targetPlayersCount - hordeRealCount
-
-    print("[WSG Queue] Balance Target per team: " .. targetPlayersCount)
-    print("[WSG Queue] Alliance: " .. allianceRealCount .. " real players, " .. allianceBotsNeeded .. " bots needed")
-    print("[WSG Queue] Horde: " .. hordeRealCount .. " real players, " .. hordeBotsNeeded .. " bots needed")
-
-    -- Distribute bots to Alliance (using native Alliance bots)
-    local allianceBots = {}
-    for i = 1, allianceBotsNeeded do
-        if #availableBots[0] > 0 then
-            local bot = table.remove(availableBots[0], 1)
-            table.insert(allianceBots, bot)
         else
-            break
+            print("[WSG Queue Debug] Bot " .. botName .. " is OFFLINE.")
         end
     end
 
-    -- Distribute bots to Horde (using native Horde bots)
-    local hordeBots = {}
-    for i = 1, hordeBotsNeeded do
-        if #availableBots[1] > 0 then
-            local bot = table.remove(availableBots[1], 1)
-            table.insert(hordeBots, bot)
-        else
-            break
-        end
-    end
-
-    -- 6. Register and start the battleground instance (must be done before adding players so the instance is registered for teleportation)
-    bg:StartBattleground()
-
-    -- 7. Add real players to the BG instance
-    for _, player in ipairs(balancedRealPlayers[0]) do
-        print("[WSG Queue] Adding player " .. player:GetName() .. " to Alliance")
-        player:AddToBattleground(bg, 0)
-    end
-    for _, player in ipairs(balancedRealPlayers[1]) do
-        print("[WSG Queue] Adding player " .. player:GetName() .. " to Horde")
-        player:AddToBattleground(bg, 1)
-    end
-
-    -- 8. Add bots to the BG instance
-    for _, bot in ipairs(allianceBots) do
-        print("[WSG Queue] Adding bot " .. bot:GetName() .. " to Alliance")
-        bot:AddToBattleground(bg, 0)
-        -- Enable BG strategy for the bot
-        bot:SetBotStrategy("+bg", 1)
-    end
-    for _, bot in ipairs(hordeBots) do
-        print("[WSG Queue] Adding bot " .. bot:GetName() .. " to Horde")
-        bot:AddToBattleground(bg, 1)
-        -- Enable BG strategy for the bot
-        bot:SetBotStrategy("+bg", 1)
-    end
-
-    SendWorldMessage("[WSG Queue] Match is starting! Teams balanced: Alliance (" .. (allianceRealCount + #allianceBots) .. ") vs Horde (" .. (hordeRealCount + #hordeBots) .. ")")
+    SendWorldMessage("[WSG Queue] Match is starting!")
 end
 
 local function UpdateWSGQueue()
-    local bgTypeId = 2 -- Warsong Gulch
-    local level = 19
-    local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
-    if not bracketId then
-        return
-    end
-
-    -- 1. Get current queued players
     local queuedPlayers = GetPlayersInQueue(bgTypeId, bracketId)
     local realPlayersCount = 0
     local currentTime = GetCurrTime()
-
-    -- 2. Find the longest wait time from the actual C++ join times
     local shouldProc = false
     local longestWait = 0
-
     for _, player in ipairs(queuedPlayers) do
-        if not player:IsBot() then
-            realPlayersCount = realPlayersCount + 1
-            local joinTime = player:GetBattlegroundQueueJoinTime(bgTypeId)
-            if joinTime > 0 then
-                local waitTime = currentTime - joinTime
-                if waitTime >= 60000 then
-                    shouldProc = true
-                end
-                if waitTime > longestWait then
-                    longestWait = waitTime
-                end
+        realPlayersCount = realPlayersCount + 1
+        local joinTime = player:GetBattlegroundQueueJoinTime(bgTypeId)
+        if joinTime > 0 then
+            local waitTime = currentTime - joinTime
+            if waitTime >= 60000 then
+                shouldProc = true
+            end
+            if waitTime > longestWait then
+                longestWait = waitTime
             end
         end
     end
 
-    -- Periodically print status if there are players waiting
     local waitSeconds = math.floor(longestWait / 1000)
-    if realPlayersCount > 0 and waitSeconds > 0 and waitSeconds % 10 == 0 then
+    if realPlayersCount > 0 and waitSeconds > 0 and waitSeconds % 30 == 0 then
         local timeLeft = 60 - waitSeconds
         if timeLeft > 0 then
             print("[WSG Queue] Queue active. " .. realPlayersCount .. " player(s) waiting. Time left to proc: " .. timeLeft .. "s")
@@ -235,97 +135,81 @@ local function UpdateWSGQueue()
         end
     end
 
-    -- 3. If any player has been in the queue for 60 seconds or more, trigger match start
     if shouldProc and realPlayersCount > 0 then
-        ProcessAndStartMatch()
+        ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     end
 end
 
--- Create a recurring event to poll the queue every 1 second (1000ms)
 CreateLuaEvent(UpdateWSGQueue, 1000, 0)
 
-print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_PLAYER_JOIN_BG (" .. PLAYER_EVENT_ON_PLAYER_JOIN_BG .. ")...")
-
 RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
-    local name = player:GetName()
-    local isBot = player:IsBot()
-    print("[WSG Queue Debug] Event 74 (PLAYER_EVENT_ON_PLAYER_JOIN_BG) triggered for: " .. name .. " (IsBot: " .. tostring(isBot) .. ")")
-    
-    if isBot then
-        print("[WSG Queue] Bot " .. name .. " has successfully queued for Warsong Gulch.")
-        SendWorldMessage("[WSG Queue] Bot " .. name .. " has successfully queued for Warsong Gulch.")
-    else
-        print("[WSG Queue] Player " .. name .. " has queued for Warsong Gulch.")
-        SendWorldMessage("[WSG Queue] Player " .. name .. " has queued for Warsong Gulch. Match starts in 60s.")
-    end
+    local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
+    -- Check if a BG with available slots exist
+    -- If not, do nothing, let the UpdateWSGQueue polling do the thing
+    print("[WSG Queue]".. label .. " has successfully queued for Warsong Gulch.")
 end)
 
 -- Event IDs for entering and leaving BG matches
-local PLAYER_EVENT_ON_ENTER_BG = 75
-local PLAYER_EVENT_ON_LEAVE_BG = 76
-local PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE = 77
-
-print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE (" .. PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE .. ")...")
 RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE, function(event, player)
-    local name = player:GetName()
-    local isBot = player:IsBot()
-    local botText = isBot and "Bot" or "Player"
-    print("[WSG Queue] " .. botText .. " " .. name .. " has left the queue.")
-    SendWorldMessage("[WSG Queue] " .. botText .. " " .. name .. " has left the queue.")
+    local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
+    print("[WSG Queue] " .. label .. " has left the queue.")
 end)
 
-print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_ENTER_BG (" .. PLAYER_EVENT_ON_ENTER_BG .. ")...")
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
-    local name = player:GetName()
-    local botText = player:IsBot() and "Bot" or "Player"
-    print("[WSG Queue Debug] Event 75 (PLAYER_EVENT_ON_ENTER_BG) triggered for: " .. name .. " on map: " .. mapId)
-    local logMsg = "[BG Match] " .. botText .. " " .. name .. " entered Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")"
-    print(logMsg)
-    SendWorldMessage(logMsg)
+    local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
+    print("[BG Match] " .. label .. " entered Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
 end)
 
-print("[WSG Queue Debug] Registering event handler for PLAYER_EVENT_ON_LEAVE_BG (" .. PLAYER_EVENT_ON_LEAVE_BG .. ")...")
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId)
     local name = player:GetName()
     local botText = player:IsBot() and "Bot" or "Player"
-    print("[WSG Queue Debug] Event 76 (PLAYER_EVENT_ON_LEAVE_BG) triggered for: " .. name .. " on map: " .. mapId)
     local logMsg = "[BG Match] " .. botText .. " " .. name .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")"
     print(logMsg)
-    SendWorldMessage(logMsg)
 
     -- If a real player is leaving, check if there are any real players left in this BG instance
-    if not player:IsBot() then
-        local bg = GetBattleground(instanceId, mapId)
-        if bg then
-            local map = bg:GetMap()
-            if map then
-                local players = map:GetPlayers()
-                local realPlayersCount = 0
-                for _, p in ipairs(players) do
-                    -- Count all other real players still in the battleground
-                    if p:GetName() ~= name and not p:IsBot() then
-                        realPlayersCount = realPlayersCount + 1
-                    end
-                end
-
-                if realPlayersCount == 0 then
-                    print("[WSG Queue] No real players remaining in BG map " .. mapId .. " (Instance " .. instanceId .. "). Ending match and removing bots...")
-                    SendWorldMessage("[WSG Queue] No real players remaining. Closing battleground match.")
-                    
-                    -- Kick all remaining bots out of the battleground
-                    for _, p in ipairs(players) do
-                        if p:IsBot() then
-                            print("[WSG Queue] Kicking bot " .. p:GetName() .. " from battleground.")
-                            p:LeaveBattleground()
-                        end
-                    end
-
-                    bg:EndBattleground(2) -- End with NEUTRAL to clean up the BG instance
-                    bg:SetEndTime(1)      -- Force immediate cleanup (1ms countdown)
-                else
-                    print("[WSG Queue] " .. realPlayersCount .. " real player(s) still remaining in BG.")
-                end
-            end
+    if player:IsBot() then return end
+    local bg = GetBattleground(instanceId, mapId)
+    print("[BG Match] bg found")
+    if not bg then return end
+    local map = bg:GetMap()
+    print("[BG Match] map found")
+    if not map then return end
+    local players = map:GetPlayers()
+    local playersLeft = 0
+    for _, p in ipairs(players) do
+        -- Count all other real players still in the battleground
+        if p:GetName() ~= name and not p:IsBot() then
+            playersLeft = playersLeft + 1
         end
     end
+    print("[BG Match] playersLeft: " .. playersLeft)
+
+    if playersLeft == 0 then
+        print("[WSG Queue] No real players remaining in BG map " .. mapId .. " (Instance " .. instanceId .. "). Ending match and removing bots...")
+
+        -- Kick all remaining bots out of the battleground
+        for _, p in ipairs(players) do
+            if p:IsBot() then
+                print("[WSG Queue] Kicking bot " .. p:GetName() .. " from battleground.")
+                p:LeaveBattleground()
+            end
+        end
+
+        bg:EndBattleground(2) -- End with NEUTRAL to clean up the BG instance
+        bg:SetEndTime(1)      -- Force immediate cleanup (1ms countdown)
+    else
+        print("[WSG Queue] " .. playersLeft .. " real player(s) still remaining in BG.")
+    end
 end)
+-- 
+-- // Prompt them one by one
+-- I need to handle when a new player queue but a wsg is already in progress
+-- 
+-- - If the bg as a side with more players, join the oposite side, always balance
+-- - if possible we should try to alternate the side with more players: if previously horde side had 3 players alliance had 2, then then
+-- next 2 players will go alliance side, then the next 2 horde side, then the next 2 alliance side etc until full.
+-- - We always add a bot in the under playered side
+-- - if bg is full because of a bot we kick the bot to make room but this should only happen if the bg is 9 vs 10 then a bot will fill
+-- the last slot to balance and we will need to kick him.
+-- - a bot should always leave when a player enter.
+-- - sometimes a new bot enter to counter balance

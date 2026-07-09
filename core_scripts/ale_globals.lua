@@ -1148,6 +1148,7 @@ BG_EVENT_ON_START       = 1 -- (event, bg, bgId, instanceId)
 BG_EVENT_ON_END         = 2 -- (event, bg, bgId, instanceId, winner)
 BG_EVENT_ON_CREATE      = 3 -- (event, bg, bgId, instanceId)
 BG_EVENT_ON_PRE_DESTROY = 4 -- (event, bg, bgId, instanceId)
+BG_EVENT_ON_QUEUE_DISTRIBUTION = 5 -- (event, bg, bracketId, queueDistributionTable) - Can return true
 
 -- RegisterPlayerEvent
 PLAYER_EVENT_ON_CHARACTER_CREATE       = 1 -- (event, player)
@@ -1205,9 +1206,26 @@ PLAYER_EVENT_ON_COMPLETE_QUEST         = 54 -- (event, player, quest)
 PLAYER_EVENT_ON_CAN_GROUP_INVITE       = 55 -- (event, player, memberName) - Can return false to prevent inviting
 PLAYER_EVENT_ON_GROUP_ROLL_REWARD_ITEM = 56 -- (event, player, item, count, voteType, roll)
 PLAYER_EVENT_ON_BG_DESERTION           = 57 -- (event, player, type)
+PLAYER_EVENT_ON_PET_KILL               = 58 -- (event, player, killer)
+PLAYER_EVENT_ON_CAN_RESURRECT          = 59 -- (event, player)
+PLAYER_EVENT_ON_CAN_UPDATE_SKILL       = 60 -- (event, player, skill_id) - Can return true or false
+PLAYER_EVENT_ON_BEFORE_UPDATE_SKILL    = 61 -- (event, player, skill_id, value, max, step) -- Can return new amount
+PLAYER_EVENT_ON_UPDATE_SKILL           = 62 -- (event, player, skill_id, value, max, step, new_value)
+PLAYER_EVENT_ON_QUEST_ACCEPT           = 63 -- (event, player, quest)
+PLAYER_EVENT_ON_AURA_APPLY             = 64 -- (event, player, aura)
+PLAYER_EVENT_ON_HEAL                   = 65 -- (event, player, target, gain) - Can return new heal amount
+PLAYER_EVENT_ON_DAMAGE                 = 66 -- (event, player, target, damage) - Can return new damage amount
+PLAYER_EVENT_ON_AURA_REMOVE            = 67 -- (event, player, aura, remove_mode)
+PLAYER_EVENT_ON_MODIFY_PERIODIC_DAMAGE_AURAS_TICK = 68 -- (event, player, target, damage, spellInfo) - Can return new damage amount
+PLAYER_EVENT_ON_MODIFY_MELEE_DAMAGE                 = 69 -- (event, player, target, damage) - Can return new damage amount
+PLAYER_EVENT_ON_MODIFY_SPELL_DAMAGE_TAKEN           = 70 -- (event, player, target, damage, spellInfo) - Can return new damage amount
+PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                = 71 -- (event, player, target, heal, spellInfo) - Can return new heal amount
+PLAYER_EVENT_ON_DEAL_DAMAGE                         = 72 -- (event, player, target, damage, damagetype) - Can return new damage amount
+PLAYER_EVENT_ON_RELEASED_GHOST                      = 73 -- (event, player)
 PLAYER_EVENT_ON_PLAYER_JOIN_BG         = 74 -- (event, player)
 PLAYER_EVENT_ON_ENTER_BG               = 75 -- (event, player, mapId, instanceId)
 PLAYER_EVENT_ON_LEAVE_BG               = 76 -- (event, player, mapId, instanceId)
+PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE  = 77 -- (event, player)
 
 
 -- RegisterMapEvent
@@ -1446,4 +1464,14 @@ function SendWebEvent(type, player, data)
     data.player = FormatPlayer(player)
   end
   WorldDBExecute("INSERT INTO acore_auth.web_events (type, world, data) VALUES ('"..type.."', "..WORLD_ID..", "..EncodeValue(data)..")")
+end
+
+math.randomseed(os.time())
+
+function ShuffleTable(t)
+  for i = #t, 2, -1 do
+    local j = math.random(i)
+    t[i], t[j] = t[j], t[i]
+  end
+  return t
 end

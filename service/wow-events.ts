@@ -111,14 +111,14 @@ try {
   console.warn(err)
 }
 
-// Those events are not preserved in the database
+// Those events are immediatly archived preserved in the database
 const purgedEvents = new Set<string>([
   'GENERAL_CHANNEL_MESSAGE',
-  'PLAYER_LOCATION',
   'BATTLEGROUND_QUEUE',
   'BATTLEGROUND_END',
   'ARENA_QUEUE',
   'ARENA_END',
+  'COMMAND',
 ])
 
 let polling = false

@@ -115,10 +115,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, s
     if player:IsBot() then return end
 
     if player:InBattleground() then
-        local spellInfo = spell:GetSpellInfo()
-        if not spellInfo then return end
-
-        local spellId = spellInfo:GetId()
+        local spellId = spell:GetEntry()
         if DISPEL_PROTECTIVE_SPELLS[spellId] then
             local target = spell:GetTarget()
             if target and target:ToPlayer() then
@@ -362,14 +359,12 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
         end
     end
 
-    if reporter then
-        print("[WSG Metrics] Closing match instance " .. instanceId .. ". Sending PVP_BG_STATS web event...")
-        SendWebEvent('PVP_BG_STATS', reporter, {
-            instanceId = instanceId,
-            winner = winner,
-            players = currentMatchStats,
-        })
-    end
+    print("[WSG Metrics] Closing match instance " .. instanceId .. ". Sending PVP_BG_STATS web event...")
+    SendWebEvent('PVP_BG_STATS', nil, {
+        instanceId = instanceId,
+        winner = winner,
+        players = currentMatchStats,
+    })
 
     -- Clear stats only for this specific match instance
     matchStats[instanceId] = nil

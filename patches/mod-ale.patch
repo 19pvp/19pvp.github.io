@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..4043d7a 100644
+index d8886ce..9ac8540 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -59,7 +59,16 @@ index d8886ce..4043d7a 100644
          PLAYERHOOK_ON_LOGOUT,
          PLAYERHOOK_ON_CREATE,
          PLAYERHOOK_ON_SAVE,
-@@ -740,6 +758,19 @@ public:
+@@ -737,9 +755,28 @@ public:
+         sALE->OnQuestAbandon(player, questId);
+     }
+ 
++    void OnPlayerRemoveFromBattleground(Player* player, Battleground* bg) override
++    {
++        playersInBG.erase(player->GetGUID());
++        sALE->OnLeaveBG(player, bg);
++    }
++
      void OnPlayerMapChanged(Player* player) override
      {
          sALE->OnMapChanged(player);
@@ -79,7 +88,7 @@ index d8886ce..4043d7a 100644
      }
  
      void OnPlayerGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action) override
-@@ -832,8 +863,22 @@ public:
+@@ -832,8 +869,22 @@ public:
          sALE->OnLogin(player);
      }
  
@@ -571,7 +580,7 @@ index cebb7bc..568ff1d 100644
       * </pre>
       *
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..cf0b90e 100644
+index c39801f..7ed6ae5 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -10,6 +10,9 @@
@@ -584,7 +593,7 @@ index c39801f..cf0b90e 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -5175,6 +5178,306 @@ namespace LuaPlayer
+@@ -5175,6 +5178,313 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
@@ -718,6 +727,13 @@ index c39801f..cf0b90e 100644
 +        uint32 queueSlot = player->GetBattlegroundQueueIndex(bgQueueTypeId);
 +        player->SetInviteForBattlegroundQueueType(bgQueueTypeId, bg->GetInstanceID());
 +        bg->IncreaseInvitedCount((TeamId)teamId);
++
++        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
++        auto qItr = bgQueue.m_QueuedPlayers.find(player->GetGUID());
++        if (qItr != bgQueue.m_QueuedPlayers.end())
++        {
++            qItr->second->teamId = (TeamId)teamId;
++        }
 +
 +        WorldPacket data;
 +        sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, queueSlot, STATUS_WAIT_JOIN, INVITE_ACCEPT_WAIT_TIME, 0, bg->GetArenaType(), (TeamId)teamId);

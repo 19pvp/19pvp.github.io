@@ -12,6 +12,7 @@ DELETE FROM quest_poi WHERE QuestId >= 777000 AND QuestId <= 777017;
 DELETE FROM quest_poi_points WHERE QuestId >= 777000 AND QuestId <= 777017;
 
 UPDATE `item_template` SET `AllowableClass` = -1 WHERE (`entry` = 18468);
+UPDATE `item_template` SET `socketColor_1` = 4, `socketContent_1` = 1 WHERE (`InventoryType` IN (1, 7));
 
 UPDATE `creature_template` SET `npcflag` = `npcflag` | 2 WHERE `entry` IN (19531, 19537, 19538, 20084, 20205, 20980, 22427);
 
