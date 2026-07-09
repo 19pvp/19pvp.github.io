@@ -435,7 +435,7 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..b4119a5 100644
+index cebb7bc..3e8129b 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,7 @@
@@ -446,7 +446,7 @@ index cebb7bc..b4119a5 100644
  #include "../../../../src/server/scripts/OutdoorPvP/OutdoorPvPNA.h"
  
  
-@@ -163,6 +164,124 @@ namespace LuaGlobalFunctions
+@@ -163,6 +164,128 @@ namespace LuaGlobalFunctions
          return 1;
      }
  
@@ -522,8 +522,12 @@ index cebb7bc..b4119a5 100644
 +            if (bracketIdVal != -1 && ginfo->BracketId != bracketIdVal)
 +                continue;
 +
++            // Skip players who already have a pending invite — they're deciding, not waiting.
++            if (ginfo->IsInvitedToBGInstanceGUID)
++                continue;
++
 +            Player* player = ObjectAccessor::FindConnectedPlayer(guid);
-+            if (player)
++            if (player && !player->GetSession()->IsBot())
 +            {
 +                lua_pushinteger(L, index++);
 +                ALE::Push(L, player);
@@ -571,7 +575,7 @@ index cebb7bc..b4119a5 100644
      /**
       * Returns the instance ID of the Lua state. Returns 0 for continent maps and the world state.
       *
-@@ -794,6 +913,10 @@ namespace LuaGlobalFunctions
+@@ -794,6 +917,10 @@ namespace LuaGlobalFunctions
       *     PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                 =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
       *     PLAYER_EVENT_ON_DEAL_DAMAGE                          =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
       *     PLAYER_EVENT_ON_RELEASED_GHOST                       =     73,       // (event, player)

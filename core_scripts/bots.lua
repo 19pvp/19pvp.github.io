@@ -40,6 +40,12 @@ local level = 19
 local minPlayersPerTeam = 5
 local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
+
+-- Tracks real players who have been sent an invite popup but haven't entered yet.
+-- Prevents UpdateWSGQueue from re-processing them every second while they decide.
+-- NOTE: Lua-side guard; the C++ idempotency guard in InviteToBattleground is the
+-- authoritative lock — this just stops orphan BGs from being created on duplicate procs.
+local pendingInvites = {}
 local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     ShuffleTable(queuedPlayers)
     local playersByTeam = { [0] = {}, [1] = {} }
@@ -62,7 +68,9 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     local smallTeam = #playersByTeam[0] > #playersByTeam[1] and 1 or 0
     local largeTeam = smallTeam == 0 and 1 or 0
     for i, player in ipairs(playersByTeam[smallTeam]) do
-        player:InviteToBattleground(bg, smallTeam)
+        if player:InviteToBattleground(bg, smallTeam) then
+            pendingInvites[player:GetGUIDLow()] = true
+        end
         table.insert(balancedRealPlayers[smallTeam], player)
     end
 
@@ -75,7 +83,9 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
         if i > retainCount then
             teamId = (i - retainCount) % 2 == 1 and largeTeam or smallTeam
         end
-        player:InviteToBattleground(bg, teamId)
+        if player:InviteToBattleground(bg, teamId) then
+            pendingInvites[player:GetGUIDLow()] = true
+        end
         table.insert(balancedRealPlayers[teamId], player)
     end
 
@@ -91,12 +101,15 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     for _, botName in ipairs(fixedRoster) do
         local bot = GetPlayerByName(botName)
         if bot then
-            local team = bot:GetTeam()
-            if teamBotsNeeded[team] > 0 then
-                bot:AddToBattleground(bg, team)
-                bot:SetBotStrategy("+bg", 1)
-                print("[WSG Queue] Adding bot " .. bot:GetName() .. " to ".. teamNames[team])
-                teamBotsNeeded[team] = teamBotsNeeded[team] - 1
+            -- Guard: never add a bot that is already in a battleground (prevents double-add crash)
+            if not bot:InBattleground() then
+                local team = bot:GetTeam()
+                if teamBotsNeeded[team] > 0 then
+                    bot:AddToBattleground(bg, team)
+                    bot:SetBotStrategy("+bg", 1)
+                    print("[WSG Queue] Adding bot " .. bot:GetName() .. " to " .. teamNames[team])
+                    teamBotsNeeded[team] = teamBotsNeeded[team] - 1
+                end
             end
         else
             print("[WSG Queue Debug] Bot " .. botName .. " is OFFLINE.")
@@ -112,16 +125,22 @@ local function UpdateWSGQueue()
     local currentTime = GetCurrTime()
     local shouldProc = false
     local longestWait = 0
+    local eligiblePlayers = {}
+
     for _, player in ipairs(queuedPlayers) do
-        realPlayersCount = realPlayersCount + 1
-        local joinTime = player:GetBattlegroundQueueJoinTime(bgTypeId)
-        if joinTime > 0 then
-            local waitTime = currentTime - joinTime
-            if waitTime >= 60000 then
-                shouldProc = true
-            end
-            if waitTime > longestWait then
-                longestWait = waitTime
+        -- Skip players already sent an invite (Lua-side guard until C++ filter is compiled in)
+        if not pendingInvites[player:GetGUIDLow()] then
+            realPlayersCount = realPlayersCount + 1
+            table.insert(eligiblePlayers, player)
+            local joinTime = player:GetBattlegroundQueueJoinTime(bgTypeId)
+            if joinTime > 0 then
+                local waitTime = currentTime - joinTime
+                if waitTime >= 60000 then
+                    shouldProc = true
+                end
+                if waitTime > longestWait then
+                    longestWait = waitTime
+                end
             end
         end
     end
@@ -136,7 +155,7 @@ local function UpdateWSGQueue()
     end
 
     if shouldProc and realPlayersCount > 0 then
-        ProcessAndStartMatch(queuedPlayers, realPlayersCount)
+        ProcessAndStartMatch(eligiblePlayers, realPlayersCount)
     end
 end
 
@@ -149,33 +168,31 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     print("[WSG Queue]".. label .. " has successfully queued for Warsong Gulch.")
 end)
 
--- Event IDs for entering and leaving BG matches
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player)
     local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
+    pendingInvites[player:GetGUIDLow()] = nil
     print("[WSG Queue] " .. label .. " has left the queue.")
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
     local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
+    pendingInvites[player:GetGUIDLow()] = nil
     print("[BG Match] " .. label .. " entered Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
     local name = player:GetName()
     local botText = player:IsBot() and "Bot" or "Player"
-    local logMsg = "[BG Match] " .. botText .. " " .. name .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")"
-    print(logMsg)
+    print("[BG Match] " .. botText .. " " .. name .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
 
     -- If a real player is leaving, check if there are any real players left in this BG instance
     if player:IsBot() then return end
     if not bg then return end
     local map = bg:GetMap()
-    print("[BG Match] map found")
     if not map then return end
     local players = map:GetPlayers()
     local playersLeft = 0
     for _, p in ipairs(players) do
-        -- Count all other real players still in the battleground
         if p:GetName() ~= name and not p:IsBot() then
             playersLeft = playersLeft + 1
         end
@@ -184,21 +201,19 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
 
     if playersLeft == 0 then
         print("[WSG Queue] No real players remaining in BG map " .. mapId .. " (Instance " .. instanceId .. "). Ending match and removing bots...")
-
-        -- Kick all remaining bots out of the battleground
         for _, p in ipairs(players) do
             if p:IsBot() then
                 print("[WSG Queue] Kicking bot " .. p:GetName() .. " from battleground.")
                 p:LeaveBattleground()
             end
         end
-
         bg:EndBattleground(2) -- End with NEUTRAL to clean up the BG instance
         bg:SetEndTime(1)      -- Force immediate cleanup (1ms countdown)
     else
         print("[WSG Queue] " .. playersLeft .. " real player(s) still remaining in BG.")
     end
 end)
+
 -- 
 -- // Prompt them one by one
 -- I need to handle when a new player queue but a wsg is already in progress
