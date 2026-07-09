@@ -1,4 +1,4 @@
-RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
+RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     local isBot = player:IsBot()
     local botText = "Player"
     if isBot then

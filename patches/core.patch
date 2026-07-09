@@ -33,22 +33,26 @@ index f21841c0b..d81b35cd2 100644
  
                  DirectoryEntry const entry = { dirPath, AppliedFileEntry::StateConvert("MODULE") };
 diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.cpp b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
-index 169f642ec..941ec8e48 100644
+index 169f642ec..8098bdbfe 100644
 --- a/src/server/game/Battlegrounds/BattlegroundQueue.cpp
 +++ b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
-@@ -279,6 +279,11 @@ void BattlegroundQueue::RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount)
+@@ -279,6 +279,15 @@ void BattlegroundQueue::RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount)
  
      GroupQueueInfo* groupInfo = itr->second;
  
 +    if (Player* player = ObjectAccessor::FindConnectedPlayer(guid))
 +    {
-+        sScriptMgr->OnPlayerLeaveBGQueue(player);
++        // Only fire the queue-leave event when the player truly left/rejected.
++        // decreaseInvitedCount=false with a pending invite means they accepted and entered the BG.
++        bool acceptedInvite = !decreaseInvitedCount && groupInfo->IsInvitedToBGInstanceGUID;
++        if (!acceptedInvite)
++            sScriptMgr->OnPlayerLeaveBGQueue(player);
 +    }
 +
      uint32 _bracketId = groupInfo->BracketId;
      uint32 _groupType = groupInfo->GroupType;
  
-@@ -819,11 +824,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+@@ -819,11 +828,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
              m_SelectionPools[TEAM_ALLIANCE].Init();
              m_SelectionPools[TEAM_HORDE].Init();
  
@@ -113,7 +117,7 @@ index 169f642ec..941ec8e48 100644
  
              if (!bg->HasFreeSlots())
                  bg->RemoveFromBGFreeSlotQueue();
-@@ -899,8 +953,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+@@ -899,8 +957,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
                  return;
              }
  

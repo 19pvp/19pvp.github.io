@@ -1222,10 +1222,10 @@ PLAYER_EVENT_ON_MODIFY_SPELL_DAMAGE_TAKEN           = 70 -- (event, player, targ
 PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                = 71 -- (event, player, target, heal, spellInfo) - Can return new heal amount
 PLAYER_EVENT_ON_DEAL_DAMAGE                         = 72 -- (event, player, target, damage, damagetype) - Can return new damage amount
 PLAYER_EVENT_ON_RELEASED_GHOST                      = 73 -- (event, player)
-PLAYER_EVENT_ON_PLAYER_JOIN_BG         = 74 -- (event, player)
-PLAYER_EVENT_ON_ENTER_BG               = 75 -- (event, player, mapId, instanceId)
-PLAYER_EVENT_ON_LEAVE_BG               = 76 -- (event, player, mapId, instanceId)
-PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE  = 77 -- (event, player)
+PLAYER_EVENT_ON_BG_QUEUE_ENTER         = 7000 -- (event, player)
+PLAYER_EVENT_ON_ENTER_BG               = 7001 -- (event, player, mapId, instanceId)
+PLAYER_EVENT_ON_LEAVE_BG               = 7002 -- (event, player, mapId, instanceId, bg)
+PLAYER_EVENT_ON_BG_QUEUE_LEAVE         = 7003 -- (event, player)
 
 
 -- RegisterMapEvent

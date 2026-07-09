@@ -148,10 +148,8 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         end
         if not casterPlayer or casterPlayer:IsBot() then return end
 
-        local spellInfo = aura:GetSpellInfo()
-        if not spellInfo then return end
-
-        local spellId = spellInfo:GetId()
+        local spellId = aura:GetAuraId()
+        if not spellId then return end
         local ccType = CC_SPELLS[spellId]
         if ccType then
             activeCCs[aura] = {
@@ -213,9 +211,8 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
         activeCCs[aura] = nil
     end
 
-    local spellInfo = aura:GetSpellInfo()
-    if spellInfo then
-        local spellId = spellInfo:GetId()
+    local spellId = aura:GetAuraId()
+    if spellId then
         if spellId == 23381 or spellId == 23382 then
             local guid = tostring(player:GetGUID())
             local startTime = flagCarryStartTimes[guid]
@@ -279,24 +276,19 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_DAMAGE, function(event, player, target, dama
 end)
 
 -- Hook: Track player desertion and total play time when leaving
-RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId)
+RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
     if player:IsBot() then return end
 
     local stats = GetStats(player, instanceId)
-    if stats then
-        -- Record play time up to the point they left
-        stats.timePlayed = GetCurrTime() - stats.joinTime
-
-        local bg = GetBattleground(instanceId, mapId)
-        if bg then
-            local status = bg:GetStatus()
-            if status < 4 then -- STATUS_WAIT_LEAVE is 4
-                -- Store the exact second of the match when they deserted
-                local matchStart = matchStartTimes[instanceId] or stats.joinTime
-                stats.deserted = math.floor((GetCurrTime() - matchStart) / 1000)
-            end
-        end
-    end
+    if not stats then return end
+    -- Record play time up to the point they left
+    stats.timePlayed = GetCurrTime() - stats.joinTime
+    if not bg then return end
+    local status = bg:GetStatus()
+    if not status < 4 then return end -- STATUS_WAIT_LEAVE is 4
+    -- Store the exact second of the match when they deserted
+    local matchStart = matchStartTimes[instanceId] or stats.joinTime
+    stats.deserted = math.floor((GetCurrTime() - matchStart) / 1000)
 end)
 
 -- Hook: Send aggregated stats as web event at the end of the BG match

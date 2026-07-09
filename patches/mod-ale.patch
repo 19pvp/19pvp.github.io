@@ -112,20 +112,23 @@ index d8886ce..9ac8540 100644
      }
  
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
-index f83dd99..d7fd3b2 100644
+index f83dd99..1b3b9da 100644
 --- a/src/LuaEngine/Hooks.h
 +++ b/src/LuaEngine/Hooks.h
-@@ -238,6 +238,10 @@ namespace Hooks
+@@ -238,8 +238,12 @@ namespace Hooks
          PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
          PLAYER_EVENT_ON_DEAL_DAMAGE                         =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
          PLAYER_EVENT_ON_RELEASED_GHOST                      =     73,       // (event, player)
-+        PLAYER_EVENT_ON_PLAYER_JOIN_BG                      =     74,       // (event, player)
-+        PLAYER_EVENT_ON_ENTER_BG                            =     75,       // (event, player, mapId, instanceId)
-+        PLAYER_EVENT_ON_LEAVE_BG                            =     76,       // (event, player, mapId, instanceId)
-+        PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE               =     77,       // (event, player)
++        PLAYER_EVENT_ON_BG_QUEUE_ENTER                      =   7000,       // (event, player)
++        PLAYER_EVENT_ON_ENTER_BG                            =   7001,       // (event, player, mapId, instanceId)
++        PLAYER_EVENT_ON_LEAVE_BG                            =   7002,       // (event, player, mapId, instanceId)
++        PLAYER_EVENT_ON_BG_QUEUE_LEAVE                      =   7003,       // (event, player)
  
-         PLAYER_EVENT_COUNT
+-        PLAYER_EVENT_COUNT
++        PLAYER_EVENT_COUNT                                  =   7004
      };
+ 
+     enum GuildEvents
 @@ -378,6 +382,7 @@ namespace Hooks
          BG_EVENT_ON_END                                 = 2,    // (event, bg, bgId, instanceId, winner) - Needs to be added to TC
          BG_EVENT_ON_CREATE                              = 3,    // (event, bg, bgId, instanceId) - Needs to be added to TC
@@ -272,7 +275,7 @@ index ec70cf5..af65ac0 100644
 +    return false;
 +}
 diff --git a/src/LuaEngine/hooks/PlayerHooks.cpp b/src/LuaEngine/hooks/PlayerHooks.cpp
-index 7649274..338663d 100644
+index 7649274..2531663 100644
 --- a/src/LuaEngine/hooks/PlayerHooks.cpp
 +++ b/src/LuaEngine/hooks/PlayerHooks.cpp
 @@ -344,6 +344,40 @@ void ALE::OnLogin(Player* pPlayer)
@@ -281,14 +284,14 @@ index 7649274..338663d 100644
  
 +void ALE::OnPlayerJoinBG(Player* pPlayer)
 +{
-+    START_HOOK(PLAYER_EVENT_ON_PLAYER_JOIN_BG);
++    START_HOOK(PLAYER_EVENT_ON_BG_QUEUE_ENTER);
 +    Push(pPlayer);
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
 +
 +void ALE::OnPlayerLeaveBGQueue(Player* pPlayer)
 +{
-+    START_HOOK(PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE);
++    START_HOOK(PLAYER_EVENT_ON_BG_QUEUE_LEAVE);
 +    Push(pPlayer);
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
@@ -432,7 +435,7 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..568ff1d 100644
+index cebb7bc..b4119a5 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,7 @@
@@ -572,15 +575,15 @@ index cebb7bc..568ff1d 100644
       *     PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                 =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
       *     PLAYER_EVENT_ON_DEAL_DAMAGE                          =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
       *     PLAYER_EVENT_ON_RELEASED_GHOST                       =     73,       // (event, player)
-+     *     PLAYER_EVENT_ON_PLAYER_JOIN_BG                      =     74,       // (event, player)
-+     *     PLAYER_EVENT_ON_ENTER_BG                            =     75,       // (event, player, mapId, instanceId)
-+     *     PLAYER_EVENT_ON_LEAVE_BG                            =     76,       // (event, player, mapId, instanceId)
-+     *     PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE               =     77,       // (event, player)
++     *     PLAYER_EVENT_ON_BG_QUEUE_ENTER                      =   7000,       // (event, player)
++     *     PLAYER_EVENT_ON_ENTER_BG                            =   7001,       // (event, player, mapId, instanceId)
++     *     PLAYER_EVENT_ON_LEAVE_BG                            =   7002,       // (event, player, mapId, instanceId)
++     *     PLAYER_EVENT_ON_BG_QUEUE_LEAVE                      =   7003,       // (event, player)
       * };
       * </pre>
       *
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..7ed6ae5 100644
+index c39801f..5e5457e 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -10,6 +10,9 @@
@@ -593,7 +596,7 @@ index c39801f..7ed6ae5 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -5175,6 +5178,313 @@ namespace LuaPlayer
+@@ -5175,6 +5178,342 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
@@ -704,7 +707,10 @@ index c39801f..7ed6ae5 100644
 +    }
 +
 +    /**
-+     * Instantly invites the player to a battleground on a specific team, bypassing normal queue logic.
++     * Invites the player to a battleground on a specific team.
++     * Sends the "Enter Battle" popup and sets up proper queue invite tracking
++     * so the player can actually accept. The invite will auto-expire after
++     * INVITE_ACCEPT_WAIT_TIME milliseconds if not accepted.
 +     *
 +     * @param BattleGround bg The Battleground object
 +     * @param uint32 teamId The team to place the player in (0 = Alliance, 1 = Horde)
@@ -722,7 +728,7 @@ index c39801f..7ed6ae5 100644
 +        }
 +
 +        BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bg->GetBgTypeID(), bg->GetArenaType());
-+        
++
 +        player->AddBattlegroundQueueId(bgQueueTypeId);
 +        uint32 queueSlot = player->GetBattlegroundQueueIndex(bgQueueTypeId);
 +        player->SetInviteForBattlegroundQueueType(bgQueueTypeId, bg->GetInstanceID());
@@ -730,9 +736,35 @@ index c39801f..7ed6ae5 100644
 +
 +        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
 +        auto qItr = bgQueue.m_QueuedPlayers.find(player->GetGUID());
-+        if (qItr != bgQueue.m_QueuedPlayers.end())
++        if (qItr != bgQueue.m_QueuedPlayers.end() && qItr->second)
 +        {
-+            qItr->second->teamId = (TeamId)teamId;
++            GroupQueueInfo* ginfo = qItr->second;
++
++            // Idempotency guard: mirrors InviteGroupToBG line 1419.
++            // If already invited, don't reset the invite or stack another remove timer.
++            if (ginfo->IsInvitedToBGInstanceGUID)
++            {
++                ALE::Push(L, false);
++                return 1;
++            }
++
++            ginfo->teamId = (TeamId)teamId;
++
++            // Required so HandleBattleFieldPortOpcode accepts the "Enter Battle" click.
++            // Without this field set, line 439 in BattleGroundHandler.cpp silently rejects the accept.
++            ginfo->IsInvitedToBGInstanceGUID = bg->GetInstanceID();
++            ginfo->RemoveInviteTime = GameTime::GetGameTimeMS().count() + INVITE_ACCEPT_WAIT_TIME;
++
++            // Schedule the auto-remove event in case the player ignores the popup,
++            // mirroring what InviteGroupToBG does.
++            BGQueueRemoveEvent* removeEvent = new BGQueueRemoveEvent(
++                player->GetGUID(),
++                ginfo->IsInvitedToBGInstanceGUID,
++                bg->GetBgTypeID(),
++                bgQueueTypeId,
++                ginfo->RemoveInviteTime
++            );
++            bgQueue.AddEvent(removeEvent, INVITE_ACCEPT_WAIT_TIME);
 +        }
 +
 +        WorldPacket data;

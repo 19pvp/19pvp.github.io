@@ -142,7 +142,7 @@ end
 
 CreateLuaEvent(UpdateWSGQueue, 1000, 0)
 
-RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
+RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
     -- Check if a BG with available slots exist
     -- If not, do nothing, let the UpdateWSGQueue polling do the thing
@@ -150,7 +150,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_JOIN_BG, function(event, player)
 end)
 
 -- Event IDs for entering and leaving BG matches
-RegisterPlayerEvent(PLAYER_EVENT_ON_PLAYER_LEAVE_BG_QUEUE, function(event, player)
+RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player)
     local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
     print("[WSG Queue] " .. label .. " has left the queue.")
 end)
@@ -160,7 +160,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
     print("[BG Match] " .. label .. " entered Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
 end)
 
-RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId)
+RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
     local name = player:GetName()
     local botText = player:IsBot() and "Bot" or "Player"
     local logMsg = "[BG Match] " .. botText .. " " .. name .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")"
@@ -168,8 +168,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
 
     -- If a real player is leaving, check if there are any real players left in this BG instance
     if player:IsBot() then return end
-    local bg = GetBattleground(instanceId, mapId)
-    print("[BG Match] bg found")
     if not bg then return end
     local map = bg:GetMap()
     print("[BG Match] map found")

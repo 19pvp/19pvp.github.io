@@ -290,7 +290,7 @@
   "AiPlayerbot.RandomBotTeleLowerLevel": "1",
   "AiPlayerbot.RandomBotTeleHigherLevel": "3",
   "AiPlayerbot.AutoTeleportForLevel": "1",
-  "AiPlayerbot.RandomBotJoinBG": "1",
+  "AiPlayerbot.RandomBotJoinBG": "0",
   "AiPlayerbot.RandomBotAutoJoinBG": "0",
   "AiPlayerbot.RandomBotAutoJoinWSBrackets": "7",
   "AiPlayerbot.RandomBotAutoJoinABBrackets": "6",
