@@ -17,9 +17,12 @@ type GSheetData = {
 type ItemSheetRow = {
   CLASSES?: string
   ID?: string
+  LINK?: string
   NAME?: string
   PROPS?: string
   SOURCE?: string
+  TYPE?: string
+  VALUE?: string
 }
 
 type NpcSheetRow = {
@@ -132,6 +135,24 @@ type NpcSpawnSwap = {
   id: number
 }
 
+type VendorCurrency = 'arena' | 'gold' | 'honor'
+type VendorCategory = 'accessory' | 'armor' | 'weapon'
+
+type VendorItemInfo = {
+  classId: number
+  inventoryType: number
+  itemId: number
+  name: string
+  subclassId: number
+}
+
+type VendorItem = {
+  currency: VendorCurrency
+  itemId: number
+  name: string
+  npc: number
+}
+
 const autoReturnQuestFlags = 589824
 const dailyQuestFlags = 4096
 const weeklyQuestFlags = 32768
@@ -139,6 +160,10 @@ const invisibleNpcEntry = 12999
 const learnSpellRewardDummy = 36937
 const soulboundBonding = 1
 const bonusArmorStatType = 50
+const vendorNpcFlag = 128
+const consortiumFaction = 1731
+const placeholderVendorBuyPrice = 10000
+const placeholderExtendedCost = 0
 
 const itemQualityByName = {
   common: 1,
@@ -614,6 +639,75 @@ const parseBotStarterItems = (rows: ItemSheetRow[] | undefined) => {
   return items.sort((a, b) => a.classId - b.classId || a.itemId - b.itemId)
 }
 
+const vendorCurrencyFromSource = (source: string | undefined): VendorCurrency | undefined => {
+  const normalized = source?.trim().toLowerCase().replaceAll(/\s+/g, '')
+  if (normalized === 'gold') return 'gold'
+  if (normalized === 'honor') return 'honor'
+  if (normalized === 'arena') return 'arena'
+  return undefined
+}
+
+const vendorCategoryFromItemInfo = (item: VendorItemInfo): VendorCategory | undefined => {
+  if ([2, 11, 12, 16].includes(item.inventoryType)) return 'accessory'
+  if (item.classId === 2 || (item.classId === 4 && (item.subclassId === 6 || item.inventoryType === 14))) {
+    return 'weapon'
+  }
+  if (item.classId === 4) return 'armor'
+  return undefined
+}
+
+const vendorNpcSubname = (currency: VendorCurrency, category: VendorCategory) => {
+  if (currency === 'arena') return 'former gladiator'
+  const prefix = category === 'weapon' ? 'weapons' : category
+  const suffix = currency === 'gold' ? 'merchant' : 'quartermaster'
+  return `${prefix} ${suffix}`
+}
+
+const parseVendorItems = (
+  rows: ItemSheetRow[] | undefined,
+  itemInfoById: Map<number, VendorItemInfo>,
+) => {
+  const items: VendorItem[] = []
+  const seen = new Set<string>()
+
+  for (const [index, row] of (rows ?? []).entries()) {
+    const currency = vendorCurrencyFromSource(row.SOURCE)
+    if (!currency) continue
+
+    const rowLabel = `ITEM row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
+    const itemId = parseRequiredInt(row.ID, 'ID', rowLabel)
+    if (!itemId) continue
+
+    const itemInfo = itemInfoById.get(itemId)
+    if (!itemInfo) {
+      questWarnings.push(`${rowLabel}: ignored vendor item, item_template row not found`)
+      continue
+    }
+
+    const category = vendorCategoryFromItemInfo(itemInfo)
+    if (!category) {
+      questWarnings.push(
+        `${rowLabel}: ignored vendor item, unsupported class ${itemInfo.classId} subclass ${itemInfo.subclassId} inventory type ${itemInfo.inventoryType}`,
+      )
+      continue
+    }
+
+    const npcSubname = vendorNpcSubname(currency, category)
+    const npc = npcEntriesBySubname.get(npcSubname.toLowerCase())
+    if (!npc) {
+      questWarnings.push(`${rowLabel}: ignored vendor item, NPC subname ${JSON.stringify(npcSubname)} not found`)
+      continue
+    }
+
+    const key = `${npc}:${itemId}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    items.push({ currency, itemId, name: row.NAME?.trim() || itemInfo.name || String(itemId), npc })
+  }
+
+  return items.sort((a, b) => a.npc - b.npc || a.itemId - b.itemId)
+}
+
 const parseWsgBotItems = (
   rows: WsgBotItemSheetRow[] | undefined,
   roster: WsgBotRosterEntry[],
@@ -717,6 +811,14 @@ type ItemEnchantRow = {
   propertyId: number | null
 }
 
+type ItemTemplateInfoRow = {
+  item: number
+  name: string
+  classId: number
+  subclassId: number
+  inventoryType: number
+}
+
 const itemEnchantRows = await worldserver.raw.sql`
 SELECT
   item.entry item,
@@ -732,6 +834,30 @@ LEFT JOIN item_enchantment_template property
 WHERE item.entry IN (${itemIds.join(', ')})
 ORDER BY item.entry, suffix.chance DESC, suffix.ench, property.chance DESC, property.ench
   ` as ItemEnchantRow[]
+
+const itemTemplateInfoRows = await worldserver.raw.sql`
+SELECT
+  entry item,
+  name,
+  class classId,
+  subclass subclassId,
+  InventoryType inventoryType
+FROM item_template
+WHERE entry IN (${itemIds.join(', ')})
+ORDER BY entry
+  ` as ItemTemplateInfoRow[]
+const itemInfoById = new Map(
+  itemTemplateInfoRows.map((row) => [
+    Number(row.item),
+    {
+      classId: Number(row.classId),
+      inventoryType: Number(row.inventoryType),
+      itemId: Number(row.item),
+      name: row.name,
+      subclassId: Number(row.subclassId),
+    },
+  ]),
+)
 
 type RandomEnchantOption = {
   id: number
@@ -869,6 +995,17 @@ const parseNpcSubnames = (rows: NpcSheetRow[] | undefined) => {
     subnames.set(id, subname)
   }
   return subnames
+}
+
+const buildNpcEntryBySubname = (subnames: Map<number, string>) => {
+  const entries = new Map<string, number>()
+  for (const [entry, subname] of subnames) {
+    const normalized = subname.trim().toLowerCase()
+    if (!normalized) continue
+    if (entries.has(normalized)) questWarnings.push(`NPC subname ${JSON.stringify(subname)} is duplicated`)
+    else entries.set(normalized, entry)
+  }
+  return entries
 }
 
 const parseNpcNames = (rows: NpcSheetRow[] | undefined) => {
@@ -1140,6 +1277,7 @@ const generateQuestSql = (
   npcNames: Map<number, string>,
   npcSubnames: Map<number, string>,
   npcSpawnSwaps: NpcSpawnSwap[],
+  vendorItems: VendorItem[],
 ) => {
   const questIds = quests.map((quest) => quest.id)
   const minQuestId = Math.min(...questIds)
@@ -1170,6 +1308,18 @@ const generateQuestSql = (
   const npcSpawnSwapRows = npcSpawnSwaps
     .map((swap) => `UPDATE \`creature\` SET \`id\` = ${swap.id} WHERE \`guid\` = ${swap.guid};`)
     .join('\n')
+  const vendorEntries = [...new Set(vendorItems.map((item) => item.npc))].sort((a, b) => a - b)
+  const vendorSlots = new Map<number, number>()
+  const vendorItemRows = vendorItems.map((item) => {
+    const slot = (vendorSlots.get(item.npc) ?? 0) + 1
+    vendorSlots.set(item.npc, slot)
+    return `  (${item.npc}, ${slot}, ${item.itemId}, 0, 0, ${
+      item.currency === 'gold' ? 0 : placeholderExtendedCost
+    }, NULL)`
+  })
+  const goldVendorItemIds = [
+    ...new Set(vendorItems.filter((item) => item.currency === 'gold').map((item) => item.itemId)),
+  ].sort((a, b) => a - b)
 
   return `${generatedHeader}
 
@@ -1192,6 +1342,8 @@ UPDATE \`creature_template\` SET \`npcflag\` = \`npcflag\` | 2 WHERE \`entry\` I
     [...new Set(quests.flatMap((quest) => [quest.giver, quest.taker]))].sort((a, b) => a - b).join(', ')
   });
 
+UPDATE \`creature_template\` SET \`gossip_menu_id\` = 0, \`ScriptName\` = '' WHERE (\`entry\` IN (35364, 35365));
+
 ${
     npcNameRows.length
       ? `UPDATE \`creature_template\`
@@ -1213,6 +1365,28 @@ WHERE \`entry\` IN (${npcSubnameRows.map(([id]) => id).join(', ')});`
   }
 
 ${npcSpawnSwapRows || '-- No NPC spawn swaps.'}
+
+${
+    vendorEntries.length
+      ? `UPDATE \`creature_template\`
+SET \`npcflag\` = \`npcflag\` | ${vendorNpcFlag},
+    \`faction\` = ${consortiumFaction}
+WHERE \`entry\` IN (${vendorEntries.join(', ')});
+
+DELETE FROM \`npc_vendor\` WHERE \`entry\` IN (${vendorEntries.join(', ')});
+
+${
+        goldVendorItemIds.length
+          ? `UPDATE \`item_template\` SET \`BuyPrice\` = ${placeholderVendorBuyPrice} WHERE \`entry\` IN (${
+            goldVendorItemIds.join(', ')
+          });`
+          : '-- No gold vendor item prices.'
+      }
+
+INSERT INTO \`npc_vendor\` (\`entry\`, \`slot\`, \`item\`, \`maxcount\`, \`incrtime\`, \`ExtendedCost\`, \`VerifiedBuild\`) VALUES
+${vendorItemRows.join(',\n')};`
+      : '-- No generated vendor inventory.'
+  }
 
 INSERT INTO \`quest_template\` (${questTemplateColumns.map((column) => `\`${column}\``).join(', ')}) VALUES
 ${quests.map((quest) => `  ${questTemplateRow(quest, positionsByNpc.get(quest.taker))}`).join(',\n')};
@@ -1673,6 +1847,8 @@ const quests = parseQuests(gsheetData.QUEST)
 const npcSubnames = parseNpcSubnames(gsheetData.NPC)
 const npcNames = parseNpcNames(gsheetData.NPC)
 const npcSpawnSwaps = parseNpcSpawnSwaps(gsheetData.NPC)
+const npcEntriesBySubname = buildNpcEntryBySubname(npcSubnames)
+const vendorItems = parseVendorItems(gsheetData.ITEM, itemInfoById)
 const wsgBotRoster = parseWsgBotRoster()
 const wsgBotItems = parseWsgBotItems(/* gsheetData.ITEM */ [], wsgBotRoster, starterItems, botStarterItems)
 const luaQuestRewardSpells = quests
@@ -1762,9 +1938,9 @@ ORDER BY npc
 
   await Deno.writeTextFile(
     'sql/generated-quests.sql',
-    generateQuestSql(quests, positionsByNpc, npcNames, npcSubnames, npcSpawnSwaps),
+    generateQuestSql(quests, positionsByNpc, npcNames, npcSubnames, npcSpawnSwaps, vendorItems),
   )
-  console.log(`wrote ${quests.length} quests to sql/generated-quests.sql`)
+  console.log(`wrote ${quests.length} quests and ${vendorItems.length} vendor items to sql/generated-quests.sql`)
 }
 
 for (const warning of questWarnings) {

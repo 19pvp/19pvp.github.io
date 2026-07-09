@@ -16,6 +16,8 @@ UPDATE `item_template` SET `socketColor_1` = 4, `socketContent_1` = 1 WHERE (`In
 
 UPDATE `creature_template` SET `npcflag` = `npcflag` | 2 WHERE `entry` IN (19531, 19537, 19538, 20084, 20205, 20980, 22427);
 
+UPDATE `creature_template` SET `gossip_menu_id` = 0, `ScriptName` = '' WHERE (`entry` IN (35364, 35365));
+
 UPDATE `creature_template`
 SET `name` = CASE `entry`
   WHEN 213 THEN 'Starving Dire Wolf'
@@ -39,6 +41,7 @@ SET `name` = CASE `entry`
   WHEN 19538 THEN 'Dealer Senzik'
   WHEN 19539 THEN 'Jazdalaad'
   WHEN 19540 THEN 'Asarnan'
+  WHEN 20066 THEN 'Gahruj'
   WHEN 20084 THEN 'Image of Nexus-Prince Haramad'
   WHEN 20205 THEN 'Audi the Needle'
   WHEN 20242 THEN 'Karaaz'
@@ -47,12 +50,13 @@ SET `name` = CASE `entry`
   WHEN 20989 THEN 'Dealer Sadaqat'
   WHEN 22427 THEN 'Zarevhi'
   WHEN 22899 THEN 'Warpweaver Rahim'
+  WHEN 29510 THEN 'Linna Bruder'
   WHEN 32332 THEN 'Action Jaxon'
   WHEN 32474 THEN 'Jonas The Fisherman'
   WHEN 35364 THEN 'Slahtz'
   WHEN 35365 THEN 'Behsten'
 END
-WHERE `entry` IN (213, 428, 547, 569, 958, 1417, 2350, 2804, 3247, 3256, 4129, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 32332, 32474, 35364, 35365);
+WHERE `entry` IN (213, 428, 547, 569, 958, 1417, 2350, 2804, 3247, 3256, 4129, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 29510, 32332, 32474, 35364, 35365);
 
 UPDATE `creature_template`
 SET `subname` = CASE `entry`
@@ -67,6 +71,7 @@ SET `subname` = CASE `entry`
   WHEN 19538 THEN 'Gem Merchant'
   WHEN 19539 THEN 'Gem Quartermaster'
   WHEN 19540 THEN 'Enchant Quartermaster'
+  WHEN 20066 THEN 'Accessory Quartermaster'
   WHEN 20084 THEN 'Field Commander'
   WHEN 20205 THEN 'Former Gladiator'
   WHEN 20242 THEN 'Clothier'
@@ -75,17 +80,220 @@ SET `subname` = CASE `entry`
   WHEN 20989 THEN 'Armor Merchant'
   WHEN 22427 THEN 'Arcane Healer'
   WHEN 22899 THEN 'Transmogrifier'
+  WHEN 29510 THEN 'Trading Card Items'
   WHEN 32332 THEN 'Arena Battlemaster'
   WHEN 32474 THEN 'Fishing Trainer'
   WHEN 35364 THEN 'Weapons Quartermaster'
   WHEN 35365 THEN 'Armor Quartermaster'
 END
-WHERE `entry` IN (2804, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 32332, 32474, 35364, 35365);
+WHERE `entry` IN (2804, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 29510, 32332, 32474, 35364, 35365);
 
 UPDATE `creature` SET `id` = 14981 WHERE `guid` = 69933;
 UPDATE `creature` SET `id` = 2804 WHERE `guid` = 69934;
 UPDATE `creature` SET `id` = 12999 WHERE `guid` = 70019;
 UPDATE `creature` SET `id` = 32332 WHERE `guid` = 71820;
+
+UPDATE `creature_template`
+SET `npcflag` = `npcflag` | 128,
+    `faction` = 1731
+WHERE `entry` IN (19534, 20066, 20205, 20980, 20989, 35364, 35365);
+
+DELETE FROM `npc_vendor` WHERE `entry` IN (19534, 20066, 20205, 20980, 20989, 35364, 35365);
+
+UPDATE `item_template` SET `BuyPrice` = 10000 WHERE `entry` IN (872, 935, 1116, 1131, 1156, 1449, 1483, 1484, 1937, 1974, 2042, 2059, 2167, 2314, 2807, 2879, 2911, 3066, 3194, 3202, 3647, 4373, 4381, 5183, 5187, 5192, 5196, 5197, 5198, 5201, 5243, 5323, 5423, 5425, 5426, 5443, 5444, 5613, 5614, 6191, 6332, 6335, 6341, 6383, 6447, 6448, 6449, 6629, 6632, 6667, 6668, 6678, 7004, 7284, 7285, 7334, 10653, 12054, 12975, 12976, 12977, 12979, 12983, 12984, 12988, 12992, 12996, 13136, 13245, 14145, 14149, 14150, 14151, 14374, 16608, 18471, 21933, 22268, 22980, 22982, 22984, 22990, 22995, 27640, 28303, 29201, 29584, 30804, 43515);
+
+INSERT INTO `npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `ExtendedCost`, `VerifiedBuild`) VALUES
+  (19534, 1, 872, 0, 0, 0, NULL),
+  (19534, 2, 935, 0, 0, 0, NULL),
+  (19534, 3, 1483, 0, 0, 0, NULL),
+  (19534, 4, 1484, 0, 0, 0, NULL),
+  (19534, 5, 1937, 0, 0, 0, NULL),
+  (19534, 6, 2042, 0, 0, 0, NULL),
+  (19534, 7, 2807, 0, 0, 0, NULL),
+  (19534, 8, 3194, 0, 0, 0, NULL),
+  (19534, 9, 5187, 0, 0, 0, NULL),
+  (19534, 10, 5192, 0, 0, 0, NULL),
+  (19534, 11, 5196, 0, 0, 0, NULL),
+  (19534, 12, 5197, 0, 0, 0, NULL),
+  (19534, 13, 5198, 0, 0, 0, NULL),
+  (19534, 14, 5201, 0, 0, 0, NULL),
+  (19534, 15, 5243, 0, 0, 0, NULL),
+  (19534, 16, 5423, 0, 0, 0, NULL),
+  (19534, 17, 5426, 0, 0, 0, NULL),
+  (19534, 18, 5443, 0, 0, 0, NULL),
+  (19534, 19, 5613, 0, 0, 0, NULL),
+  (19534, 20, 5614, 0, 0, 0, NULL),
+  (19534, 21, 6383, 0, 0, 0, NULL),
+  (19534, 22, 6447, 0, 0, 0, NULL),
+  (19534, 23, 6448, 0, 0, 0, NULL),
+  (19534, 24, 12975, 0, 0, 0, NULL),
+  (19534, 25, 12976, 0, 0, 0, NULL),
+  (19534, 26, 12983, 0, 0, 0, NULL),
+  (19534, 27, 12984, 0, 0, 0, NULL),
+  (19534, 28, 12992, 0, 0, 0, NULL),
+  (19534, 29, 13136, 0, 0, 0, NULL),
+  (19534, 30, 13245, 0, 0, 0, NULL),
+  (19534, 31, 14145, 0, 0, 0, NULL),
+  (19534, 32, 14151, 0, 0, 0, NULL),
+  (19534, 33, 22980, 0, 0, 0, NULL),
+  (19534, 34, 22982, 0, 0, 0, NULL),
+  (19534, 35, 22984, 0, 0, 0, NULL),
+  (19534, 36, 22995, 0, 0, 0, NULL),
+  (19534, 37, 27640, 0, 0, 0, NULL),
+  (19534, 38, 29201, 0, 0, 0, NULL),
+  (19534, 39, 29584, 0, 0, 0, NULL),
+  (20066, 1, 2933, 0, 0, 0, NULL),
+  (20066, 2, 6414, 0, 0, 0, NULL),
+  (20066, 3, 20426, 0, 0, 0, NULL),
+  (20066, 4, 20427, 0, 0, 0, NULL),
+  (20066, 5, 20428, 0, 0, 0, NULL),
+  (20066, 6, 20429, 0, 0, 0, NULL),
+  (20066, 7, 20431, 0, 0, 0, NULL),
+  (20066, 8, 20439, 0, 0, 0, NULL),
+  (20066, 9, 20442, 0, 0, 0, NULL),
+  (20066, 10, 20444, 0, 0, 0, NULL),
+  (20066, 11, 24551, 0, 0, 0, NULL),
+  (20066, 12, 25829, 0, 0, 0, NULL),
+  (20066, 13, 45626, 0, 0, 0, NULL),
+  (20205, 1, 42949, 0, 0, 0, NULL),
+  (20205, 2, 42950, 0, 0, 0, NULL),
+  (20205, 3, 42951, 0, 0, 0, NULL),
+  (20205, 4, 42952, 0, 0, 0, NULL),
+  (20205, 5, 42984, 0, 0, 0, NULL),
+  (20205, 6, 42985, 0, 0, 0, NULL),
+  (20205, 7, 44099, 0, 0, 0, NULL),
+  (20205, 8, 44100, 0, 0, 0, NULL),
+  (20205, 9, 44101, 0, 0, 0, NULL),
+  (20205, 10, 44102, 0, 0, 0, NULL),
+  (20205, 11, 44103, 0, 0, 0, NULL),
+  (20205, 12, 44105, 0, 0, 0, NULL),
+  (20205, 13, 44107, 0, 0, 0, NULL),
+  (20980, 1, 1116, 0, 0, 0, NULL),
+  (20980, 2, 1156, 0, 0, 0, NULL),
+  (20980, 3, 1449, 0, 0, 0, NULL),
+  (20980, 4, 2059, 0, 0, 0, NULL),
+  (20980, 5, 4381, 0, 0, 0, NULL),
+  (20980, 6, 5444, 0, 0, 0, NULL),
+  (20980, 7, 6332, 0, 0, 0, NULL),
+  (20980, 8, 6449, 0, 0, 0, NULL),
+  (20980, 9, 6629, 0, 0, 0, NULL),
+  (20980, 10, 6632, 0, 0, 0, NULL),
+  (20980, 11, 6667, 0, 0, 0, NULL),
+  (20980, 12, 6678, 0, 0, 0, NULL),
+  (20980, 13, 7004, 0, 0, 0, NULL),
+  (20980, 14, 12054, 0, 0, 0, NULL),
+  (20980, 15, 12979, 0, 0, 0, NULL),
+  (20980, 16, 12996, 0, 0, 0, NULL),
+  (20980, 17, 14149, 0, 0, 0, NULL),
+  (20980, 18, 18471, 0, 0, 0, NULL),
+  (20980, 19, 21933, 0, 0, 0, NULL),
+  (20980, 20, 22268, 0, 0, 0, NULL),
+  (20980, 21, 22990, 0, 0, 0, NULL),
+  (20980, 22, 28303, 0, 0, 0, NULL),
+  (20980, 23, 30804, 0, 0, 0, NULL),
+  (20989, 1, 1131, 0, 0, 0, NULL),
+  (20989, 2, 1974, 0, 0, 0, NULL),
+  (20989, 3, 2167, 0, 0, 0, NULL),
+  (20989, 4, 2314, 0, 0, 0, NULL),
+  (20989, 5, 2879, 0, 0, 0, NULL),
+  (20989, 6, 2911, 0, 0, 0, NULL),
+  (20989, 7, 3066, 0, 0, 0, NULL),
+  (20989, 8, 3202, 0, 0, 0, NULL),
+  (20989, 9, 3647, 0, 0, 0, NULL),
+  (20989, 10, 4373, 0, 0, 0, NULL),
+  (20989, 11, 5183, 0, 0, 0, NULL),
+  (20989, 12, 5323, 0, 0, 0, NULL),
+  (20989, 13, 5425, 0, 0, 0, NULL),
+  (20989, 14, 6191, 0, 0, 0, NULL),
+  (20989, 15, 6335, 0, 0, 0, NULL),
+  (20989, 16, 6341, 0, 0, 0, NULL),
+  (20989, 17, 6668, 0, 0, 0, NULL),
+  (20989, 18, 7284, 0, 0, 0, NULL),
+  (20989, 19, 7285, 0, 0, 0, NULL),
+  (20989, 20, 7334, 0, 0, 0, NULL),
+  (20989, 21, 10653, 0, 0, 0, NULL),
+  (20989, 22, 12977, 0, 0, 0, NULL),
+  (20989, 23, 12988, 0, 0, 0, NULL),
+  (20989, 24, 14150, 0, 0, 0, NULL),
+  (20989, 25, 14374, 0, 0, 0, NULL),
+  (20989, 26, 16608, 0, 0, 0, NULL),
+  (20989, 27, 43515, 0, 0, 0, NULL),
+  (35364, 1, 890, 0, 0, 0, NULL),
+  (35364, 2, 1318, 0, 0, 0, NULL),
+  (35364, 3, 1482, 0, 0, 0, NULL),
+  (35364, 4, 1935, 0, 0, 0, NULL),
+  (35364, 5, 2169, 0, 0, 0, NULL),
+  (35364, 6, 2256, 0, 0, 0, NULL),
+  (35364, 7, 2271, 0, 0, 0, NULL),
+  (35364, 8, 2567, 0, 0, 0, NULL),
+  (35364, 9, 3415, 0, 0, 0, NULL),
+  (35364, 10, 3761, 0, 0, 0, NULL),
+  (35364, 11, 3822, 0, 0, 0, NULL),
+  (35364, 12, 5191, 0, 0, 0, NULL),
+  (35364, 13, 5194, 0, 0, 0, NULL),
+  (35364, 14, 5815, 0, 0, 0, NULL),
+  (35364, 15, 6469, 0, 0, 0, NULL),
+  (35364, 16, 6472, 0, 0, 0, NULL),
+  (35364, 17, 6504, 0, 0, 0, NULL),
+  (35364, 18, 6505, 0, 0, 0, NULL),
+  (35364, 19, 6633, 0, 0, 0, NULL),
+  (35364, 20, 7001, 0, 0, 0, NULL),
+  (35364, 21, 7002, 0, 0, 0, NULL),
+  (35364, 22, 7230, 0, 0, 0, NULL),
+  (35364, 23, 12990, 0, 0, 0, NULL),
+  (35364, 24, 12997, 0, 0, 0, NULL),
+  (35364, 25, 17046, 0, 0, 0, NULL),
+  (35364, 26, 20425, 0, 0, 0, NULL),
+  (35364, 27, 20430, 0, 0, 0, NULL),
+  (35364, 28, 20434, 0, 0, 0, NULL),
+  (35364, 29, 20437, 0, 0, 0, NULL),
+  (35364, 30, 20438, 0, 0, 0, NULL),
+  (35364, 31, 20440, 0, 0, 0, NULL),
+  (35364, 32, 20441, 0, 0, 0, NULL),
+  (35364, 33, 20443, 0, 0, 0, NULL),
+  (35365, 1, 1121, 0, 0, 0, NULL),
+  (35365, 2, 1486, 0, 0, 0, NULL),
+  (35365, 3, 2041, 0, 0, 0, NULL),
+  (35365, 4, 2231, 0, 0, 0, NULL),
+  (35365, 5, 3324, 0, 0, 0, NULL),
+  (35365, 6, 4315, 0, 0, 0, NULL),
+  (35365, 7, 4320, 0, 0, 0, NULL),
+  (35365, 8, 4385, 0, 0, 0, NULL),
+  (35365, 9, 4534, 0, 0, 0, NULL),
+  (35365, 10, 5195, 0, 0, 0, NULL),
+  (35365, 11, 5199, 0, 0, 0, NULL),
+  (35365, 12, 5202, 0, 0, 0, NULL),
+  (35365, 13, 5254, 0, 0, 0, NULL),
+  (35365, 14, 5404, 0, 0, 0, NULL),
+  (35365, 15, 5970, 0, 0, 0, NULL),
+  (35365, 16, 6087, 0, 0, 0, NULL),
+  (35365, 17, 6226, 0, 0, 0, NULL),
+  (35365, 18, 6282, 0, 0, 0, NULL),
+  (35365, 19, 6319, 0, 0, 0, NULL),
+  (35365, 20, 6459, 0, 0, 0, NULL),
+  (35365, 21, 6460, 0, 0, 0, NULL),
+  (35365, 22, 6465, 0, 0, 0, NULL),
+  (35365, 23, 6468, 0, 0, 0, NULL),
+  (35365, 24, 6473, 0, 0, 0, NULL),
+  (35365, 25, 7003, 0, 0, 0, NULL),
+  (35365, 26, 10043, 0, 0, 0, NULL),
+  (35365, 27, 10399, 0, 0, 0, NULL),
+  (35365, 28, 10403, 0, 0, 0, NULL),
+  (35365, 29, 10410, 0, 0, 0, NULL),
+  (35365, 30, 10411, 0, 0, 0, NULL),
+  (35365, 31, 10412, 0, 0, 0, NULL),
+  (35365, 32, 10413, 0, 0, 0, NULL),
+  (35365, 33, 10654, 0, 0, 0, NULL),
+  (35365, 34, 10657, 0, 0, 0, NULL),
+  (35365, 35, 12982, 0, 0, 0, NULL),
+  (35365, 36, 12987, 0, 0, 0, NULL),
+  (35365, 37, 12994, 0, 0, 0, NULL),
+  (35365, 38, 14147, 0, 0, 0, NULL),
+  (35365, 39, 14148, 0, 0, 0, NULL),
+  (35365, 40, 16768, 0, 0, 0, NULL),
+  (35365, 41, 16987, 0, 0, 0, NULL),
+  (35365, 42, 19969, 0, 0, 0, NULL),
+  (35365, 43, 19972, 0, 0, 0, NULL);
 
 INSERT INTO `quest_template` (`ID`, `QuestType`, `QuestLevel`, `MinLevel`, `QuestSortID`, `QuestInfoID`, `SuggestedGroupNum`, `RequiredFactionId1`, `RequiredFactionId2`, `RequiredFactionValue1`, `RequiredFactionValue2`, `RewardNextQuest`, `RewardXPDifficulty`, `RewardMoney`, `RewardMoneyDifficulty`, `RewardDisplaySpell`, `RewardSpell`, `RewardHonor`, `RewardKillHonor`, `StartItem`, `Flags`, `RequiredPlayerKills`, `RewardItem1`, `RewardAmount1`, `RewardItem2`, `RewardAmount2`, `RewardItem3`, `RewardAmount3`, `RewardItem4`, `RewardAmount4`, `ItemDrop1`, `ItemDropQuantity1`, `ItemDrop2`, `ItemDropQuantity2`, `ItemDrop3`, `ItemDropQuantity3`, `ItemDrop4`, `ItemDropQuantity4`, `RewardChoiceItemID1`, `RewardChoiceItemQuantity1`, `RewardChoiceItemID2`, `RewardChoiceItemQuantity2`, `RewardChoiceItemID3`, `RewardChoiceItemQuantity3`, `RewardChoiceItemID4`, `RewardChoiceItemQuantity4`, `RewardChoiceItemID5`, `RewardChoiceItemQuantity5`, `RewardChoiceItemID6`, `RewardChoiceItemQuantity6`, `POIContinent`, `POIx`, `POIy`, `POIPriority`, `RewardTitle`, `RewardTalents`, `RewardArenaPoints`, `RewardFactionID1`, `RewardFactionValue1`, `RewardFactionOverride1`, `RewardFactionID2`, `RewardFactionValue2`, `RewardFactionOverride2`, `RewardFactionID3`, `RewardFactionValue3`, `RewardFactionOverride3`, `RewardFactionID4`, `RewardFactionValue4`, `RewardFactionOverride4`, `RewardFactionID5`, `RewardFactionValue5`, `RewardFactionOverride5`, `TimeAllowed`, `AllowableRaces`, `LogTitle`, `LogDescription`, `QuestDescription`, `AreaDescription`, `QuestCompletionLog`, `RequiredNpcOrGo1`, `RequiredNpcOrGo2`, `RequiredNpcOrGo3`, `RequiredNpcOrGo4`, `RequiredNpcOrGoCount1`, `RequiredNpcOrGoCount2`, `RequiredNpcOrGoCount3`, `RequiredNpcOrGoCount4`, `RequiredItemId1`, `RequiredItemId2`, `RequiredItemId3`, `RequiredItemId4`, `RequiredItemId5`, `RequiredItemId6`, `RequiredItemCount1`, `RequiredItemCount2`, `RequiredItemCount3`, `RequiredItemCount4`, `RequiredItemCount5`, `RequiredItemCount6`, `Unknown0`, `ObjectiveText1`, `ObjectiveText2`, `ObjectiveText3`, `ObjectiveText4`, `VerifiedBuild`) VALUES
   (777000, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4113, 3066, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
