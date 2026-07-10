@@ -38,6 +38,8 @@ end
 local bgTypeId = 2 -- Warsong Gulch
 local level = 19
 local minPlayersPerTeam = 5
+local queueDelayTime = 60
+local annouceFreq = math.floor(queueDelayTime / 2) -- announce at half time
 local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
 
@@ -46,10 +48,12 @@ local teamNames = { [0] = "alliance", [1] = "horde" }
 -- NOTE: Lua-side guard; the C++ idempotency guard in InviteToBattleground is the
 -- authoritative lock — this just stops orphan BGs from being created on duplicate procs.
 local pendingInvites = {}
+
 local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     ShuffleTable(queuedPlayers)
     local playersByTeam = { [0] = {}, [1] = {} }
     local balancedRealPlayers = { [0] = {}, [1] = {} }
+
     for _, player in ipairs(queuedPlayers) do
         table.insert(playersByTeam[player:GetTeam()], player)
     end
@@ -64,6 +68,7 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
 
     print("[WSG Queue] Found " .. realPlayersCount .. " real players queued (Alliance: " .. #playersByTeam[0] .. ", Horde: " .. #playersByTeam[1] .. ")")
 
+    -- 2. Balance the real players across the two teams
     -- All of the smaller team is added as-is
     local smallTeam = #playersByTeam[0] > #playersByTeam[1] and 1 or 0
     local largeTeam = smallTeam == 0 and 1 or 0
@@ -81,7 +86,7 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     for i, player in ipairs(playersByTeam[largeTeam]) do
         local teamId = largeTeam
         if i > retainCount then
-            teamId = (i - retainCount) % 2 == 1 and largeTeam or smallTeam
+            teamId = (i - retainCount) % 2 == 1 and smallTeam or largeTeam
         end
         if player:InviteToBattleground(bg, teamId) then
             pendingInvites[player:GetGUIDLow()] = true
@@ -94,9 +99,7 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
         [1] = minPlayersPerTeam - #balancedRealPlayers[1],
     }
 
-    -- 4. Gather available online roster bots, grouped by native faction (0 = Alliance, 1 = Horde)
-    -- TODO: try to give bots that would help with missing classes, balancing the roster
-    -- we should never have bots in 2 different games once a game team gets more than 5 participants bots should leave
+    -- 3. Gather available online roster bots, grouped by native faction (0 = Alliance, 1 = Horde)
     ShuffleTable(fixedRoster)
     for _, botName in ipairs(fixedRoster) do
         local bot = GetPlayerByName(botName)
@@ -119,7 +122,7 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     SendWorldMessage("[WSG Queue] Match is starting!")
 end
 
-local function UpdateWSGQueue()
+CreateLuaEvent(function ()
     local queuedPlayers = GetPlayersInQueue(bgTypeId, bracketId)
     local realPlayersCount = 0
     local currentTime = GetCurrTime()
@@ -135,7 +138,7 @@ local function UpdateWSGQueue()
             local joinTime = player:GetBattlegroundQueueJoinTime(bgTypeId)
             if joinTime > 0 then
                 local waitTime = currentTime - joinTime
-                if waitTime >= 60000 then
+                if waitTime >= (queueDelayTime * 1000) then
                     shouldProc = true
                 end
                 if waitTime > longestWait then
@@ -146,7 +149,7 @@ local function UpdateWSGQueue()
     end
 
     local waitSeconds = math.floor(longestWait / 1000)
-    if realPlayersCount > 0 and waitSeconds > 0 and waitSeconds % 30 == 0 then
+    if realPlayersCount > 0 and waitSeconds > 0 and waitSeconds % annouceFreq == 0 then
         local timeLeft = 60 - waitSeconds
         if timeLeft > 0 then
             print("[WSG Queue] Queue active. " .. realPlayersCount .. " player(s) waiting. Time left to proc: " .. timeLeft .. "s")
@@ -157,15 +160,12 @@ local function UpdateWSGQueue()
     if shouldProc and realPlayersCount > 0 then
         ProcessAndStartMatch(eligiblePlayers, realPlayersCount)
     end
-end
-
-CreateLuaEvent(UpdateWSGQueue, 1000, 0)
+end, 1000, 0)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
-    -- Check if a BG with available slots exist
-    -- If not, do nothing, let the UpdateWSGQueue polling do the thing
-    print("[WSG Queue]".. label .. " has successfully queued for Warsong Gulch.")
+    pendingInvites[player:GetGUIDLow()] = nil -- should not be needed but keep as safety
+    print("[WSG Queue]" .. label .. " has successfully queued for Warsong Gulch.")
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player)
@@ -184,35 +184,37 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
     local name = player:GetName()
     local botText = player:IsBot() and "Bot" or "Player"
     print("[BG Match] " .. botText .. " " .. name .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
-
-    -- If a real player is leaving, check if there are any real players left in this BG instance
-    if player:IsBot() then return end
     if not bg then return end
     local map = bg:GetMap()
     if not map then return end
     local players = map:GetPlayers()
-    local playersLeft = 0
+    local realPlayers = 0
+    local bots = {}
     for _, p in ipairs(players) do
-        if p:GetName() ~= name and not p:IsBot() then
-            playersLeft = playersLeft + 1
-        end
-    end
-    print("[BG Match] playersLeft: " .. playersLeft)
-
-    if playersLeft == 0 then
-        print("[WSG Queue] No real players remaining in BG map " .. mapId .. " (Instance " .. instanceId .. "). Ending match and removing bots...")
-        for _, p in ipairs(players) do
+        if p:GetName() ~= player:GetName() then
             if p:IsBot() then
-                print("[WSG Queue] Kicking bot " .. p:GetName() .. " from battleground.")
-                p:LeaveBattleground()
+                table.insert(bots, p)
+            else
+                realPlayers = realPlayers + 1
             end
         end
-        bg:EndBattleground(2) -- End with NEUTRAL to clean up the BG instance
-        bg:SetEndTime(1)      -- Force immediate cleanup (1ms countdown)
-    else
-        print("[WSG Queue] " .. playersLeft .. " real player(s) still remaining in BG.")
     end
+
+    print("[BG Match] playersLeft: " .. realPlayers)
+    if realPlayers > 0 then
+        print("[WSG Queue] " .. realPlayers .. " real player(s) still remaining in BG.")
+        return
+    end
+
+    print("[WSG Queue] No real players remaining in BG map " .. mapId .. " (Instance " .. instanceId .. "). Ending match and removing bots...")
+    for _, p in ipairs(bots) do
+        print("[WSG Queue] Kicking bot " .. p:GetName() .. " from battleground.")
+        p:LeaveBattleground()
+    end
+    bg:EndBattleground(2) -- End with NEUTRAL to clean up the BG instance
+    bg:SetEndTime(1)      -- Force immediate cleanup (1ms countdown)
 end)
+
 
 -- 
 -- // Prompt them one by one

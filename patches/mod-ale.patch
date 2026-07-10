@@ -587,7 +587,7 @@ index cebb7bc..3e8129b 100644
       * </pre>
       *
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..5e5457e 100644
+index c39801f..02b957a 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -10,6 +10,9 @@
@@ -600,7 +600,7 @@ index c39801f..5e5457e 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -5175,6 +5178,342 @@ namespace LuaPlayer
+@@ -5175,6 +5178,347 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
@@ -733,6 +733,17 @@ index c39801f..5e5457e 100644
 +
 +        BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bg->GetBgTypeID(), bg->GetArenaType());
 +
++        // Player-level idempotency guard — must be checked BEFORE any state mutations.
++        // ginfo->IsInvitedToBGInstanceGUID is shared across the whole GroupQueueInfo, so using
++        // it would block every cross-faction group member after the first one is invited.
++        // IsInvitedForBattlegroundQueueType checks _BgBattlegroundQueueID[i].invitedToInstance
++        // which is per-player and correctly handles group members independently.
++        if (player->IsInvitedForBattlegroundQueueType(bgQueueTypeId))
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
 +        player->AddBattlegroundQueueId(bgQueueTypeId);
 +        uint32 queueSlot = player->GetBattlegroundQueueIndex(bgQueueTypeId);
 +        player->SetInviteForBattlegroundQueueType(bgQueueTypeId, bg->GetInstanceID());
@@ -743,24 +754,17 @@ index c39801f..5e5457e 100644
 +        if (qItr != bgQueue.m_QueuedPlayers.end() && qItr->second)
 +        {
 +            GroupQueueInfo* ginfo = qItr->second;
-+
-+            // Idempotency guard: mirrors InviteGroupToBG line 1419.
-+            // If already invited, don't reset the invite or stack another remove timer.
-+            if (ginfo->IsInvitedToBGInstanceGUID)
-+            {
-+                ALE::Push(L, false);
-+                return 1;
-+            }
-+
 +            ginfo->teamId = (TeamId)teamId;
 +
 +            // Required so HandleBattleFieldPortOpcode accepts the "Enter Battle" click.
 +            // Without this field set, line 439 in BattleGroundHandler.cpp silently rejects the accept.
++            // For a shared GroupQueueInfo (cross-faction group), setting it on each member call is
++            // fine — same value, and each player still gets their own BGQueueRemoveEvent below.
 +            ginfo->IsInvitedToBGInstanceGUID = bg->GetInstanceID();
 +            ginfo->RemoveInviteTime = GameTime::GetGameTimeMS().count() + INVITE_ACCEPT_WAIT_TIME;
 +
-+            // Schedule the auto-remove event in case the player ignores the popup,
-+            // mirroring what InviteGroupToBG does.
++            // Schedule the per-player auto-remove event so the invite expires correctly
++            // even when group members share a single GroupQueueInfo.
 +            BGQueueRemoveEvent* removeEvent = new BGQueueRemoveEvent(
 +                player->GetGUID(),
 +                ginfo->IsInvitedToBGInstanceGUID,
@@ -778,6 +782,7 @@ index c39801f..5e5457e 100644
 +        ALE::Push(L, true);
 +        return 1;
 +    }
++
 +
 +    /**
 +     * Instantly teleports and adds the player directly to a battleground, bypassing invitation accepting.
