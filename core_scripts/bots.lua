@@ -1,5 +1,7 @@
 print("[WSG Queue Debug] Loading bots.lua script...")
 
+local WsgBalance = require("wsg_balance")
+
 local fixedRoster = {}
 
 -- Load the fixed roster from the database
@@ -49,14 +51,29 @@ local teamNames = { [0] = "alliance", [1] = "horde" }
 -- authoritative lock — this just stops orphan BGs from being created on duplicate procs.
 local pendingInvites = {}
 
-local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
-    ShuffleTable(queuedPlayers)
-    local playersByTeam = { [0] = {}, [1] = {} }
-    local balancedRealPlayers = { [0] = {}, [1] = {} }
+local function GroupQueuedPlayers(queuedPlayers)
+    local groupsByKey = {}
+    local groups = {}
 
     for _, player in ipairs(queuedPlayers) do
-        table.insert(playersByTeam[player:GetTeam()], player)
+        local group = player:GetGroup()
+        local key = group and "group:" .. tostring(group:GetGUID()) or "solo:" .. player:GetGUIDLow()
+        if not groupsByKey[key] then
+            groupsByKey[key] = { players = {} }
+            groups[#groups + 1] = groupsByKey[key]
+        end
+        groupsByKey[key].players[#groupsByKey[key].players + 1] = {
+            player = player,
+            nativeTeam = player:GetTeam(),
+        }
     end
+
+    return groups
+end
+
+local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
+    local balancedRealPlayers = { [0] = {}, [1] = {} }
+    local assignments = WsgBalance.assign(GroupQueuedPlayers(queuedPlayers))
 
     local bg = CreateBattleground(bgTypeId, bracketId)
     if not bg then
@@ -66,33 +83,18 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
 
     bg:StartBattleground()
 
-    print("[WSG Queue] Found " .. realPlayersCount .. " real players queued (Alliance: " .. #playersByTeam[0] .. ", Horde: " .. #playersByTeam[1] .. ")")
-
-    -- 2. Balance the real players across the two teams
-    -- All of the smaller team is added as-is
-    local smallTeam = #playersByTeam[0] > #playersByTeam[1] and 1 or 0
-    local largeTeam = smallTeam == 0 and 1 or 0
-    for i, player in ipairs(playersByTeam[smallTeam]) do
-        if player:InviteToBattleground(bg, smallTeam) then
-            pendingInvites[player:GetGUIDLow()] = true
-        end
-        table.insert(balancedRealPlayers[smallTeam], player)
-    end
-
-    -- The first retainCount players from the bigger team stay on largeTeam (keeping balance at ±1)
-    -- Excess players beyond that alternate between teams
-    -- TODO: try to preserve groups, randomize the rest so overflow is not always the same players
-    local retainCount = #playersByTeam[smallTeam] + 1
-    for i, player in ipairs(playersByTeam[largeTeam]) do
-        local teamId = largeTeam
-        if i > retainCount then
-            teamId = (i - retainCount) % 2 == 1 and smallTeam or largeTeam
-        end
+    for _, assignment in ipairs(assignments) do
+        local player = assignment.player
+        local teamId = assignment.team
         if player:InviteToBattleground(bg, teamId) then
             pendingInvites[player:GetGUIDLow()] = true
+            table.insert(balancedRealPlayers[teamId], player)
+        else
+            print("[WSG Queue] Failed to invite " .. player:GetName())
         end
-        table.insert(balancedRealPlayers[teamId], player)
     end
+
+    print("[WSG Queue] Found " .. realPlayersCount .. " real players queued; assigned Alliance: " .. #balancedRealPlayers[0] .. ", Horde: " .. #balancedRealPlayers[1])
 
     local teamBotsNeeded = {
         [0] = minPlayersPerTeam - #balancedRealPlayers[0],
@@ -206,12 +208,21 @@ local function CheckBGEmpty(player, mapId, instanceId, bg)
     bg:SetEndTime(1) -- 1ms cleanup countdown
 end
 
+--  looks like RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg) does not recieve the bg, it's nil.
+-- I don't know how we pass it but it's wrong
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
     local botText = player:IsBot() and "Bot" or "Player"
     print("[BG Match] " .. botText .. " " .. player:GetName() .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
     CheckBGEmpty(player, mapId, instanceId, bg)
 end)
 
+-- 1) We must never allow more than 1 players on each teams
+-- then in order whe must try to:
+-- 2) keep the groups intact
+-- 3) preserve players teams, horde should stay horde and alliance should stay ally
+-- 4) balance based on skill level once I have this rating defined and tracked successfully
+-- the skill balance is the least important, preserving groups is most important, only split groups
+-- if we would have more players in one side otherwhise
 
 -- 
 -- // Prompt them one by one

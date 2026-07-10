@@ -57,7 +57,7 @@
   "AiPlayerbot.MaxMovementSearchTime": "3",
   "AiPlayerbot.ExpireActionTime": "5000",
   "AiPlayerbot.DispelAuraDuration": "700",
-  "AiPlayerbot.ReactDelay": "500",
+  "AiPlayerbot.ReactDelay": "100",
   "AiPlayerbot.DynamicReactDelay": "1",
   "AiPlayerbot.PassiveDelay": "10000",
   "AiPlayerbot.RepeatDelay": "2000",

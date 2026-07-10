@@ -33,10 +33,43 @@ index f21841c0b..d81b35cd2 100644
  
                  DirectoryEntry const entry = { dirPath, AppliedFileEntry::StateConvert("MODULE") };
 diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.cpp b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
-index 169f642ec..8098bdbfe 100644
+index 169f642ec..5ad912f29 100644
 --- a/src/server/game/Battlegrounds/BattlegroundQueue.cpp
 +++ b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
-@@ -279,6 +279,15 @@ void BattlegroundQueue::RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount)
+@@ -206,6 +206,32 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* group, Battle
+     return ginfo;
+ }
+ 
++GroupQueueInfo* BattlegroundQueue::DetachPlayerFromGroup(ObjectGuid guid, TeamId teamId)
++{
++    auto playerItr = m_QueuedPlayers.find(guid);
++    if (playerItr == m_QueuedPlayers.end() || !playerItr->second)
++        return nullptr;
++
++    GroupQueueInfo* ginfo = playerItr->second;
++    if (ginfo->Players.size() == 1)
++    {
++        ginfo->teamId = teamId;
++        return ginfo;
++    }
++
++    auto* playerGinfo = new GroupQueueInfo(*ginfo);
++    playerGinfo->Players.clear();
++    playerGinfo->Players.emplace(guid);
++    playerGinfo->teamId = teamId;
++    playerGinfo->IsInvitedToBGInstanceGUID = 0;
++    playerGinfo->RemoveInviteTime = 0;
++
++    ginfo->Players.erase(guid);
++    playerItr->second = playerGinfo;
++    m_QueuedGroups[playerGinfo->BracketId][playerGinfo->GroupType].push_back(playerGinfo);
++    return playerGinfo;
++}
++
+ void BattlegroundQueue::PlayerInvitedToBGUpdateAverageWaitTime(GroupQueueInfo* ginfo)
+ {
+     uint32 timeInQueue = std::max<uint32>(1, getMSTimeDiff(ginfo->JoinTime, GameTime::GetGameTimeMS().count()));
+@@ -279,6 +305,15 @@ void BattlegroundQueue::RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount)
  
      GroupQueueInfo* groupInfo = itr->second;
  
@@ -52,7 +85,7 @@ index 169f642ec..8098bdbfe 100644
      uint32 _bracketId = groupInfo->BracketId;
      uint32 _groupType = groupInfo->GroupType;
  
-@@ -819,11 +828,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+@@ -819,11 +854,27 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
              m_SelectionPools[TEAM_ALLIANCE].Init();
              m_SelectionPools[TEAM_HORDE].Init();
  
@@ -66,58 +99,25 @@ index 169f642ec..8098bdbfe 100644
 +                {
 +                    ObjectGuid guid = pair.first;
 +                    uint32 teamId = pair.second;
-+
-+                    auto qItr = m_QueuedPlayers.find(guid);
-+                    if (qItr != m_QueuedPlayers.end() && qItr->second)
-+                    {
-+                        GroupQueueInfo* ginfo = qItr->second;
-+                        if (ginfo->Players.size() > 1)
-+                        {
-+                            // Split player into their own group queue info
-+                            ginfo->Players.erase(guid);
-+
-+                            GroupQueueInfo* newGinfo = new GroupQueueInfo;
-+                            newGinfo->BgTypeId = ginfo->BgTypeId;
-+                            newGinfo->ArenaType = ginfo->ArenaType;
-+                            newGinfo->IsRated = ginfo->IsRated;
-+                            newGinfo->IsInvitedToBGInstanceGUID = 0;
-+                            newGinfo->JoinTime = ginfo->JoinTime;
-+                            newGinfo->RemoveInviteTime = ginfo->RemoveInviteTime;
-+                            newGinfo->teamId = (TeamId)teamId;
-+                            newGinfo->ArenaTeamId = 0;
-+                            newGinfo->ArenaMatchmakerRating = ginfo->ArenaMatchmakerRating;
-+                            newGinfo->OpponentsTeamRating = ginfo->OpponentsTeamRating;
-+                            newGinfo->Players.insert(guid);
-+
-+                            m_QueuedPlayers[guid] = newGinfo;
-+
-+                            // Normal matching (bypassing premade index for custom distribution)
-+                            uint8 index = BG_QUEUE_NORMAL_ALLIANCE + teamId;
-+                            m_QueuedGroups[bracket_id][index].push_back(newGinfo);
-+
-+                            InviteGroupToBG(newGinfo, bg, (TeamId)teamId);
-+                        }
-+                        else
-+                        {
-+                            InviteGroupToBG(ginfo, bg, (TeamId)teamId);
-+                        }
-+                    }
+ 
+-            // now everything is set, invite players
+-            InviteAllGroupsToBg(bg);
++                    if (GroupQueueInfo* ginfo = DetachPlayerFromGroup(guid, (TeamId)teamId))
++                        InviteGroupToBG(ginfo, bg, (TeamId)teamId);
 +                }
 +            }
 +            else
 +            {
 +                // call a function that does the job for us
 +                FillPlayersToBG(bg, bracket_id);
- 
--            // now everything is set, invite players
--            InviteAllGroupsToBg(bg);
++
 +                // now everything is set, invite players
 +                InviteAllGroupsToBg(bg);
 +            }
  
              if (!bg->HasFreeSlots())
                  bg->RemoveFromBGFreeSlotQueue();
-@@ -899,8 +957,60 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+@@ -899,8 +950,27 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
                  return;
              }
  
@@ -135,41 +135,8 @@ index 169f642ec..8098bdbfe 100644
 +                    ObjectGuid guid = pair.first;
 +                    uint32 teamId = pair.second;
 +
-+                    auto qItr = m_QueuedPlayers.find(guid);
-+                    if (qItr != m_QueuedPlayers.end() && qItr->second)
-+                    {
-+                        GroupQueueInfo* ginfo = qItr->second;
-+                        if (ginfo->Players.size() > 1)
-+                        {
-+                            // Split player into their own group queue info
-+                            ginfo->Players.erase(guid);
-+
-+                            GroupQueueInfo* newGinfo = new GroupQueueInfo;
-+                            newGinfo->BgTypeId = ginfo->BgTypeId;
-+                            newGinfo->ArenaType = ginfo->ArenaType;
-+                            newGinfo->IsRated = ginfo->IsRated;
-+                            newGinfo->IsInvitedToBGInstanceGUID = 0;
-+                            newGinfo->JoinTime = ginfo->JoinTime;
-+                            newGinfo->RemoveInviteTime = ginfo->RemoveInviteTime;
-+                            newGinfo->teamId = (TeamId)teamId;
-+                            newGinfo->ArenaTeamId = 0;
-+                            newGinfo->ArenaMatchmakerRating = ginfo->ArenaMatchmakerRating;
-+                            newGinfo->OpponentsTeamRating = ginfo->OpponentsTeamRating;
-+                            newGinfo->Players.insert(guid);
-+
-+                            m_QueuedPlayers[guid] = newGinfo;
-+
-+                            // Normal matching (bypassing premade index for custom distribution)
-+                            uint8 index = BG_QUEUE_NORMAL_ALLIANCE + teamId;
-+                            m_QueuedGroups[bracket_id][index].push_back(newGinfo);
-+
-+                            InviteGroupToBG(newGinfo, bg, (TeamId)teamId);
-+                        }
-+                        else
-+                        {
-+                            InviteGroupToBG(ginfo, bg, (TeamId)teamId);
-+                        }
-+                    }
++                    if (GroupQueueInfo* ginfo = DetachPlayerFromGroup(guid, (TeamId)teamId))
++                        InviteGroupToBG(ginfo, bg, (TeamId)teamId);
 +                }
 +            }
 +            else
@@ -180,6 +147,18 @@ index 169f642ec..8098bdbfe 100644
  
              bg->StartBattleground();
          }
+diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.h b/src/server/game/Battlegrounds/BattlegroundQueue.h
+index 34575e539..a76200a3d 100644
+--- a/src/server/game/Battlegrounds/BattlegroundQueue.h
++++ b/src/server/game/Battlegrounds/BattlegroundQueue.h
+@@ -79,6 +79,7 @@ public:
+     bool CheckNormalMatch(Battleground* bgTemplate, BattlegroundBracketId bracket_id, uint32 minPlayers, uint32 maxPlayers);
+     bool CheckSkirmishForSameFaction(BattlegroundBracketId bracket_id, uint32 minPlayersPerTeam);
+     GroupQueueInfo* AddGroup(Player* leader, Group* group, BattlegroundTypeId bgTypeId, PvPDifficultyEntry const* bracketEntry, uint8 arenaType, bool isRated, bool isPremade, uint32 arenaRating, uint32 matchmakerRating, uint32 arenaTeamId = 0, uint32 opponentsArenaTeamId = 0);
++    GroupQueueInfo* DetachPlayerFromGroup(ObjectGuid guid, TeamId teamId);
+     void RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount);
+     bool IsPlayerInvitedToRatedArena(ObjectGuid pl_guid);
+     bool IsPlayerInvited(ObjectGuid pl_guid, uint32 bgInstanceGuid, uint32 removeTime);
 diff --git a/src/server/game/Battlegrounds/BattlegroundScore.h b/src/server/game/Battlegrounds/BattlegroundScore.h
 index de0663cdc..e5d906547 100644
 --- a/src/server/game/Battlegrounds/BattlegroundScore.h

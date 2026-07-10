@@ -587,7 +587,7 @@ index cebb7bc..3e8129b 100644
       * </pre>
       *
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..02b957a 100644
+index c39801f..a1d6894 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -10,6 +10,9 @@
@@ -600,7 +600,7 @@ index c39801f..02b957a 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -5175,6 +5178,347 @@ namespace LuaPlayer
+@@ -5175,6 +5178,341 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
@@ -744,36 +744,31 @@ index c39801f..02b957a 100644
 +            return 1;
 +        }
 +
++        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
++        GroupQueueInfo* ginfo = bgQueue.DetachPlayerFromGroup(player->GetGUID(), (TeamId)teamId);
++        if (!ginfo)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
 +        player->AddBattlegroundQueueId(bgQueueTypeId);
 +        uint32 queueSlot = player->GetBattlegroundQueueIndex(bgQueueTypeId);
 +        player->SetInviteForBattlegroundQueueType(bgQueueTypeId, bg->GetInstanceID());
 +        bg->IncreaseInvitedCount((TeamId)teamId);
 +
-+        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
-+        auto qItr = bgQueue.m_QueuedPlayers.find(player->GetGUID());
-+        if (qItr != bgQueue.m_QueuedPlayers.end() && qItr->second)
-+        {
-+            GroupQueueInfo* ginfo = qItr->second;
-+            ginfo->teamId = (TeamId)teamId;
++        // Required so HandleBattleFieldPortOpcode accepts the "Enter Battle" click.
++        ginfo->IsInvitedToBGInstanceGUID = bg->GetInstanceID();
++        ginfo->RemoveInviteTime = GameTime::GetGameTimeMS().count() + INVITE_ACCEPT_WAIT_TIME;
 +
-+            // Required so HandleBattleFieldPortOpcode accepts the "Enter Battle" click.
-+            // Without this field set, line 439 in BattleGroundHandler.cpp silently rejects the accept.
-+            // For a shared GroupQueueInfo (cross-faction group), setting it on each member call is
-+            // fine — same value, and each player still gets their own BGQueueRemoveEvent below.
-+            ginfo->IsInvitedToBGInstanceGUID = bg->GetInstanceID();
-+            ginfo->RemoveInviteTime = GameTime::GetGameTimeMS().count() + INVITE_ACCEPT_WAIT_TIME;
-+
-+            // Schedule the per-player auto-remove event so the invite expires correctly
-+            // even when group members share a single GroupQueueInfo.
-+            BGQueueRemoveEvent* removeEvent = new BGQueueRemoveEvent(
-+                player->GetGUID(),
-+                ginfo->IsInvitedToBGInstanceGUID,
-+                bg->GetBgTypeID(),
-+                bgQueueTypeId,
-+                ginfo->RemoveInviteTime
-+            );
-+            bgQueue.AddEvent(removeEvent, INVITE_ACCEPT_WAIT_TIME);
-+        }
++        BGQueueRemoveEvent* removeEvent = new BGQueueRemoveEvent(
++            player->GetGUID(),
++            ginfo->IsInvitedToBGInstanceGUID,
++            bg->GetBgTypeID(),
++            bgQueueTypeId,
++            ginfo->RemoveInviteTime
++        );
++        bgQueue.AddEvent(removeEvent, INVITE_ACCEPT_WAIT_TIME);
 +
 +        WorldPacket data;
 +        sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, queueSlot, STATUS_WAIT_JOIN, INVITE_ACCEPT_WAIT_TIME, 0, bg->GetArenaType(), (TeamId)teamId);
@@ -947,4 +942,4 @@ index c39801f..02b957a 100644
 +    }
  };
  #endif
- 
+-

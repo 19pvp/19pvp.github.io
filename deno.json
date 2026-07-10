@@ -9,6 +9,7 @@
     "fmt": "deno fmt",
     "lint": "deno lint",
     "check": "deno check --unstable-tsgo",
+    "test:lua": "lua tasks/wsg_balance_test.lua",
     "build": "deno run --allow-read --allow-write tasks/build.ts",
     "compile": "cd core && nix --extra-experimental-features \"nix-command flakes\" develop -c ./acore.sh compiler build",
     "compile:backup": "[ -f core/env/dist/bin/worldserver ] && cp core/env/dist/bin/worldserver core/env/dist/bin/worldserver.$(date +%Y%m%d_%H%M%S) ; deno task compile",

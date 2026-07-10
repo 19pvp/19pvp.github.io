@@ -1184,8 +1184,9 @@ DELETE FROM quest_template WHERE ${rangeWhere};
 DELETE FROM quest_poi WHERE ${poiWhere};
 DELETE FROM quest_poi_points WHERE ${poiWhere};
 
-UPDATE \`item_template\` SET \`AllowableClass\` = -1 WHERE (\`entry\` = 18468);
-UPDATE \`item_template\` SET \`socketColor_1\` = 4, \`socketContent_1\` = 1 WHERE (\`InventoryType\` IN (1, 7));
+UPDATE item_template SET \`AllowableClass\` = -1 WHERE (\`entry\` = 18468);
+UPDATE item_template SET \`socketColor_1\` = 4, \`socketContent_1\` = 1 WHERE (\`InventoryType\` IN (1, 7));
+UPDATE item_template SET \`RequiredSkill\` = 0, \`RequiredSkillRank\` = 0 WHERE \`RequiredSkill\` > 0;
 
 UPDATE \`creature_template\` SET \`npcflag\` = \`npcflag\` | 2 WHERE \`entry\` IN (${
     [...new Set(quests.flatMap((quest) => [quest.giver, quest.taker]))].sort((a, b) => a - b).join(', ')
@@ -1377,7 +1378,7 @@ const itemUpdateSql = (itemId: number, props: ItemProps) => {
     }
   }
 
-  return `UPDATE \`item_template\`
+  return `UPDATE item_template
 SET ${assignments.join(',\n    ')}
 WHERE \`entry\` = ${itemId};`
 }
@@ -1432,7 +1433,7 @@ const subclassList = (subclasses: number[]) =>
 
 const weaponClassRestrictionSql = () =>
   weaponClassRestrictions.map((restriction) =>
-    `UPDATE \`item_template\`
+    `UPDATE item_template
 SET \`AllowableClass\` = ${allowableClass(restriction.classes)}
 WHERE \`class\` = 2
   AND \`subclass\` ${subclassList(restriction.subclasses)}
@@ -1461,40 +1462,40 @@ const generateItemTemplateSql = (itemIds: number[]) => {
 USE \`${worldDb}\`;
 
 -- Make every sheet-listed item soulbound and remove any bonus armor stat slots.
-UPDATE \`item_template\`
+UPDATE item_template
 SET ${bonusArmorStatCleanupSql()}
 WHERE \`entry\` IN (${itemIdList});
 
 CREATE TEMPORARY TABLE item_template_relaxed_class_entries AS
 SELECT \`entry\`
-FROM \`item_template\`
+FROM item_template
 WHERE \`RequiredLevel\` > 19
    OR \`ItemLevel\` > 45;
 
 -- Normalize custom bracket item levels before relaxing requirements.
-UPDATE \`item_template\`
+UPDATE item_template
 SET \`ItemLevel\` = 35;
 
 -- Remove class requirements from items that were above the bracket before level normalization.
-UPDATE \`item_template\`
+UPDATE item_template
 SET \`AllowableClass\` = -1
 WHERE \`entry\` IN (SELECT \`entry\` FROM item_template_relaxed_class_entries);
 
 -- Remove item required levels.
-UPDATE \`item_template\`
+UPDATE item_template
 SET \`RequiredLevel\` = 0;
 
 DROP TEMPORARY TABLE item_template_relaxed_class_entries;
 
 -- Restrict unrestricted mail and plate armor to warrior/paladin.
-UPDATE \`item_template\`
+UPDATE item_template
 SET \`AllowableClass\` = 3
 WHERE \`class\` = 4
   AND \`subclass\` IN (3, 4)
   AND \`AllowableClass\` = -1;
 
 -- Restrict unrestricted leather armor to every non-DK class except priest/mage/warlock.
-UPDATE \`item_template\`
+UPDATE item_template
 SET \`AllowableClass\` = 1103
 WHERE \`class\` = 4
   AND \`subclass\` = 2
@@ -1504,7 +1505,7 @@ WHERE \`class\` = 4
 ${weaponClassRestrictionSql()}
 
 -- Restrict unrestricted shields to warrior/paladin/shaman.
-UPDATE \`item_template\`
+UPDATE item_template
 SET \`AllowableClass\` = ${allowableClass(['warrior', 'paladin', 'shaman'])}
 WHERE \`class\` = 4
   AND \`subclass\` = 6
