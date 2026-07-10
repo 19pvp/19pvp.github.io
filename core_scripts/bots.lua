@@ -180,39 +180,36 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
     print("[BG Match] " .. label .. " entered Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
 end)
 
-RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
-    local name = player:GetName()
-    local botText = player:IsBot() and "Bot" or "Player"
-    print("[BG Match] " .. botText .. " " .. name .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
-    if not bg then return end
-    local map = bg:GetMap()
-    if not map then return end
-    local players = map:GetPlayers()
-    local realPlayers = 0
-    local bots = {}
-    for _, p in ipairs(players) do
-        if p:GetName() ~= player:GetName() then
-            if p:IsBot() then
-                table.insert(bots, p)
-            else
-                realPlayers = realPlayers + 1
-            end
-        end
+local function CheckBGEmpty(player, mapId, instanceId, bg)
+    if not bg then
+        print("[BG Match] bg not found, can't cleanup")
+        return
     end
-
-    print("[BG Match] playersLeft: " .. realPlayers)
-    if realPlayers > 0 then
-        print("[WSG Queue] " .. realPlayers .. " real player(s) still remaining in BG.")
+    local map = bg:GetMap()
+    if not map then
+        print("[BG Match] map not found, can't cleanup")
         return
     end
 
-    print("[WSG Queue] No real players remaining in BG map " .. mapId .. " (Instance " .. instanceId .. "). Ending match and removing bots...")
-    for _, p in ipairs(bots) do
-        print("[WSG Queue] Kicking bot " .. p:GetName() .. " from battleground.")
-        p:LeaveBattleground()
+    for _, p in ipairs(map:GetPlayers()) do
+        if p:GetName() ~= player:GetName() and not p:IsBot() then
+            print("[WSG Queue] " .. p:GetName() .. " still remaining in BG, keeping it open.")
+            return
+        end
     end
-    bg:EndBattleground(2) -- End with NEUTRAL to clean up the BG instance
-    bg:SetEndTime(1)      -- Force immediate cleanup (1ms countdown)
+
+    -- No real players left: end the BG.
+    -- BattlegroundMap::Update removes all remaining players (bots) once the timer expires.
+    -- Guard: EndBattleground checks STATUS_IN_PROGRESS internally and is a no-op if already ended.
+    print("[WSG Queue] No real players remaining in BG map " .. mapId .. " (Instance " .. instanceId .. "). Ending match.")
+    bg:EndBattleground(2)
+    bg:SetEndTime(1) -- 1ms cleanup countdown
+end
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
+    local botText = player:IsBot() and "Bot" or "Player"
+    print("[BG Match] " .. botText .. " " .. player:GetName() .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
+    CheckBGEmpty(player, mapId, instanceId, bg)
 end)
 
 
