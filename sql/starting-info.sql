@@ -10,6 +10,8 @@ SET `map` = 530,
     `position_z` = 339.4637,
     `orientation` = 1.9342613;
 
+UPDATE `item_template` SET `SellPrice` = 1 WHERE `entry` IN (892, 1276, 1306, 1459, 1560, 2035, 2046, 2516, 2910, 3429, 3555, 3561, 4316, 4368, 4369, 4708, 4800, 4818, 4998, 5312, 5317, 5356, 5627, 5750, 5961, 6189, 6333, 6467, 14169, 14568, 14743, 15019, 15946, 16981, 21934, 22979, 25873, 46978);
+
 DROP TEMPORARY TABLE IF EXISTS `starting_info_item`;
 CREATE TEMPORARY TABLE `starting_info_item` (
   `race` TINYINT UNSIGNED NOT NULL DEFAULT 0,
@@ -552,7 +554,7 @@ INSERT INTO `starting_info_item` (`race`, `class`, `itemid`, `amount`, `note`) V
   (0, 5, 4368, 1, 'Priest: Flying Tiger Goggles'),
   (0, 5, 4708, 1, 'Priest: Bright Belt'),
   (0, 5, 4998, 1, 'Priest: Blood Ring'),
-  (0, 5, 5356, 1, 'Priest: 5356'),
+  (0, 5, 5356, 1, 'Priest: Branding Rod'),
   (0, 5, 5627, 1, 'Priest: Relic Blade'),
   (0, 5, 14169, 1, 'Priest: Aboriginal Shoulder Pads'),
   (0, 5, 15946, 1, 'Priest: Mystic\'s Sphere'),
@@ -584,7 +586,7 @@ INSERT INTO `starting_info_item` (`race`, `class`, `itemid`, `amount`, `note`) V
   (0, 8, 4368, 1, 'Mage: Flying Tiger Goggles'),
   (0, 8, 4708, 1, 'Mage: Bright Belt'),
   (0, 8, 4998, 1, 'Mage: Blood Ring'),
-  (0, 8, 5356, 1, 'Mage: 5356'),
+  (0, 8, 5356, 1, 'Mage: Branding Rod'),
   (0, 8, 5627, 1, 'Mage: Relic Blade'),
   (0, 8, 14169, 1, 'Mage: Aboriginal Shoulder Pads'),
   (0, 8, 15946, 1, 'Mage: Mystic\'s Sphere'),
@@ -599,7 +601,7 @@ INSERT INTO `starting_info_item` (`race`, `class`, `itemid`, `amount`, `note`) V
   (0, 9, 4368, 1, 'Warlock: Flying Tiger Goggles'),
   (0, 9, 4708, 1, 'Warlock: Bright Belt'),
   (0, 9, 4998, 1, 'Warlock: Blood Ring'),
-  (0, 9, 5356, 1, 'Warlock: 5356'),
+  (0, 9, 5356, 1, 'Warlock: Branding Rod'),
   (0, 9, 5627, 1, 'Warlock: Relic Blade'),
   (0, 9, 14169, 1, 'Warlock: Aboriginal Shoulder Pads'),
   (0, 9, 15946, 1, 'Warlock: Mystic\'s Sphere'),

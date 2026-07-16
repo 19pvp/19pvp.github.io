@@ -1,4 +1,5 @@
 import { applySqlFile } from './sql_utils.ts'
+import { authDbName } from '../service/db.ts'
 
 const dry = Deno.args.includes('--dry')
 const force = Deno.args.includes('--force')
@@ -21,7 +22,8 @@ const managedSqlFiles = async () => {
       entry.isFile &&
       entry.name.endsWith('.sql') &&
       (entry.name.startsWith('generated-') || entry.name === 'starting-info.sql' ||
-        entry.name === 'random-enchant-npc.sql')
+        entry.name === 'random-enchant-npc.sql' || entry.name === 'gm-command-permissions.sql' ||
+        entry.name === 'gm-command-permissions-auth.sql')
     ) {
       files.push(`${generatedSqlDir}/${entry.name}`)
     }
@@ -40,6 +42,7 @@ const selectedSqlFiles = async () => {
 }
 
 const storageKey = (file: string) => `${hashPrefix}${file}`
+const databaseForFile = (file: string) => file.endsWith('-auth.sql') ? authDbName : worldDb
 
 let checked = 0
 let skipped = 0
@@ -57,7 +60,7 @@ for (const file of await selectedSqlFiles()) {
     continue
   }
 
-  const statements = await applySqlFile(file, !dry, { database: worldDb })
+  const statements = await applySqlFile(file, !dry, { database: databaseForFile(file) })
   if (!dry) localStorage.setItem(storageKey(file), hash)
   ran++
   console.log(`${dry ? 'validated' : 'executed'} ${statements} SQL statement(s) from ${file}`)

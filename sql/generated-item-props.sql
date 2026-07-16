@@ -130,7 +130,7 @@ UPDATE `item_template`
 SET `bonding` = 1,
     `description` = IF(`name` <> 'Assassin\'s Blade', '', `description`),
     `name` = 'Assassin\'s Blade',
-    `Quality` = 4
+    `Quality` = 3
 WHERE `entry` = 1935;
 
 UPDATE `item_template`
@@ -215,17 +215,43 @@ UPDATE `item_template`
 SET `bonding` = 1,
     `description` = IF(`name` <> 'Inferno Robe', '', `description`),
     `name` = 'Inferno Robe',
-    `Quality` = 4
+    `Quality` = 4,
+    `stat_type1` = 7,
+    `stat_value1` = 5,
+    `stat_type2` = 0,
+    `stat_value2` = 0,
+    `stat_type3` = 0,
+    `stat_value3` = 0,
+    `stat_type4` = 0,
+    `stat_value4` = 0,
+    `stat_type5` = 0,
+    `stat_value5` = 0,
+    `stat_type6` = 0,
+    `stat_value6` = 0,
+    `stat_type7` = 0,
+    `stat_value7` = 0,
+    `stat_type8` = 0,
+    `stat_value8` = 0,
+    `stat_type9` = 0,
+    `stat_value9` = 0,
+    `stat_type10` = 0,
+    `stat_value10` = 0,
+    `holy_res` = 0,
+    `fire_res` = 0,
+    `nature_res` = 0,
+    `frost_res` = 0,
+    `shadow_res` = 0,
+    `arcane_res` = 0
 WHERE `entry` = 2231;
 
 UPDATE `item_template`
 SET `bonding` = 1,
     `description` = IF(`name` <> 'Antipodean Rod', '', `description`),
     `name` = 'Antipodean Rod',
-    `stat_type1` = 45,
-    `stat_value1` = 5,
-    `stat_type2` = 5,
-    `stat_value2` = 4,
+    `stat_type1` = 5,
+    `stat_value1` = 4,
+    `stat_type2` = 0,
+    `stat_value2` = 0,
     `stat_type3` = 0,
     `stat_value3` = 0,
     `stat_type4` = 0,
@@ -480,6 +506,13 @@ WHERE `entry` = 4385;
 
 UPDATE `item_template`
 SET `bonding` = 1,
+    `description` = IF(`name` <> 'Standard scope', '', `description`),
+    `name` = 'Standard scope',
+    `Quality` = 2
+WHERE `entry` = 4406;
+
+UPDATE `item_template`
+SET `bonding` = 1,
     `description` = IF(`name` <> 'Steel-clasped Bracers', '', `description`),
     `name` = 'Steel-clasped Bracers',
     `Quality` = 3
@@ -491,8 +524,8 @@ SET `bonding` = 1,
     `name` = 'Pulsating Hydra Heart',
     `stat_type1` = 7,
     `stat_value1` = 2,
-    `stat_type2` = 45,
-    `stat_value2` = 6,
+    `stat_type2` = 0,
+    `stat_value2` = 0,
     `stat_type3` = 0,
     `stat_value3` = 0,
     `stat_type4` = 0,
@@ -894,8 +927,8 @@ SET `bonding` = 1,
     `name` = 'Eerie Stable Lantern',
     `stat_type1` = 7,
     `stat_value1` = 4,
-    `stat_type2` = 45,
-    `stat_value2` = 5,
+    `stat_type2` = 0,
+    `stat_value2` = 0,
     `stat_type3` = 0,
     `stat_value3` = 0,
     `stat_type4` = 0,
@@ -1021,13 +1054,6 @@ SET `bonding` = 1,
     `name` = 'Beetle Clasps',
     `Quality` = 3
 WHERE `entry` = 7003;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Prelacy Cape', '', `description`),
-    `name` = 'Prelacy Cape',
-    `Quality` = 2
-WHERE `entry` = 7004;
 
 UPDATE `item_template`
 SET `bonding` = 1,
@@ -1201,6 +1227,13 @@ SET `bonding` = 1,
     `shadow_res` = 0,
     `arcane_res` = 0
 WHERE `entry` = 12054;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Thorium shield spike', '', `description`),
+    `name` = 'Thorium shield spike',
+    `Quality` = 2
+WHERE `entry` = 12645;
 
 UPDATE `item_template`
 SET `bonding` = 1,
@@ -2140,6 +2173,76 @@ WHERE `entry` = 22995;
 
 UPDATE `item_template`
 SET `bonding` = 1,
+    `description` = IF(`name` <> 'Solid azure moonstone', '', `description`),
+    `name` = 'Solid azure moonstone',
+    `Quality` = 2
+WHERE `entry` = 23118;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Felsteel shield spike', '', `description`),
+    `name` = 'Felsteel shield spike',
+    `Quality` = 3
+WHERE `entry` = 23530;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Bold living ruby', '', `description`),
+    `name` = 'Bold living ruby',
+    `Quality` = 2
+WHERE `entry` = 24027;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Delicate living ruby', '', `description`),
+    `name` = 'Delicate living ruby',
+    `Quality` = 2
+WHERE `entry` = 24028;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Bright living ruby', '', `description`),
+    `name` = 'Bright living ruby',
+    `Quality` = 2
+WHERE `entry` = 24031;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Solid star of elune', '', `description`),
+    `name` = 'Solid star of elune',
+    `Quality` = 3
+WHERE `entry` = 24033;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Sparkling star of elune', '', `description`),
+    `name` = 'Sparkling star of elune',
+    `Quality` = 2
+WHERE `entry` = 24035;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Lustrous star of elune', '', `description`),
+    `name` = 'Lustrous star of elune',
+    `Quality` = 2
+WHERE `entry` = 24037;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Brilliant dawnstone', '', `description`),
+    `name` = 'Brilliant dawnstone',
+    `Quality` = 2
+WHERE `entry` = 24047;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Smooth dawnstone', '', `description`),
+    `name` = 'Smooth dawnstone',
+    `Quality` = 2
+WHERE `entry` = 24048;
+
+UPDATE `item_template`
+SET `bonding` = 1,
     `description` = IF(`name` <> 'Greater Insigna of Blasting', '', `description`),
     `name` = 'Greater Insigna of Blasting',
     `Quality` = 3,
@@ -2286,10 +2389,519 @@ WHERE `entry` = 25829;
 
 UPDATE `item_template`
 SET `bonding` = 1,
+    `description` = IF(`name` <> 'Stark blood garnet', '', `description`),
+    `name` = 'Stark blood garnet',
+    `Quality` = 2
+WHERE `entry` = 27777;
+
+UPDATE `item_template`
+SET `bonding` = 1,
     `description` = IF(`name` <> 'Invoker\'s Signet', '', `description`),
     `name` = 'Invoker\'s Signet',
-    `Quality` = 2
+    `Quality` = 3,
+    `stat_type1` = 5,
+    `stat_value1` = 3,
+    `stat_type2` = 45,
+    `stat_value2` = 2,
+    `stat_type3` = 32,
+    `stat_value3` = 3,
+    `stat_type4` = 0,
+    `stat_value4` = 0,
+    `stat_type5` = 0,
+    `stat_value5` = 0,
+    `stat_type6` = 0,
+    `stat_value6` = 0,
+    `stat_type7` = 0,
+    `stat_value7` = 0,
+    `stat_type8` = 0,
+    `stat_value8` = 0,
+    `stat_type9` = 0,
+    `stat_value9` = 0,
+    `stat_type10` = 0,
+    `stat_value10` = 0,
+    `holy_res` = 0,
+    `fire_res` = 0,
+    `nature_res` = 0,
+    `frost_res` = 0,
+    `shadow_res` = 0,
+    `arcane_res` = 0
 WHERE `entry` = 28303;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Great dawnstone', '', `description`),
+    `name` = 'Great dawnstone',
+    `Quality` = 2
+WHERE `entry` = 31861;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Runed crimson spinel', '', `description`),
+    `name` = 'Runed crimson spinel',
+    `Quality` = 3
+WHERE `entry` = 32196;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Quick dawnstone', '', `description`),
+    `name` = 'Quick dawnstone',
+    `Quality` = 2
+WHERE `entry` = 35315;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant shield spirit', '', `description`),
+    `name` = 'Scroll of enchant shield spirit',
+    `Quality` = 2
+WHERE `entry` = 38816;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant shield lesser block', '', `description`),
+    `name` = 'Scroll of enchant shield lesser block',
+    `Quality` = 2
+WHERE `entry` = 38820;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant cloak greater defense', '', `description`),
+    `name` = 'Scroll of enchant cloak greater defense',
+    `Quality` = 2
+WHERE `entry` = 38825;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant cloak resistance', '', `description`),
+    `name` = 'Scroll of enchant cloak resistance',
+    `Quality` = 2
+WHERE `entry` = 38826;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant shield stamina', '', `description`),
+    `name` = 'Scroll of enchant shield stamina',
+    `Quality` = 2
+WHERE `entry` = 38828;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant boots stamina', '', `description`),
+    `name` = 'Scroll of enchant boots stamina',
+    `Quality` = 2
+WHERE `entry` = 38830;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant chest superior health', '', `description`),
+    `name` = 'Scroll of enchant chest superior health',
+    `Quality` = 2
+WHERE `entry` = 38833;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant cloak lesser agility', '', `description`),
+    `name` = 'Scroll of enchant cloak lesser agility',
+    `Quality` = 2
+WHERE `entry` = 38835;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant boots minor speed', '', `description`),
+    `name` = 'Scroll of enchant boots minor speed',
+    `Quality` = 2
+WHERE `entry` = 38837;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon fiery weapon', '', `description`),
+    `name` = 'Scroll of enchant weapon fiery weapon',
+    `Quality` = 2
+WHERE `entry` = 38838;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant shield greater spirit', '', `description`),
+    `name` = 'Scroll of enchant shield greater spirit',
+    `Quality` = 3
+WHERE `entry` = 38839;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant boots agility', '', `description`),
+    `name` = 'Scroll of enchant boots agility',
+    `Quality` = 2
+WHERE `entry` = 38844;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant bracer greater strength', '', `description`),
+    `name` = 'Scroll of enchant bracer greater strength',
+    `Quality` = 2
+WHERE `entry` = 38846;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant chest stats', '', `description`),
+    `name` = 'Scroll of enchant chest stats',
+    `Quality` = 2
+WHERE `entry` = 38847;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon greater striking', '', `description`),
+    `name` = 'Scroll of enchant weapon greater striking',
+    `Quality` = 2
+WHERE `entry` = 38848;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant bracer greater stamina', '', `description`),
+    `name` = 'Scroll of enchant bracer greater stamina',
+    `Quality` = 2
+WHERE `entry` = 38849;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves minor haste', '', `description`),
+    `name` = 'Scroll of enchant gloves minor haste',
+    `Quality` = 2
+WHERE `entry` = 38851;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant bracer greater intellect', '', `description`),
+    `name` = 'Scroll of enchant bracer greater intellect',
+    `Quality` = 2
+WHERE `entry` = 38852;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant bracer superior spirit', '', `description`),
+    `name` = 'Scroll of enchant bracer superior spirit',
+    `Quality` = 3
+WHERE `entry` = 38853;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant bracer superior strength', '', `description`),
+    `name` = 'Scroll of enchant bracer superior strength',
+    `Quality` = 3
+WHERE `entry` = 38854;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant bracer superior stamina', '', `description`),
+    `name` = 'Scroll of enchant bracer superior stamina',
+    `Quality` = 3
+WHERE `entry` = 38855;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves greater agility', '', `description`),
+    `name` = 'Scroll of enchant gloves greater agility',
+    `Quality` = 2
+WHERE `entry` = 38856;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves greater strength', '', `description`),
+    `name` = 'Scroll of enchant gloves greater strength',
+    `Quality` = 2
+WHERE `entry` = 38857;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant cloak greater resistance', '', `description`),
+    `name` = 'Scroll of enchant cloak greater resistance',
+    `Quality` = 3
+WHERE `entry` = 38858;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant cloak superior defense', '', `description`),
+    `name` = 'Scroll of enchant cloak superior defense',
+    `Quality` = 3
+WHERE `entry` = 38859;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant shield vitality', '', `description`),
+    `name` = 'Scroll of enchant shield vitality',
+    `Quality` = 3
+WHERE `entry` = 38860;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant shield greater stamina', '', `description`),
+    `name` = 'Scroll of enchant shield greater stamina',
+    `Quality` = 3
+WHERE `entry` = 38861;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant boots greater stamina', '', `description`),
+    `name` = 'Scroll of enchant boots greater stamina',
+    `Quality` = 3
+WHERE `entry` = 38862;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant boots greater agility', '', `description`),
+    `name` = 'Scroll of enchant boots greater agility',
+    `Quality` = 3
+WHERE `entry` = 38863;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant chest greater stats', '', `description`),
+    `name` = 'Scroll of enchant chest greater stats',
+    `Quality` = 3
+WHERE `entry` = 38865;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant chest major health', '', `description`),
+    `name` = 'Scroll of enchant chest major health',
+    `Quality` = 3
+WHERE `entry` = 38866;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon icy chill', '', `description`),
+    `name` = 'Scroll of enchant weapon icy chill',
+    `Quality` = 2
+WHERE `entry` = 38868;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant 2h weapon superior impact', '', `description`),
+    `name` = 'Scroll of enchant 2h weapon superior impact',
+    `Quality` = 2
+WHERE `entry` = 38869;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon superior striking', '', `description`),
+    `name` = 'Scroll of enchant weapon superior striking',
+    `Quality` = 3
+WHERE `entry` = 38870;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon lifestealing', '', `description`),
+    `name` = 'Scroll of enchant weapon lifestealing',
+    `Quality` = 3
+WHERE `entry` = 38871;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon crusader', '', `description`),
+    `name` = 'Scroll of enchant weapon crusader',
+    `Quality` = 3
+WHERE `entry` = 38873;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant 2h weapon major spirit', '', `description`),
+    `name` = 'Scroll of enchant 2h weapon major spirit',
+    `Quality` = 2
+WHERE `entry` = 38874;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant 2h weapon major intellect', '', `description`),
+    `name` = 'Scroll of enchant 2h weapon major intellect',
+    `Quality` = 2
+WHERE `entry` = 38875;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon spellpower', '', `description`),
+    `name` = 'Scroll of enchant weapon spellpower',
+    `Quality` = 2
+WHERE `entry` = 38877;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon strength', '', `description`),
+    `name` = 'Scroll of enchant weapon strength',
+    `Quality` = 3
+WHERE `entry` = 38879;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon agility', '', `description`),
+    `name` = 'Scroll of enchant weapon agility',
+    `Quality` = 3
+WHERE `entry` = 38880;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant bracer mana regeneration', '', `description`),
+    `name` = 'Scroll of enchant bracer mana regeneration',
+    `Quality` = 3
+WHERE `entry` = 38881;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant bracer healing power', '', `description`),
+    `name` = 'Scroll of enchant bracer healing power',
+    `Quality` = 3
+WHERE `entry` = 38882;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon mighty spirit', '', `description`),
+    `name` = 'Scroll of enchant weapon mighty spirit',
+    `Quality` = 3
+WHERE `entry` = 38883;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon mighty intellect', '', `description`),
+    `name` = 'Scroll of enchant weapon mighty intellect',
+    `Quality` = 3
+WHERE `entry` = 38884;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves healing power', '', `description`),
+    `name` = 'Scroll of enchant gloves healing power',
+    `Quality` = 2
+WHERE `entry` = 38889;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves superior agility', '', `description`),
+    `name` = 'Scroll of enchant gloves superior agility',
+    `Quality` = 3
+WHERE `entry` = 38890;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant cloak stealth', '', `description`),
+    `name` = 'Scroll of enchant cloak stealth',
+    `Quality` = 3
+WHERE `entry` = 38893;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant 2h weapon agility', '', `description`),
+    `name` = 'Scroll of enchant 2h weapon agility',
+    `Quality` = 3
+WHERE `entry` = 38896;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon major spellpower', '', `description`),
+    `name` = 'Scroll of enchant weapon major spellpower',
+    `Quality` = 3
+WHERE `entry` = 38921;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves blasting', '', `description`),
+    `name` = 'Scroll of enchant gloves blasting',
+    `Quality` = 2
+WHERE `entry` = 38931;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves precise strikes', '', `description`),
+    `name` = 'Scroll of enchant gloves precise strikes',
+    `Quality` = 2
+WHERE `entry` = 38932;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves major strength', '', `description`),
+    `name` = 'Scroll of enchant gloves major strength',
+    `Quality` = 3
+WHERE `entry` = 38933;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves assault', '', `description`),
+    `name` = 'Scroll of enchant gloves assault',
+    `Quality` = 3
+WHERE `entry` = 38934;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant gloves major healing', '', `description`),
+    `name` = 'Scroll of enchant gloves major healing',
+    `Quality` = 3
+WHERE `entry` = 38936;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant weapon major healing', '', `description`),
+    `name` = 'Scroll of enchant weapon major healing',
+    `Quality` = 3
+WHERE `entry` = 38946;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Bold bloodstone', '', `description`),
+    `name` = 'Bold bloodstone',
+    `Quality` = 3
+WHERE `entry` = 39900;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Delicate bloodstone', '', `description`),
+    `name` = 'Delicate bloodstone',
+    `Quality` = 3
+WHERE `entry` = 39905;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Bright bloodstone', '', `description`),
+    `name` = 'Bright bloodstone',
+    `Quality` = 3
+WHERE `entry` = 39906;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Brilliant sun crystal', '', `description`),
+    `name` = 'Brilliant sun crystal',
+    `Quality` = 3
+WHERE `entry` = 39912;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Smooth sun crystal', '', `description`),
+    `name` = 'Smooth sun crystal',
+    `Quality` = 3
+WHERE `entry` = 39914;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Rigid sun crystal', '', `description`),
+    `name` = 'Rigid sun crystal',
+    `Quality` = 3
+WHERE `entry` = 39915;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Quick sun crystal', '', `description`),
+    `name` = 'Quick sun crystal',
+    `Quality` = 3
+WHERE `entry` = 39918;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Sparkling chalcedony', '', `description`),
+    `name` = 'Sparkling chalcedony',
+    `Quality` = 3
+WHERE `entry` = 39920;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Lustrous chalcedony', '', `description`),
+    `name` = 'Lustrous chalcedony',
+    `Quality` = 3
+WHERE `entry` = 39927;
 
 UPDATE `item_template`
 SET `bonding` = 1,
@@ -2420,3 +3032,21 @@ SET `bonding` = 1,
     `name` = 'Commendation of Bravery',
     `Quality` = 1
 WHERE `entry` = 44115;
+
+UPDATE `item_template`
+SET `bonding` = 1,
+    `description` = IF(`name` <> 'Scroll of enchant boots lesser accuracy', '', `description`),
+    `name` = 'Scroll of enchant boots lesser accuracy',
+    `Quality` = 2
+WHERE `entry` = 45628;
+
+-- Apply permanent item spells without making them on-use effects.
+UPDATE `item_template`
+SET `spellid_1` = 23990,
+    `spelltrigger_1` = 1,
+    `spellcharges_1` = 0,
+    `spellppmRate_1` = 0,
+    `spellcooldown_1` = -1,
+    `spellcategory_1` = 0,
+    `spellcategorycooldown_1` = -1
+WHERE `entry` = 19969;

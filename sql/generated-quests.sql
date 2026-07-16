@@ -11,8 +11,12 @@ DELETE FROM quest_template WHERE ID >= 777000 AND ID <= 777017;
 DELETE FROM quest_poi WHERE QuestId >= 777000 AND QuestId <= 777017;
 DELETE FROM quest_poi_points WHERE QuestId >= 777000 AND QuestId <= 777017;
 
-UPDATE `item_template` SET `AllowableClass` = -1 WHERE (`entry` = 18468);
-UPDATE `item_template` SET `socketColor_1` = 4, `socketContent_1` = 1 WHERE (`InventoryType` IN (1, 7));
+UPDATE item_template SET `RequiredReputationFaction` = 0, `RequiredReputationRank` = 0, `AllowableRace` = -1 WHERE `RequiredReputationFaction` <> 0 OR AllowableRace <> -1 OR `RequiredReputationRank` <> 0;
+UPDATE item_template SET `AllowableClass` = -1 WHERE (`entry` = 18468);
+UPDATE item_template SET `socketColor_1` = 4, `socketContent_1` = 1 WHERE (`InventoryType` IN (1, 7));
+UPDATE item_template SET `name` = 'Smoked Speckled Tastyfish', `spellcharges_1` = 0, `description` = 'The first bite is delicious. The thousandth is still a surprise.', `Quality` = 2, `flags` = `flags` | 32, `SellPrice` = 0, `bonding` = 1 WHERE (`entry` = 21153);
+UPDATE item_template SET `name` = 'Infinite Bandage', `Quality` = 2, `flags` = `flags` | 32, `spellcharges_1` = 0, `SellPrice` = 0, `bonding` = 1 WHERE (`entry` = 14530);
+UPDATE item_template SET `Quality` = 3, `spellcharges_1` = 0 WHERE (`entry` = 4381);
 
 UPDATE `creature_template` SET `npcflag` = `npcflag` | 2 WHERE `entry` IN (19531, 19537, 19538, 20084, 20205, 20980, 22427);
 
@@ -93,81 +97,451 @@ UPDATE `creature` SET `id` = 2804 WHERE `guid` = 69934;
 UPDATE `creature` SET `id` = 12999 WHERE `guid` = 70019;
 UPDATE `creature` SET `id` = 32332 WHERE `guid` = 71820;
 
+-- Remove vendor inventory and vendor flags from NPCs not listed in the ITEM sheet.
+DELETE FROM `npc_vendor` WHERE `entry` NOT IN (19534, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
 UPDATE `creature_template`
-SET `npcflag` = `npcflag` | 128,
+SET `npcflag` = `npcflag` & 4294967055
+WHERE (`npcflag` & 128) <> 0
+  AND `entry` NOT IN (19534, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
+
+-- Remove trainer flags from merchant and quartermaster NPCs, including legacy entries.
+UPDATE `creature_template`
+SET `npcflag` = `npcflag` & 4294967183
+WHERE LOWER(`subname`) LIKE '%merchant%'
+   OR LOWER(`subname`) LIKE '%quartermaster%';
+
+UPDATE `creature_template`
+SET `npcflag` = (`npcflag` & 4294967183) | 128,
     `faction` = 1731
-WHERE `entry` IN (19534, 20066, 20205, 20980, 20989, 35364, 35365);
+WHERE `entry` IN (19534, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
 
-DELETE FROM `npc_vendor` WHERE `entry` IN (19534, 20066, 20205, 20980, 20989, 35364, 35365);
+DELETE FROM `npc_vendor` WHERE `entry` IN (19534, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
 
-UPDATE `item_template` SET `BuyPrice` = 10000 WHERE `entry` IN (872, 935, 1116, 1131, 1156, 1449, 1483, 1484, 1937, 1974, 2042, 2059, 2167, 2314, 2807, 2879, 2911, 3066, 3194, 3202, 3647, 4373, 4381, 5183, 5187, 5192, 5196, 5197, 5198, 5201, 5243, 5323, 5423, 5425, 5426, 5443, 5444, 5613, 5614, 6191, 6332, 6335, 6341, 6383, 6447, 6448, 6449, 6629, 6632, 6667, 6668, 6678, 7004, 7284, 7285, 7334, 10653, 12054, 12975, 12976, 12977, 12979, 12983, 12984, 12988, 12992, 12996, 13136, 13245, 14145, 14149, 14150, 14151, 14374, 16608, 18471, 21933, 22268, 22980, 22982, 22984, 22990, 22995, 27640, 28303, 29201, 29584, 30804, 43515);
+UPDATE `item_template`
+SET `BuyPrice` = CASE `entry`
+  WHEN 872 THEN 5500
+  WHEN 935 THEN 11500
+  WHEN 1116 THEN 11500
+  WHEN 1131 THEN 11500
+  WHEN 1156 THEN 5500
+  WHEN 1449 THEN 16000
+  WHEN 1483 THEN 11500
+  WHEN 1484 THEN 33500
+  WHEN 1937 THEN 5500
+  WHEN 1974 THEN 16000
+  WHEN 2042 THEN 33500
+  WHEN 2059 THEN 33500
+  WHEN 2167 THEN 5500
+  WHEN 2314 THEN 16000
+  WHEN 2807 THEN 5500
+  WHEN 2879 THEN 5500
+  WHEN 2911 THEN 16000
+  WHEN 3066 THEN 5500
+  WHEN 3194 THEN 11500
+  WHEN 3202 THEN 5500
+  WHEN 3647 THEN 5500
+  WHEN 4373 THEN 16000
+  WHEN 4381 THEN 5500
+  WHEN 4406 THEN 5500
+  WHEN 5183 THEN 5500
+  WHEN 5187 THEN 5500
+  WHEN 5192 THEN 16000
+  WHEN 5196 THEN 11500
+  WHEN 5197 THEN 11500
+  WHEN 5198 THEN 5500
+  WHEN 5201 THEN 5500
+  WHEN 5243 THEN 5500
+  WHEN 5323 THEN 11500
+  WHEN 5423 THEN 11500
+  WHEN 5425 THEN 11500
+  WHEN 5426 THEN 11500
+  WHEN 5443 THEN 11500
+  WHEN 5444 THEN 11500
+  WHEN 5613 THEN 11500
+  WHEN 5614 THEN 16000
+  WHEN 6191 THEN 11500
+  WHEN 6332 THEN 11500
+  WHEN 6335 THEN 11500
+  WHEN 6341 THEN 5500
+  WHEN 6383 THEN 11500
+  WHEN 6447 THEN 5500
+  WHEN 6448 THEN 16000
+  WHEN 6449 THEN 11500
+  WHEN 6629 THEN 11500
+  WHEN 6632 THEN 11500
+  WHEN 6667 THEN 16000
+  WHEN 6668 THEN 5500
+  WHEN 6678 THEN 33500
+  WHEN 7284 THEN 11500
+  WHEN 7285 THEN 11500
+  WHEN 7334 THEN 33500
+  WHEN 10653 THEN 5500
+  WHEN 12054 THEN 11500
+  WHEN 12645 THEN 11500
+  WHEN 12975 THEN 11500
+  WHEN 12976 THEN 11500
+  WHEN 12977 THEN 16000
+  WHEN 12979 THEN 16000
+  WHEN 12983 THEN 16000
+  WHEN 12984 THEN 11500
+  WHEN 12988 THEN 5500
+  WHEN 12992 THEN 11500
+  WHEN 12996 THEN 11500
+  WHEN 13136 THEN 16000
+  WHEN 13245 THEN 11500
+  WHEN 14145 THEN 5500
+  WHEN 14149 THEN 16000
+  WHEN 14150 THEN 11500
+  WHEN 14151 THEN 11500
+  WHEN 14374 THEN 5500
+  WHEN 16608 THEN 11500
+  WHEN 18471 THEN 16000
+  WHEN 22268 THEN 16000
+  WHEN 22980 THEN 5500
+  WHEN 22982 THEN 16000
+  WHEN 22984 THEN 16000
+  WHEN 22990 THEN 5500
+  WHEN 22995 THEN 5500
+  WHEN 23118 THEN 33500
+  WHEN 24027 THEN 33500
+  WHEN 24028 THEN 33500
+  WHEN 24031 THEN 33500
+  WHEN 24035 THEN 33500
+  WHEN 24037 THEN 33500
+  WHEN 24047 THEN 33500
+  WHEN 24048 THEN 33500
+  WHEN 27640 THEN 5500
+  WHEN 27777 THEN 33500
+  WHEN 28303 THEN 5500
+  WHEN 28463 THEN 5500
+  WHEN 28468 THEN 5500
+  WHEN 29201 THEN 5500
+  WHEN 29584 THEN 5500
+  WHEN 30804 THEN 5500
+  WHEN 31861 THEN 33500
+  WHEN 35315 THEN 33500
+  WHEN 38816 THEN 16000
+  WHEN 38820 THEN 16000
+  WHEN 38825 THEN 5500
+  WHEN 38826 THEN 5500
+  WHEN 38828 THEN 16000
+  WHEN 38830 THEN 11500
+  WHEN 38833 THEN 11500
+  WHEN 38835 THEN 5500
+  WHEN 38837 THEN 11500
+  WHEN 38838 THEN 33500
+  WHEN 38844 THEN 11500
+  WHEN 38846 THEN 16000
+  WHEN 38847 THEN 11500
+  WHEN 38848 THEN 33500
+  WHEN 38849 THEN 16000
+  WHEN 38851 THEN 16000
+  WHEN 38852 THEN 16000
+  WHEN 38856 THEN 16000
+  WHEN 38857 THEN 16000
+  WHEN 38868 THEN 33500
+  WHEN 38869 THEN 33500
+  WHEN 38874 THEN 33500
+  WHEN 38875 THEN 33500
+  WHEN 38877 THEN 33500
+  WHEN 38889 THEN 16000
+  WHEN 38931 THEN 16000
+  WHEN 38932 THEN 16000
+  WHEN 43515 THEN 5500
+  WHEN 45628 THEN 11500
+END,
+`SellPrice` = CASE `entry`
+  WHEN 872 THEN 1375
+  WHEN 935 THEN 2875
+  WHEN 1116 THEN 2875
+  WHEN 1131 THEN 2875
+  WHEN 1156 THEN 1375
+  WHEN 1449 THEN 4000
+  WHEN 1483 THEN 2875
+  WHEN 1484 THEN 8375
+  WHEN 1937 THEN 1375
+  WHEN 1974 THEN 4000
+  WHEN 2042 THEN 8375
+  WHEN 2059 THEN 8375
+  WHEN 2167 THEN 1375
+  WHEN 2314 THEN 4000
+  WHEN 2807 THEN 1375
+  WHEN 2879 THEN 1375
+  WHEN 2911 THEN 4000
+  WHEN 3066 THEN 1375
+  WHEN 3194 THEN 2875
+  WHEN 3202 THEN 1375
+  WHEN 3647 THEN 1375
+  WHEN 4373 THEN 4000
+  WHEN 4381 THEN 1375
+  WHEN 4406 THEN 1375
+  WHEN 5183 THEN 1375
+  WHEN 5187 THEN 1375
+  WHEN 5192 THEN 4000
+  WHEN 5196 THEN 2875
+  WHEN 5197 THEN 2875
+  WHEN 5198 THEN 1375
+  WHEN 5201 THEN 1375
+  WHEN 5243 THEN 1375
+  WHEN 5323 THEN 2875
+  WHEN 5423 THEN 2875
+  WHEN 5425 THEN 2875
+  WHEN 5426 THEN 2875
+  WHEN 5443 THEN 2875
+  WHEN 5444 THEN 2875
+  WHEN 5613 THEN 2875
+  WHEN 5614 THEN 4000
+  WHEN 6191 THEN 2875
+  WHEN 6332 THEN 2875
+  WHEN 6335 THEN 2875
+  WHEN 6341 THEN 1375
+  WHEN 6383 THEN 2875
+  WHEN 6447 THEN 1375
+  WHEN 6448 THEN 4000
+  WHEN 6449 THEN 2875
+  WHEN 6629 THEN 2875
+  WHEN 6632 THEN 2875
+  WHEN 6667 THEN 4000
+  WHEN 6668 THEN 1375
+  WHEN 6678 THEN 8375
+  WHEN 7284 THEN 2875
+  WHEN 7285 THEN 2875
+  WHEN 7334 THEN 8375
+  WHEN 10653 THEN 1375
+  WHEN 12054 THEN 2875
+  WHEN 12645 THEN 2875
+  WHEN 12975 THEN 2875
+  WHEN 12976 THEN 2875
+  WHEN 12977 THEN 4000
+  WHEN 12979 THEN 4000
+  WHEN 12983 THEN 4000
+  WHEN 12984 THEN 2875
+  WHEN 12988 THEN 1375
+  WHEN 12992 THEN 2875
+  WHEN 12996 THEN 2875
+  WHEN 13136 THEN 4000
+  WHEN 13245 THEN 2875
+  WHEN 14145 THEN 1375
+  WHEN 14149 THEN 4000
+  WHEN 14150 THEN 2875
+  WHEN 14151 THEN 2875
+  WHEN 14374 THEN 1375
+  WHEN 16608 THEN 2875
+  WHEN 18471 THEN 4000
+  WHEN 22268 THEN 4000
+  WHEN 22980 THEN 1375
+  WHEN 22982 THEN 4000
+  WHEN 22984 THEN 4000
+  WHEN 22990 THEN 1375
+  WHEN 22995 THEN 1375
+  WHEN 23118 THEN 8375
+  WHEN 24027 THEN 8375
+  WHEN 24028 THEN 8375
+  WHEN 24031 THEN 8375
+  WHEN 24035 THEN 8375
+  WHEN 24037 THEN 8375
+  WHEN 24047 THEN 8375
+  WHEN 24048 THEN 8375
+  WHEN 27640 THEN 1375
+  WHEN 27777 THEN 8375
+  WHEN 28303 THEN 1375
+  WHEN 28463 THEN 1375
+  WHEN 28468 THEN 1375
+  WHEN 29201 THEN 1375
+  WHEN 29584 THEN 1375
+  WHEN 30804 THEN 1375
+  WHEN 31861 THEN 8375
+  WHEN 35315 THEN 8375
+  WHEN 38816 THEN 4000
+  WHEN 38820 THEN 4000
+  WHEN 38825 THEN 1375
+  WHEN 38826 THEN 1375
+  WHEN 38828 THEN 4000
+  WHEN 38830 THEN 2875
+  WHEN 38833 THEN 2875
+  WHEN 38835 THEN 1375
+  WHEN 38837 THEN 2875
+  WHEN 38838 THEN 8375
+  WHEN 38844 THEN 2875
+  WHEN 38846 THEN 4000
+  WHEN 38847 THEN 2875
+  WHEN 38848 THEN 8375
+  WHEN 38849 THEN 4000
+  WHEN 38851 THEN 4000
+  WHEN 38852 THEN 4000
+  WHEN 38856 THEN 4000
+  WHEN 38857 THEN 4000
+  WHEN 38868 THEN 8375
+  WHEN 38869 THEN 8375
+  WHEN 38874 THEN 8375
+  WHEN 38875 THEN 8375
+  WHEN 38877 THEN 8375
+  WHEN 38889 THEN 4000
+  WHEN 38931 THEN 4000
+  WHEN 38932 THEN 4000
+  WHEN 43515 THEN 1375
+  WHEN 45628 THEN 2875
+END
+WHERE `entry` IN (872, 935, 1116, 1131, 1156, 1449, 1483, 1484, 1937, 1974, 2042, 2059, 2167, 2314, 2807, 2879, 2911, 3066, 3194, 3202, 3647, 4373, 4381, 4406, 5183, 5187, 5192, 5196, 5197, 5198, 5201, 5243, 5323, 5423, 5425, 5426, 5443, 5444, 5613, 5614, 6191, 6332, 6335, 6341, 6383, 6447, 6448, 6449, 6629, 6632, 6667, 6668, 6678, 7284, 7285, 7334, 10653, 12054, 12645, 12975, 12976, 12977, 12979, 12983, 12984, 12988, 12992, 12996, 13136, 13245, 14145, 14149, 14150, 14151, 14374, 16608, 18471, 22268, 22980, 22982, 22984, 22990, 22995, 23118, 24027, 24028, 24031, 24035, 24037, 24047, 24048, 27640, 27777, 28303, 28463, 28468, 29201, 29584, 30804, 31861, 35315, 38816, 38820, 38825, 38826, 38828, 38830, 38833, 38835, 38837, 38838, 38844, 38846, 38847, 38848, 38849, 38851, 38852, 38856, 38857, 38868, 38869, 38874, 38875, 38877, 38889, 38931, 38932, 43515, 45628);
 
 INSERT INTO `npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `ExtendedCost`, `VerifiedBuild`) VALUES
   (19534, 1, 872, 0, 0, 0, NULL),
   (19534, 2, 935, 0, 0, 0, NULL),
-  (19534, 3, 1483, 0, 0, 0, NULL),
-  (19534, 4, 1484, 0, 0, 0, NULL),
-  (19534, 5, 1937, 0, 0, 0, NULL),
-  (19534, 6, 2042, 0, 0, 0, NULL),
-  (19534, 7, 2807, 0, 0, 0, NULL),
-  (19534, 8, 3194, 0, 0, 0, NULL),
-  (19534, 9, 5187, 0, 0, 0, NULL),
-  (19534, 10, 5192, 0, 0, 0, NULL),
-  (19534, 11, 5196, 0, 0, 0, NULL),
-  (19534, 12, 5197, 0, 0, 0, NULL),
-  (19534, 13, 5198, 0, 0, 0, NULL),
-  (19534, 14, 5201, 0, 0, 0, NULL),
-  (19534, 15, 5243, 0, 0, 0, NULL),
-  (19534, 16, 5423, 0, 0, 0, NULL),
-  (19534, 17, 5426, 0, 0, 0, NULL),
-  (19534, 18, 5443, 0, 0, 0, NULL),
-  (19534, 19, 5613, 0, 0, 0, NULL),
-  (19534, 20, 5614, 0, 0, 0, NULL),
-  (19534, 21, 6383, 0, 0, 0, NULL),
-  (19534, 22, 6447, 0, 0, 0, NULL),
-  (19534, 23, 6448, 0, 0, 0, NULL),
-  (19534, 24, 12975, 0, 0, 0, NULL),
-  (19534, 25, 12976, 0, 0, 0, NULL),
-  (19534, 26, 12983, 0, 0, 0, NULL),
-  (19534, 27, 12984, 0, 0, 0, NULL),
-  (19534, 28, 12992, 0, 0, 0, NULL),
-  (19534, 29, 13136, 0, 0, 0, NULL),
-  (19534, 30, 13245, 0, 0, 0, NULL),
-  (19534, 31, 14145, 0, 0, 0, NULL),
-  (19534, 32, 14151, 0, 0, 0, NULL),
-  (19534, 33, 22980, 0, 0, 0, NULL),
-  (19534, 34, 22982, 0, 0, 0, NULL),
-  (19534, 35, 22984, 0, 0, 0, NULL),
-  (19534, 36, 22995, 0, 0, 0, NULL),
-  (19534, 37, 27640, 0, 0, 0, NULL),
-  (19534, 38, 29201, 0, 0, 0, NULL),
-  (19534, 39, 29584, 0, 0, 0, NULL),
-  (20066, 1, 2933, 0, 0, 0, NULL),
-  (20066, 2, 6414, 0, 0, 0, NULL),
-  (20066, 3, 20426, 0, 0, 0, NULL),
-  (20066, 4, 20427, 0, 0, 0, NULL),
-  (20066, 5, 20428, 0, 0, 0, NULL),
-  (20066, 6, 20429, 0, 0, 0, NULL),
-  (20066, 7, 20431, 0, 0, 0, NULL),
-  (20066, 8, 20439, 0, 0, 0, NULL),
-  (20066, 9, 20442, 0, 0, 0, NULL),
-  (20066, 10, 20444, 0, 0, 0, NULL),
-  (20066, 11, 24551, 0, 0, 0, NULL),
-  (20066, 12, 25829, 0, 0, 0, NULL),
-  (20066, 13, 45626, 0, 0, 0, NULL),
-  (20205, 1, 42949, 0, 0, 0, NULL),
-  (20205, 2, 42950, 0, 0, 0, NULL),
-  (20205, 3, 42951, 0, 0, 0, NULL),
-  (20205, 4, 42952, 0, 0, 0, NULL),
-  (20205, 5, 42984, 0, 0, 0, NULL),
-  (20205, 6, 42985, 0, 0, 0, NULL),
-  (20205, 7, 44099, 0, 0, 0, NULL),
-  (20205, 8, 44100, 0, 0, 0, NULL),
-  (20205, 9, 44101, 0, 0, 0, NULL),
-  (20205, 10, 44102, 0, 0, 0, NULL),
-  (20205, 11, 44103, 0, 0, 0, NULL),
-  (20205, 12, 44105, 0, 0, 0, NULL),
-  (20205, 13, 44107, 0, 0, 0, NULL),
+  (19534, 3, 1131, 0, 0, 0, NULL),
+  (19534, 4, 1483, 0, 0, 0, NULL),
+  (19534, 5, 1484, 0, 0, 0, NULL),
+  (19534, 6, 1937, 0, 0, 0, NULL),
+  (19534, 7, 2042, 0, 0, 0, NULL),
+  (19534, 8, 2807, 0, 0, 0, NULL),
+  (19534, 9, 2879, 0, 0, 0, NULL),
+  (19534, 10, 3194, 0, 0, 0, NULL),
+  (19534, 11, 5183, 0, 0, 0, NULL),
+  (19534, 12, 5187, 0, 0, 0, NULL),
+  (19534, 13, 5192, 0, 0, 0, NULL),
+  (19534, 14, 5196, 0, 0, 0, NULL),
+  (19534, 15, 5197, 0, 0, 0, NULL),
+  (19534, 16, 5198, 0, 0, 0, NULL),
+  (19534, 17, 5201, 0, 0, 0, NULL),
+  (19534, 18, 5243, 0, 0, 0, NULL),
+  (19534, 19, 5323, 0, 0, 0, NULL),
+  (19534, 20, 5423, 0, 0, 0, NULL),
+  (19534, 21, 5426, 0, 0, 0, NULL),
+  (19534, 22, 5443, 0, 0, 0, NULL),
+  (19534, 23, 5613, 0, 0, 0, NULL),
+  (19534, 24, 5614, 0, 0, 0, NULL),
+  (19534, 25, 6341, 0, 0, 0, NULL),
+  (19534, 26, 6383, 0, 0, 0, NULL),
+  (19534, 27, 6447, 0, 0, 0, NULL),
+  (19534, 28, 6448, 0, 0, 0, NULL),
+  (19534, 29, 12975, 0, 0, 0, NULL),
+  (19534, 30, 12976, 0, 0, 0, NULL),
+  (19534, 31, 12983, 0, 0, 0, NULL),
+  (19534, 32, 12984, 0, 0, 0, NULL),
+  (19534, 33, 12992, 0, 0, 0, NULL),
+  (19534, 34, 13136, 0, 0, 0, NULL),
+  (19534, 35, 13245, 0, 0, 0, NULL),
+  (19534, 36, 14145, 0, 0, 0, NULL),
+  (19534, 37, 14151, 0, 0, 0, NULL),
+  (19534, 38, 22980, 0, 0, 0, NULL),
+  (19534, 39, 22982, 0, 0, 0, NULL),
+  (19534, 40, 22984, 0, 0, 0, NULL),
+  (19534, 41, 22995, 0, 0, 0, NULL),
+  (19534, 42, 27640, 0, 0, 0, NULL),
+  (19534, 43, 29201, 0, 0, 0, NULL),
+  (19534, 44, 29584, 0, 0, 0, NULL),
+  (19534, 45, 43515, 0, 0, 0, NULL),
+  (19537, 1, 4406, 0, 0, 0, NULL),
+  (19537, 2, 12645, 0, 0, 0, NULL),
+  (19537, 3, 38816, 0, 0, 0, NULL),
+  (19537, 4, 38820, 0, 0, 0, NULL),
+  (19537, 5, 38825, 0, 0, 0, NULL),
+  (19537, 6, 38826, 0, 0, 0, NULL),
+  (19537, 7, 38828, 0, 0, 0, NULL),
+  (19537, 8, 38830, 0, 0, 0, NULL),
+  (19537, 9, 38833, 0, 0, 0, NULL),
+  (19537, 10, 38835, 0, 0, 0, NULL),
+  (19537, 11, 38837, 0, 0, 0, NULL),
+  (19537, 12, 38838, 0, 0, 0, NULL),
+  (19537, 13, 38844, 0, 0, 0, NULL),
+  (19537, 14, 38846, 0, 0, 0, NULL),
+  (19537, 15, 38847, 0, 0, 0, NULL),
+  (19537, 16, 38848, 0, 0, 0, NULL),
+  (19537, 17, 38849, 0, 0, 0, NULL),
+  (19537, 18, 38851, 0, 0, 0, NULL),
+  (19537, 19, 38852, 0, 0, 0, NULL),
+  (19537, 20, 38856, 0, 0, 0, NULL),
+  (19537, 21, 38857, 0, 0, 0, NULL),
+  (19537, 22, 38868, 0, 0, 0, NULL),
+  (19537, 23, 38869, 0, 0, 0, NULL),
+  (19537, 24, 38874, 0, 0, 0, NULL),
+  (19537, 25, 38875, 0, 0, 0, NULL),
+  (19537, 26, 38877, 0, 0, 0, NULL),
+  (19537, 27, 38889, 0, 0, 0, NULL),
+  (19537, 28, 38931, 0, 0, 0, NULL),
+  (19537, 29, 38932, 0, 0, 0, NULL),
+  (19537, 30, 45628, 0, 0, 0, NULL),
+  (19538, 1, 23118, 0, 0, 0, NULL),
+  (19538, 2, 24027, 0, 0, 0, NULL),
+  (19538, 3, 24028, 0, 0, 0, NULL),
+  (19538, 4, 24031, 0, 0, 0, NULL),
+  (19538, 5, 24035, 0, 0, 0, NULL),
+  (19538, 6, 24037, 0, 0, 0, NULL),
+  (19538, 7, 24047, 0, 0, 0, NULL),
+  (19538, 8, 24048, 0, 0, 0, NULL),
+  (19538, 9, 27777, 0, 0, 0, NULL),
+  (19538, 10, 28463, 0, 0, 0, NULL),
+  (19538, 11, 28468, 0, 0, 0, NULL),
+  (19538, 12, 31861, 0, 0, 0, NULL),
+  (19538, 13, 35315, 0, 0, 0, NULL),
+  (19539, 1, 24033, 0, 0, 747, NULL),
+  (19539, 2, 32196, 0, 0, 747, NULL),
+  (19539, 3, 39900, 0, 0, 747, NULL),
+  (19539, 4, 39905, 0, 0, 747, NULL),
+  (19539, 5, 39906, 0, 0, 747, NULL),
+  (19539, 6, 39912, 0, 0, 747, NULL),
+  (19539, 7, 39914, 0, 0, 747, NULL),
+  (19539, 8, 39915, 0, 0, 747, NULL),
+  (19539, 9, 39918, 0, 0, 747, NULL),
+  (19539, 10, 39920, 0, 0, 747, NULL),
+  (19539, 11, 39927, 0, 0, 747, NULL),
+  (19540, 1, 23530, 0, 0, 491, NULL),
+  (19540, 2, 38839, 0, 0, 491, NULL),
+  (19540, 3, 38853, 0, 0, 1062, NULL),
+  (19540, 4, 38854, 0, 0, 1062, NULL),
+  (19540, 5, 38855, 0, 0, 1062, NULL),
+  (19540, 6, 38858, 0, 0, 837, NULL),
+  (19540, 7, 38859, 0, 0, 837, NULL),
+  (19540, 8, 38860, 0, 0, 491, NULL),
+  (19540, 9, 38861, 0, 0, 491, NULL),
+  (19540, 10, 38862, 0, 0, 837, NULL),
+  (19540, 11, 38863, 0, 0, 837, NULL),
+  (19540, 12, 38865, 0, 0, 491, NULL),
+  (19540, 13, 38866, 0, 0, 491, NULL),
+  (19540, 14, 38870, 0, 0, 1062, NULL),
+  (19540, 15, 38871, 0, 0, 747, NULL),
+  (19540, 16, 38873, 0, 0, 2261, NULL),
+  (19540, 17, 38879, 0, 0, 747, NULL),
+  (19540, 18, 38880, 0, 0, 747, NULL),
+  (19540, 19, 38881, 0, 0, 1062, NULL),
+  (19540, 20, 38882, 0, 0, 1062, NULL),
+  (19540, 21, 38883, 0, 0, 747, NULL),
+  (19540, 22, 38884, 0, 0, 747, NULL),
+  (19540, 23, 38890, 0, 0, 1062, NULL),
+  (19540, 24, 38893, 0, 0, 837, NULL),
+  (19540, 25, 38896, 0, 0, 747, NULL),
+  (19540, 26, 38921, 0, 0, 2261, NULL),
+  (19540, 27, 38933, 0, 0, 1062, NULL),
+  (19540, 28, 38934, 0, 0, 1062, NULL),
+  (19540, 29, 38936, 0, 0, 1062, NULL),
+  (19540, 30, 38946, 0, 0, 2261, NULL),
+  (19540, 31, 44115, 0, 0, 1909, NULL),
+  (20066, 1, 2933, 0, 0, 1911, NULL),
+  (20066, 2, 6414, 0, 0, 1911, NULL),
+  (20066, 3, 20426, 0, 0, 491, NULL),
+  (20066, 4, 20427, 0, 0, 837, NULL),
+  (20066, 5, 20428, 0, 0, 837, NULL),
+  (20066, 6, 20429, 0, 0, 491, NULL),
+  (20066, 7, 20431, 0, 0, 491, NULL),
+  (20066, 8, 20439, 0, 0, 491, NULL),
+  (20066, 9, 20442, 0, 0, 1062, NULL),
+  (20066, 10, 20444, 0, 0, 1062, NULL),
+  (20066, 11, 21933, 0, 0, 1062, NULL),
+  (20066, 12, 24551, 0, 0, 2261, NULL),
+  (20066, 13, 25829, 0, 0, 2261, NULL),
+  (20066, 14, 45626, 0, 0, 747, NULL),
+  (20205, 1, 42949, 0, 0, 2342, NULL),
+  (20205, 2, 42950, 0, 0, 2342, NULL),
+  (20205, 3, 42951, 0, 0, 2342, NULL),
+  (20205, 4, 42952, 0, 0, 2342, NULL),
+  (20205, 5, 42984, 0, 0, 2342, NULL),
+  (20205, 6, 42985, 0, 0, 2342, NULL),
+  (20205, 7, 44099, 0, 0, 2342, NULL),
+  (20205, 8, 44100, 0, 0, 2342, NULL),
+  (20205, 9, 44101, 0, 0, 2342, NULL),
+  (20205, 10, 44102, 0, 0, 2342, NULL),
+  (20205, 11, 44103, 0, 0, 2342, NULL),
+  (20205, 12, 44105, 0, 0, 2342, NULL),
+  (20205, 13, 44107, 0, 0, 2342, NULL),
   (20980, 1, 1116, 0, 0, 0, NULL),
   (20980, 2, 1156, 0, 0, 0, NULL),
   (20980, 3, 1449, 0, 0, 0, NULL),
@@ -180,125 +554,200 @@ INSERT INTO `npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `Exte
   (20980, 10, 6632, 0, 0, 0, NULL),
   (20980, 11, 6667, 0, 0, 0, NULL),
   (20980, 12, 6678, 0, 0, 0, NULL),
-  (20980, 13, 7004, 0, 0, 0, NULL),
-  (20980, 14, 12054, 0, 0, 0, NULL),
-  (20980, 15, 12979, 0, 0, 0, NULL),
-  (20980, 16, 12996, 0, 0, 0, NULL),
-  (20980, 17, 14149, 0, 0, 0, NULL),
-  (20980, 18, 18471, 0, 0, 0, NULL),
-  (20980, 19, 21933, 0, 0, 0, NULL),
-  (20980, 20, 22268, 0, 0, 0, NULL),
-  (20980, 21, 22990, 0, 0, 0, NULL),
-  (20980, 22, 28303, 0, 0, 0, NULL),
-  (20980, 23, 30804, 0, 0, 0, NULL),
-  (20989, 1, 1131, 0, 0, 0, NULL),
-  (20989, 2, 1974, 0, 0, 0, NULL),
-  (20989, 3, 2167, 0, 0, 0, NULL),
-  (20989, 4, 2314, 0, 0, 0, NULL),
-  (20989, 5, 2879, 0, 0, 0, NULL),
-  (20989, 6, 2911, 0, 0, 0, NULL),
-  (20989, 7, 3066, 0, 0, 0, NULL),
-  (20989, 8, 3202, 0, 0, 0, NULL),
-  (20989, 9, 3647, 0, 0, 0, NULL),
-  (20989, 10, 4373, 0, 0, 0, NULL),
-  (20989, 11, 5183, 0, 0, 0, NULL),
-  (20989, 12, 5323, 0, 0, 0, NULL),
-  (20989, 13, 5425, 0, 0, 0, NULL),
-  (20989, 14, 6191, 0, 0, 0, NULL),
-  (20989, 15, 6335, 0, 0, 0, NULL),
-  (20989, 16, 6341, 0, 0, 0, NULL),
-  (20989, 17, 6668, 0, 0, 0, NULL),
-  (20989, 18, 7284, 0, 0, 0, NULL),
-  (20989, 19, 7285, 0, 0, 0, NULL),
-  (20989, 20, 7334, 0, 0, 0, NULL),
-  (20989, 21, 10653, 0, 0, 0, NULL),
-  (20989, 22, 12977, 0, 0, 0, NULL),
-  (20989, 23, 12988, 0, 0, 0, NULL),
-  (20989, 24, 14150, 0, 0, 0, NULL),
-  (20989, 25, 14374, 0, 0, 0, NULL),
-  (20989, 26, 16608, 0, 0, 0, NULL),
-  (20989, 27, 43515, 0, 0, 0, NULL),
-  (35364, 1, 890, 0, 0, 0, NULL),
-  (35364, 2, 1318, 0, 0, 0, NULL),
-  (35364, 3, 1482, 0, 0, 0, NULL),
-  (35364, 4, 1935, 0, 0, 0, NULL),
-  (35364, 5, 2169, 0, 0, 0, NULL),
-  (35364, 6, 2256, 0, 0, 0, NULL),
-  (35364, 7, 2271, 0, 0, 0, NULL),
-  (35364, 8, 2567, 0, 0, 0, NULL),
-  (35364, 9, 3415, 0, 0, 0, NULL),
-  (35364, 10, 3761, 0, 0, 0, NULL),
-  (35364, 11, 3822, 0, 0, 0, NULL),
-  (35364, 12, 5191, 0, 0, 0, NULL),
-  (35364, 13, 5194, 0, 0, 0, NULL),
-  (35364, 14, 5815, 0, 0, 0, NULL),
-  (35364, 15, 6469, 0, 0, 0, NULL),
-  (35364, 16, 6472, 0, 0, 0, NULL),
-  (35364, 17, 6504, 0, 0, 0, NULL),
-  (35364, 18, 6505, 0, 0, 0, NULL),
-  (35364, 19, 6633, 0, 0, 0, NULL),
-  (35364, 20, 7001, 0, 0, 0, NULL),
-  (35364, 21, 7002, 0, 0, 0, NULL),
-  (35364, 22, 7230, 0, 0, 0, NULL),
-  (35364, 23, 12990, 0, 0, 0, NULL),
-  (35364, 24, 12997, 0, 0, 0, NULL),
-  (35364, 25, 17046, 0, 0, 0, NULL),
-  (35364, 26, 20425, 0, 0, 0, NULL),
-  (35364, 27, 20430, 0, 0, 0, NULL),
-  (35364, 28, 20434, 0, 0, 0, NULL),
-  (35364, 29, 20437, 0, 0, 0, NULL),
-  (35364, 30, 20438, 0, 0, 0, NULL),
-  (35364, 31, 20440, 0, 0, 0, NULL),
-  (35364, 32, 20441, 0, 0, 0, NULL),
-  (35364, 33, 20443, 0, 0, 0, NULL),
-  (35365, 1, 1121, 0, 0, 0, NULL),
-  (35365, 2, 1486, 0, 0, 0, NULL),
-  (35365, 3, 2041, 0, 0, 0, NULL),
-  (35365, 4, 2231, 0, 0, 0, NULL),
-  (35365, 5, 3324, 0, 0, 0, NULL),
-  (35365, 6, 4315, 0, 0, 0, NULL),
-  (35365, 7, 4320, 0, 0, 0, NULL),
-  (35365, 8, 4385, 0, 0, 0, NULL),
-  (35365, 9, 4534, 0, 0, 0, NULL),
-  (35365, 10, 5195, 0, 0, 0, NULL),
-  (35365, 11, 5199, 0, 0, 0, NULL),
-  (35365, 12, 5202, 0, 0, 0, NULL),
-  (35365, 13, 5254, 0, 0, 0, NULL),
-  (35365, 14, 5404, 0, 0, 0, NULL),
-  (35365, 15, 5970, 0, 0, 0, NULL),
-  (35365, 16, 6087, 0, 0, 0, NULL),
-  (35365, 17, 6226, 0, 0, 0, NULL),
-  (35365, 18, 6282, 0, 0, 0, NULL),
-  (35365, 19, 6319, 0, 0, 0, NULL),
-  (35365, 20, 6459, 0, 0, 0, NULL),
-  (35365, 21, 6460, 0, 0, 0, NULL),
-  (35365, 22, 6465, 0, 0, 0, NULL),
-  (35365, 23, 6468, 0, 0, 0, NULL),
-  (35365, 24, 6473, 0, 0, 0, NULL),
-  (35365, 25, 7003, 0, 0, 0, NULL),
-  (35365, 26, 10043, 0, 0, 0, NULL),
-  (35365, 27, 10399, 0, 0, 0, NULL),
-  (35365, 28, 10403, 0, 0, 0, NULL),
-  (35365, 29, 10410, 0, 0, 0, NULL),
-  (35365, 30, 10411, 0, 0, 0, NULL),
-  (35365, 31, 10412, 0, 0, 0, NULL),
-  (35365, 32, 10413, 0, 0, 0, NULL),
-  (35365, 33, 10654, 0, 0, 0, NULL),
-  (35365, 34, 10657, 0, 0, 0, NULL),
-  (35365, 35, 12982, 0, 0, 0, NULL),
-  (35365, 36, 12987, 0, 0, 0, NULL),
-  (35365, 37, 12994, 0, 0, 0, NULL),
-  (35365, 38, 14147, 0, 0, 0, NULL),
-  (35365, 39, 14148, 0, 0, 0, NULL),
-  (35365, 40, 16768, 0, 0, 0, NULL),
-  (35365, 41, 16987, 0, 0, 0, NULL),
-  (35365, 42, 19969, 0, 0, 0, NULL),
-  (35365, 43, 19972, 0, 0, 0, NULL);
+  (20980, 13, 12054, 0, 0, 0, NULL),
+  (20980, 14, 12979, 0, 0, 0, NULL),
+  (20980, 15, 12996, 0, 0, 0, NULL),
+  (20980, 16, 14149, 0, 0, 0, NULL),
+  (20980, 17, 18471, 0, 0, 0, NULL),
+  (20980, 18, 22268, 0, 0, 0, NULL),
+  (20980, 19, 22990, 0, 0, 0, NULL),
+  (20980, 20, 28303, 0, 0, 0, NULL),
+  (20980, 21, 30804, 0, 0, 0, NULL),
+  (20989, 1, 1974, 0, 0, 0, NULL),
+  (20989, 2, 2167, 0, 0, 0, NULL),
+  (20989, 3, 2314, 0, 0, 0, NULL),
+  (20989, 4, 2911, 0, 0, 0, NULL),
+  (20989, 5, 3066, 0, 0, 0, NULL),
+  (20989, 6, 3202, 0, 0, 0, NULL),
+  (20989, 7, 3647, 0, 0, 0, NULL),
+  (20989, 8, 4373, 0, 0, 0, NULL),
+  (20989, 9, 5425, 0, 0, 0, NULL),
+  (20989, 10, 6191, 0, 0, 0, NULL),
+  (20989, 11, 6335, 0, 0, 0, NULL),
+  (20989, 12, 6668, 0, 0, 0, NULL),
+  (20989, 13, 7284, 0, 0, 0, NULL),
+  (20989, 14, 7285, 0, 0, 0, NULL),
+  (20989, 15, 7334, 0, 0, 0, NULL),
+  (20989, 16, 10653, 0, 0, 0, NULL),
+  (20989, 17, 12977, 0, 0, 0, NULL),
+  (20989, 18, 12988, 0, 0, 0, NULL),
+  (20989, 19, 14150, 0, 0, 0, NULL),
+  (20989, 20, 14374, 0, 0, 0, NULL),
+  (20989, 21, 16608, 0, 0, 0, NULL),
+  (35364, 1, 890, 0, 0, 747, NULL),
+  (35364, 2, 1318, 0, 0, 837, NULL),
+  (35364, 3, 1482, 0, 0, 2428, NULL),
+  (35364, 4, 1935, 0, 0, 2261, NULL),
+  (35364, 5, 2169, 0, 0, 491, NULL),
+  (35364, 6, 2256, 0, 0, 491, NULL),
+  (35364, 7, 2271, 0, 0, 2261, NULL),
+  (35364, 8, 2567, 0, 0, 747, NULL),
+  (35364, 9, 3415, 0, 0, 747, NULL),
+  (35364, 10, 3761, 0, 0, 747, NULL),
+  (35364, 11, 3822, 0, 0, 747, NULL),
+  (35364, 12, 5191, 0, 0, 2261, NULL),
+  (35364, 13, 5194, 0, 0, 1062, NULL),
+  (35364, 14, 5815, 0, 0, 2428, NULL),
+  (35364, 15, 6469, 0, 0, 2428, NULL),
+  (35364, 16, 6472, 0, 0, 2261, NULL),
+  (35364, 17, 6504, 0, 0, 747, NULL),
+  (35364, 18, 6505, 0, 0, 1062, NULL),
+  (35364, 19, 6633, 0, 0, 747, NULL),
+  (35364, 20, 7001, 0, 0, 747, NULL),
+  (35364, 21, 7002, 0, 0, 747, NULL),
+  (35364, 22, 7230, 0, 0, 1062, NULL),
+  (35364, 23, 12990, 0, 0, 1062, NULL),
+  (35364, 24, 12997, 0, 0, 1062, NULL),
+  (35364, 25, 16768, 0, 0, 2428, NULL),
+  (35364, 26, 17046, 0, 0, 491, NULL),
+  (35364, 27, 20425, 0, 0, 837, NULL),
+  (35364, 28, 20430, 0, 0, 837, NULL),
+  (35364, 29, 20434, 0, 0, 837, NULL),
+  (35364, 30, 20437, 0, 0, 837, NULL),
+  (35364, 31, 20438, 0, 0, 837, NULL),
+  (35364, 32, 20440, 0, 0, 837, NULL),
+  (35364, 33, 20441, 0, 0, 837, NULL),
+  (35364, 34, 20443, 0, 0, 837, NULL),
+  (35365, 1, 1121, 0, 0, 747, NULL),
+  (35365, 2, 1486, 0, 0, 2261, NULL),
+  (35365, 3, 2041, 0, 0, 747, NULL),
+  (35365, 4, 2231, 0, 0, 2428, NULL),
+  (35365, 5, 3324, 0, 0, 1062, NULL),
+  (35365, 6, 4315, 0, 0, 747, NULL),
+  (35365, 7, 4320, 0, 0, 747, NULL),
+  (35365, 8, 4385, 0, 0, 1062, NULL),
+  (35365, 9, 4534, 0, 0, 747, NULL),
+  (35365, 10, 5195, 0, 0, 747, NULL),
+  (35365, 11, 5199, 0, 0, 1062, NULL),
+  (35365, 12, 5202, 0, 0, 491, NULL),
+  (35365, 13, 5254, 0, 0, 1062, NULL),
+  (35365, 14, 5404, 0, 0, 1062, NULL),
+  (35365, 15, 5970, 0, 0, 1062, NULL),
+  (35365, 16, 6087, 0, 0, 747, NULL),
+  (35365, 17, 6226, 0, 0, 491, NULL),
+  (35365, 18, 6282, 0, 0, 491, NULL),
+  (35365, 19, 6319, 0, 0, 2261, NULL),
+  (35365, 20, 6459, 0, 0, 1062, NULL),
+  (35365, 21, 6460, 0, 0, 1062, NULL),
+  (35365, 22, 6465, 0, 0, 1062, NULL),
+  (35365, 23, 6468, 0, 0, 747, NULL),
+  (35365, 24, 6473, 0, 0, 2261, NULL),
+  (35365, 25, 7003, 0, 0, 837, NULL),
+  (35365, 26, 10043, 0, 0, 1062, NULL),
+  (35365, 27, 10399, 0, 0, 2428, NULL),
+  (35365, 28, 10403, 0, 0, 1062, NULL),
+  (35365, 29, 10410, 0, 0, 747, NULL),
+  (35365, 30, 10411, 0, 0, 747, NULL),
+  (35365, 31, 10412, 0, 0, 837, NULL),
+  (35365, 32, 10413, 0, 0, 747, NULL),
+  (35365, 33, 10654, 0, 0, 747, NULL),
+  (35365, 34, 10657, 0, 0, 1062, NULL),
+  (35365, 35, 12982, 0, 0, 747, NULL),
+  (35365, 36, 12987, 0, 0, 2261, NULL),
+  (35365, 37, 12994, 0, 0, 1062, NULL),
+  (35365, 38, 14147, 0, 0, 1062, NULL),
+  (35365, 39, 14148, 0, 0, 1062, NULL),
+  (35365, 40, 16987, 0, 0, 491, NULL),
+  (35365, 41, 19969, 0, 0, 2261, NULL),
+  (35365, 42, 19972, 0, 0, 2559, NULL);
+
+DELETE FROM `item_loot_template` WHERE `Entry` = 51999;
+
+UPDATE `item_template`
+SET `MinMoneyLoot` = 5000,
+    `MaxMoneyLoot` = 7500
+WHERE `entry` = 51999;
+
+INSERT INTO `item_loot_template` (`Entry`, `Item`, `Reference`, `Chance`, `QuestRequired`, `LootMode`, `GroupId`, `MinCount`, `MaxCount`, `Comment`) VALUES
+  (51999, 790, 0, 0, 0, 1, 1, 1, 1, 'Forester\'s Axe'),
+  (51999, 3184, 0, 0, 0, 1, 1, 1, 1, 'Hook Dagger'),
+  (51999, 6563, 0, 0, 0, 1, 1, 1, 1, 'Shimmering Bracers'),
+  (51999, 6568, 0, 0, 0, 1, 1, 1, 1, 'Shimmering Trousers'),
+  (51999, 6570, 0, 0, 0, 1, 1, 1, 1, 'Shimmering Sash'),
+  (51999, 6573, 0, 0, 0, 1, 1, 1, 1, 'Defender Boots'),
+  (51999, 6577, 0, 0, 0, 1, 1, 1, 1, 'Defender Gauntlets'),
+  (51999, 6586, 0, 0, 0, 1, 1, 1, 1, 'Scouting Gloves'),
+  (51999, 6587, 0, 0, 0, 1, 1, 1, 1, 'Scouting Trousers'),
+  (51999, 9766, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Sash'),
+  (51999, 9767, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Sandals'),
+  (51999, 9768, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Bracers'),
+  (51999, 9782, 0, 0, 0, 1, 1, 1, 1, 'Bandit Jerkin'),
+  (51999, 9811, 0, 0, 0, 1, 1, 1, 1, 'Fortified Bracers'),
+  (51999, 9814, 0, 0, 0, 1, 1, 1, 1, 'Fortified Belt'),
+  (51999, 11993, 0, 0, 0, 1, 1, 1, 1, 'Clay Ring'),
+  (51999, 12006, 0, 0, 0, 1, 1, 1, 1, 'Meadow Ring'),
+  (51999, 14171, 0, 0, 0, 1, 1, 1, 1, 'Buccaneer\'s Pants'),
+  (51999, 15269, 0, 0, 0, 1, 1, 1, 1, 'Massive Battle Axe'),
+  (51999, 15331, 0, 0, 0, 1, 1, 1, 1, 'Wrangler\'s Wristbands'),
+  (51999, 15500, 0, 0, 0, 1, 1, 1, 1, 'Outrunner\'s Chestguard'),
+  (51999, 15511, 0, 0, 0, 1, 1, 1, 1, 'Grunt\'s Legguards'),
+  (51999, 15512, 0, 0, 0, 1, 1, 1, 1, 'Grunt\'s Shield'),
+  (51999, 31270, 0, 0, 0, 1, 1, 1, 1, 'Banshee Rod'),
+  (51999, 51964, 0, 0, 0, 1, 1, 1, 1, 'Vigorous Belt'),
+  (51999, 51968, 0, 0, 0, 1, 1, 1, 1, 'Enumerated Wrap'),
+  (51999, 51978, 0, 0, 0, 1, 1, 1, 1, 'Earthbound Girdle'),
+  (51999, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
+  (51999, 0, 10065, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - (ReferenceTable)');
+
+DELETE FROM `reference_loot_template`
+WHERE `Entry` = 10066
+   OR (`Entry` IN (10036, 10037, 10038, 10062, 10063, 10064, 10065, 10066)
+       AND `Item` IN (790, 3184, 6563, 6568, 6570, 6573, 6577, 6586, 6587, 9766, 9767, 9768, 9782, 9811, 9814, 11993, 12006, 14171, 15269, 15331, 15500, 15511, 15512, 31270, 51964, 51968, 51978, 51994, 5740, 6657));
+
+INSERT INTO `reference_loot_template` (`Entry`, `Item`, `Reference`, `Chance`, `QuestRequired`, `LootMode`, `GroupId`, `MinCount`, `MaxCount`, `Comment`) VALUES
+  (10065, 5740, 0, 0, 0, 1, 7, 1, 1, 'Red Fireworks Rocket'),
+  (10065, 6657, 0, 0, 0, 1, 7, 1, 1, 'Savory Deviate Delight');
+
+DELETE FROM `conditions`
+WHERE `SourceTypeOrReferenceId` = 10
+  AND (`SourceGroup` = 51999
+    OR `SourceGroup` IN (10036, 10037, 10038, 10062, 10063, 10064, 10065, 10066))
+  AND `SourceEntry` IN (790, 3184, 6563, 6568, 6570, 6573, 6577, 6586, 6587, 9766, 9767, 9768, 9782, 9811, 9814, 11993, 12006, 14171, 15269, 15331, 15500, 15511, 15512, 31270, 51964, 51968, 51978, 51994, 5740, 6657);
+
+INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`, `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES
+  (10, 51999, 790, 0, 0, 15, 0, 79, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Forester\'s Axe'),
+  (10, 51999, 3184, 0, 0, 15, 0, 2047, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Hook Dagger'),
+  (10, 51999, 6563, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Shimmering Bracers'),
+  (10, 51999, 6568, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Shimmering Trousers'),
+  (10, 51999, 6570, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Shimmering Sash'),
+  (10, 51999, 6573, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Defender Boots'),
+  (10, 51999, 6577, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Defender Gauntlets'),
+  (10, 51999, 6586, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Gloves'),
+  (10, 51999, 6587, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Trousers'),
+  (10, 51999, 9766, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Sash'),
+  (10, 51999, 9767, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Sandals'),
+  (10, 51999, 9768, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Bracers'),
+  (10, 51999, 9782, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Bandit Jerkin'),
+  (10, 51999, 9811, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Fortified Bracers'),
+  (10, 51999, 9814, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Fortified Belt'),
+  (10, 51999, 11993, 0, 0, 15, 0, 2047, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Clay Ring'),
+  (10, 51999, 12006, 0, 0, 15, 0, 2047, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Meadow Ring'),
+  (10, 51999, 14171, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Buccaneer\'s Pants'),
+  (10, 51999, 15269, 0, 0, 15, 0, 71, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Massive Battle Axe'),
+  (10, 51999, 15331, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Wrangler\'s Wristbands'),
+  (10, 51999, 15500, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Outrunner\'s Chestguard'),
+  (10, 51999, 15511, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Grunt\'s Legguards'),
+  (10, 51999, 15512, 0, 0, 15, 0, 67, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Grunt\'s Shield'),
+  (10, 51999, 31270, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Banshee Rod'),
+  (10, 51999, 51964, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Vigorous Belt'),
+  (10, 51999, 51968, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Enumerated Wrap'),
+  (10, 51999, 51978, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Earthbound Girdle'),
+  (10, 51999, 51994, 0, 0, 15, 0, 2047, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak');
 
 INSERT INTO `quest_template` (`ID`, `QuestType`, `QuestLevel`, `MinLevel`, `QuestSortID`, `QuestInfoID`, `SuggestedGroupNum`, `RequiredFactionId1`, `RequiredFactionId2`, `RequiredFactionValue1`, `RequiredFactionValue2`, `RewardNextQuest`, `RewardXPDifficulty`, `RewardMoney`, `RewardMoneyDifficulty`, `RewardDisplaySpell`, `RewardSpell`, `RewardHonor`, `RewardKillHonor`, `StartItem`, `Flags`, `RequiredPlayerKills`, `RewardItem1`, `RewardAmount1`, `RewardItem2`, `RewardAmount2`, `RewardItem3`, `RewardAmount3`, `RewardItem4`, `RewardAmount4`, `ItemDrop1`, `ItemDropQuantity1`, `ItemDrop2`, `ItemDropQuantity2`, `ItemDrop3`, `ItemDropQuantity3`, `ItemDrop4`, `ItemDropQuantity4`, `RewardChoiceItemID1`, `RewardChoiceItemQuantity1`, `RewardChoiceItemID2`, `RewardChoiceItemQuantity2`, `RewardChoiceItemID3`, `RewardChoiceItemQuantity3`, `RewardChoiceItemID4`, `RewardChoiceItemQuantity4`, `RewardChoiceItemID5`, `RewardChoiceItemQuantity5`, `RewardChoiceItemID6`, `RewardChoiceItemQuantity6`, `POIContinent`, `POIx`, `POIy`, `POIPriority`, `RewardTitle`, `RewardTalents`, `RewardArenaPoints`, `RewardFactionID1`, `RewardFactionValue1`, `RewardFactionOverride1`, `RewardFactionID2`, `RewardFactionValue2`, `RewardFactionOverride2`, `RewardFactionID3`, `RewardFactionValue3`, `RewardFactionOverride3`, `RewardFactionID4`, `RewardFactionValue4`, `RewardFactionOverride4`, `RewardFactionID5`, `RewardFactionValue5`, `RewardFactionOverride5`, `TimeAllowed`, `AllowableRaces`, `LogTitle`, `LogDescription`, `QuestDescription`, `AreaDescription`, `QuestCompletionLog`, `RequiredNpcOrGo1`, `RequiredNpcOrGo2`, `RequiredNpcOrGo3`, `RequiredNpcOrGo4`, `RequiredNpcOrGoCount1`, `RequiredNpcOrGoCount2`, `RequiredNpcOrGoCount3`, `RequiredNpcOrGoCount4`, `RequiredItemId1`, `RequiredItemId2`, `RequiredItemId3`, `RequiredItemId4`, `RequiredItemId5`, `RequiredItemId6`, `RequiredItemCount1`, `RequiredItemCount2`, `RequiredItemCount3`, `RequiredItemCount4`, `RequiredItemCount5`, `RequiredItemCount6`, `Unknown0`, `ObjectiveText1`, `ObjectiveText2`, `ObjectiveText3`, `ObjectiveText4`, `VerifiedBuild`) VALUES
-  (777000, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4113, 3066, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777001, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777002, 0, 0, 0, 55428, 36937, 0, 0, 0, 0, 0, 8545, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Stayin\' alive', 'Speak with Zarevhi, the arcane healer and learn it\'s techniques.', 'Food won\'t keep you alive when you\'re bleeding out. Find the healer here in the Stormspire. They\'ll show you how to patch up your own leaks so you aren\'t constantly running back from the graveyard.', 'Find the arcane healer inside the Stormspire.', 'Find the arcane healer inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the arcane healer inside the Stormspire.', '', '', '', 0),
-  (777002, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777003, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28463, 2, 28468, 2, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4202, 2999, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Gems for the Drip', 'Speak with Dealer Senzik to get your shiny gems.', 'Forget grinding dusty old librams and arcanums to pimp out your hats and legs. Instead, our top engineers cooked up special custom gems made specifically for your head and leg slots. You get the same insane stat boosts, but with way more variety to min-max your build! Go find Dealer Senzik the gem merchant right now and get shiny!', 'Find the gem merchant inside the Stormspire.', 'Find the gem merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the gem merchant inside the Stormspire.', '', '', '', 0),
+  (777000, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 21153, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4113, 3066, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777001, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777002, 0, 0, 0, 55500, 36937, 0, 0, 0, 0, 0, 14530, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Stayin\' alive', 'Speak with Zarevhi, the arcane healer and learn it\'s techniques.', 'Food won\'t keep you alive when you\'re bleeding out. Find the healer here in the Stormspire. They\'ll show you how to patch up your own leaks so you aren\'t constantly running back from the graveyard.', 'Find the arcane healer inside the Stormspire.', 'Find the arcane healer inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the arcane healer inside the Stormspire.', '', '', '', 0),
+  (777002, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777003, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28463, 1, 28468, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4202, 2999, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Gems for the Drip', 'Speak with Dealer Senzik to get your shiny gems.', 'Forget grinding dusty old librams and arcanums to pimp out your hats and legs. Instead, our top engineers cooked up special custom gems made specifically for your head and leg slots. You get the same insane stat boosts, but with way more variety to min-max your build! Go find Dealer Senzik the gem merchant right now and get shiny!', 'Find the gem merchant inside the Stormspire.', 'Find the gem merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the gem merchant inside the Stormspire.', '', '', '', 0),
   (777003, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4190, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'An enchanting encounter', 'Have you found Dealer Malij yet? The secrets of enchanting won\'t reveal themselves on their own. Seek them out and take your first step toward imbuing your equipment with extraordinary power.', 'Ah, a fresh face! Every seasoned adventurer eventually learns that steel alone won\'t carry them through the dangers ahead. The right enchantment can turn an ordinary weapon into a legendary one, or grant armor the resilience needed to survive impossible odds.
 
 If you\'re ready to unlock that power, seek out Dealer Malij. Few understand the art of enchanting as well as they do, and they\'re always willing to share their knowledge with those eager to learn.
@@ -326,92 +775,40 @@ Join the queue, and show everyone that you\'re more than just another bystander.
 
 If you seek glory, honor, and a worthy challenge, it\'s time to enter Warsong Gulch. There, the Horde and Alliance clash in an endless struggle to capture one another\'s flag, testing both courage and teamwork.
 
-Speak with "Image of Nexus-Prince Haramad" and enlist. The sooner you queue, the sooner you\'ll be fighting for victory.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', '', '', '', 0),
-  (777007, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55480, 36937, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Lifeblood - The Next Level', 'A stronger heal is worth more than you would imagine. Every improvement to your magic could mean the difference between victory and a long walk back from the grave.
+Speak with "Image of Nexus-Prince Haramad" and enlist. The sooner you queue, the sooner you\'ll be fighting for victory.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', '', '', '', 0),
+  (777009, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 13209, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 2', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 18706, 40752, 0, 0, 0, 0, 1, 30, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777010, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 8663, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 3', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 13209, 40752, 0, 0, 0, 0, 1, 60, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777011, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 19024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 4', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 8663, 40752, 0, 0, 0, 0, 1, 120, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777014, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5000, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Trial of Justice', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777015, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 666, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Trial of Heroism', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777016, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15000, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Judgment of Champions', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777017, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Heroes of the Arena', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0, 0, '', '', '', '', 0);
 
-Return once you\'ve mastered Lifeblood Rank 2.', 'You\'ve survived this long because you\'ve learned to mend wounds as quickly as they\'re dealt. But every healer knows that standing still is the same as falling behind.
-
-The spell Lifeblood has served you well, yet its true potential remains untapped. With greater understanding comes greater healing, allowing you to keep both yourself and your allies standing when others would fall.
-
-Seek out the trainer and master Lifeblood Rank 2. Strengthening your healing magic is the next step toward becoming a true champion.', 'Speak to [WIP] and upgrade your Lifeblood to Rank 2.', 'Speak to [WIP] and upgrade your Lifeblood to Rank 2.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Lifeblood to Rank 2.', '', '', '', 0),
-  (777008, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55500, 36937, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Lifeblood - Maxing The Potential', 'Healing is more than restoring wounds; it is the art of preserving hope. With each improvement to Lifeblood, your control over restorative magic grows more precise and more potent.
-
-Continue your training and unlock the next stage of your healing abilities. Your allies will soon depend on the power you are about to wield.', 'Your command over Lifeblood Rank 2 has served you well, but true healers never stop honing their craft. Every battle fought and every ally saved has strengthened your connection to the life-giving energies that flow through this spell.
-
-It is time to push beyond your current limits. Focus your power, refine your technique, and elevate Lifeblood to Rank 3. Greater mastery means greater responsibility—and greater strength for those who stand beside you.', 'Speak to [WIP] and upgrade your Lifeblood to Rank 3.', 'Speak to [WIP] and upgrade your Lifeblood to Rank 3.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Lifeblood to Rank 3.', '', '', '', 0),
-  (777009, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13209, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 2', 'The Arena Grand Master resonates with growing power, but the transformation is not yet complete. Continue the upgrade process and focus your efforts. Great relics are not created through chance—they are earned through persistence and determination.
-
-Return once your Arena Grand Master has reached its next rank.', 'The Arena Grand Master has already proven its worth in battle, shielding you when the odds were stacked against you. But true power is never stagnant. Every victory, every hard-fought duel, and every challenge overcome has awakened the trinket\'s hidden potential.
-
-Its magic yearns to be refined. With the proper materials and your continued dedication, the Arena Grand Master can be forged into an even greater relic—one worthy of a seasoned champion.
-
-Take the next step. Strengthen your trinket and let your enemies witness the power of a true gladiator.', 'Speak to [WIP] and upgrade your Arena Grand Master trinket!', 'Speak to [WIP] and upgrade your Arena Grand Master trinket!', 0, 0, 0, 0, 0, 0, 0, 0, 18706, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Arena Grand Master trinket!', '', '', '', 0),
-  (777010, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8663, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 3', 'You\'re getting closer. I can already feel the trinket resonating with greater strength. The Arena Grand Master was forged for those who refuse to settle for yesterday\'s victories.
-
-Finish the upgrade and unlock the next stage of its power. A seasoned warrior is dangerous—but one who continues to grow is unstoppable.', 'Every true champion knows that power is never fully complete. Every victory, every close call, and every hard-fought battle has brought you to this moment.
-
-The trinket has absorbed enough experience to awaken its next potential. Strengthen it once more, and let your enemies witness what a true gladiator is capable of.
-
-Upgrade your Arena Grand Master to Rank 3.', 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', 0, 0, 0, 0, 0, 0, 0, 0, 13209, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', '', '', '', 0),
-  (777011, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 4', 'The trinket pulses with overwhelming power. Every victory brings it closer to perfection, yet it still yearns for one final display of your dominance.
-
-This is no longer about earning the title of Arena Grand Master.
-
-It is about becoming the champion others measure themselves against.
-
-Finish what you started, and let your legacy be etched into the arena forever.', 'You\'ve carried the Arena Grand Master through countless battles, proving your worth against every challenger who dared stand before you. The trinket has grown alongside you, absorbing the echoes of victory and the resolve of a true champion.
-
-Now only one step remains.
-
-The final ritual cannot be completed with strength alone. It demands unwavering determination, flawless execution, and the heart of a gladiator who refuses to yield. Should you succeed, the Arena Grand Master will awaken to its ultimate form—a relic worthy of legends, feared by enemies and admired by allies alike.
-
-Return only when the final trial has been conquered.', 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', 0, 0, 0, 0, 0, 0, 0, 0, 8663, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and upgrade your Arena Grand Master tricket! ', '', '', '', 0),
-  (777012, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14529, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'First Aid! Becoming a Journeyman', 'Every seasoned healer began with a single bandage. The difference between an apprentice and a journeyman isn\'t talent—it\'s experience.
-
-Have you completed your training? Show me that you\'ve learned to treat the wounded with confidence, precision, and speed.', 'Bandages can save a life, but only in the hands of someone who knows how to use them. You\'ve mastered the basics of treating cuts and bruises, yet true healers must be ready for far worse. The wounded won\'t always have the luxury of magic at their side.
-
-If you wish to become a Journeyman in First Aid, you\'ll need to prove that your hands are as steady as your resolve. Study the techniques, prepare your supplies, and demonstrate that you\'re ready for the next stage of your training.
-
-Return once you\'ve completed your First Aid training. Then we\'ll see if you\'ve earned the title of Journeyman.', 'Speak to [WIP] and learn the ways of Journeyman First Aid.', 'Speak to [WIP] and learn the ways of Journeyman First Aid.', 0, 0, 0, 0, 0, 0, 0, 0, 8545, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and learn the ways of Journeyman First Aid.', '', '', '', 0),
-  (777013, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14530, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'First Aid! Becoming an Expert', 'Every stitch tells a story. Every bandage wrapped with precision is another life that may yet be saved.
-
-The road to becoming an Expert isn\'t about speed—it\'s about confidence, discipline, and knowing exactly what to do when the battlefield turns against you. Continue your training, and don\'t stop until your techniques become instinct.', 'You\'ve come a long way. Bandages that once took all your concentration are now second nature. A true healer in the field isn\'t measured by magic alone, but by the ability to keep allies alive when every second counts.
-
-It\'s time to advance beyond the basics. Master the techniques of an Expert medic and prove that your hands remain steady, even in the chaos of battle. Greater wounds demand greater skill—and soon, others will look to you when hope begins to fade.
-
-Train diligently, refine your craft, and return once you\'ve achieved the rank of Expert in First Aid.', 'Speak to [WIP] and learn the ways of Expert First Aid.', 'Speak to [WIP] and learn the ways of Expert First Aid.', 0, 0, 0, 0, 0, 0, 0, 0, 14529, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Speak to [WIP] and learn the ways of Expert First Aid.', '', '', '', 0),
-  (777014, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 5000, 0, 0, 4096, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Daily - For the Glory of Honor', 'The war rages on, and every battle shapes the fate of Azeroth. Stay focused and never lose sight of your objective.
-
-True honor is earned through courage, determination, and the will to fight until the very end. Victory favors those who refuse to surrender.', 'The battlefield never rests, and neither should a true champion. Every clash, every victory, and every fallen foe adds another page to your legend.
-
-Today, you have another chance to prove your worth. Whether you stand shoulder to shoulder with allies or charge headlong into the fray alone, honor awaits those willing to fight for it.
-
-Go forth, warrior. Let your enemies remember your name, and return when your deeds have earned you the glory you seek.', 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Daily - For the Glory of Honor". ', 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Daily - For the Glory of Honor". ', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Daily - For the Glory of Honor". ', '', '', '', 0),
-  (777015, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 50000, 0, 0, 0, 0, 0, 0, 4096, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 666, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Daily - The Arena', 'The roar of the crowd echoes through the Arena as champions clash steel against steel and spell against spell.
-
-Every match hones your instincts. Adapt to your opponents, trust your teammates, and never stop fighting until the final blow has been struck.
-
-Keep entering the Arena. Great warriors aren\'t forged in a single battle—they\'re forged through perseverance.', 'So, you think you\'re ready for real combat?
-
-The battlegrounds teach teamwork, but the Arena strips away every excuse. No sprawling battlefields, no reinforcements—just you, your allies, and the enemy standing before you.
-
-Victory isn\'t guaranteed, and defeat is often the greatest teacher. Step into the Arena and prove you have the courage to face worthy opponents head-on.
-
-Queue for [WIP] Arena matches today. Whether you claim victory or learn from defeat, every battle will sharpen your skills.', 'Complete [WIP] Arena matches for the day.', 'Complete [WIP] Arena matches for the day.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Complete [WIP] Arena matches for the day.', '', '', '', 0),
-  (777016, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 15000, 0, 0, 32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Weekly - For the Glory of Honor', 'The battles rage on, and your legend grows with every encounter. Whether victory comes easily or only after hardship, each step brings you closer to fulfilling your oath.
-
-Do not falter now. The greatest warriors are those who continue fighting long after others have surrendered. Finish what you started, and let your honor shine brighter than ever.', 'Honor is not earned through words—it is forged in battle. Every clash, every victory, and every sacrifice strengthens your legacy upon the battlefield.
-
-This week, prove that your resolve has not faded. Stand beside your allies, face your enemies without fear, and remind the realm why your name deserves to be remembered.
-
-Fight not for riches alone, but for the glory that only true champions can claim.', 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Weekly - For the Glory of Honor".', 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Weekly - For the Glory of Honor".', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Speak to "Image of Nexus-Prince Haramad" and accept the quest "Weekly - For the Glory of Honor".', '', '', '', 0),
-  (777017, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 150000, 0, 0, 0, 0, 0, 0, 32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Weekly - The Arena', 'The arena waits for no one. Every match sharpens your instincts, every opponent teaches a lesson, and every battle brings you closer to mastering your craft.
-
-Stay focused and see all [WIP] arena matches through. Your weekly trial is not over yet.', 'The arena is where warriors are truly tested. Every battle demands skill, discipline, and the resolve to stand firm against worthy opponents.
-
-This week, I have a challenge worthy of your name. Step into the arena and see [WIP] matches through to their conclusion. Victory is always celebrated, but even defeat carries the lessons of a seasoned combatant.
-
-Prove your dedication, and return when your task is complete.', 'Complete [WIP] Arena matches for the week.', 'Complete [WIP] Arena matches for the week.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Complete [WIP] Arena matches for the week.', '', '', '', 0);
+-- Reapply sheet-defined item requirements explicitly after quest row generation.
+UPDATE `quest_template`
+SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 1, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
+WHERE `ID` = 777006;
+UPDATE `quest_template`
+SET `RequiredItemId1` = 18706, `RequiredItemCount1` = 1, `RequiredItemId2` = 40752, `RequiredItemCount2` = 30, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
+WHERE `ID` = 777009;
+UPDATE `quest_template`
+SET `RequiredItemId1` = 13209, `RequiredItemCount1` = 1, `RequiredItemId2` = 40752, `RequiredItemCount2` = 60, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
+WHERE `ID` = 777010;
+UPDATE `quest_template`
+SET `RequiredItemId1` = 8663, `RequiredItemCount1` = 1, `RequiredItemId2` = 40752, `RequiredItemCount2` = 120, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
+WHERE `ID` = 777011;
+UPDATE `quest_template`
+SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 15, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
+WHERE `ID` = 777014;
+UPDATE `quest_template`
+SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 20, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
+WHERE `ID` = 777015;
+UPDATE `quest_template`
+SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 45, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
+WHERE `ID` = 777016;
+UPDATE `quest_template`
+SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 60, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
+WHERE `ID` = 777017;
 
 INSERT INTO `quest_offer_reward` (`ID`, `Emote1`, `Emote2`, `Emote3`, `Emote4`, `EmoteDelay1`, `EmoteDelay2`, `EmoteDelay3`, `EmoteDelay4`, `RewardText`, `VerifiedBuild`) VALUES
   (777000, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire, traveler! Please, take a moment to rest, have a warm meal, and enjoy the artificial breeze. Your adventure in the dome starts now, but heed my words: do not step outside the glass. The twisting nether out there will tear a newcomer apart, and I’d prefer not to lose a customer so quickly.', 0),
@@ -439,14 +836,6 @@ Welcome to the Stormpike.', 0),
 Now all that\'s left is to await the call to battle. When the gates open, fight with honor, protect your allies, and never let the enemy walk away with your flag.
 
 Good luck, champion. May your first steps into Warsong Gulch be the beginning of a long legacy of victories.', 0),
-  (777007, 0, 0, 0, 0, 0, 0, 0, 0, 'I can already feel the difference in your aura. Lifeblood now flows through you with greater power and control, restoring wounds with renewed strength.
-
-Never underestimate the value of a well-timed heal. As battles grow more dangerous, so too must your command of the life-giving arts.
-
-Well done. This is only the beginning of your journey toward true mastery.', 0),
-  (777008, 0, 0, 0, 0, 0, 0, 0, 0, 'Excellent work! Lifeblood has now reached Rank 3, and its restorative power has grown considerably. Your dedication to mastering the healing arts is paying off, making you an even greater asset on the battlefield.
-
-Remember, every rank brings new potential. Continue to strengthen your abilities, for the greatest healers are forged through constant growth and unwavering determination.', 0),
   (777009, 0, 0, 0, 0, 0, 0, 0, 0, 'Excellent work. Your Arena Grand Master has evolved into a stronger artifact, its protective magic now more potent than before.
 
 This is more than an upgrade—it\'s a testament to your growth as a combatant. Treasure this relic, for every enhancement brings you one step closer to becoming an unstoppable force in the arena.
@@ -466,14 +855,6 @@ Wear this trinket with pride. It is more than a piece of equipment; it is proof 
 There are no higher ranks to attain.
 
 Only legends to surpass.', 0),
-  (777012, 0, 0, 0, 0, 0, 0, 0, 0, 'Excellent work! You\'ve proven that healing isn\'t just about magic—it\'s about preparation, knowledge, and keeping a steady hand when others need it most.
-
-From this day forward, you are recognized as a Journeyman of First Aid. Your bandages will mend more than wounds; they\'ll give your allies the strength to fight another battle.
-
-Continue honing your craft. The greatest healers are those who never stop learning.', 0),
-  (777013, 0, 0, 0, 0, 0, 0, 0, 0, 'Excellent work! Your knowledge of battlefield medicine has reached the level of an Expert. You\'ve proven that even without powerful spells, a skilled healer can mean the difference between victory and defeat.
-
-Carry your bandages with pride and never underestimate the value of a prepared medic. Your journey isn\'t over yet, but you\'ve taken another important step toward mastering the art of First Aid.', 0),
   (777014, 0, 0, 0, 0, 0, 0, 0, 0, 'Outstanding work! You\'ve once again proven yourself as a formidable force on the battlefield.
 
 Your bravery has earned the respect of friend and foe alike. Accept this reward of 5,000 Honor and 50,000 Gold as payment for your service.
@@ -500,13 +881,9 @@ INSERT INTO `quest_template_addon` (`ID`, `MaxLevel`, `AllowableClasses`, `Sourc
   (777003, 19, 0, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777004, 19, 0, 0, 0, 777005, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777005, 19, 0, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
-  (777007, 19, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
-  (777008, 19, 0, 0, 777007, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777009, 19, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777010, 19, 0, 0, 777009, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777011, 19, 0, 0, 777010, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
-  (777012, 19, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
-  (777013, 19, 0, 0, 777012, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777014, 19, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777015, 19, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777016, 19, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
@@ -528,45 +905,13 @@ Seek her out within the Stormpike and make your introduction. Your journey as a 
 Warsong Gulch isn\'t going to queue itself. Every moment you hesitate is another opportunity for the enemy to claim victory.
 
 Join the queue, and show everyone that you\'re more than just another bystander.', 0),
-  (777007, 0, 0, 'A stronger heal is worth more than you would imagine. Every improvement to your magic could mean the difference between victory and a long walk back from the grave.
-
-Return once you\'ve mastered Lifeblood Rank 2.', 0),
-  (777008, 0, 0, 'Healing is more than restoring wounds; it is the art of preserving hope. With each improvement to Lifeblood, your control over restorative magic grows more precise and more potent.
-
-Continue your training and unlock the next stage of your healing abilities. Your allies will soon depend on the power you are about to wield.', 0),
-  (777009, 0, 0, 'The Arena Grand Master resonates with growing power, but the transformation is not yet complete. Continue the upgrade process and focus your efforts. Great relics are not created through chance—they are earned through persistence and determination.
-
-Return once your Arena Grand Master has reached its next rank.', 0),
-  (777010, 0, 0, 'You\'re getting closer. I can already feel the trinket resonating with greater strength. The Arena Grand Master was forged for those who refuse to settle for yesterday\'s victories.
-
-Finish the upgrade and unlock the next stage of its power. A seasoned warrior is dangerous—but one who continues to grow is unstoppable.', 0),
-  (777011, 0, 0, 'The trinket pulses with overwhelming power. Every victory brings it closer to perfection, yet it still yearns for one final display of your dominance.
-
-This is no longer about earning the title of Arena Grand Master.
-
-It is about becoming the champion others measure themselves against.
-
-Finish what you started, and let your legacy be etched into the arena forever.', 0),
-  (777012, 0, 0, 'Every seasoned healer began with a single bandage. The difference between an apprentice and a journeyman isn\'t talent—it\'s experience.
-
-Have you completed your training? Show me that you\'ve learned to treat the wounded with confidence, precision, and speed.', 0),
-  (777013, 0, 0, 'Every stitch tells a story. Every bandage wrapped with precision is another life that may yet be saved.
-
-The road to becoming an Expert isn\'t about speed—it\'s about confidence, discipline, and knowing exactly what to do when the battlefield turns against you. Continue your training, and don\'t stop until your techniques become instinct.', 0),
-  (777014, 0, 0, 'The war rages on, and every battle shapes the fate of Azeroth. Stay focused and never lose sight of your objective.
-
-True honor is earned through courage, determination, and the will to fight until the very end. Victory favors those who refuse to surrender.', 0),
-  (777015, 0, 0, 'The roar of the crowd echoes through the Arena as champions clash steel against steel and spell against spell.
-
-Every match hones your instincts. Adapt to your opponents, trust your teammates, and never stop fighting until the final blow has been struck.
-
-Keep entering the Arena. Great warriors aren\'t forged in a single battle—they\'re forged through perseverance.', 0),
-  (777016, 0, 0, 'The battles rage on, and your legend grows with every encounter. Whether victory comes easily or only after hardship, each step brings you closer to fulfilling your oath.
-
-Do not falter now. The greatest warriors are those who continue fighting long after others have surrendered. Finish what you started, and let your honor shine brighter than ever.', 0),
-  (777017, 0, 0, 'The arena waits for no one. Every match sharpens your instincts, every opponent teaches a lesson, and every battle brings you closer to mastering your craft.
-
-Stay focused and see all [WIP] arena matches through. Your weekly trial is not over yet.', 0);
+  (777009, 0, 0, '', 0),
+  (777010, 0, 0, '', 0),
+  (777011, 0, 0, '', 0),
+  (777014, 0, 0, '', 0),
+  (777015, 0, 0, '', 0),
+  (777016, 0, 0, '', 0),
+  (777017, 0, 0, '', 0);
 
 INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES
   (19531, 777000),
@@ -576,13 +921,9 @@ INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES
   (19537, 777004),
   (20980, 777005),
   (20205, 777006),
-  (22427, 777007),
-  (22427, 777008),
   (20205, 777009),
   (20205, 777010),
   (20205, 777011),
-  (22427, 777012),
-  (22427, 777013),
   (20084, 777014),
   (20205, 777015),
   (20084, 777016),
@@ -596,13 +937,9 @@ INSERT INTO `creature_questender` (`id`, `quest`) VALUES
   (20980, 777004),
   (20205, 777005),
   (20084, 777006),
-  (22427, 777007),
-  (22427, 777008),
   (20205, 777009),
   (20205, 777010),
   (20205, 777011),
-  (22427, 777012),
-  (22427, 777013),
   (20084, 777014),
   (20205, 777015),
   (20084, 777016),
@@ -616,13 +953,9 @@ INSERT INTO quest_poi (`QuestId`, `id`, `ObjectiveIndex`, `MapId`, `WorldMapArea
   (777004, 1, -1, 530, 105, 0, 0, 0, 0),
   (777005, 1, -1, 530, 105, 0, 0, 0, 0),
   (777006, 1, -1, 530, 105, 0, 0, 0, 0),
-  (777007, 1, -1, 530, 105, 0, 0, 0, 0),
-  (777008, 1, -1, 530, 105, 0, 0, 0, 0),
   (777009, 1, -1, 530, 105, 0, 0, 0, 0),
   (777010, 1, -1, 530, 105, 0, 0, 0, 0),
   (777011, 1, -1, 530, 105, 0, 0, 0, 0),
-  (777012, 1, -1, 530, 105, 0, 0, 0, 0),
-  (777013, 1, -1, 530, 105, 0, 0, 0, 0),
   (777014, 1, -1, 530, 105, 0, 0, 0, 0),
   (777015, 1, -1, 530, 105, 0, 0, 0, 0),
   (777016, 1, -1, 530, 105, 0, 0, 0, 0),
@@ -636,13 +969,9 @@ INSERT INTO quest_poi_points (`QuestId`, `idx1`, `idx2`, `X`, `Y`) VALUES
   (777004, 1, 0, 4145, 3057),
   (777005, 1, 0, 4090, 2989),
   (777006, 1, 0, 4120, 2926),
-  (777007, 1, 0, 4095, 3024),
-  (777008, 1, 0, 4095, 3024),
   (777009, 1, 0, 4090, 2989),
   (777010, 1, 0, 4090, 2989),
   (777011, 1, 0, 4090, 2989),
-  (777012, 1, 0, 4095, 3024),
-  (777013, 1, 0, 4095, 3024),
   (777014, 1, 0, 4120, 2926),
   (777015, 1, 0, 4090, 2989),
   (777016, 1, 0, 4120, 2926),

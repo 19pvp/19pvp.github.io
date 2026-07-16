@@ -135,8 +135,9 @@ type NpcSpawnSwap = {
   id: number
 }
 
-type VendorCurrency = 'arena' | 'gold' | 'honor'
-type VendorCategory = 'accessory' | 'armor' | 'weapon'
+type VendorCurrency = 'arena' | 'gold' | 'honor' | 'heroism' | 'justice'
+type VendorTier = '★☆☆☆☆' | '★★☆☆☆' | '★★★☆☆' | '★★★★☆' | '★★★★★'
+type VendorCategory = 'accessory' | 'armor' | 'enchant' | 'gem' | 'weapon'
 
 type VendorItemInfo = {
   classId: number
@@ -148,9 +149,25 @@ type VendorItemInfo = {
 
 type VendorItem = {
   currency: VendorCurrency
+  inventoryType: number
   itemId: number
   name: string
   npc: number
+  special: boolean
+  value?: VendorTier
+}
+
+type SatchelItem = {
+  classId: number
+  inventoryType: number
+  itemId: number
+  name: string
+  subclassId: number
+}
+
+type SatchelDropItem = {
+  itemId: number
+  name: string
 }
 
 const autoReturnQuestFlags = 589824
@@ -161,9 +178,12 @@ const learnSpellRewardDummy = 36937
 const soulboundBonding = 1
 const bonusArmorStatType = 50
 const vendorNpcFlag = 128
+const vendorTrainerNpcFlags = 16 | 32 | 64
+const vendorNpcFlagsWithoutTrainer = 4294967295 - vendorTrainerNpcFlags
+const vendorNpcFlagsWithoutVendorOrTrainer = 4294967295 - (vendorNpcFlag | vendorTrainerNpcFlags)
 const consortiumFaction = 1731
-const placeholderVendorBuyPrice = 10000
-const placeholderExtendedCost = 0
+const satchelAlwaysDropItemIds = [5740, 6657]
+const appliedItemSpells = [{ itemId: 19969, spellId: 23990 }] as const
 
 const itemQualityByName = {
   common: 1,
@@ -286,7 +306,11 @@ const parseCountedItemArrayProp = (
   value: unknown,
   rowLabel: string,
 ): CountedItem[] | undefined => {
-  const values = Array.isArray(value) ? value : [value]
+  const values = (Array.isArray(value) ? value : [value]).filter((item) => item !== null && item !== '')
+  if (!values.length) {
+    questWarnings.push(`${rowLabel}: ignored ${key}, expected at least one item`)
+    return undefined
+  }
   const items = values.map(normalizeCountedItem)
   if (items.some((item) => !item)) {
     questWarnings.push(`${rowLabel}: ignored ${key}, expected item id(s) or { count, id } objects`)
@@ -311,7 +335,13 @@ const parseQuestProps = (props: string | undefined, rowLabel: string): QuestProp
     const rawValue = trimmed.slice(separator + 1).trim()
     let value: unknown
     try {
-      value = JSON.parse(rawValue)
+      const repairedRawValue = key === 'ChooseItem' || key === 'RewardItem' || key === 'TakeItem'
+        ? rawValue
+          .replace(/^\[\s*,/, '[null,')
+          .replace(/,\s*(?=,|\])/g, ', null')
+          .replace(/^(\s*\[[\s\S]*\}\s*)$/, '$1]')
+        : rawValue
+      value = JSON.parse(repairedRawValue)
     } catch (err) {
       if (key === 'Repeat' && (rawValue === 'Daily' || rawValue === 'Weekly')) {
         value = rawValue
@@ -640,16 +670,31 @@ const parseBotStarterItems = (rows: ItemSheetRow[] | undefined) => {
 }
 
 const vendorCurrencyFromSource = (source: string | undefined): VendorCurrency | undefined => {
-  const normalized = source?.trim().toLowerCase().replaceAll(/\s+/g, '')
-  if (normalized === 'gold') return 'gold'
-  if (normalized === 'honor') return 'honor'
-  if (normalized === 'arena') return 'arena'
-  return undefined
+  const normalized = source?.trim().toLowerCase()
+  switch (normalized) {
+    case 'gold':
+    case 'honor':
+    case 'arena':
+    case 'justice':
+    case 'heroism':
+      return normalized
+  }
+}
+
+const vendorTierFromValue = (value: string | undefined): VendorTier | undefined => {
+  const normalized = value?.trim()
+  if (!normalized || !Object.hasOwn(costs.gold, normalized)) return undefined
+  return normalized as VendorTier
 }
 
 const vendorCategoryFromItemInfo = (item: VendorItemInfo): VendorCategory | undefined => {
+  if (item.classId === 3) return 'gem'
+  if (item.inventoryType === 0) return 'enchant'
   if ([2, 11, 12, 16].includes(item.inventoryType)) return 'accessory'
-  if (item.classId === 2 || (item.classId === 4 && (item.subclassId === 6 || item.inventoryType === 14))) {
+  if (
+    item.classId === 2 ||
+    (item.classId === 4 && (item.subclassId === 6 || [14, 23].includes(item.inventoryType)))
+  ) {
     return 'weapon'
   }
   if (item.classId === 4) return 'armor'
@@ -658,6 +703,7 @@ const vendorCategoryFromItemInfo = (item: VendorItemInfo): VendorCategory | unde
 
 const vendorNpcSubname = (currency: VendorCurrency, category: VendorCategory) => {
   if (currency === 'arena') return 'former gladiator'
+  if (category === 'enchant') return `enchant ${currency === 'gold' ? 'merchant' : 'quartermaster'}`
   const prefix = category === 'weapon' ? 'weapons' : category
   const suffix = currency === 'gold' ? 'merchant' : 'quartermaster'
   return `${prefix} ${suffix}`
@@ -677,6 +723,13 @@ const parseVendorItems = (
     const rowLabel = `ITEM row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
     const itemId = parseRequiredInt(row.ID, 'ID', rowLabel)
     if (!itemId) continue
+
+    const rawValue = row.VALUE?.trim()
+    const value = vendorTierFromValue(rawValue)
+    if (!value && rawValue && rawValue.toLowerCase() !== 'special') {
+      questWarnings.push(`${rowLabel}: ignored vendor item, invalid VALUE ${JSON.stringify(row.VALUE)}`)
+      continue
+    }
 
     const itemInfo = itemInfoById.get(itemId)
     if (!itemInfo) {
@@ -702,10 +755,49 @@ const parseVendorItems = (
     const key = `${npc}:${itemId}`
     if (seen.has(key)) continue
     seen.add(key)
-    items.push({ currency, itemId, name: row.NAME?.trim() || itemInfo.name || String(itemId), npc })
+    items.push({
+      currency,
+      inventoryType: itemInfo.inventoryType,
+      itemId,
+      name: row.NAME?.trim() || itemInfo.name || String(itemId),
+      npc,
+      special: rawValue?.toLowerCase() === 'special',
+      value,
+    })
   }
 
   return items.sort((a, b) => a.npc - b.npc || a.itemId - b.itemId)
+}
+
+const parseSatchelItems = (
+  rows: ItemSheetRow[] | undefined,
+  itemInfoById: Map<number, VendorItemInfo>,
+): SatchelItem[] => {
+  const itemsById = new Map<number, SatchelItem>()
+
+  for (const [index, row] of (rows ?? []).entries()) {
+    if (row.SOURCE?.trim().toLowerCase() !== 'satchel') continue
+
+    const rowLabel = `ITEM row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
+    const itemId = parseRequiredInt(row.ID, 'ID', rowLabel)
+    if (!itemId) continue
+
+    const itemInfo = itemInfoById.get(itemId)
+    if (!itemInfo) {
+      questWarnings.push(`${rowLabel}: ignored satchel item, item_template row not found`)
+      continue
+    }
+
+    itemsById.set(itemId, {
+      classId: itemInfo.classId,
+      inventoryType: itemInfo.inventoryType,
+      itemId,
+      name: row.NAME?.trim() || itemInfo.name || String(itemId),
+      subclassId: itemInfo.subclassId,
+    })
+  }
+
+  return [...itemsById.values()].sort((a, b) => a.itemId - b.itemId)
 }
 
 const parseWsgBotItems = (
@@ -797,6 +889,7 @@ const dbc = {
 }
 
 const itemIds = gsheetData.ITEM.map((i) => Number(i.ID)).filter((i) => i > 1)
+const itemTemplateLookupIds = [...new Set([...itemIds, ...satchelAlwaysDropItemIds])]
 const itemUpdates = parseItemUpdates(gsheetData.ITEM)
 const starterItems = parseStarterItems(gsheetData.ITEM)
 const botStarterItems = parseBotStarterItems(gsheetData.ITEM)
@@ -843,7 +936,7 @@ SELECT
   subclass subclassId,
   InventoryType inventoryType
 FROM item_template
-WHERE entry IN (${itemIds.join(', ')})
+WHERE entry IN (${itemTemplateLookupIds.join(', ')})
 ORDER BY entry
   ` as ItemTemplateInfoRow[]
 const itemInfoById = new Map(
@@ -881,6 +974,7 @@ const startingInfoSpellSection = async () => {
 
 const generateStartingInfoSql = async (starterItems: StarterItem[]) => {
   const starterClassItems = new Set(starterItems.map((item) => `${item.classId}:${item.itemId}`))
+  const starterItemIds = [...new Set(starterItems.map((item) => item.itemId))].sort((a, b) => a - b)
   const removalRows: string[] = []
   const removedOutfitItems = new Set<string>()
 
@@ -908,6 +1002,9 @@ const generateStartingInfoSql = async (starterItems: StarterItem[]) => {
     `  (0, ${item.classId}, ${item.itemId}, 1, ${sqlString(`${item.className}: ${item.name}`)})`
   )
   const itemRows = [...removalRows, ...starterRows]
+  const starterSellPriceUpdate = starterItemIds.length
+    ? `UPDATE \`item_template\` SET \`SellPrice\` = 1 WHERE \`entry\` IN (${starterItemIds.join(', ')});`
+    : '-- No starter item sell-price updates.'
   const itemInsert = itemRows.length
     ? `INSERT INTO \`starting_info_item\` (\`race\`, \`class\`, \`itemid\`, \`amount\`, \`note\`) VALUES
 ${itemRows.join(',\n')};
@@ -933,6 +1030,8 @@ SET \`map\` = 530,
     \`position_y\` = 3058.874,
     \`position_z\` = 339.4637,
     \`orientation\` = 1.9342613;
+
+${starterSellPriceUpdate}
 
 DROP TEMPORARY TABLE IF EXISTS \`starting_info_item\`;
 CREATE TEMPORARY TABLE \`starting_info_item\` (
@@ -1271,12 +1370,120 @@ const questTemplateRow = (quest: Quest, poi: CreaturePositionRow | undefined) =>
   return `(${values.join(', ')})`
 }
 
+const questRequiredItemUpdateRows = (quests: Quest[]) =>
+  quests
+    .filter((quest) => quest.props.TakeItem?.length)
+    .map((quest) => {
+      const requiredItems = quest.props.TakeItem ?? []
+      const assignments = Array.from({ length: 4 }, (_, index) => {
+        const item = requiredItems[index]
+        return [
+          `\`RequiredItemId${index + 1}\` = ${item?.id ?? 0}`,
+          `\`RequiredItemCount${index + 1}\` = ${item?.count ?? 0}`,
+        ]
+      }).flat()
+      return `UPDATE \`quest_template\`
+SET ${assignments.join(', ')}
+WHERE \`ID\` = ${quest.id};`
+    })
+    .join('\n')
+
+const costs = {
+  gold: {
+    '★☆☆☆☆': 55_00,
+    '★★☆☆☆': 1_15_00,
+    '★★★☆☆': 1_60_00,
+    '★★★★☆': 3_35_00,
+    '★★★★★': 5_00_00,
+  },
+  honor: {
+    '★☆☆☆☆': 837, //  700
+    '★★☆☆☆': 491, // 1600
+    '★★★☆☆': 1062, // 3000
+    '★★★★☆': 747, // 6000
+    '★★★★★': 2261, // 9000
+  },
+  arena: {
+    '★☆☆☆☆': 2596, //  100
+    '★★☆☆☆': 2431, //  250
+    '★★★☆☆': 2432, //  400
+    '★★★★☆': 2380, //  800
+    '★★★★★': 2342, // 1125
+  },
+  justice: { // bg token 29434
+    '★☆☆☆☆': 1909, // 10
+    '★★☆☆☆': 1452, // 20
+    '★★★☆☆': 2347, // 40
+    '★★★★☆': 2347, // 75
+    '★★★★★': 2330, // 125
+  },
+  heroism: { // arena token
+    '★☆☆☆☆': 2525, // 15
+    '★★☆☆☆': 2529, // 30
+    '★★★☆☆': 2526, // 60
+    '★★★★☆': 2530, // 100
+    '★★★★★': 2550, // 200
+  },
+} as const
+
+const specialVendorCosts = {
+  epicItem: 2428,
+  epicRing: 1911,
+  luckyFishingHat: 2559,
+} as const
+
+const luckyFishingHatItemId = 19972
+const ringInventoryType = 11
+const satchelLootEntry = 51999
+const allPlayableClassesMask = 2047
+const satchelLegacyChoiceReference = 10066
+const satchelAlwaysDropReference = 10065
+const satchelMinMoneyLoot = 50 * 100
+const satchelMaxMoneyLoot = 75 * 100
+const satchelReferenceByCategory = {
+  cloth: { classMask: 400, reference: 10036 },
+  leather: { classMask: 1100, reference: 10037 },
+  mail: { classMask: 3, reference: 10038 },
+  weapon: { classMask: allPlayableClassesMask, reference: 10062 },
+  shield: { classMask: 67, reference: 10063 },
+  accessory: { classMask: allPlayableClassesMask, reference: 10064 },
+} as const
+
+const getCost = (item: VendorItem) => {
+  if (item.value) return costs[item.currency][item.value]
+  if (!item.special) return undefined
+  if (item.itemId === luckyFishingHatItemId) return specialVendorCosts.luckyFishingHat
+  if (item.inventoryType === ringInventoryType) return specialVendorCosts.epicRing
+  return specialVendorCosts.epicItem
+}
+
+const satchelReferenceForItem = (item: SatchelItem) => {
+  if (item.classId === 4) {
+    if ([2, 11, 12, 16].includes(item.inventoryType)) return { ...satchelReferenceByCategory.accessory }
+    if (item.subclassId === 1) return { ...satchelReferenceByCategory.cloth }
+    if (item.subclassId === 2) return { ...satchelReferenceByCategory.leather }
+    if (item.subclassId === 3) return { ...satchelReferenceByCategory.mail }
+    if (item.subclassId === 6) return { ...satchelReferenceByCategory.shield }
+  }
+
+  if (item.classId === 2) {
+    if (item.subclassId === 19) return { classMask: 400, reference: satchelReferenceByCategory.weapon.reference }
+    if (item.subclassId === 0) return { classMask: 79, reference: satchelReferenceByCategory.weapon.reference }
+    if (item.subclassId === 1) return { classMask: 71, reference: satchelReferenceByCategory.weapon.reference }
+    return { ...satchelReferenceByCategory.weapon }
+  }
+
+  return { ...satchelReferenceByCategory.accessory }
+}
+
 const generateQuestSql = (
   quests: Quest[],
   positionsByNpc: Map<number, CreaturePositionRow>,
   npcNames: Map<number, string>,
   npcSubnames: Map<number, string>,
   npcSpawnSwaps: NpcSpawnSwap[],
+  satchelItems: SatchelItem[],
+  satchelAlwaysDropItems: SatchelDropItem[],
   vendorItems: VendorItem[],
 ) => {
   const questIds = quests.map((quest) => quest.id)
@@ -1309,17 +1516,86 @@ const generateQuestSql = (
     .map((swap) => `UPDATE \`creature\` SET \`id\` = ${swap.id} WHERE \`guid\` = ${swap.guid};`)
     .join('\n')
   const vendorEntries = [...new Set(vendorItems.map((item) => item.npc))].sort((a, b) => a - b)
+  const unlistedVendorWhere = vendorEntries.length ? `\`entry\` NOT IN (${vendorEntries.join(', ')})` : '1 = 1'
+  const unlistedVendorCleanup = `-- Remove vendor inventory and vendor flags from NPCs not listed in the ITEM sheet.
+DELETE FROM \`npc_vendor\` WHERE ${unlistedVendorWhere};
+UPDATE \`creature_template\`
+SET \`npcflag\` = \`npcflag\` & ${vendorNpcFlagsWithoutVendorOrTrainer}
+WHERE (\`npcflag\` & ${vendorNpcFlag}) <> 0
+  AND ${unlistedVendorWhere};
+
+-- Remove trainer flags from merchant and quartermaster NPCs, including legacy entries.
+UPDATE \`creature_template\`
+SET \`npcflag\` = \`npcflag\` & ${vendorNpcFlagsWithoutTrainer}
+WHERE LOWER(\`subname\`) LIKE '%merchant%'
+   OR LOWER(\`subname\`) LIKE '%quartermaster%';`
   const vendorSlots = new Map<number, number>()
   const vendorItemRows = vendorItems.map((item) => {
     const slot = (vendorSlots.get(item.npc) ?? 0) + 1
     vendorSlots.set(item.npc, slot)
-    return `  (${item.npc}, ${slot}, ${item.itemId}, 0, 0, ${
-      item.currency === 'gold' ? 0 : placeholderExtendedCost
-    }, NULL)`
+    const extendedCost = item.currency === 'gold' ? 0 : getCost(item) ?? 0
+    return `  (${item.npc}, ${slot}, ${item.itemId}, 0, 0, ${extendedCost}, NULL)`
   })
-  const goldVendorItemIds = [
-    ...new Set(vendorItems.filter((item) => item.currency === 'gold').map((item) => item.itemId)),
+  const goldVendorPrices = [
+    ...new Map(
+      vendorItems
+        .filter((item) => item.currency === 'gold')
+        .flatMap((item) => {
+          const cost = getCost(item)
+          return cost === undefined ? [] : [[item.itemId, cost]]
+        }),
+    ),
+  ].sort(([a], [b]) => a - b)
+  const goldVendorItemIds = goldVendorPrices.map(([itemId]) => itemId)
+  const goldVendorPriceCase = goldVendorPrices.map(([itemId, price]) => `  WHEN ${itemId} THEN ${price}`).join('\n')
+  const goldVendorSellPriceCase = goldVendorPrices
+    .map(([itemId, price]) => `  WHEN ${itemId} THEN ${Math.floor(price / 4)}`)
+    .join('\n')
+  const satchelReferenceItems = satchelItems.map((item) => ({ item, ...satchelReferenceForItem(item) }))
+  const satchelAlwaysDropReferenceItems = satchelAlwaysDropItems.map((item) => ({
+    item,
+    reference: satchelAlwaysDropReference,
+  }))
+  const satchelReferenceIds = [
+    ...new Set([
+      ...satchelReferenceItems.map((item) => item.reference),
+      10036,
+      10037,
+      10038,
+      satchelLegacyChoiceReference,
+      satchelAlwaysDropReference,
+    ]),
   ].sort((a, b) => a - b)
+  const satchelItemIds = [
+    ...new Set([
+      ...satchelReferenceItems.map(({ item }) => item.itemId),
+      ...satchelAlwaysDropReferenceItems.map(({ item }) => item.itemId),
+    ]),
+  ]
+  const satchelGroupId = (reference: number) => satchelReferenceIds.indexOf(reference) + 1
+  const satchelLootItems = satchelReferenceItems
+  const satchelLootRows = [
+    ...satchelLootItems.map(({ item }) =>
+      `  (${satchelLootEntry}, ${item.itemId}, 0, 0, 0, 1, 1, 1, 1, ${
+        sqlString(
+          item.name,
+        )
+      })`
+    ),
+    `  (${satchelLootEntry}, 0, ${satchelAlwaysDropReference}, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - (ReferenceTable)')`,
+  ]
+  const satchelReferenceLootRows = [
+    ...satchelAlwaysDropReferenceItems.map(({ item, reference }) =>
+      `  (${reference}, ${item.itemId}, 0, 0, 0, 1, ${satchelGroupId(reference)}, 1, 1, ${sqlString(item.name)})`
+    ),
+  ]
+  const satchelConditionRows = satchelLootItems.map(({ item, classMask }) =>
+    `  (10, ${satchelLootEntry}, ${item.itemId}, 0, 0, 15, 0, ${classMask}, 0, 0, 0, 0, 0, '', ${
+      sqlString(
+        `Generated Satchel of Helpful Goods - ${item.name}`,
+      )
+    })`
+  )
 
   return `${generatedHeader}
 
@@ -1334,9 +1610,13 @@ DELETE FROM quest_template WHERE ${rangeWhere};
 DELETE FROM quest_poi WHERE ${poiWhere};
 DELETE FROM quest_poi_points WHERE ${poiWhere};
 
+UPDATE item_template SET \`RequiredReputationFaction\` = 0, \`RequiredReputationRank\` = 0, \`AllowableRace\` = -1 WHERE \`RequiredReputationFaction\` <> 0 OR AllowableRace <> -1 OR \`RequiredReputationRank\` <> 0;
 UPDATE item_template SET \`AllowableClass\` = -1 WHERE (\`entry\` = 18468);
 UPDATE item_template SET \`socketColor_1\` = 4, \`socketContent_1\` = 1 WHERE (\`InventoryType\` IN (1, 7));
 UPDATE item_template SET \`RequiredSkill\` = 0, \`RequiredSkillRank\` = 0 WHERE \`RequiredSkill\` > 0;
+UPDATE item_template SET \`name\` = 'Smoked Speckled Tastyfish', \`spellcharges_1\` = 0, \`description\` = 'The first bite is delicious. The thousandth is still a surprise.', \`Quality\` = 2, \`flags\` = \`flags\` | 32, \`SellPrice\` = 0, \`bonding\` = 1 WHERE (\`entry\` = 21153);
+UPDATE item_template SET \`name\` = 'Infinite Bandage', \`Quality\` = 2, \`flags\` = \`flags\` | 32, \`spellcharges_1\` = 0, \`SellPrice\` = 0, \`bonding\` = 1 WHERE (\`entry\` = 14530);
+UPDATE item_template SET \`Quality\` = 3, \`spellcharges_1\` = 0 WHERE (\`entry\` = 4381);
 
 UPDATE \`creature_template\` SET \`npcflag\` = \`npcflag\` | 2 WHERE \`entry\` IN (${
     [...new Set(quests.flatMap((quest) => [quest.giver, quest.taker]))].sort((a, b) => a - b).join(', ')
@@ -1366,10 +1646,12 @@ WHERE \`entry\` IN (${npcSubnameRows.map(([id]) => id).join(', ')});`
 
 ${npcSpawnSwapRows || '-- No NPC spawn swaps.'}
 
+${unlistedVendorCleanup}
+
 ${
     vendorEntries.length
       ? `UPDATE \`creature_template\`
-SET \`npcflag\` = \`npcflag\` | ${vendorNpcFlag},
+SET \`npcflag\` = (\`npcflag\` & ${vendorNpcFlagsWithoutTrainer}) | ${vendorNpcFlag},
     \`faction\` = ${consortiumFaction}
 WHERE \`entry\` IN (${vendorEntries.join(', ')});
 
@@ -1377,9 +1659,14 @@ DELETE FROM \`npc_vendor\` WHERE \`entry\` IN (${vendorEntries.join(', ')});
 
 ${
         goldVendorItemIds.length
-          ? `UPDATE \`item_template\` SET \`BuyPrice\` = ${placeholderVendorBuyPrice} WHERE \`entry\` IN (${
-            goldVendorItemIds.join(', ')
-          });`
+          ? `UPDATE \`item_template\`
+SET \`BuyPrice\` = CASE \`entry\`
+${goldVendorPriceCase}
+END,
+\`SellPrice\` = CASE \`entry\`
+${goldVendorSellPriceCase}
+END
+WHERE \`entry\` IN (${goldVendorItemIds.join(', ')});`
           : '-- No gold vendor item prices.'
       }
 
@@ -1388,8 +1675,50 @@ ${vendorItemRows.join(',\n')};`
       : '-- No generated vendor inventory.'
   }
 
+DELETE FROM \`item_loot_template\` WHERE \`Entry\` = ${satchelLootEntry};
+
+UPDATE \`item_template\`
+SET \`MinMoneyLoot\` = ${satchelMinMoneyLoot},
+    \`MaxMoneyLoot\` = ${satchelMaxMoneyLoot}
+WHERE \`entry\` = ${satchelLootEntry};
+
+${
+    satchelLootRows.length
+      ? `INSERT INTO \`item_loot_template\` (\`Entry\`, \`Item\`, \`Reference\`, \`Chance\`, \`QuestRequired\`, \`LootMode\`, \`GroupId\`, \`MinCount\`, \`MaxCount\`, \`Comment\`) VALUES
+${satchelLootRows.join(',\n')};`
+      : '-- No generated Satchel of Helpful Goods loot.'
+  }
+
+DELETE FROM \`reference_loot_template\`
+WHERE \`Entry\` = ${satchelLegacyChoiceReference}
+   OR (\`Entry\` IN (${satchelReferenceIds.join(', ')})
+       AND \`Item\` IN (${satchelItemIds.join(', ')}));
+
+${
+    satchelReferenceLootRows.length
+      ? `INSERT INTO \`reference_loot_template\` (\`Entry\`, \`Item\`, \`Reference\`, \`Chance\`, \`QuestRequired\`, \`LootMode\`, \`GroupId\`, \`MinCount\`, \`MaxCount\`, \`Comment\`) VALUES
+${satchelReferenceLootRows.join(',\n')};`
+      : '-- No generated Satchel reference loot.'
+  }
+
+DELETE FROM \`conditions\`
+WHERE \`SourceTypeOrReferenceId\` = 10
+  AND (\`SourceGroup\` = ${satchelLootEntry}
+    OR \`SourceGroup\` IN (${satchelReferenceIds.join(', ')}))
+  AND \`SourceEntry\` IN (${satchelItemIds.join(', ')});
+
+${
+    satchelConditionRows.length
+      ? `INSERT INTO \`conditions\` (\`SourceTypeOrReferenceId\`, \`SourceGroup\`, \`SourceEntry\`, \`SourceId\`, \`ElseGroup\`, \`ConditionTypeOrReference\`, \`ConditionTarget\`, \`ConditionValue1\`, \`ConditionValue2\`, \`ConditionValue3\`, \`NegativeCondition\`, \`ErrorType\`, \`ErrorTextId\`, \`ScriptName\`, \`Comment\`) VALUES
+${satchelConditionRows.join(',\n')};`
+      : '-- No generated Satchel loot conditions.'
+  }
+
 INSERT INTO \`quest_template\` (${questTemplateColumns.map((column) => `\`${column}\``).join(', ')}) VALUES
 ${quests.map((quest) => `  ${questTemplateRow(quest, positionsByNpc.get(quest.taker))}`).join(',\n')};
+
+-- Reapply sheet-defined item requirements explicitly after quest row generation.
+${questRequiredItemUpdateRows(quests) || '-- No sheet-defined quest item requirements.'}
 
 INSERT INTO \`quest_offer_reward\` (\`ID\`, \`Emote1\`, \`Emote2\`, \`Emote3\`, \`Emote4\`, \`EmoteDelay1\`, \`EmoteDelay2\`, \`EmoteDelay3\`, \`EmoteDelay4\`, \`RewardText\`, \`VerifiedBuild\`) VALUES
 ${quests.map((quest) => `  (${quest.id}, 0, 0, 0, 0, 0, 0, 0, 0, ${sqlString(quest.end)}, 0)`).join(',\n')};
@@ -1619,12 +1948,29 @@ const generateItemPropsSql = (itemUpdates: Map<number, ItemProps>) => {
     .sort(([a], [b]) => a - b)
     .map(([itemId, props]) => itemUpdateSql(itemId, props))
     .join('\n\n')
+  const appliedItemSpellRows = appliedItemSpells
+    .map(
+      ({ itemId, spellId }) =>
+        `UPDATE \`item_template\`
+SET \`spellid_1\` = ${spellId},
+    \`spelltrigger_1\` = 1,
+    \`spellcharges_1\` = 0,
+    \`spellppmRate_1\` = 0,
+    \`spellcooldown_1\` = -1,
+    \`spellcategory_1\` = 0,
+    \`spellcategorycooldown_1\` = -1
+WHERE \`entry\` = ${itemId};`,
+    )
+    .join('\n\n')
 
   return `${generatedHeader}
 
 USE \`${worldDb}\`;
 
 ${itemUpdateRows || '-- No item prop updates.'}
+
+-- Apply permanent item spells without making them on-use effects.
+${appliedItemSpellRows || '-- No applied item spells.'}
 `
 }
 
@@ -1640,15 +1986,24 @@ UPDATE item_template
 SET ${bonusArmorStatCleanupSql()}
 WHERE \`entry\` IN (${itemIdList});
 
+-- Make sheet-listed gems ordinary non-unique socket gems.
+UPDATE \`item_template\`
+SET \`Flags\` = \`Flags\` & 4294443007,
+    \`ItemLimitCategory\` = 0
+WHERE \`entry\` IN (${itemIdList})
+  AND \`class\` = 3;
+
 CREATE TEMPORARY TABLE item_template_relaxed_class_entries AS
 SELECT \`entry\`
 FROM item_template
 WHERE \`RequiredLevel\` > 19
    OR \`ItemLevel\` > 45;
 
--- Normalize custom bracket item levels before relaxing requirements.
-UPDATE item_template
-SET \`ItemLevel\` = 35;
+-- Normalize custom bracket item levels before relaxing requirements, but preserve
+-- item levels for random-suffix items because their stats scale from ItemLevel.
+UPDATE \`item_template\`
+SET \`ItemLevel\` = 35
+WHERE \`RandomSuffix\` = 0;
 
 -- Remove class requirements from items that were above the bracket before level normalization.
 UPDATE item_template
@@ -1848,6 +2203,15 @@ const npcSubnames = parseNpcSubnames(gsheetData.NPC)
 const npcNames = parseNpcNames(gsheetData.NPC)
 const npcSpawnSwaps = parseNpcSpawnSwaps(gsheetData.NPC)
 const npcEntriesBySubname = buildNpcEntryBySubname(npcSubnames)
+const satchelItems = parseSatchelItems(gsheetData.ITEM, itemInfoById)
+const satchelAlwaysDropItems = satchelAlwaysDropItemIds.flatMap((itemId) => {
+  const item = itemInfoById.get(itemId)
+  if (!item) {
+    questWarnings.push(`Satchel always-drop item ${itemId}: item_template row not found`)
+    return []
+  }
+  return [{ itemId, name: item.name }]
+})
 const vendorItems = parseVendorItems(gsheetData.ITEM, itemInfoById)
 const wsgBotRoster = parseWsgBotRoster()
 const wsgBotItems = parseWsgBotItems(/* gsheetData.ITEM */ [], wsgBotRoster, starterItems, botStarterItems)
@@ -1938,9 +2302,20 @@ ORDER BY npc
 
   await Deno.writeTextFile(
     'sql/generated-quests.sql',
-    generateQuestSql(quests, positionsByNpc, npcNames, npcSubnames, npcSpawnSwaps, vendorItems),
+    generateQuestSql(
+      quests,
+      positionsByNpc,
+      npcNames,
+      npcSubnames,
+      npcSpawnSwaps,
+      satchelItems,
+      satchelAlwaysDropItems,
+      vendorItems,
+    ),
   )
-  console.log(`wrote ${quests.length} quests and ${vendorItems.length} vendor items to sql/generated-quests.sql`)
+  console.log(
+    `wrote ${quests.length} quests, ${satchelItems.length} satchel items, ${satchelAlwaysDropItems.length} always-drop satchel items, and ${vendorItems.length} vendor items to sql/generated-quests.sql`,
+  )
 }
 
 for (const warning of questWarnings) {

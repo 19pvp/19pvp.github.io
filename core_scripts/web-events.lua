@@ -230,13 +230,16 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
   local mapId = bg:GetMapId()
   local map = GetMapById(mapId, instanceId)
   if not map then return end
-  -- local tokenId = (map:IsArena() and 37836) or (map:IsBattleground() and 20558)
-  -- if not tokenId then return end
-  -- for _, player in ipairs(map:GetPlayers()) do
-  --   if player:GetTeam() == winner then
-  --     player:AddItem(tokenId, 3)
-  --   else
-  --     player:AddItem(tokenId, 1)
-  --   end
-  -- end
+  if map:IsBattleground() then
+    for _, player in ipairs(map:GetPlayers()) do
+      player:AddItem(tokenId, 51999) -- add satchel
+      local count = player:GetTeam() == winner and 2 or 1
+      player:AddItem(29434, count)
+    end
+  else if map:IsArena() then
+    for _, player in ipairs(map:GetPlayers()) do
+      local count = player:GetTeam() == winner and 2 or 1
+      player:AddItem(40752, count)
+    end
+  end
 end)
