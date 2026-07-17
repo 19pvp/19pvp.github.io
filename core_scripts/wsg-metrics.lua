@@ -9,6 +9,8 @@ local activeCCs = {}
 local flagCarryStartTimes = {}
 -- instanceId -> matchStartTime
 local matchStartTimes = {}
+local WSG_MAP_ID = 489
+local WSG_BG_TYPE_ID = 2
 
 -- 1. Dispel / Protective Spells definition (filtered to level 19 starting spells)
 local DISPEL_PROTECTIVE_SPELLS = {
@@ -69,10 +71,7 @@ local function GetStats(player, instanceId)
     if player:IsBot() then return nil end
 
     if not instanceId then
-        local bg = player:GetBattleground()
-        if bg then
-            instanceId = bg:GetInstanceId()
-        end
+        instanceId = player:GetBattlegroundId()
     end
     if not instanceId then return nil end
 
@@ -89,7 +88,7 @@ local function GetStats(player, instanceId)
     if not matchStats[instanceId][guid] then
         matchStats[instanceId][guid] = {
             name = player:GetName(),
-            player = player,
+            playerGuid = guid,
             dispelsOffensive = 0,
             dispelsDefensive = 0,
             hardCCCount = 0,
@@ -102,6 +101,14 @@ local function GetStats(player, instanceId)
             flagCarryTime = 0,
             damageOnEFC = 0,
             damageTaken = 0,
+            killingBlows = 0,
+            deaths = 0,
+            honorableKills = 0,
+            bonusHonor = 0,
+            damageDone = 0,
+            healingDone = 0,
+            flagCaptures = 0,
+            flagReturns = 0,
             deserted = false,
             joinTime = GetCurrTime(),
             timePlayed = 0,
@@ -109,6 +116,41 @@ local function GetStats(player, instanceId)
     end
     return matchStats[instanceId][guid]
 end
+
+-- Cache native battleground scores while Player userdata is still valid.
+local function snapshotPlayerScore(player, instanceId)
+    if player:IsBot() then return end
+
+    local stats = GetStats(player, instanceId)
+    if not stats then return end
+
+    local bg = GetBattleground(instanceId, WSG_BG_TYPE_ID)
+    if not bg then return end
+
+    local score = bg:GetPlayerScore(player)
+    if not score then return end
+
+    stats.killingBlows = score.killingBlows or 0
+    stats.deaths = score.deaths or 0
+    stats.honorableKills = score.honorableKills or 0
+    stats.bonusHonor = score.bonusHonor or 0
+    stats.damageDone = score.damageDone or 0
+    stats.healingDone = score.healingDone or 0
+    stats.flagCaptures = score.flagCaptures or 0
+    stats.flagReturns = score.flagReturns or 0
+end
+
+-- Score snapshots are intentionally numeric; no Player userdata is retained.
+CreateLuaEvent(function()
+    for _, player in ipairs(GetPlayersInWorld()) do
+        if not player:IsBot() and player:InBattleground() and player:GetMapId() == WSG_MAP_ID then
+            local instanceId = player:GetBattlegroundId()
+            if instanceId then
+                snapshotPlayerScore(player, instanceId)
+            end
+        end
+    end
+end, 500, 0)
 
 -- Hook: Spell casting (for dispels / protective spells)
 RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, skipCheck)
@@ -167,8 +209,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         -- Shield absorbs estimation
         local shield = SHIELD_SPELLS[spellId]
         if shield then
-            local bg = casterPlayer:GetBattleground()
-            local instanceId = bg and bg:GetInstanceId()
+            local instanceId = casterPlayer:GetBattlegroundId()
 
             if shield.allowSelf or player:GetGUID() ~= casterPlayer:GetGUID() then
                 -- Attributed to the caster
@@ -195,8 +236,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
     if entry then
         local duration = GetCurrTime() - entry.startTime
         if duration > 0 then
-            local bg = player:GetBattleground()
-            local instanceId = bg and bg:GetInstanceId()
+            local instanceId = player:GetBattlegroundId()
             local stats = instanceId and matchStats[instanceId] and matchStats[instanceId][entry.caster]
             if stats then
                 if entry.type == "HARD" then
@@ -285,7 +325,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
     stats.timePlayed = GetCurrTime() - stats.joinTime
     if not bg then return end
     local status = bg:GetStatus()
-    if not status < 4 then return end -- STATUS_WAIT_LEAVE is 4
+    if status >= 4 then return end -- STATUS_WAIT_LEAVE is 4
     -- Store the exact second of the match when they deserted
     local matchStart = matchStartTimes[instanceId] or stats.joinTime
     stats.deserted = math.floor((GetCurrTime() - matchStart) / 1000)
@@ -311,44 +351,6 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
         -- Clean up internal helper fields before sending
         stats.joinTime = nil
 
-        -- Fetch and merge standard battleground scores from C++
-        if stats.player then
-            local score = bg:GetPlayerScore(stats.player)
-            if score then
-                stats.killingBlows = score.killingBlows
-                stats.deaths = score.deaths
-                stats.honorableKills = score.honorableKills
-                stats.bonusHonor = score.bonusHonor
-                stats.damageDone = score.damageDone
-                stats.healingDone = score.healingDone
-                stats.flagCaptures = score.flagCaptures
-                stats.flagReturns = score.flagReturns
-            else
-                stats.killingBlows = 0
-                stats.deaths = 0
-                stats.honorableKills = 0
-                stats.bonusHonor = 0
-                stats.damageDone = 0
-                stats.healingDone = 0
-                stats.flagCaptures = 0
-                stats.flagReturns = 0
-            end
-            -- Clear the Player reference to prevent leaking memory or serialization issues
-            stats.player = nil
-        end
-    end
-
-    -- Trigger the web event with the collected stats
-    local players = GetPlayersInWorld()
-    local reporter = nil
-    for _, p in ipairs(players) do
-        if p:InBattleground() and not p:IsBot() then
-            local playerBg = p:GetBattleground()
-            if playerBg and playerBg:GetInstanceId() == instanceId then
-                reporter = p
-                break
-            end
-        end
     end
 
     print("[WSG Metrics] Closing match instance " .. instanceId .. ". Sending PVP_BG_STATS web event...")

@@ -14,6 +14,8 @@ local classColors = {
   [13] = "|cFF33937F", -- Evoker
 }
 
+local SATCHEL_ITEM_ID = 51999
+
 AuthDBQuery([[
 CREATE TABLE IF NOT EXISTS discord_account (
   discord_id    BIGINT UNSIGNED PRIMARY KEY,
@@ -232,11 +234,11 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
   if not map then return end
   if map:IsBattleground() then
     for _, player in ipairs(map:GetPlayers()) do
-      player:AddItem(tokenId, 51999) -- add satchel
+      player:AddItem(SATCHEL_ITEM_ID, 1)
       local count = player:GetTeam() == winner and 2 or 1
       player:AddItem(29434, count)
     end
-  else if map:IsArena() then
+  elseif map:IsArena() then
     for _, player in ipairs(map:GetPlayers()) do
       local count = player:GetTeam() == winner and 2 or 1
       player:AddItem(40752, count)
