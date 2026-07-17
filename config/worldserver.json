@@ -448,7 +448,7 @@
   "Battleground.QueueAnnouncer.PlayerOnly": "0",
   "Battleground.QueueAnnouncer.Timed": "0",
   "Battleground.QueueAnnouncer.Timer": "30000",
-  "Battleground.PrematureFinishTimer": "300000",
+  "Battleground.PrematureFinishTimer": "0",
   "Battleground.PremadeGroupWaitForMatch": "1800000",
   "Battleground.GiveXPForKills": "0",
   "Battleground.Random.ResetHour": "6",
