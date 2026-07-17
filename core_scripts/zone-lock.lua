@@ -21,6 +21,21 @@ local allowed_areas = {
   },
 }
 
+local AREA_STORMSPIRE = 3738
+
+local function applyStormspireSanctuary(eventId, delay, repeats, player)
+  if player:GetAreaId() ~= AREA_STORMSPIRE then return end
+
+  player:SetFFA(false)
+  player:SetPvP(false)
+  player:SetSanctuary(true)
+end
+
+local function scheduleStormspireSanctuary(player)
+  -- Area updates run before the core applies its normal PvP-area state.
+  player:RegisterEvent(applyStormspireSanctuary, 100, 1)
+end
+
 function Teleport (map, x, y, z, o)
   return function (player) return player:Teleport(map, x, y, z, o) end
 end
@@ -70,9 +85,11 @@ end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_UPDATE_AREA, function (event, player, oldArea, newArea)
   restrictPlayerArea(player)
+  scheduleStormspireSanctuary(player)
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function (event, player)
+  scheduleStormspireSanctuary(player)
   if isPlayerAllowed(player) then return end
   if player:IsDead() then
     TeleportMainGraveyard(player)

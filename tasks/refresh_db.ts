@@ -689,6 +689,7 @@ const vendorTierFromValue = (value: string | undefined): VendorTier | undefined 
 
 const vendorCategoryFromItemInfo = (item: VendorItemInfo): VendorCategory | undefined => {
   if (item.classId === 3) return 'gem'
+  if (item.classId === 16) return 'glyph'
   if (item.inventoryType === 0) return 'enchant'
   if ([2, 11, 12, 16].includes(item.inventoryType)) return 'accessory'
   if (

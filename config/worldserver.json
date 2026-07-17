@@ -429,7 +429,7 @@
   "Guild.MemberLimit": "0",
   "FFAPvPTimer": "30",
   "OutdoorPvPCaptureRate": "1.0",
-  "Wintergrasp.Enable": "1",
+  "Wintergrasp.Enable": "0",
   "Wintergrasp.PlayerMax": "120",
   "Wintergrasp.PlayerMin": "0",
   "Wintergrasp.PlayerMinLvl": "75",
