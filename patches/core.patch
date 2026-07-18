@@ -32,6 +32,67 @@ index f21841c0b..d81b35cd2 100644
                      continue;
  
                  DirectoryEntry const entry = { dirPath, AppliedFileEntry::StateConvert("MODULE") };
+diff --git a/src/server/game/Battlegrounds/Battleground.cpp b/src/server/game/Battlegrounds/Battleground.cpp
+index b10feb7b8..805f5e012 100644
+--- a/src/server/game/Battlegrounds/Battleground.cpp
++++ b/src/server/game/Battlegrounds/Battleground.cpp
+@@ -364,6 +364,48 @@ inline void Battleground::_ProcessResurrect(uint32 diff)
+     m_LastResurrectTime += diff;
+     if (m_LastResurrectTime >= RESURRECTION_INTERVAL)
+     {
++        // Automatically add nearby dead players to the resurrect queue
++        for (auto const& itr : GetPlayers())
++        {
++            Player* player = ObjectAccessor::FindPlayer(itr.first);
++            if (!player || player->IsAlive() || !player->IsInWorld())
++                continue;
++
++            // Check if player is already in a resurrect queue
++            bool alreadyInQueue = false;
++            for (auto const& queuePair : m_ReviveQueue)
++            {
++                for (ObjectGuid const& val : queuePair.second)
++                {
++                    if (val == player->GetGUID())
++                    {
++                        alreadyInQueue = true;
++                        break;
++                    }
++                }
++                if (alreadyInQueue)
++                    break;
++            }
++            if (alreadyInQueue)
++                continue;
++
++            // Find a nearby friendly spirit guide
++            for (ObjectGuid const& creatureGuid : BgCreatures)
++            {
++                Creature* sh = FindBgMap() ? FindBgMap()->GetCreature(creatureGuid) : nullptr;
++                if (!sh || !sh->IsAlive() || !sh->IsSpiritService())
++                    continue;
++
++                // Check team/friendliness and range (40 yards)
++                if (player->IsFriendlyTo(sh) && player->IsWithinDistInMap(sh, 40.0f))
++                {
++                    m_ReviveQueue[sh->GetGUID()].push_back(player->GetGUID());
++                    player->CastSpell(player, SPELL_WAITING_FOR_RESURRECT, true);
++                    break;
++                }
++            }
++        }
++
+         if (GetReviveQueueSize())
+         {
+             for (std::map<ObjectGuid, GuidVector>::iterator itr = m_ReviveQueue.begin(); itr != m_ReviveQueue.end(); ++itr)
+@@ -407,6 +449,7 @@ inline void Battleground::_ProcessResurrect(uint32 diff)
+             if (!player)
+                 continue;
+             player->ResurrectPlayer(1.0f);
++            player->RemoveAurasDueToSpell(SPELL_WAITING_FOR_RESURRECT);
+             player->CastSpell(player, 6962, true);
+             player->CastSpell(player, SPELL_SPIRIT_HEAL_MANA, true);
+             player->SpawnCorpseBones(false);
 diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.cpp b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
 index 169f642ec..5ad912f29 100644
 --- a/src/server/game/Battlegrounds/BattlegroundQueue.cpp
@@ -180,6 +241,107 @@ index de0663cdc..e5d906547 100644
      ObjectGuid PlayerGuid;
  
      // Default score, present in every type
+diff --git a/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp b/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
+index f5bd8a84f..86a533bb6 100644
+--- a/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
++++ b/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
+@@ -195,11 +195,11 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* player)
+     player->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+     RemoveAssaultAuras();
+ 
+-    AddPoints(player->GetTeamId(), 1);
+-    SetFlagPicker(ObjectGuid::Empty, GetOtherTeamId(player->GetTeamId()));
+-    UpdateFlagState(GetOtherTeamId(player->GetTeamId()), BG_WS_FLAG_STATE_ON_BASE);
++    AddPoints(player->GetBgTeamId(), 1);
++    SetFlagPicker(ObjectGuid::Empty, GetOtherTeamId(player->GetBgTeamId()));
++    UpdateFlagState(GetOtherTeamId(player->GetBgTeamId()), BG_WS_FLAG_STATE_ON_BASE);
+ 
+-    if (player->GetTeamId() == TEAM_ALLIANCE)
++    if (player->GetBgTeamId() == TEAM_ALLIANCE)
+     {
+         player->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
+         PlaySoundToAll(BG_WS_SOUND_FLAG_CAPTURED_ALLIANCE);
+@@ -217,11 +217,11 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* player)
+     SpawnBGObject(BG_WS_OBJECT_H_FLAG, BG_WS_FLAG_RESPAWN_TIME);
+     SpawnBGObject(BG_WS_OBJECT_A_FLAG, BG_WS_FLAG_RESPAWN_TIME);
+ 
+-    UpdateWorldState(player->GetTeamId() == TEAM_ALLIANCE ? WORLD_STATE_BATTLEGROUND_WS_FLAG_CAPTURES_ALLIANCE : WORLD_STATE_BATTLEGROUND_WS_FLAG_CAPTURES_HORDE, GetTeamScore(player->GetTeamId()));
++    UpdateWorldState(player->GetBgTeamId() == TEAM_ALLIANCE ? WORLD_STATE_BATTLEGROUND_WS_FLAG_CAPTURES_ALLIANCE : WORLD_STATE_BATTLEGROUND_WS_FLAG_CAPTURES_HORDE, GetTeamScore(player->GetBgTeamId()));
+     UpdatePlayerScore(player, SCORE_FLAG_CAPTURES, 1);      // +1 flag captures
+-    _lastFlagCaptureTeam = player->GetTeamId();
++    _lastFlagCaptureTeam = player->GetBgTeamId();
+ 
+-    RewardHonorToTeam(GetBonusHonorFromKill(2), player->GetTeamId());
++    RewardHonorToTeam(GetBonusHonorFromKill(2), player->GetBgTeamId());
+ 
+     if (GetTeamScore(TEAM_ALLIANCE) == _configurableMaxTeamScore || GetTeamScore(TEAM_HORDE) == _configurableMaxTeamScore)
+     {
+@@ -240,7 +240,7 @@ void BattlegroundWS::EventPlayerDroppedFlag(Player* player)
+     if (GetFlagPickerGUID(TEAM_HORDE) != player->GetGUID() && GetFlagPickerGUID(TEAM_ALLIANCE) != player->GetGUID())
+         return;
+ 
+-    SetFlagPicker(ObjectGuid::Empty, GetOtherTeamId(player->GetTeamId()));
++    SetFlagPicker(ObjectGuid::Empty, GetOtherTeamId(player->GetBgTeamId()));
+     player->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
+     player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
+     player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
+@@ -249,7 +249,7 @@ void BattlegroundWS::EventPlayerDroppedFlag(Player* player)
+         return;
+ 
+     player->CastSpell(player, SPELL_RECENTLY_DROPPED_FLAG, true);
+-    if (player->GetTeamId() == TEAM_ALLIANCE)
++    if (player->GetBgTeamId() == TEAM_ALLIANCE)
+     {
+         UpdateFlagState(TEAM_HORDE, BG_WS_FLAG_STATE_ON_GROUND);
+         player->CastSpell(player, BG_WS_SPELL_WARSONG_FLAG_DROPPED, true);
+@@ -273,7 +273,7 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+     player->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+ 
+     // Alliance Flag picked up from base
+-    if (player->GetTeamId() == TEAM_HORDE && GetFlagState(TEAM_ALLIANCE) == BG_WS_FLAG_STATE_ON_BASE && BgObjects[BG_WS_OBJECT_A_FLAG] == gameObject->GetGUID())
++    if (player->GetBgTeamId() == TEAM_HORDE && GetFlagState(TEAM_ALLIANCE) == BG_WS_FLAG_STATE_ON_BASE && BgObjects[BG_WS_OBJECT_A_FLAG] == gameObject->GetGUID())
+     {
+         SpawnBGObject(BG_WS_OBJECT_A_FLAG, RESPAWN_ONE_DAY);
+         SetFlagPicker(player->GetGUID(), TEAM_ALLIANCE);
+@@ -293,7 +293,7 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+     }
+ 
+     // Horde Flag picked up from base
+-    if (player->GetTeamId() == TEAM_ALLIANCE && GetFlagState(TEAM_HORDE) == BG_WS_FLAG_STATE_ON_BASE && BgObjects[BG_WS_OBJECT_H_FLAG] == gameObject->GetGUID())
++    if (player->GetBgTeamId() == TEAM_ALLIANCE && GetFlagState(TEAM_HORDE) == BG_WS_FLAG_STATE_ON_BASE && BgObjects[BG_WS_OBJECT_H_FLAG] == gameObject->GetGUID())
+     {
+         SpawnBGObject(BG_WS_OBJECT_H_FLAG, RESPAWN_ONE_DAY);
+         SetFlagPicker(player->GetGUID(), TEAM_HORDE);
+@@ -320,7 +320,7 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+     if (GetFlagState(TEAM_ALLIANCE) == BG_WS_FLAG_STATE_ON_GROUND && player->IsWithinDistInMap(gameObject, 10.0f) && gameObject->GetEntry() == BG_OBJECT_A_FLAG_GROUND_WS_ENTRY)
+     {
+         SetDroppedFlagGUID(ObjectGuid::Empty, TEAM_ALLIANCE);
+-        if (player->GetTeamId() == TEAM_ALLIANCE)
++        if (player->GetBgTeamId() == TEAM_ALLIANCE)
+         {
+             UpdateFlagState(TEAM_ALLIANCE, BG_WS_FLAG_STATE_ON_BASE);
+             SpawnBGObject(BG_WS_OBJECT_A_FLAG, RESPAWN_IMMEDIATELY);
+@@ -353,7 +353,7 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+     if (GetFlagState(TEAM_HORDE) == BG_WS_FLAG_STATE_ON_GROUND && player->IsWithinDistInMap(gameObject, 10.0f) && gameObject->GetEntry() == BG_OBJECT_H_FLAG_GROUND_WS_ENTRY)
+     {
+         SetDroppedFlagGUID(ObjectGuid::Empty, TEAM_HORDE);
+-        if (player->GetTeamId() == TEAM_HORDE)
++        if (player->GetBgTeamId() == TEAM_HORDE)
+         {
+             UpdateFlagState(TEAM_HORDE, BG_WS_FLAG_STATE_ON_BASE);
+             SpawnBGObject(BG_WS_OBJECT_H_FLAG, RESPAWN_IMMEDIATELY);
+@@ -549,9 +549,9 @@ bool BattlegroundWS::UpdatePlayerScore(Player* player, uint32 type, uint32 value
+ GraveyardStruct const* BattlegroundWS::GetClosestGraveyard(Player* player)
+ {
+     if (GetStatus() == STATUS_IN_PROGRESS)
+-        return sGraveyard->GetGraveyard(player->GetTeamId() == TEAM_ALLIANCE ? WS_GRAVEYARD_MAIN_ALLIANCE : WS_GRAVEYARD_MAIN_HORDE);
++        return sGraveyard->GetGraveyard(player->GetBgTeamId() == TEAM_ALLIANCE ? WS_GRAVEYARD_MAIN_ALLIANCE : WS_GRAVEYARD_MAIN_HORDE);
+     else
+-        return sGraveyard->GetGraveyard(player->GetTeamId() == TEAM_ALLIANCE ? WS_GRAVEYARD_FLAGROOM_ALLIANCE : WS_GRAVEYARD_FLAGROOM_HORDE);
++        return sGraveyard->GetGraveyard(player->GetBgTeamId() == TEAM_ALLIANCE ? WS_GRAVEYARD_FLAGROOM_ALLIANCE : WS_GRAVEYARD_FLAGROOM_HORDE);
+ }
+ 
+ void BattlegroundWS::FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& packet)
 diff --git a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
 index 9881a25f0..246cd3a8a 100644
 --- a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
