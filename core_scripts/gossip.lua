@@ -6,10 +6,59 @@ require("custom-data")
 local ON_HELLO = 1
 local ON_SELECT = 2
 
+function enchantItem(player, itemId, enchantId)
+  local item = player:GetItemByEntry(itemId)
+  if not item then return end
+  item:SetEnchantment(enchantId, 0, 0)
+end
+
 -- Add quests triggers
 RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, quest, opt)
-  local spellId = custom_data.quest_reward_spells[quest:GetId()]
-  if spellId then player:LearnSpell(spellId) end
+  local spellId = custom_data.quest_reward_spells[questId]
+  local questId = quest:GetId()
+  inspect({
+    ["questId"] = questId,
+    ["spellId"] = spellId,
+  })
+  if spellId then
+    player:LearnSpell(spellId)
+    return
+  end
+  if questId == 777003 then -- Quest ENCHANT
+    -- minor speed
+    enchantItem(player, 14568, 911)
+    enchantItem(player, 2910, 911)
+    enchantItem(player, 1560, 911)
+    -- 50 armor
+    enchantItem(player, 3561, 884) --
+    -- fiery
+    enchantItem(player, 4818, 803) --  Executioner's Sword
+    enchantItem(player, 2046, 803) --  Bluegill Kukri
+    enchantItem(player, 1459, 803) --  Shadowhide Scalper
+    enchantItem(player, 6333, 803) --  Spikelash Dagger
+    -- 9 intel
+    enchantItem(player, 5749, 1904) --  Scythe Axe
+    -- +2 damage
+    enchantItem(player, 4369, 32) --  Deadly Blunderbuss
+    -- +10 crit
+    enchantItem(player, 6467, 2934) --  Deviate Scale Gloves
+    enchantItem(player, 892, 2934) -- Gnoll Casting Gloves
+    enchantItem(player, 5312, 2934) --  Riveted Gauntlets
+    -- + 3 all stats
+    enchantItem(player, 5317, 928) --  Dry Moss Tunic
+    enchantItem(player, 3555, 928) --  Robe of Solomon
+    enchantItem(player, 3561, 928) --  Resilient Poncho
+    -- + 5 stamina
+    enchantItem(player, 1276, 852) --  Fire Hardened Buckler
+    -- +7 stamina
+    enchantItem(player, 1306, 929) --  Wolfmane Wristguards
+    enchantItem(player, 16981, 929) -- Owlbeard Bracers
+    enchantItem(player, 14743, 929) -- Hulking Bands
+    -- +30 spell
+    enchantItem(player, 5627, 2504) --  Relic Blade
+    enchantItem(player, 2035, 2504) --  Sword of the Night Sky
+    return
+  end
 end)
 
 --[[
