@@ -73,6 +73,13 @@ type StarterItem = {
   name: string
 }
 
+type BotStarterItem = {
+  classId?: number
+  itemId: number
+  name: string
+  team?: number
+}
+
 type WsgBotRosterEntry = {
   account: string
   behaviorProfile: string
@@ -137,10 +144,12 @@ type NpcSpawnSwap = {
 
 type VendorCurrency = 'arena' | 'gold' | 'honor' | 'heroism' | 'justice'
 type VendorTier = '★☆☆☆☆' | '★★☆☆☆' | '★★★☆☆' | '★★★★☆' | '★★★★★'
-type VendorCategory = 'accessory' | 'armor' | 'enchant' | 'gem' | 'weapon'
+type VendorCategory = 'accessory' | 'armor' | 'enchant' | 'gem' | 'glyph' | 'weapon'
+type VendorGlyphType = 'major' | 'minor'
 
 type VendorItemInfo = {
   classId: number
+  glyphType?: VendorGlyphType
   inventoryType: number
   itemId: number
   name: string
@@ -148,7 +157,9 @@ type VendorItemInfo = {
 }
 
 type VendorItem = {
+  category: VendorCategory
   currency: VendorCurrency
+  glyphType?: VendorGlyphType
   inventoryType: number
   itemId: number
   name: string
@@ -158,11 +169,9 @@ type VendorItem = {
 }
 
 type SatchelItem = {
-  classId: number
-  inventoryType: number
   itemId: number
   name: string
-  subclassId: number
+  playerClassIds: number[]
 }
 
 type SatchelDropItem = {
@@ -241,6 +250,12 @@ const teamIdByName = {
 const teamNameById = {
   1: 'alliance',
   2: 'horde',
+} as const
+
+const botReplacedStarterItemId = 4368
+const botOnlyItemTeamById = {
+  15196: 1,
+  15197: 2,
 } as const
 
 const wsgClassSlotOrder = {
@@ -634,16 +649,26 @@ const parseStarterItems = (rows: ItemSheetRow[] | undefined) => {
 }
 
 const parseBotStarterItems = (rows: ItemSheetRow[] | undefined) => {
-  const items: StarterItem[] = []
+  const items: BotStarterItem[] = []
   const seen = new Set<string>()
 
   for (const [index, row] of (rows ?? []).entries()) {
     const source = row.SOURCE?.trim().toLowerCase()
-    if (source !== 'botstarter' && source !== 'wsgbotstarter') continue
+    if (source !== 'bot' && source !== 'botstarter' && source !== 'wsgbotstarter') continue
 
     const rowLabel = `ITEM row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
     const itemId = parseRequiredInt(row.ID, 'ID', rowLabel)
     if (!itemId) continue
+
+    if (source === 'bot') {
+      const team = botOnlyItemTeamById[itemId as keyof typeof botOnlyItemTeamById]
+      const key = `${team ?? 0}:${itemId}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        items.push({ itemId, name: row.NAME?.trim() || String(itemId), team })
+      }
+      continue
+    }
 
     const classNames = row.CLASSES?.split(',').map((value) => value.trim()).filter(Boolean) ?? []
     if (classNames.length === 0) {
@@ -659,14 +684,16 @@ const parseBotStarterItems = (rows: ItemSheetRow[] | undefined) => {
         continue
       }
 
-      const key = `${classId}:${itemId}`
+      const key = `class:${classId}:${itemId}`
       if (seen.has(key)) continue
       seen.add(key)
-      items.push({ classId, className, itemId, name: row.NAME?.trim() || String(itemId) })
+      items.push({ classId, itemId, name: row.NAME?.trim() || String(itemId) })
     }
   }
 
-  return items.sort((a, b) => a.classId - b.classId || a.itemId - b.itemId)
+  return items.sort((a, b) =>
+    (a.classId ?? 0) - (b.classId ?? 0) || (a.team ?? 0) - (b.team ?? 0) || a.itemId - b.itemId
+  )
 }
 
 const vendorCurrencyFromSource = (source: string | undefined): VendorCurrency | undefined => {
@@ -700,6 +727,14 @@ const vendorCategoryFromItemInfo = (item: VendorItemInfo): VendorCategory | unde
   }
   if (item.classId === 4) return 'armor'
   return undefined
+}
+
+const vendorGoldDiscount = (item: VendorItem) => {
+  if (item.category === 'enchant') return 70
+  if (item.category === 'gem') return 35
+  if (item.category === 'glyph' && item.glyphType === 'major') return 60
+  if (item.category === 'glyph' && item.glyphType === 'minor') return 85
+  return 0
 }
 
 const vendorNpcSubname = (currency: VendorCurrency, category: VendorCategory) => {
@@ -757,7 +792,9 @@ const parseVendorItems = (
     if (seen.has(key)) continue
     seen.add(key)
     items.push({
+      category,
       currency,
+      glyphType: itemInfo.glyphType,
       inventoryType: itemInfo.inventoryType,
       itemId,
       name: row.NAME?.trim() || itemInfo.name || String(itemId),
@@ -783,18 +820,31 @@ const parseSatchelItems = (
     const itemId = parseRequiredInt(row.ID, 'ID', rowLabel)
     if (!itemId) continue
 
+    const classNames = row.CLASSES?.split(',').map((value) => value.trim()).filter(Boolean) ?? []
+    if (classNames.length === 0) {
+      questWarnings.push(`${rowLabel}: ignored satchel item, missing CLASSES`)
+      continue
+    }
+
+    const playerClassIds = classNames.flatMap((className) => {
+      const normalized = normalizeClassName(className)
+      const classId = playerClassIdByName[normalized as keyof typeof playerClassIdByName]
+      if (!classId) questWarnings.push(`${rowLabel}: ignored satchel class ${JSON.stringify(className)}`)
+      return classId ? [classId] : []
+    })
+    if (playerClassIds.length === 0) continue
+
     const itemInfo = itemInfoById.get(itemId)
     if (!itemInfo) {
       questWarnings.push(`${rowLabel}: ignored satchel item, item_template row not found`)
       continue
     }
 
+    const existing = itemsById.get(itemId)
     itemsById.set(itemId, {
-      classId: itemInfo.classId,
-      inventoryType: itemInfo.inventoryType,
       itemId,
       name: row.NAME?.trim() || itemInfo.name || String(itemId),
-      subclassId: itemInfo.subclassId,
+      playerClassIds: [...new Set([...(existing?.playerClassIds ?? []), ...playerClassIds])].sort((a, b) => a - b),
     })
   }
 
@@ -805,7 +855,7 @@ const parseWsgBotItems = (
   rows: WsgBotItemSheetRow[] | undefined,
   roster: WsgBotRosterEntry[],
   starterItems: StarterItem[],
-  botStarterItems: StarterItem[],
+  botStarterItems: BotStarterItem[],
 ): WsgBotItem[] => {
   const itemsByBot = new Map<string, WsgBotItem>()
 
@@ -823,13 +873,16 @@ const parseWsgBotItems = (
 
   for (const bot of roster) {
     for (const item of starterItems) {
-      if (item.classId === bot.classId) {
+      if (item.itemId !== botReplacedStarterItemId && item.classId === bot.classId) {
         addBotItem(bot, item.itemId, 1, item.name, 'player starter gear')
       }
     }
 
     for (const item of botStarterItems) {
-      if (item.classId === bot.classId) {
+      if (
+        (item.classId === undefined || item.classId === bot.classId) &&
+        (item.team === undefined || item.team === bot.team)
+      ) {
         addBotItem(bot, item.itemId, 1, item.name, 'bot-only starter gear')
       }
     }
@@ -887,6 +940,28 @@ const dbc = {
   properties: openDBC('ItemRandomProperties'),
   suffix: openDBC('ItemRandomSuffix'),
   enchant: openDBC('SpellItemEnchantment'),
+  glyphProperties: openDBC('GlyphProperties'),
+  spell: openDBC('Spell'),
+}
+
+const glyphTypeForItem = (classId: number, spellIds: number[]): VendorGlyphType | undefined => {
+  if (classId !== 16) return undefined
+
+  for (const spellId of spellIds) {
+    const spell = dbc.spell.get(spellId)
+    if (!spell) continue
+
+    const glyphId = [
+      [spell.Effect_1, spell.EffectMiscValue_1],
+      [spell.Effect_2, spell.EffectMiscValue_2],
+      [spell.Effect_3, spell.EffectMiscValue_3],
+    ].find(([effect]) => effect === 74)?.[1]
+    if (!glyphId) continue
+
+    const glyphTypeFlags = dbc.glyphProperties.get(glyphId)?.GlyphSlotFlags
+    if (glyphTypeFlags === 1) return 'major'
+    if (glyphTypeFlags === 2) return 'minor'
+  }
 }
 
 const itemIds = gsheetData.ITEM.map((i) => Number(i.ID)).filter((i) => i > 1)
@@ -911,6 +986,11 @@ type ItemTemplateInfoRow = {
   classId: number
   subclassId: number
   inventoryType: number
+  spellId1: number
+  spellId2: number
+  spellId3: number
+  spellId4: number
+  spellId5: number
 }
 
 const itemEnchantRows = await worldserver.raw.sql`
@@ -935,7 +1015,12 @@ SELECT
   name,
   class classId,
   subclass subclassId,
-  InventoryType inventoryType
+  InventoryType inventoryType,
+  spellid_1 spellId1,
+  spellid_2 spellId2,
+  spellid_3 spellId3,
+  spellid_4 spellId4,
+  spellid_5 spellId5
 FROM item_template
 WHERE entry IN (${itemTemplateLookupIds.join(', ')})
 ORDER BY entry
@@ -949,6 +1034,10 @@ const itemInfoById = new Map(
       itemId: Number(row.item),
       name: row.name,
       subclassId: Number(row.subclassId),
+      glyphType: glyphTypeForItem(
+        Number(row.classId),
+        [row.spellId1, row.spellId2, row.spellId3, row.spellId4, row.spellId5].map(Number),
+      ),
     },
   ]),
 )
@@ -965,9 +1054,11 @@ const luaString = (value: string) => `"${value.replaceAll('\\', '\\\\').replaceA
 const luaArray = <T>(values: T[], formatter: (value: T) => string) => `{ ${values.map(formatter).join(', ')} }`
 const sqlString = (value: string) => `'${value.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`
 
+const normalizeMysqlIdentifiers = (sql: string) => sql.replace(/`([A-Za-z_][A-Za-z0-9_$]*)`/g, '$1')
+
 const startingInfoSpellSection = async () => {
   const existing = await Deno.readTextFile('sql/starting-info.sql').catch(() => '')
-  const marker = 'DROP TEMPORARY TABLE IF EXISTS `starting_info_spell`;'
+  const marker = 'DROP TEMPORARY TABLE IF EXISTS starting_info_spell;'
   const index = existing.indexOf(marker)
   if (index === -1) throw Error(`sql/starting-info.sql is missing ${marker}`)
   return existing.slice(index).trimEnd()
@@ -1436,45 +1527,24 @@ const specialVendorCosts = {
 const luckyFishingHatItemId = 19972
 const ringInventoryType = 11
 const satchelLootEntry = 51999
-const allPlayableClassesMask = 2047
 const satchelLegacyChoiceReference = 10066
 const satchelAlwaysDropReference = 10065
+const satchelClassReference = (classId: number) => satchelLegacyChoiceReference + classId
 const satchelMinMoneyLoot = 50 * 100
 const satchelMaxMoneyLoot = 75 * 100
-const satchelReferenceByCategory = {
-  cloth: { classMask: 400, reference: 10036 },
-  leather: { classMask: 1100, reference: 10037 },
-  mail: { classMask: 3, reference: 10038 },
-  weapon: { classMask: allPlayableClassesMask, reference: 10062 },
-  shield: { classMask: 67, reference: 10063 },
-  accessory: { classMask: allPlayableClassesMask, reference: 10064 },
-} as const
 
 const getCost = (item: VendorItem) => {
-  if (item.value) return costs[item.currency][item.value]
-  if (!item.special) return undefined
-  if (item.itemId === luckyFishingHatItemId) return specialVendorCosts.luckyFishingHat
-  if (item.inventoryType === ringInventoryType) return specialVendorCosts.epicRing
-  return specialVendorCosts.epicItem
-}
-
-const satchelReferenceForItem = (item: SatchelItem) => {
-  if (item.classId === 4) {
-    if ([2, 11, 12, 16].includes(item.inventoryType)) return { ...satchelReferenceByCategory.accessory }
-    if (item.subclassId === 1) return { ...satchelReferenceByCategory.cloth }
-    if (item.subclassId === 2) return { ...satchelReferenceByCategory.leather }
-    if (item.subclassId === 3) return { ...satchelReferenceByCategory.mail }
-    if (item.subclassId === 6) return { ...satchelReferenceByCategory.shield }
-  }
-
-  if (item.classId === 2) {
-    if (item.subclassId === 19) return { classMask: 400, reference: satchelReferenceByCategory.weapon.reference }
-    if (item.subclassId === 0) return { classMask: 79, reference: satchelReferenceByCategory.weapon.reference }
-    if (item.subclassId === 1) return { classMask: 71, reference: satchelReferenceByCategory.weapon.reference }
-    return { ...satchelReferenceByCategory.weapon }
-  }
-
-  return { ...satchelReferenceByCategory.accessory }
+  const baseCost = item.value
+    ? costs[item.currency][item.value]
+    : item.special
+    ? item.itemId === luckyFishingHatItemId
+      ? specialVendorCosts.luckyFishingHat
+      : item.inventoryType === ringInventoryType
+      ? specialVendorCosts.epicRing
+      : specialVendorCosts.epicItem
+    : undefined
+  if (baseCost === undefined || item.currency !== 'gold') return baseCost
+  return Math.floor(baseCost * (100 - vendorGoldDiscount(item)) / 100)
 }
 
 const generateQuestSql = (
@@ -1552,46 +1622,51 @@ WHERE LOWER(\`subname\`) LIKE '%merchant%'
   const goldVendorSellPriceCase = goldVendorPrices
     .map(([itemId, price]) => `  WHEN ${itemId} THEN ${Math.floor(price / 4)}`)
     .join('\n')
-  const satchelReferenceItems = satchelItems.map((item) => ({ item, ...satchelReferenceForItem(item) }))
+  const satchelClassReferenceItems = satchelItems.flatMap((item) =>
+    item.playerClassIds.map((classId) => ({ classId, item, reference: satchelClassReference(classId) }))
+  )
   const satchelAlwaysDropReferenceItems = satchelAlwaysDropItems.map((item) => ({
     item,
     reference: satchelAlwaysDropReference,
   }))
+  const satchelClassReferenceIds = [...new Set(satchelClassReferenceItems.map((item) => item.reference))]
   const satchelReferenceIds = [
     ...new Set([
-      ...satchelReferenceItems.map((item) => item.reference),
+      ...satchelClassReferenceIds,
       10036,
       10037,
       10038,
+      10062,
+      10063,
+      10064,
       satchelLegacyChoiceReference,
       satchelAlwaysDropReference,
     ]),
   ].sort((a, b) => a - b)
   const satchelItemIds = [
     ...new Set([
-      ...satchelReferenceItems.map(({ item }) => item.itemId),
+      ...satchelClassReferenceItems.map(({ item }) => item.itemId),
       ...satchelAlwaysDropReferenceItems.map(({ item }) => item.itemId),
     ]),
   ]
-  const satchelGroupId = (reference: number) => satchelReferenceIds.indexOf(reference) + 1
-  const satchelLootItems = satchelReferenceItems
   const satchelLootRows = [
-    ...satchelLootItems.map(({ item }) =>
-      `  (${satchelLootEntry}, ${item.itemId}, 0, 0, 0, 1, 1, 1, 1, ${
-        sqlString(
-          item.name,
-        )
-      })`
+    ...satchelClassReferenceIds.map((reference) =>
+      `  (${satchelLootEntry}, ${reference}, ${reference}, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class ${
+        reference - satchelLegacyChoiceReference
+      }')`
     ),
-    `  (${satchelLootEntry}, 0, ${satchelAlwaysDropReference}, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - (ReferenceTable)')`,
+    `  (${satchelLootEntry}, ${satchelAlwaysDropReference}, ${satchelAlwaysDropReference}, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - (ReferenceTable)')`,
   ]
   const satchelReferenceLootRows = [
+    ...satchelClassReferenceItems.map(({ item, reference }) =>
+      `  (${reference}, ${item.itemId}, 0, 0, 0, 1, 1, 1, 1, ${sqlString(item.name)})`
+    ),
     ...satchelAlwaysDropReferenceItems.map(({ item, reference }) =>
-      `  (${reference}, ${item.itemId}, 0, 0, 0, 1, ${satchelGroupId(reference)}, 1, 1, ${sqlString(item.name)})`
+      `  (${reference}, ${item.itemId}, 0, 0, 0, 1, 7, 1, 1, ${sqlString(item.name)})`
     ),
   ]
-  const satchelConditionRows = satchelLootItems.map(({ item, classMask }) =>
-    `  (10, ${satchelLootEntry}, ${item.itemId}, 0, 0, 15, 0, ${classMask}, 0, 0, 0, 0, 0, '', ${
+  const satchelConditionRows = satchelClassReferenceItems.map(({ classId, item, reference }) =>
+    `  (10, ${reference}, ${item.itemId}, 0, 0, 15, 0, ${1 << (classId - 1)}, 0, 0, 0, 0, 0, '', ${
       sqlString(
         `Generated Satchel of Helpful Goods - ${item.name}`,
       )
@@ -2215,7 +2290,7 @@ const satchelAlwaysDropItems = satchelAlwaysDropItemIds.flatMap((itemId) => {
 })
 const vendorItems = parseVendorItems(gsheetData.ITEM, itemInfoById)
 const wsgBotRoster = parseWsgBotRoster()
-const wsgBotItems = parseWsgBotItems(/* gsheetData.ITEM */ [], wsgBotRoster, starterItems, botStarterItems)
+const wsgBotItems = parseWsgBotItems([], wsgBotRoster, starterItems, botStarterItems)
 const luaQuestRewardSpells = quests
   .filter((quest) => quest.props.LearnSpell)
   .sort((a, b) => a.id - b.id)
@@ -2259,21 +2334,24 @@ console.log(
   } quest reward spells`,
 )
 
-await Deno.writeTextFile('sql/generated-item-props.sql', generateItemPropsSql(itemUpdates))
+await Deno.writeTextFile('sql/generated-item-props.sql', normalizeMysqlIdentifiers(generateItemPropsSql(itemUpdates)))
 console.log('wrote item prop updates to sql/generated-item-props.sql')
 
-await Deno.writeTextFile('sql/generated-item-template.sql', generateItemTemplateSql(itemIds))
+await Deno.writeTextFile('sql/generated-item-template.sql', normalizeMysqlIdentifiers(generateItemTemplateSql(itemIds)))
 console.log('wrote item template normalization to sql/generated-item-template.sql')
 
 await Deno.writeTextFile(
   'sql/generated-playerbots-fixed-roster.sql',
-  generateWsgBotRosterSql(wsgBotRoster, wsgBotItems),
+  normalizeMysqlIdentifiers(generateWsgBotRosterSql(wsgBotRoster, wsgBotItems)),
 )
 console.log(
   `wrote ${wsgBotRoster.length} WSG bot roster rows and ${wsgBotItems.length} item rows to sql/generated-playerbots-fixed-roster.sql`,
 )
 
-await Deno.writeTextFile('sql/starting-info.sql', await generateStartingInfoSql(starterItems))
+await Deno.writeTextFile(
+  'sql/starting-info.sql',
+  normalizeMysqlIdentifiers(await generateStartingInfoSql(starterItems)),
+)
 console.log(`wrote ${starterItems.length} starter item rows to sql/starting-info.sql`)
 
 if (quests.length > 0) {
@@ -2303,15 +2381,17 @@ ORDER BY npc
 
   await Deno.writeTextFile(
     'sql/generated-quests.sql',
-    generateQuestSql(
-      quests,
-      positionsByNpc,
-      npcNames,
-      npcSubnames,
-      npcSpawnSwaps,
-      satchelItems,
-      satchelAlwaysDropItems,
-      vendorItems,
+    normalizeMysqlIdentifiers(
+      generateQuestSql(
+        quests,
+        positionsByNpc,
+        npcNames,
+        npcSubnames,
+        npcSpawnSwaps,
+        satchelItems,
+        satchelAlwaysDropItems,
+        vendorItems,
+      ),
     ),
   )
   console.log(

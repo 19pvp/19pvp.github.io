@@ -5479,7 +5479,17 @@ content:
       - name: AiPlayerbot.RandomBotShowHelmet
         label: Ai Playerbot Random Bot Show Helmet
         type: string
-        description: Show helmet and cloak on randombots (reset required)
+        description: >-
+          Show helmet and cloak on randombots (reset required)
+
+          0 - Helmet or cloak will be visually hidden on all randombots
+
+          1 - Helmet or cloak will be visually visible on all randombots
+
+          2 - Helmet or cloak visibility is random when a randombot is
+          randomized
+
+          Default: 1 (helm/cloak visible on all randombots)
         default: '1'
       - name: AiPlayerbot.RandomBotShowCloak
         label: Ai Playerbot Random Bot Show Cloak
@@ -10269,4 +10279,89 @@ content:
         label: Ai Playerbot Summon At Innkeepers Enabled
         type: string
         description: Allow bots to be summoned near innkeepers
+        default: '1'
+  - name: cfbg
+    label: Cross-Faction Battleground Config
+    type: file
+    path: config/cfbg.json
+    fields:
+      - name: CFBG.Enable
+        label: CFBG Enable
+        type: string
+        default: '1'
+      - name: CFBG.Battlefield.Enable
+        label: CFBG Battlefield Enable
+        type: string
+        default: '1'
+      - name: CFBG.Battlefield.TeamLock.Enable
+        label: CFBG Battlefield Team Lock Enable
+        type: string
+        default: '1'
+      - name: CFBG.Battlefield.NativePriority.Enable
+        label: CFBG Battlefield Native Priority Enable
+        type: string
+        default: '1'
+      - name: CFBG.Battlefield.ReapplyOnResurrect.Enable
+        label: CFBG Battlefield Reapply On Resurrect Enable
+        type: string
+        default: '1'
+      - name: CFBG.Battlefield.SkipClasses
+        label: CFBG Battlefield Skip Classes
+        type: string
+        default: '""'
+      - name: CFBG.BalancedTeams
+        label: CFBG Balanced Teams
+        type: string
+        default: '1'
+      - name: CFBG.BalancedTeams.Class.LowLevel
+        label: CFBG Balanced Teams Class Low Level
+        type: string
+        default: '0'
+      - name: CFBG.BalancedTeams.Class.MinLevel
+        label: CFBG Balanced Teams Class Min Level
+        type: string
+        default: '10'
+      - name: CFBG.BalancedTeams.Class.MaxLevel
+        label: CFBG Balanced Teams Class Max Level
+        type: string
+        default: '19'
+      - name: CFBG.BalancedTeams.Class.LevelDiff
+        label: CFBG Balanced Teams Class Level Diff
+        type: string
+        default: '2'
+      - name: CFBG.Include.Avg.Ilvl.Enable
+        label: CFBG Include Avg Ilvl Enable
+        type: string
+        default: '0'
+      - name: CFBG.Players.Count.In.Group
+        label: CFBG Players Count In Group
+        type: string
+        default: '3'
+      - name: CFBG.EvenTeams.Enabled
+        label: CFBG Even Teams Enabled
+        type: string
+        default: '0'
+      - name: CFBG.EvenTeams.MaxPlayersThreshold
+        label: CFBG Even Teams Max Players Threshold
+        type: string
+        default: '0'
+      - name: CFBG.ResetCooldowns
+        label: CFBG Reset Cooldowns
+        type: string
+        default: '0'
+      - name: CFBG.Show.PlayerName
+        label: CFBG Show Player Name
+        type: string
+        default: '0'
+      - name: CFBG.RandomRaceSelection
+        label: CFBG Random Race Selection
+        type: string
+        default: '1'
+      - name: CFBG.BalanceTeamsOnEntry.Enabled
+        label: CFBG Balance Teams On Entry Enabled
+        type: string
+        default: '1'
+      - name: CFBG.BalanceTeamsAtStart.Enabled
+        label: CFBG Balance Teams At Start Enabled
+        type: string
         default: '1'

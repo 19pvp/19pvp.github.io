@@ -21,6 +21,7 @@
     "conf:all": {
       "dependencies": [
         "config:conf:ale",
+        "config:conf:cfbg",
         "config:conf:playerbots",
         "config:conf:worldserver"
       ]
@@ -28,16 +29,19 @@
     "json:all": {
       "dependencies": [
         "config:json:ale",
+        "config:json:cfbg",
         "config:json:playerbots",
         "config:json:worldserver"
       ]
     },
     "ci": { "dependencies": ["lint", "check", "fmt"] },
     "config:json:ale": "deno run --allow-net --allow-write tasks/config.ts json ale",
+    "config:json:cfbg": "deno run --allow-net --allow-write tasks/config.ts json cfbg",
     "config:json:playerbots": "deno run --allow-net --allow-write tasks/config.ts json playerbots",
     "config:json:worldserver": "deno run --allow-net --allow-write tasks/config.ts json worldserver",
     "config:pages": "deno run --allow-net --allow-read --allow-write tasks/config.ts pages",
     "config:conf:ale": "deno run --allow-read --allow-write tasks/config.ts conf ale",
+    "config:conf:cfbg": "deno run --allow-read --allow-write tasks/config.ts conf cfbg",
     "config:conf:playerbots": "deno run --allow-read --allow-write tasks/config.ts conf playerbots",
     "config:conf:worldserver": "deno run --allow-read --allow-write tasks/config.ts conf worldserver",
     "config:install": "deno run -A tasks/config.ts install",

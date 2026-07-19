@@ -1,0 +1,22 @@
+{
+  "CFBG.Enable": "1",
+  "CFBG.Battlefield.Enable": "1",
+  "CFBG.Battlefield.TeamLock.Enable": "1",
+  "CFBG.Battlefield.NativePriority.Enable": "1",
+  "CFBG.Battlefield.ReapplyOnResurrect.Enable": "1",
+  "CFBG.Battlefield.SkipClasses": "\"\"",
+  "CFBG.BalancedTeams": "1",
+  "CFBG.BalancedTeams.Class.LowLevel": "0",
+  "CFBG.BalancedTeams.Class.MinLevel": "10",
+  "CFBG.BalancedTeams.Class.MaxLevel": "19",
+  "CFBG.BalancedTeams.Class.LevelDiff": "2",
+  "CFBG.Include.Avg.Ilvl.Enable": "0",
+  "CFBG.Players.Count.In.Group": "3",
+  "CFBG.EvenTeams.Enabled": "0",
+  "CFBG.EvenTeams.MaxPlayersThreshold": "0",
+  "CFBG.ResetCooldowns": "0",
+  "CFBG.Show.PlayerName": "0",
+  "CFBG.RandomRaceSelection": "1",
+  "CFBG.BalanceTeamsOnEntry.Enabled": "1",
+  "CFBG.BalanceTeamsAtStart.Enabled": "1"
+}

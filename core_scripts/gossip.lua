@@ -30,7 +30,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, que
     enchantItem(player, 2910, 911)
     enchantItem(player, 1560, 911)
     -- 50 armor
-    enchantItem(player, 3561, 884) --
+    enchantItem(player, 3561, 884) --  Resilient Poncho
     -- fiery
     enchantItem(player, 4818, 803) --  Executioner's Sword
     enchantItem(player, 2046, 803) --  Bluegill Kukri
@@ -47,7 +47,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, que
     -- + 3 all stats
     enchantItem(player, 5317, 928) --  Dry Moss Tunic
     enchantItem(player, 3555, 928) --  Robe of Solomon
-    enchantItem(player, 3561, 928) --  Resilient Poncho
     -- + 5 stamina
     enchantItem(player, 1276, 852) --  Fire Hardened Buckler
     -- +7 stamina

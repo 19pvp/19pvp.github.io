@@ -11,19 +11,20 @@ DELETE FROM quest_template WHERE ID >= 777000 AND ID <= 777017;
 DELETE FROM quest_poi WHERE QuestId >= 777000 AND QuestId <= 777017;
 DELETE FROM quest_poi_points WHERE QuestId >= 777000 AND QuestId <= 777017;
 
-UPDATE item_template SET `RequiredReputationFaction` = 0, `RequiredReputationRank` = 0, `AllowableRace` = -1 WHERE `RequiredReputationFaction` <> 0 OR AllowableRace <> -1 OR `RequiredReputationRank` <> 0;
-UPDATE item_template SET `AllowableClass` = -1 WHERE (`entry` = 18468);
-UPDATE item_template SET `socketColor_1` = 4, `socketContent_1` = 1 WHERE (`InventoryType` IN (1, 7));
-UPDATE item_template SET `name` = 'Smoked Speckled Tastyfish', `spellcharges_1` = 0, `description` = 'The first bite is delicious. The thousandth is still a surprise.', `Quality` = 2, `flags` = `flags` | 32, `SellPrice` = 0, `bonding` = 1 WHERE (`entry` = 21153);
-UPDATE item_template SET `name` = 'Infinite Bandage', `Quality` = 2, `flags` = `flags` | 32, `spellcharges_1` = 0, `SellPrice` = 0, `bonding` = 1 WHERE (`entry` = 14530);
-UPDATE item_template SET `Quality` = 3, `spellcharges_1` = 0 WHERE (`entry` = 4381);
+UPDATE item_template SET RequiredReputationFaction = 0, RequiredReputationRank = 0, AllowableRace = -1 WHERE RequiredReputationFaction <> 0 OR AllowableRace <> -1 OR RequiredReputationRank <> 0;
+UPDATE item_template SET AllowableClass = -1 WHERE (entry = 18468);
+UPDATE item_template SET socketColor_1 = 4, socketContent_1 = 1 WHERE (InventoryType IN (1, 7));
+UPDATE item_template SET RequiredSkill = 0, RequiredSkillRank = 0 WHERE RequiredSkill > 0;
+UPDATE item_template SET name = 'Smoked Speckled Tastyfish', spellcharges_1 = 0, description = 'The first bite is delicious. The thousandth is still a surprise.', Quality = 2, flags = flags | 32, SellPrice = 0, bonding = 1 WHERE (entry = 21153);
+UPDATE item_template SET name = 'Infinite Bandage', Quality = 2, flags = flags | 32, spellcharges_1 = 0, SellPrice = 0, bonding = 1 WHERE (entry = 14530);
+UPDATE item_template SET Quality = 3, spellcharges_1 = 0 WHERE (entry = 4381);
 
-UPDATE `creature_template` SET `npcflag` = `npcflag` | 2 WHERE `entry` IN (19531, 19537, 19538, 20084, 20205, 20980, 22427);
+UPDATE creature_template SET npcflag = npcflag | 2 WHERE entry IN (19531, 19537, 19538, 20084, 20205, 20980, 22427);
 
-UPDATE `creature_template` SET `gossip_menu_id` = 0, `ScriptName` = '' WHERE (`entry` IN (35364, 35365));
+UPDATE creature_template SET gossip_menu_id = 0, ScriptName = '' WHERE (entry IN (35364, 35365));
 
-UPDATE `creature_template`
-SET `name` = CASE `entry`
+UPDATE creature_template
+SET name = CASE entry
   WHEN 213 THEN 'Starving Dire Wolf'
   WHEN 428 THEN 'Dire Condor'
   WHEN 547 THEN 'Great Goretusk'
@@ -41,6 +42,7 @@ SET `name` = CASE `entry`
   WHEN 19533 THEN 'Dealer Aljaan'
   WHEN 19534 THEN 'Dealer Digriz'
   WHEN 19535 THEN 'Dealer Zijaad'
+  WHEN 19536 THEN 'Dealer Jadyan'
   WHEN 19537 THEN 'Dealer Malij'
   WHEN 19538 THEN 'Dealer Senzik'
   WHEN 19539 THEN 'Jazdalaad'
@@ -60,10 +62,10 @@ SET `name` = CASE `entry`
   WHEN 35364 THEN 'Slahtz'
   WHEN 35365 THEN 'Behsten'
 END
-WHERE `entry` IN (213, 428, 547, 569, 958, 1417, 2350, 2804, 3247, 3256, 4129, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 29510, 32332, 32474, 35364, 35365);
+WHERE entry IN (213, 428, 547, 569, 958, 1417, 2350, 2804, 3247, 3256, 4129, 5161, 14981, 19531, 19533, 19534, 19535, 19536, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 29510, 32332, 32474, 35364, 35365);
 
-UPDATE `creature_template`
-SET `subname` = CASE `entry`
+UPDATE creature_template
+SET subname = CASE entry
   WHEN 2804 THEN 'Warsong Gulch Battlemaster'
   WHEN 5161 THEN 'Fishing Supplies'
   WHEN 14981 THEN 'Warsong Gulch Battlemaster'
@@ -71,6 +73,7 @@ SET `subname` = CASE `entry`
   WHEN 19533 THEN '(WIP) Transmog Merchant'
   WHEN 19534 THEN 'Weapons Merchant'
   WHEN 19535 THEN 'Tabard Merchant'
+  WHEN 19536 THEN 'Glyph Merchant'
   WHEN 19537 THEN 'Enchant Merchant'
   WHEN 19538 THEN 'Gem Merchant'
   WHEN 19539 THEN 'Gem Quartermaster'
@@ -90,35 +93,35 @@ SET `subname` = CASE `entry`
   WHEN 35364 THEN 'Weapons Quartermaster'
   WHEN 35365 THEN 'Armor Quartermaster'
 END
-WHERE `entry` IN (2804, 5161, 14981, 19531, 19533, 19534, 19535, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 29510, 32332, 32474, 35364, 35365);
+WHERE entry IN (2804, 5161, 14981, 19531, 19533, 19534, 19535, 19536, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 22427, 22899, 29510, 32332, 32474, 35364, 35365);
 
-UPDATE `creature` SET `id` = 14981 WHERE `guid` = 69933;
-UPDATE `creature` SET `id` = 2804 WHERE `guid` = 69934;
-UPDATE `creature` SET `id` = 12999 WHERE `guid` = 70019;
-UPDATE `creature` SET `id` = 32332 WHERE `guid` = 71820;
+UPDATE creature SET id = 14981 WHERE guid = 69933;
+UPDATE creature SET id = 2804 WHERE guid = 69934;
+UPDATE creature SET id = 12999 WHERE guid = 70019;
+UPDATE creature SET id = 32332 WHERE guid = 71820;
 
 -- Remove vendor inventory and vendor flags from NPCs not listed in the ITEM sheet.
-DELETE FROM `npc_vendor` WHERE `entry` NOT IN (19534, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
-UPDATE `creature_template`
-SET `npcflag` = `npcflag` & 4294967055
-WHERE (`npcflag` & 128) <> 0
-  AND `entry` NOT IN (19534, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
+DELETE FROM npc_vendor WHERE entry NOT IN (19534, 19536, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
+UPDATE creature_template
+SET npcflag = npcflag & 4294967055
+WHERE (npcflag & 128) <> 0
+  AND entry NOT IN (19534, 19536, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
 
 -- Remove trainer flags from merchant and quartermaster NPCs, including legacy entries.
-UPDATE `creature_template`
-SET `npcflag` = `npcflag` & 4294967183
-WHERE LOWER(`subname`) LIKE '%merchant%'
-   OR LOWER(`subname`) LIKE '%quartermaster%';
+UPDATE creature_template
+SET npcflag = npcflag & 4294967183
+WHERE LOWER(subname) LIKE '%merchant%'
+   OR LOWER(subname) LIKE '%quartermaster%';
 
-UPDATE `creature_template`
-SET `npcflag` = (`npcflag` & 4294967183) | 128,
-    `faction` = 1731
-WHERE `entry` IN (19534, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
+UPDATE creature_template
+SET npcflag = (npcflag & 4294967183) | 128,
+    faction = 1731
+WHERE entry IN (19534, 19536, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
 
-DELETE FROM `npc_vendor` WHERE `entry` IN (19534, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
+DELETE FROM npc_vendor WHERE entry IN (19534, 19536, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
 
-UPDATE `item_template`
-SET `BuyPrice` = CASE `entry`
+UPDATE item_template
+SET BuyPrice = CASE entry
   WHEN 872 THEN 5500
   WHEN 935 THEN 11500
   WHEN 1116 THEN 11500
@@ -142,7 +145,7 @@ SET `BuyPrice` = CASE `entry`
   WHEN 3647 THEN 5500
   WHEN 4373 THEN 16000
   WHEN 4381 THEN 5500
-  WHEN 4406 THEN 5500
+  WHEN 4406 THEN 1650
   WHEN 5183 THEN 5500
   WHEN 5187 THEN 5500
   WHEN 5192 THEN 16000
@@ -177,7 +180,7 @@ SET `BuyPrice` = CASE `entry`
   WHEN 7334 THEN 33500
   WHEN 10653 THEN 5500
   WHEN 12054 THEN 11500
-  WHEN 12645 THEN 11500
+  WHEN 12645 THEN 3450
   WHEN 12975 THEN 11500
   WHEN 12976 THEN 11500
   WHEN 12977 THEN 16000
@@ -202,55 +205,160 @@ SET `BuyPrice` = CASE `entry`
   WHEN 22984 THEN 16000
   WHEN 22990 THEN 5500
   WHEN 22995 THEN 5500
-  WHEN 23118 THEN 33500
-  WHEN 24027 THEN 33500
-  WHEN 24028 THEN 33500
-  WHEN 24031 THEN 33500
-  WHEN 24035 THEN 33500
-  WHEN 24037 THEN 33500
-  WHEN 24047 THEN 33500
-  WHEN 24048 THEN 33500
+  WHEN 23118 THEN 21775
+  WHEN 24027 THEN 21775
+  WHEN 24028 THEN 21775
+  WHEN 24031 THEN 21775
+  WHEN 24035 THEN 21775
+  WHEN 24037 THEN 21775
+  WHEN 24047 THEN 21775
+  WHEN 24048 THEN 21775
   WHEN 27640 THEN 5500
-  WHEN 27777 THEN 33500
+  WHEN 27777 THEN 21775
   WHEN 28303 THEN 5500
-  WHEN 28463 THEN 5500
-  WHEN 28468 THEN 5500
+  WHEN 28463 THEN 3575
+  WHEN 28468 THEN 3575
   WHEN 29201 THEN 5500
   WHEN 29584 THEN 5500
   WHEN 30804 THEN 5500
-  WHEN 31861 THEN 33500
-  WHEN 35315 THEN 33500
-  WHEN 38816 THEN 16000
-  WHEN 38820 THEN 16000
-  WHEN 38825 THEN 5500
-  WHEN 38826 THEN 5500
-  WHEN 38828 THEN 16000
-  WHEN 38830 THEN 11500
-  WHEN 38833 THEN 11500
-  WHEN 38835 THEN 5500
-  WHEN 38837 THEN 11500
-  WHEN 38838 THEN 33500
-  WHEN 38844 THEN 11500
-  WHEN 38846 THEN 16000
-  WHEN 38847 THEN 11500
-  WHEN 38848 THEN 33500
-  WHEN 38849 THEN 16000
-  WHEN 38851 THEN 16000
-  WHEN 38852 THEN 16000
-  WHEN 38856 THEN 16000
-  WHEN 38857 THEN 16000
-  WHEN 38868 THEN 33500
-  WHEN 38869 THEN 33500
-  WHEN 38874 THEN 33500
-  WHEN 38875 THEN 33500
-  WHEN 38877 THEN 33500
-  WHEN 38889 THEN 16000
-  WHEN 38931 THEN 16000
-  WHEN 38932 THEN 16000
+  WHEN 31861 THEN 21775
+  WHEN 35315 THEN 21775
+  WHEN 38816 THEN 4800
+  WHEN 38820 THEN 4800
+  WHEN 38825 THEN 1650
+  WHEN 38826 THEN 1650
+  WHEN 38828 THEN 4800
+  WHEN 38830 THEN 3450
+  WHEN 38833 THEN 3450
+  WHEN 38835 THEN 1650
+  WHEN 38837 THEN 3450
+  WHEN 38838 THEN 10050
+  WHEN 38844 THEN 3450
+  WHEN 38846 THEN 4800
+  WHEN 38847 THEN 3450
+  WHEN 38848 THEN 10050
+  WHEN 38849 THEN 4800
+  WHEN 38851 THEN 4800
+  WHEN 38852 THEN 4800
+  WHEN 38856 THEN 4800
+  WHEN 38857 THEN 4800
+  WHEN 38868 THEN 10050
+  WHEN 38869 THEN 10050
+  WHEN 38874 THEN 10050
+  WHEN 38875 THEN 10050
+  WHEN 38877 THEN 10050
+  WHEN 38889 THEN 4800
+  WHEN 38931 THEN 4800
+  WHEN 38932 THEN 4800
+  WHEN 40897 THEN 5500
+  WHEN 40899 THEN 5500
+  WHEN 40912 THEN 5500
+  WHEN 40913 THEN 5500
+  WHEN 40914 THEN 5500
+  WHEN 40922 THEN 5500
+  WHEN 40923 THEN 5500
+  WHEN 40924 THEN 5500
+  WHEN 41092 THEN 5500
+  WHEN 41095 THEN 5500
+  WHEN 41096 THEN 5500
+  WHEN 41108 THEN 5500
+  WHEN 41526 THEN 5500
+  WHEN 41530 THEN 5500
+  WHEN 41531 THEN 5500
+  WHEN 41532 THEN 5500
+  WHEN 41534 THEN 5500
+  WHEN 41536 THEN 5500
+  WHEN 41537 THEN 5500
+  WHEN 41540 THEN 5500
+  WHEN 42397 THEN 5500
+  WHEN 42398 THEN 5500
+  WHEN 42402 THEN 5500
+  WHEN 42406 THEN 5500
+  WHEN 42408 THEN 5500
+  WHEN 42410 THEN 5500
+  WHEN 42411 THEN 5500
+  WHEN 42416 THEN 5500
+  WHEN 42455 THEN 5500
+  WHEN 42456 THEN 5500
+  WHEN 42458 THEN 5500
+  WHEN 42461 THEN 5500
+  WHEN 42462 THEN 5500
+  WHEN 42464 THEN 5500
+  WHEN 42465 THEN 5500
+  WHEN 42466 THEN 5500
+  WHEN 42467 THEN 5500
+  WHEN 42470 THEN 5500
+  WHEN 42473 THEN 5500
+  WHEN 42734 THEN 5500
+  WHEN 42735 THEN 5500
+  WHEN 42739 THEN 5500
+  WHEN 42740 THEN 5500
+  WHEN 42741 THEN 5500
+  WHEN 42743 THEN 5500
+  WHEN 42752 THEN 5500
+  WHEN 42753 THEN 5500
+  WHEN 42898 THEN 5500
+  WHEN 42900 THEN 5500
+  WHEN 42907 THEN 5500
+  WHEN 42908 THEN 5500
+  WHEN 42909 THEN 5500
+  WHEN 42910 THEN 5500
+  WHEN 42912 THEN 5500
+  WHEN 42955 THEN 5500
+  WHEN 42956 THEN 5500
+  WHEN 42960 THEN 5500
+  WHEN 42961 THEN 5500
+  WHEN 42962 THEN 5500
+  WHEN 42964 THEN 5500
+  WHEN 42966 THEN 5500
+  WHEN 42970 THEN 5500
+  WHEN 42972 THEN 5500
+  WHEN 42973 THEN 5500
+  WHEN 42974 THEN 5500
+  WHEN 43316 THEN 2200
+  WHEN 43332 THEN 2200
+  WHEN 43335 THEN 2200
+  WHEN 43338 THEN 2200
+  WHEN 43339 THEN 2200
+  WHEN 43340 THEN 2200
+  WHEN 43342 THEN 2200
+  WHEN 43350 THEN 2200
+  WHEN 43354 THEN 2200
+  WHEN 43356 THEN 2200
+  WHEN 43359 THEN 2200
+  WHEN 43361 THEN 2200
+  WHEN 43364 THEN 2200
+  WHEN 43366 THEN 2200
+  WHEN 43367 THEN 2200
+  WHEN 43369 THEN 2200
+  WHEN 43371 THEN 2200
+  WHEN 43379 THEN 2200
+  WHEN 43389 THEN 2200
+  WHEN 43390 THEN 2200
+  WHEN 43395 THEN 2200
+  WHEN 43396 THEN 2200
+  WHEN 43397 THEN 2200
+  WHEN 43398 THEN 2200
+  WHEN 43399 THEN 2200
+  WHEN 43413 THEN 5500
+  WHEN 43417 THEN 5500
+  WHEN 43418 THEN 5500
+  WHEN 43422 THEN 5500
+  WHEN 43423 THEN 5500
+  WHEN 43424 THEN 5500
+  WHEN 43427 THEN 5500
+  WHEN 43430 THEN 5500
+  WHEN 43431 THEN 5500
   WHEN 43515 THEN 5500
-  WHEN 45628 THEN 11500
+  WHEN 43725 THEN 2200
+  WHEN 45628 THEN 3450
+  WHEN 45735 THEN 5500
+  WHEN 45778 THEN 5500
+  WHEN 45785 THEN 5500
+  WHEN 50077 THEN 5500
+  WHEN 50125 THEN 5500
 END,
-`SellPrice` = CASE `entry`
+SellPrice = CASE entry
   WHEN 872 THEN 1375
   WHEN 935 THEN 2875
   WHEN 1116 THEN 2875
@@ -274,7 +382,7 @@ END,
   WHEN 3647 THEN 1375
   WHEN 4373 THEN 4000
   WHEN 4381 THEN 1375
-  WHEN 4406 THEN 1375
+  WHEN 4406 THEN 412
   WHEN 5183 THEN 1375
   WHEN 5187 THEN 1375
   WHEN 5192 THEN 4000
@@ -309,7 +417,7 @@ END,
   WHEN 7334 THEN 8375
   WHEN 10653 THEN 1375
   WHEN 12054 THEN 2875
-  WHEN 12645 THEN 2875
+  WHEN 12645 THEN 862
   WHEN 12975 THEN 2875
   WHEN 12976 THEN 2875
   WHEN 12977 THEN 4000
@@ -334,57 +442,162 @@ END,
   WHEN 22984 THEN 4000
   WHEN 22990 THEN 1375
   WHEN 22995 THEN 1375
-  WHEN 23118 THEN 8375
-  WHEN 24027 THEN 8375
-  WHEN 24028 THEN 8375
-  WHEN 24031 THEN 8375
-  WHEN 24035 THEN 8375
-  WHEN 24037 THEN 8375
-  WHEN 24047 THEN 8375
-  WHEN 24048 THEN 8375
+  WHEN 23118 THEN 5443
+  WHEN 24027 THEN 5443
+  WHEN 24028 THEN 5443
+  WHEN 24031 THEN 5443
+  WHEN 24035 THEN 5443
+  WHEN 24037 THEN 5443
+  WHEN 24047 THEN 5443
+  WHEN 24048 THEN 5443
   WHEN 27640 THEN 1375
-  WHEN 27777 THEN 8375
+  WHEN 27777 THEN 5443
   WHEN 28303 THEN 1375
-  WHEN 28463 THEN 1375
-  WHEN 28468 THEN 1375
+  WHEN 28463 THEN 893
+  WHEN 28468 THEN 893
   WHEN 29201 THEN 1375
   WHEN 29584 THEN 1375
   WHEN 30804 THEN 1375
-  WHEN 31861 THEN 8375
-  WHEN 35315 THEN 8375
-  WHEN 38816 THEN 4000
-  WHEN 38820 THEN 4000
-  WHEN 38825 THEN 1375
-  WHEN 38826 THEN 1375
-  WHEN 38828 THEN 4000
-  WHEN 38830 THEN 2875
-  WHEN 38833 THEN 2875
-  WHEN 38835 THEN 1375
-  WHEN 38837 THEN 2875
-  WHEN 38838 THEN 8375
-  WHEN 38844 THEN 2875
-  WHEN 38846 THEN 4000
-  WHEN 38847 THEN 2875
-  WHEN 38848 THEN 8375
-  WHEN 38849 THEN 4000
-  WHEN 38851 THEN 4000
-  WHEN 38852 THEN 4000
-  WHEN 38856 THEN 4000
-  WHEN 38857 THEN 4000
-  WHEN 38868 THEN 8375
-  WHEN 38869 THEN 8375
-  WHEN 38874 THEN 8375
-  WHEN 38875 THEN 8375
-  WHEN 38877 THEN 8375
-  WHEN 38889 THEN 4000
-  WHEN 38931 THEN 4000
-  WHEN 38932 THEN 4000
+  WHEN 31861 THEN 5443
+  WHEN 35315 THEN 5443
+  WHEN 38816 THEN 1200
+  WHEN 38820 THEN 1200
+  WHEN 38825 THEN 412
+  WHEN 38826 THEN 412
+  WHEN 38828 THEN 1200
+  WHEN 38830 THEN 862
+  WHEN 38833 THEN 862
+  WHEN 38835 THEN 412
+  WHEN 38837 THEN 862
+  WHEN 38838 THEN 2512
+  WHEN 38844 THEN 862
+  WHEN 38846 THEN 1200
+  WHEN 38847 THEN 862
+  WHEN 38848 THEN 2512
+  WHEN 38849 THEN 1200
+  WHEN 38851 THEN 1200
+  WHEN 38852 THEN 1200
+  WHEN 38856 THEN 1200
+  WHEN 38857 THEN 1200
+  WHEN 38868 THEN 2512
+  WHEN 38869 THEN 2512
+  WHEN 38874 THEN 2512
+  WHEN 38875 THEN 2512
+  WHEN 38877 THEN 2512
+  WHEN 38889 THEN 1200
+  WHEN 38931 THEN 1200
+  WHEN 38932 THEN 1200
+  WHEN 40897 THEN 1375
+  WHEN 40899 THEN 1375
+  WHEN 40912 THEN 1375
+  WHEN 40913 THEN 1375
+  WHEN 40914 THEN 1375
+  WHEN 40922 THEN 1375
+  WHEN 40923 THEN 1375
+  WHEN 40924 THEN 1375
+  WHEN 41092 THEN 1375
+  WHEN 41095 THEN 1375
+  WHEN 41096 THEN 1375
+  WHEN 41108 THEN 1375
+  WHEN 41526 THEN 1375
+  WHEN 41530 THEN 1375
+  WHEN 41531 THEN 1375
+  WHEN 41532 THEN 1375
+  WHEN 41534 THEN 1375
+  WHEN 41536 THEN 1375
+  WHEN 41537 THEN 1375
+  WHEN 41540 THEN 1375
+  WHEN 42397 THEN 1375
+  WHEN 42398 THEN 1375
+  WHEN 42402 THEN 1375
+  WHEN 42406 THEN 1375
+  WHEN 42408 THEN 1375
+  WHEN 42410 THEN 1375
+  WHEN 42411 THEN 1375
+  WHEN 42416 THEN 1375
+  WHEN 42455 THEN 1375
+  WHEN 42456 THEN 1375
+  WHEN 42458 THEN 1375
+  WHEN 42461 THEN 1375
+  WHEN 42462 THEN 1375
+  WHEN 42464 THEN 1375
+  WHEN 42465 THEN 1375
+  WHEN 42466 THEN 1375
+  WHEN 42467 THEN 1375
+  WHEN 42470 THEN 1375
+  WHEN 42473 THEN 1375
+  WHEN 42734 THEN 1375
+  WHEN 42735 THEN 1375
+  WHEN 42739 THEN 1375
+  WHEN 42740 THEN 1375
+  WHEN 42741 THEN 1375
+  WHEN 42743 THEN 1375
+  WHEN 42752 THEN 1375
+  WHEN 42753 THEN 1375
+  WHEN 42898 THEN 1375
+  WHEN 42900 THEN 1375
+  WHEN 42907 THEN 1375
+  WHEN 42908 THEN 1375
+  WHEN 42909 THEN 1375
+  WHEN 42910 THEN 1375
+  WHEN 42912 THEN 1375
+  WHEN 42955 THEN 1375
+  WHEN 42956 THEN 1375
+  WHEN 42960 THEN 1375
+  WHEN 42961 THEN 1375
+  WHEN 42962 THEN 1375
+  WHEN 42964 THEN 1375
+  WHEN 42966 THEN 1375
+  WHEN 42970 THEN 1375
+  WHEN 42972 THEN 1375
+  WHEN 42973 THEN 1375
+  WHEN 42974 THEN 1375
+  WHEN 43316 THEN 550
+  WHEN 43332 THEN 550
+  WHEN 43335 THEN 550
+  WHEN 43338 THEN 550
+  WHEN 43339 THEN 550
+  WHEN 43340 THEN 550
+  WHEN 43342 THEN 550
+  WHEN 43350 THEN 550
+  WHEN 43354 THEN 550
+  WHEN 43356 THEN 550
+  WHEN 43359 THEN 550
+  WHEN 43361 THEN 550
+  WHEN 43364 THEN 550
+  WHEN 43366 THEN 550
+  WHEN 43367 THEN 550
+  WHEN 43369 THEN 550
+  WHEN 43371 THEN 550
+  WHEN 43379 THEN 550
+  WHEN 43389 THEN 550
+  WHEN 43390 THEN 550
+  WHEN 43395 THEN 550
+  WHEN 43396 THEN 550
+  WHEN 43397 THEN 550
+  WHEN 43398 THEN 550
+  WHEN 43399 THEN 550
+  WHEN 43413 THEN 1375
+  WHEN 43417 THEN 1375
+  WHEN 43418 THEN 1375
+  WHEN 43422 THEN 1375
+  WHEN 43423 THEN 1375
+  WHEN 43424 THEN 1375
+  WHEN 43427 THEN 1375
+  WHEN 43430 THEN 1375
+  WHEN 43431 THEN 1375
   WHEN 43515 THEN 1375
-  WHEN 45628 THEN 2875
+  WHEN 43725 THEN 550
+  WHEN 45628 THEN 862
+  WHEN 45735 THEN 1375
+  WHEN 45778 THEN 1375
+  WHEN 45785 THEN 1375
+  WHEN 50077 THEN 1375
+  WHEN 50125 THEN 1375
 END
-WHERE `entry` IN (872, 935, 1116, 1131, 1156, 1449, 1483, 1484, 1937, 1974, 2042, 2059, 2167, 2314, 2807, 2879, 2911, 3066, 3194, 3202, 3647, 4373, 4381, 4406, 5183, 5187, 5192, 5196, 5197, 5198, 5201, 5243, 5323, 5423, 5425, 5426, 5443, 5444, 5613, 5614, 6191, 6332, 6335, 6341, 6383, 6447, 6448, 6449, 6629, 6632, 6667, 6668, 6678, 7284, 7285, 7334, 10653, 12054, 12645, 12975, 12976, 12977, 12979, 12983, 12984, 12988, 12992, 12996, 13136, 13245, 14145, 14149, 14150, 14151, 14374, 16608, 18471, 22268, 22980, 22982, 22984, 22990, 22995, 23118, 24027, 24028, 24031, 24035, 24037, 24047, 24048, 27640, 27777, 28303, 28463, 28468, 29201, 29584, 30804, 31861, 35315, 38816, 38820, 38825, 38826, 38828, 38830, 38833, 38835, 38837, 38838, 38844, 38846, 38847, 38848, 38849, 38851, 38852, 38856, 38857, 38868, 38869, 38874, 38875, 38877, 38889, 38931, 38932, 43515, 45628);
+WHERE entry IN (872, 935, 1116, 1131, 1156, 1449, 1483, 1484, 1937, 1974, 2042, 2059, 2167, 2314, 2807, 2879, 2911, 3066, 3194, 3202, 3647, 4373, 4381, 4406, 5183, 5187, 5192, 5196, 5197, 5198, 5201, 5243, 5323, 5423, 5425, 5426, 5443, 5444, 5613, 5614, 6191, 6332, 6335, 6341, 6383, 6447, 6448, 6449, 6629, 6632, 6667, 6668, 6678, 7284, 7285, 7334, 10653, 12054, 12645, 12975, 12976, 12977, 12979, 12983, 12984, 12988, 12992, 12996, 13136, 13245, 14145, 14149, 14150, 14151, 14374, 16608, 18471, 22268, 22980, 22982, 22984, 22990, 22995, 23118, 24027, 24028, 24031, 24035, 24037, 24047, 24048, 27640, 27777, 28303, 28463, 28468, 29201, 29584, 30804, 31861, 35315, 38816, 38820, 38825, 38826, 38828, 38830, 38833, 38835, 38837, 38838, 38844, 38846, 38847, 38848, 38849, 38851, 38852, 38856, 38857, 38868, 38869, 38874, 38875, 38877, 38889, 38931, 38932, 40897, 40899, 40912, 40913, 40914, 40922, 40923, 40924, 41092, 41095, 41096, 41108, 41526, 41530, 41531, 41532, 41534, 41536, 41537, 41540, 42397, 42398, 42402, 42406, 42408, 42410, 42411, 42416, 42455, 42456, 42458, 42461, 42462, 42464, 42465, 42466, 42467, 42470, 42473, 42734, 42735, 42739, 42740, 42741, 42743, 42752, 42753, 42898, 42900, 42907, 42908, 42909, 42910, 42912, 42955, 42956, 42960, 42961, 42962, 42964, 42966, 42970, 42972, 42973, 42974, 43316, 43332, 43335, 43338, 43339, 43340, 43342, 43350, 43354, 43356, 43359, 43361, 43364, 43366, 43367, 43369, 43371, 43379, 43389, 43390, 43395, 43396, 43397, 43398, 43399, 43413, 43417, 43418, 43422, 43423, 43424, 43427, 43430, 43431, 43515, 43725, 45628, 45735, 45778, 45785, 50077, 50125);
 
-INSERT INTO `npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `ExtendedCost`, `VerifiedBuild`) VALUES
+INSERT INTO npc_vendor (entry, slot, item, maxcount, incrtime, ExtendedCost, VerifiedBuild) VALUES
   (19534, 1, 872, 0, 0, 0, NULL),
   (19534, 2, 935, 0, 0, 0, NULL),
   (19534, 3, 1131, 0, 0, 0, NULL),
@@ -430,6 +643,111 @@ INSERT INTO `npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `Exte
   (19534, 43, 29201, 0, 0, 0, NULL),
   (19534, 44, 29584, 0, 0, 0, NULL),
   (19534, 45, 43515, 0, 0, 0, NULL),
+  (19536, 1, 40897, 0, 0, 0, NULL),
+  (19536, 2, 40899, 0, 0, 0, NULL),
+  (19536, 3, 40912, 0, 0, 0, NULL),
+  (19536, 4, 40913, 0, 0, 0, NULL),
+  (19536, 5, 40914, 0, 0, 0, NULL),
+  (19536, 6, 40922, 0, 0, 0, NULL),
+  (19536, 7, 40923, 0, 0, 0, NULL),
+  (19536, 8, 40924, 0, 0, 0, NULL),
+  (19536, 9, 41092, 0, 0, 0, NULL),
+  (19536, 10, 41095, 0, 0, 0, NULL),
+  (19536, 11, 41096, 0, 0, 0, NULL),
+  (19536, 12, 41108, 0, 0, 0, NULL),
+  (19536, 13, 41526, 0, 0, 0, NULL),
+  (19536, 14, 41530, 0, 0, 0, NULL),
+  (19536, 15, 41531, 0, 0, 0, NULL),
+  (19536, 16, 41532, 0, 0, 0, NULL),
+  (19536, 17, 41534, 0, 0, 0, NULL),
+  (19536, 18, 41536, 0, 0, 0, NULL),
+  (19536, 19, 41537, 0, 0, 0, NULL),
+  (19536, 20, 41540, 0, 0, 0, NULL),
+  (19536, 21, 42397, 0, 0, 0, NULL),
+  (19536, 22, 42398, 0, 0, 0, NULL),
+  (19536, 23, 42402, 0, 0, 0, NULL),
+  (19536, 24, 42406, 0, 0, 0, NULL),
+  (19536, 25, 42408, 0, 0, 0, NULL),
+  (19536, 26, 42410, 0, 0, 0, NULL),
+  (19536, 27, 42411, 0, 0, 0, NULL),
+  (19536, 28, 42416, 0, 0, 0, NULL),
+  (19536, 29, 42455, 0, 0, 0, NULL),
+  (19536, 30, 42456, 0, 0, 0, NULL),
+  (19536, 31, 42458, 0, 0, 0, NULL),
+  (19536, 32, 42461, 0, 0, 0, NULL),
+  (19536, 33, 42462, 0, 0, 0, NULL),
+  (19536, 34, 42464, 0, 0, 0, NULL),
+  (19536, 35, 42465, 0, 0, 0, NULL),
+  (19536, 36, 42466, 0, 0, 0, NULL),
+  (19536, 37, 42467, 0, 0, 0, NULL),
+  (19536, 38, 42470, 0, 0, 0, NULL),
+  (19536, 39, 42473, 0, 0, 0, NULL),
+  (19536, 40, 42734, 0, 0, 0, NULL),
+  (19536, 41, 42735, 0, 0, 0, NULL),
+  (19536, 42, 42739, 0, 0, 0, NULL),
+  (19536, 43, 42740, 0, 0, 0, NULL),
+  (19536, 44, 42741, 0, 0, 0, NULL),
+  (19536, 45, 42743, 0, 0, 0, NULL),
+  (19536, 46, 42752, 0, 0, 0, NULL),
+  (19536, 47, 42753, 0, 0, 0, NULL),
+  (19536, 48, 42898, 0, 0, 0, NULL),
+  (19536, 49, 42900, 0, 0, 0, NULL),
+  (19536, 50, 42907, 0, 0, 0, NULL),
+  (19536, 51, 42908, 0, 0, 0, NULL),
+  (19536, 52, 42909, 0, 0, 0, NULL),
+  (19536, 53, 42910, 0, 0, 0, NULL),
+  (19536, 54, 42912, 0, 0, 0, NULL),
+  (19536, 55, 42955, 0, 0, 0, NULL),
+  (19536, 56, 42956, 0, 0, 0, NULL),
+  (19536, 57, 42960, 0, 0, 0, NULL),
+  (19536, 58, 42961, 0, 0, 0, NULL),
+  (19536, 59, 42962, 0, 0, 0, NULL),
+  (19536, 60, 42964, 0, 0, 0, NULL),
+  (19536, 61, 42966, 0, 0, 0, NULL),
+  (19536, 62, 42970, 0, 0, 0, NULL),
+  (19536, 63, 42972, 0, 0, 0, NULL),
+  (19536, 64, 42973, 0, 0, 0, NULL),
+  (19536, 65, 42974, 0, 0, 0, NULL),
+  (19536, 66, 43316, 0, 0, 0, NULL),
+  (19536, 67, 43332, 0, 0, 0, NULL),
+  (19536, 68, 43335, 0, 0, 0, NULL),
+  (19536, 69, 43338, 0, 0, 0, NULL),
+  (19536, 70, 43339, 0, 0, 0, NULL),
+  (19536, 71, 43340, 0, 0, 0, NULL),
+  (19536, 72, 43342, 0, 0, 0, NULL),
+  (19536, 73, 43350, 0, 0, 0, NULL),
+  (19536, 74, 43354, 0, 0, 0, NULL),
+  (19536, 75, 43356, 0, 0, 0, NULL),
+  (19536, 76, 43359, 0, 0, 0, NULL),
+  (19536, 77, 43361, 0, 0, 0, NULL),
+  (19536, 78, 43364, 0, 0, 0, NULL),
+  (19536, 79, 43366, 0, 0, 0, NULL),
+  (19536, 80, 43367, 0, 0, 0, NULL),
+  (19536, 81, 43369, 0, 0, 0, NULL),
+  (19536, 82, 43371, 0, 0, 0, NULL),
+  (19536, 83, 43379, 0, 0, 0, NULL),
+  (19536, 84, 43389, 0, 0, 0, NULL),
+  (19536, 85, 43390, 0, 0, 0, NULL),
+  (19536, 86, 43395, 0, 0, 0, NULL),
+  (19536, 87, 43396, 0, 0, 0, NULL),
+  (19536, 88, 43397, 0, 0, 0, NULL),
+  (19536, 89, 43398, 0, 0, 0, NULL),
+  (19536, 90, 43399, 0, 0, 0, NULL),
+  (19536, 91, 43413, 0, 0, 0, NULL),
+  (19536, 92, 43417, 0, 0, 0, NULL),
+  (19536, 93, 43418, 0, 0, 0, NULL),
+  (19536, 94, 43422, 0, 0, 0, NULL),
+  (19536, 95, 43423, 0, 0, 0, NULL),
+  (19536, 96, 43424, 0, 0, 0, NULL),
+  (19536, 97, 43427, 0, 0, 0, NULL),
+  (19536, 98, 43430, 0, 0, 0, NULL),
+  (19536, 99, 43431, 0, 0, 0, NULL),
+  (19536, 100, 43725, 0, 0, 0, NULL),
+  (19536, 101, 45735, 0, 0, 0, NULL),
+  (19536, 102, 45778, 0, 0, 0, NULL),
+  (19536, 103, 45785, 0, 0, 0, NULL),
+  (19536, 104, 50077, 0, 0, 0, NULL),
+  (19536, 105, 50125, 0, 0, 0, NULL),
   (19537, 1, 4406, 0, 0, 0, NULL),
   (19537, 2, 12645, 0, 0, 0, NULL),
   (19537, 3, 38816, 0, 0, 0, NULL),
@@ -661,90 +979,163 @@ INSERT INTO `npc_vendor` (`entry`, `slot`, `item`, `maxcount`, `incrtime`, `Exte
   (35365, 41, 19969, 0, 0, 2261, NULL),
   (35365, 42, 19972, 0, 0, 2559, NULL);
 
-DELETE FROM `item_loot_template` WHERE `Entry` = 51999;
+DELETE FROM item_loot_template WHERE Entry = 51999;
 
-UPDATE `item_template`
-SET `MinMoneyLoot` = 5000,
-    `MaxMoneyLoot` = 7500
-WHERE `entry` = 51999;
+UPDATE item_template
+SET MinMoneyLoot = 5000,
+    MaxMoneyLoot = 7500
+WHERE entry = 51999;
 
-INSERT INTO `item_loot_template` (`Entry`, `Item`, `Reference`, `Chance`, `QuestRequired`, `LootMode`, `GroupId`, `MinCount`, `MaxCount`, `Comment`) VALUES
-  (51999, 790, 0, 0, 0, 1, 1, 1, 1, 'Forester\'s Axe'),
-  (51999, 3184, 0, 0, 0, 1, 1, 1, 1, 'Hook Dagger'),
-  (51999, 6563, 0, 0, 0, 1, 1, 1, 1, 'Shimmering Bracers'),
-  (51999, 6568, 0, 0, 0, 1, 1, 1, 1, 'Shimmering Trousers'),
-  (51999, 6570, 0, 0, 0, 1, 1, 1, 1, 'Shimmering Sash'),
-  (51999, 6573, 0, 0, 0, 1, 1, 1, 1, 'Defender Boots'),
-  (51999, 6577, 0, 0, 0, 1, 1, 1, 1, 'Defender Gauntlets'),
-  (51999, 6586, 0, 0, 0, 1, 1, 1, 1, 'Scouting Gloves'),
-  (51999, 6587, 0, 0, 0, 1, 1, 1, 1, 'Scouting Trousers'),
-  (51999, 9766, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Sash'),
-  (51999, 9767, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Sandals'),
-  (51999, 9768, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Bracers'),
-  (51999, 9782, 0, 0, 0, 1, 1, 1, 1, 'Bandit Jerkin'),
-  (51999, 9811, 0, 0, 0, 1, 1, 1, 1, 'Fortified Bracers'),
-  (51999, 9814, 0, 0, 0, 1, 1, 1, 1, 'Fortified Belt'),
-  (51999, 11993, 0, 0, 0, 1, 1, 1, 1, 'Clay Ring'),
-  (51999, 12006, 0, 0, 0, 1, 1, 1, 1, 'Meadow Ring'),
-  (51999, 14171, 0, 0, 0, 1, 1, 1, 1, 'Buccaneer\'s Pants'),
-  (51999, 15269, 0, 0, 0, 1, 1, 1, 1, 'Massive Battle Axe'),
-  (51999, 15331, 0, 0, 0, 1, 1, 1, 1, 'Wrangler\'s Wristbands'),
-  (51999, 15500, 0, 0, 0, 1, 1, 1, 1, 'Outrunner\'s Chestguard'),
-  (51999, 15511, 0, 0, 0, 1, 1, 1, 1, 'Grunt\'s Legguards'),
-  (51999, 15512, 0, 0, 0, 1, 1, 1, 1, 'Grunt\'s Shield'),
-  (51999, 31270, 0, 0, 0, 1, 1, 1, 1, 'Banshee Rod'),
-  (51999, 51964, 0, 0, 0, 1, 1, 1, 1, 'Vigorous Belt'),
-  (51999, 51968, 0, 0, 0, 1, 1, 1, 1, 'Enumerated Wrap'),
-  (51999, 51978, 0, 0, 0, 1, 1, 1, 1, 'Earthbound Girdle'),
-  (51999, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
-  (51999, 0, 10065, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - (ReferenceTable)');
+INSERT INTO item_loot_template (Entry, Item, Reference, Chance, QuestRequired, LootMode, GroupId, MinCount, MaxCount, Comment) VALUES
+  (51999, 10071, 10071, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class 5'),
+  (51999, 10073, 10073, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class 7'),
+  (51999, 10074, 10074, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class 8'),
+  (51999, 10075, 10075, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class 9'),
+  (51999, 10077, 10077, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class 11'),
+  (51999, 10067, 10067, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class 1'),
+  (51999, 10068, 10068, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class 2'),
+  (51999, 10069, 10069, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class 3'),
+  (51999, 10070, 10070, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - Class 4'),
+  (51999, 10065, 10065, 100, 0, 1, 0, 1, 1, 'Satchel of Helpful Goods - (ReferenceTable)');
 
-DELETE FROM `reference_loot_template`
-WHERE `Entry` = 10066
-   OR (`Entry` IN (10036, 10037, 10038, 10062, 10063, 10064, 10065, 10066)
-       AND `Item` IN (790, 3184, 6563, 6568, 6570, 6573, 6577, 6586, 6587, 9766, 9767, 9768, 9782, 9811, 9814, 11993, 12006, 14171, 15269, 15331, 15500, 15511, 15512, 31270, 51964, 51968, 51978, 51994, 5740, 6657));
+DELETE FROM reference_loot_template
+WHERE Entry = 10066
+   OR (Entry IN (10036, 10037, 10038, 10062, 10063, 10064, 10065, 10066, 10067, 10068, 10069, 10070, 10071, 10073, 10074, 10075, 10077)
+       AND Item IN (3184, 6568, 6573, 6577, 6586, 6587, 9767, 9768, 9811, 15269, 15331, 15500, 15511, 15512, 31270, 51964, 51968, 51978, 51994, 5740, 6657));
 
-INSERT INTO `reference_loot_template` (`Entry`, `Item`, `Reference`, `Chance`, `QuestRequired`, `LootMode`, `GroupId`, `MinCount`, `MaxCount`, `Comment`) VALUES
+INSERT INTO reference_loot_template (Entry, Item, Reference, Chance, QuestRequired, LootMode, GroupId, MinCount, MaxCount, Comment) VALUES
+  (10071, 3184, 0, 0, 0, 1, 1, 1, 1, 'Hook Dagger'),
+  (10073, 3184, 0, 0, 0, 1, 1, 1, 1, 'Hook Dagger'),
+  (10074, 3184, 0, 0, 0, 1, 1, 1, 1, 'Hook Dagger'),
+  (10075, 3184, 0, 0, 0, 1, 1, 1, 1, 'Hook Dagger'),
+  (10077, 3184, 0, 0, 0, 1, 1, 1, 1, 'Hook Dagger'),
+  (10071, 6568, 0, 0, 0, 1, 1, 1, 1, 'Shimmering Trousers'),
+  (10074, 6568, 0, 0, 0, 1, 1, 1, 1, 'Shimmering Trousers'),
+  (10075, 6568, 0, 0, 0, 1, 1, 1, 1, 'Shimmering Trousers'),
+  (10067, 6573, 0, 0, 0, 1, 1, 1, 1, 'Defender Boots'),
+  (10068, 6573, 0, 0, 0, 1, 1, 1, 1, 'Defender Boots'),
+  (10067, 6577, 0, 0, 0, 1, 1, 1, 1, 'Defender Gauntlets'),
+  (10068, 6577, 0, 0, 0, 1, 1, 1, 1, 'Defender Gauntlets'),
+  (10069, 6586, 0, 0, 0, 1, 1, 1, 1, 'Scouting Gloves'),
+  (10070, 6586, 0, 0, 0, 1, 1, 1, 1, 'Scouting Gloves'),
+  (10073, 6586, 0, 0, 0, 1, 1, 1, 1, 'Scouting Gloves'),
+  (10077, 6586, 0, 0, 0, 1, 1, 1, 1, 'Scouting Gloves'),
+  (10069, 6587, 0, 0, 0, 1, 1, 1, 1, 'Scouting Trousers'),
+  (10070, 6587, 0, 0, 0, 1, 1, 1, 1, 'Scouting Trousers'),
+  (10073, 6587, 0, 0, 0, 1, 1, 1, 1, 'Scouting Trousers'),
+  (10077, 6587, 0, 0, 0, 1, 1, 1, 1, 'Scouting Trousers'),
+  (10071, 9767, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Sandals'),
+  (10074, 9767, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Sandals'),
+  (10075, 9767, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Sandals'),
+  (10071, 9768, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Bracers'),
+  (10074, 9768, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Bracers'),
+  (10075, 9768, 0, 0, 0, 1, 1, 1, 1, 'Greenweave Bracers'),
+  (10067, 9811, 0, 0, 0, 1, 1, 1, 1, 'Fortified Bracers'),
+  (10068, 9811, 0, 0, 0, 1, 1, 1, 1, 'Fortified Bracers'),
+  (10069, 15269, 0, 0, 0, 1, 1, 1, 1, 'Massive Battle Axe'),
+  (10069, 15331, 0, 0, 0, 1, 1, 1, 1, 'Wrangler\'s Wristbands'),
+  (10070, 15331, 0, 0, 0, 1, 1, 1, 1, 'Wrangler\'s Wristbands'),
+  (10073, 15331, 0, 0, 0, 1, 1, 1, 1, 'Wrangler\'s Wristbands'),
+  (10077, 15331, 0, 0, 0, 1, 1, 1, 1, 'Wrangler\'s Wristbands'),
+  (10067, 15500, 0, 0, 0, 1, 1, 1, 1, 'Outrunner\'s Chestguard'),
+  (10068, 15500, 0, 0, 0, 1, 1, 1, 1, 'Outrunner\'s Chestguard'),
+  (10067, 15511, 0, 0, 0, 1, 1, 1, 1, 'Grunt\'s Legguards'),
+  (10068, 15511, 0, 0, 0, 1, 1, 1, 1, 'Grunt\'s Legguards'),
+  (10067, 15512, 0, 0, 0, 1, 1, 1, 1, 'Grunt\'s Shield'),
+  (10068, 15512, 0, 0, 0, 1, 1, 1, 1, 'Grunt\'s Shield'),
+  (10071, 31270, 0, 0, 0, 1, 1, 1, 1, 'Banshee Rod'),
+  (10074, 31270, 0, 0, 0, 1, 1, 1, 1, 'Banshee Rod'),
+  (10075, 31270, 0, 0, 0, 1, 1, 1, 1, 'Banshee Rod'),
+  (10069, 51964, 0, 0, 0, 1, 1, 1, 1, 'Vigorous Belt'),
+  (10070, 51964, 0, 0, 0, 1, 1, 1, 1, 'Vigorous Belt'),
+  (10073, 51964, 0, 0, 0, 1, 1, 1, 1, 'Vigorous Belt'),
+  (10077, 51964, 0, 0, 0, 1, 1, 1, 1, 'Vigorous Belt'),
+  (10071, 51968, 0, 0, 0, 1, 1, 1, 1, 'Enumerated Wrap'),
+  (10074, 51968, 0, 0, 0, 1, 1, 1, 1, 'Enumerated Wrap'),
+  (10075, 51968, 0, 0, 0, 1, 1, 1, 1, 'Enumerated Wrap'),
+  (10067, 51978, 0, 0, 0, 1, 1, 1, 1, 'Earthbound Girdle'),
+  (10068, 51978, 0, 0, 0, 1, 1, 1, 1, 'Earthbound Girdle'),
+  (10067, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
+  (10068, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
+  (10069, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
+  (10070, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
+  (10071, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
+  (10073, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
+  (10074, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
+  (10075, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
+  (10077, 51994, 0, 0, 0, 1, 1, 1, 1, 'Tumultuous Cloak'),
   (10065, 5740, 0, 0, 0, 1, 7, 1, 1, 'Red Fireworks Rocket'),
   (10065, 6657, 0, 0, 0, 1, 7, 1, 1, 'Savory Deviate Delight');
 
-DELETE FROM `conditions`
-WHERE `SourceTypeOrReferenceId` = 10
-  AND (`SourceGroup` = 51999
-    OR `SourceGroup` IN (10036, 10037, 10038, 10062, 10063, 10064, 10065, 10066))
-  AND `SourceEntry` IN (790, 3184, 6563, 6568, 6570, 6573, 6577, 6586, 6587, 9766, 9767, 9768, 9782, 9811, 9814, 11993, 12006, 14171, 15269, 15331, 15500, 15511, 15512, 31270, 51964, 51968, 51978, 51994, 5740, 6657);
+DELETE FROM conditions
+WHERE SourceTypeOrReferenceId = 10
+  AND (SourceGroup = 51999
+    OR SourceGroup IN (10036, 10037, 10038, 10062, 10063, 10064, 10065, 10066, 10067, 10068, 10069, 10070, 10071, 10073, 10074, 10075, 10077))
+  AND SourceEntry IN (3184, 6568, 6573, 6577, 6586, 6587, 9767, 9768, 9811, 15269, 15331, 15500, 15511, 15512, 31270, 51964, 51968, 51978, 51994, 5740, 6657);
 
-INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`, `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES
-  (10, 51999, 790, 0, 0, 15, 0, 79, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Forester\'s Axe'),
-  (10, 51999, 3184, 0, 0, 15, 0, 2047, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Hook Dagger'),
-  (10, 51999, 6563, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Shimmering Bracers'),
-  (10, 51999, 6568, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Shimmering Trousers'),
-  (10, 51999, 6570, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Shimmering Sash'),
-  (10, 51999, 6573, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Defender Boots'),
-  (10, 51999, 6577, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Defender Gauntlets'),
-  (10, 51999, 6586, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Gloves'),
-  (10, 51999, 6587, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Trousers'),
-  (10, 51999, 9766, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Sash'),
-  (10, 51999, 9767, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Sandals'),
-  (10, 51999, 9768, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Bracers'),
-  (10, 51999, 9782, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Bandit Jerkin'),
-  (10, 51999, 9811, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Fortified Bracers'),
-  (10, 51999, 9814, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Fortified Belt'),
-  (10, 51999, 11993, 0, 0, 15, 0, 2047, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Clay Ring'),
-  (10, 51999, 12006, 0, 0, 15, 0, 2047, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Meadow Ring'),
-  (10, 51999, 14171, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Buccaneer\'s Pants'),
-  (10, 51999, 15269, 0, 0, 15, 0, 71, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Massive Battle Axe'),
-  (10, 51999, 15331, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Wrangler\'s Wristbands'),
-  (10, 51999, 15500, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Outrunner\'s Chestguard'),
-  (10, 51999, 15511, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Grunt\'s Legguards'),
-  (10, 51999, 15512, 0, 0, 15, 0, 67, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Grunt\'s Shield'),
-  (10, 51999, 31270, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Banshee Rod'),
-  (10, 51999, 51964, 0, 0, 15, 0, 1100, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Vigorous Belt'),
-  (10, 51999, 51968, 0, 0, 15, 0, 400, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Enumerated Wrap'),
-  (10, 51999, 51978, 0, 0, 15, 0, 3, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Earthbound Girdle'),
-  (10, 51999, 51994, 0, 0, 15, 0, 2047, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak');
+INSERT INTO conditions (SourceTypeOrReferenceId, SourceGroup, SourceEntry, SourceId, ElseGroup, ConditionTypeOrReference, ConditionTarget, ConditionValue1, ConditionValue2, ConditionValue3, NegativeCondition, ErrorType, ErrorTextId, ScriptName, Comment) VALUES
+  (10, 10071, 3184, 0, 0, 15, 0, 16, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Hook Dagger'),
+  (10, 10073, 3184, 0, 0, 15, 0, 64, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Hook Dagger'),
+  (10, 10074, 3184, 0, 0, 15, 0, 128, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Hook Dagger'),
+  (10, 10075, 3184, 0, 0, 15, 0, 256, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Hook Dagger'),
+  (10, 10077, 3184, 0, 0, 15, 0, 1024, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Hook Dagger'),
+  (10, 10071, 6568, 0, 0, 15, 0, 16, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Shimmering Trousers'),
+  (10, 10074, 6568, 0, 0, 15, 0, 128, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Shimmering Trousers'),
+  (10, 10075, 6568, 0, 0, 15, 0, 256, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Shimmering Trousers'),
+  (10, 10067, 6573, 0, 0, 15, 0, 1, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Defender Boots'),
+  (10, 10068, 6573, 0, 0, 15, 0, 2, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Defender Boots'),
+  (10, 10067, 6577, 0, 0, 15, 0, 1, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Defender Gauntlets'),
+  (10, 10068, 6577, 0, 0, 15, 0, 2, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Defender Gauntlets'),
+  (10, 10069, 6586, 0, 0, 15, 0, 4, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Gloves'),
+  (10, 10070, 6586, 0, 0, 15, 0, 8, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Gloves'),
+  (10, 10073, 6586, 0, 0, 15, 0, 64, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Gloves'),
+  (10, 10077, 6586, 0, 0, 15, 0, 1024, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Gloves'),
+  (10, 10069, 6587, 0, 0, 15, 0, 4, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Trousers'),
+  (10, 10070, 6587, 0, 0, 15, 0, 8, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Trousers'),
+  (10, 10073, 6587, 0, 0, 15, 0, 64, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Trousers'),
+  (10, 10077, 6587, 0, 0, 15, 0, 1024, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Scouting Trousers'),
+  (10, 10071, 9767, 0, 0, 15, 0, 16, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Sandals'),
+  (10, 10074, 9767, 0, 0, 15, 0, 128, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Sandals'),
+  (10, 10075, 9767, 0, 0, 15, 0, 256, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Sandals'),
+  (10, 10071, 9768, 0, 0, 15, 0, 16, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Bracers'),
+  (10, 10074, 9768, 0, 0, 15, 0, 128, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Bracers'),
+  (10, 10075, 9768, 0, 0, 15, 0, 256, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Greenweave Bracers'),
+  (10, 10067, 9811, 0, 0, 15, 0, 1, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Fortified Bracers'),
+  (10, 10068, 9811, 0, 0, 15, 0, 2, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Fortified Bracers'),
+  (10, 10069, 15269, 0, 0, 15, 0, 4, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Massive Battle Axe'),
+  (10, 10069, 15331, 0, 0, 15, 0, 4, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Wrangler\'s Wristbands'),
+  (10, 10070, 15331, 0, 0, 15, 0, 8, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Wrangler\'s Wristbands'),
+  (10, 10073, 15331, 0, 0, 15, 0, 64, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Wrangler\'s Wristbands'),
+  (10, 10077, 15331, 0, 0, 15, 0, 1024, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Wrangler\'s Wristbands'),
+  (10, 10067, 15500, 0, 0, 15, 0, 1, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Outrunner\'s Chestguard'),
+  (10, 10068, 15500, 0, 0, 15, 0, 2, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Outrunner\'s Chestguard'),
+  (10, 10067, 15511, 0, 0, 15, 0, 1, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Grunt\'s Legguards'),
+  (10, 10068, 15511, 0, 0, 15, 0, 2, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Grunt\'s Legguards'),
+  (10, 10067, 15512, 0, 0, 15, 0, 1, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Grunt\'s Shield'),
+  (10, 10068, 15512, 0, 0, 15, 0, 2, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Grunt\'s Shield'),
+  (10, 10071, 31270, 0, 0, 15, 0, 16, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Banshee Rod'),
+  (10, 10074, 31270, 0, 0, 15, 0, 128, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Banshee Rod'),
+  (10, 10075, 31270, 0, 0, 15, 0, 256, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Banshee Rod'),
+  (10, 10069, 51964, 0, 0, 15, 0, 4, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Vigorous Belt'),
+  (10, 10070, 51964, 0, 0, 15, 0, 8, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Vigorous Belt'),
+  (10, 10073, 51964, 0, 0, 15, 0, 64, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Vigorous Belt'),
+  (10, 10077, 51964, 0, 0, 15, 0, 1024, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Vigorous Belt'),
+  (10, 10071, 51968, 0, 0, 15, 0, 16, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Enumerated Wrap'),
+  (10, 10074, 51968, 0, 0, 15, 0, 128, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Enumerated Wrap'),
+  (10, 10075, 51968, 0, 0, 15, 0, 256, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Enumerated Wrap'),
+  (10, 10067, 51978, 0, 0, 15, 0, 1, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Earthbound Girdle'),
+  (10, 10068, 51978, 0, 0, 15, 0, 2, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Earthbound Girdle'),
+  (10, 10067, 51994, 0, 0, 15, 0, 1, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak'),
+  (10, 10068, 51994, 0, 0, 15, 0, 2, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak'),
+  (10, 10069, 51994, 0, 0, 15, 0, 4, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak'),
+  (10, 10070, 51994, 0, 0, 15, 0, 8, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak'),
+  (10, 10071, 51994, 0, 0, 15, 0, 16, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak'),
+  (10, 10073, 51994, 0, 0, 15, 0, 64, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak'),
+  (10, 10074, 51994, 0, 0, 15, 0, 128, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak'),
+  (10, 10075, 51994, 0, 0, 15, 0, 256, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak'),
+  (10, 10077, 51994, 0, 0, 15, 0, 1024, 0, 0, 0, 0, 0, '', 'Generated Satchel of Helpful Goods - Tumultuous Cloak');
 
-INSERT INTO `quest_template` (`ID`, `QuestType`, `QuestLevel`, `MinLevel`, `QuestSortID`, `QuestInfoID`, `SuggestedGroupNum`, `RequiredFactionId1`, `RequiredFactionId2`, `RequiredFactionValue1`, `RequiredFactionValue2`, `RewardNextQuest`, `RewardXPDifficulty`, `RewardMoney`, `RewardMoneyDifficulty`, `RewardDisplaySpell`, `RewardSpell`, `RewardHonor`, `RewardKillHonor`, `StartItem`, `Flags`, `RequiredPlayerKills`, `RewardItem1`, `RewardAmount1`, `RewardItem2`, `RewardAmount2`, `RewardItem3`, `RewardAmount3`, `RewardItem4`, `RewardAmount4`, `ItemDrop1`, `ItemDropQuantity1`, `ItemDrop2`, `ItemDropQuantity2`, `ItemDrop3`, `ItemDropQuantity3`, `ItemDrop4`, `ItemDropQuantity4`, `RewardChoiceItemID1`, `RewardChoiceItemQuantity1`, `RewardChoiceItemID2`, `RewardChoiceItemQuantity2`, `RewardChoiceItemID3`, `RewardChoiceItemQuantity3`, `RewardChoiceItemID4`, `RewardChoiceItemQuantity4`, `RewardChoiceItemID5`, `RewardChoiceItemQuantity5`, `RewardChoiceItemID6`, `RewardChoiceItemQuantity6`, `POIContinent`, `POIx`, `POIy`, `POIPriority`, `RewardTitle`, `RewardTalents`, `RewardArenaPoints`, `RewardFactionID1`, `RewardFactionValue1`, `RewardFactionOverride1`, `RewardFactionID2`, `RewardFactionValue2`, `RewardFactionOverride2`, `RewardFactionID3`, `RewardFactionValue3`, `RewardFactionOverride3`, `RewardFactionID4`, `RewardFactionValue4`, `RewardFactionOverride4`, `RewardFactionID5`, `RewardFactionValue5`, `RewardFactionOverride5`, `TimeAllowed`, `AllowableRaces`, `LogTitle`, `LogDescription`, `QuestDescription`, `AreaDescription`, `QuestCompletionLog`, `RequiredNpcOrGo1`, `RequiredNpcOrGo2`, `RequiredNpcOrGo3`, `RequiredNpcOrGo4`, `RequiredNpcOrGoCount1`, `RequiredNpcOrGoCount2`, `RequiredNpcOrGoCount3`, `RequiredNpcOrGoCount4`, `RequiredItemId1`, `RequiredItemId2`, `RequiredItemId3`, `RequiredItemId4`, `RequiredItemId5`, `RequiredItemId6`, `RequiredItemCount1`, `RequiredItemCount2`, `RequiredItemCount3`, `RequiredItemCount4`, `RequiredItemCount5`, `RequiredItemCount6`, `Unknown0`, `ObjectiveText1`, `ObjectiveText2`, `ObjectiveText3`, `ObjectiveText4`, `VerifiedBuild`) VALUES
+INSERT INTO quest_template (ID, QuestType, QuestLevel, MinLevel, QuestSortID, QuestInfoID, SuggestedGroupNum, RequiredFactionId1, RequiredFactionId2, RequiredFactionValue1, RequiredFactionValue2, RewardNextQuest, RewardXPDifficulty, RewardMoney, RewardMoneyDifficulty, RewardDisplaySpell, RewardSpell, RewardHonor, RewardKillHonor, StartItem, Flags, RequiredPlayerKills, RewardItem1, RewardAmount1, RewardItem2, RewardAmount2, RewardItem3, RewardAmount3, RewardItem4, RewardAmount4, ItemDrop1, ItemDropQuantity1, ItemDrop2, ItemDropQuantity2, ItemDrop3, ItemDropQuantity3, ItemDrop4, ItemDropQuantity4, RewardChoiceItemID1, RewardChoiceItemQuantity1, RewardChoiceItemID2, RewardChoiceItemQuantity2, RewardChoiceItemID3, RewardChoiceItemQuantity3, RewardChoiceItemID4, RewardChoiceItemQuantity4, RewardChoiceItemID5, RewardChoiceItemQuantity5, RewardChoiceItemID6, RewardChoiceItemQuantity6, POIContinent, POIx, POIy, POIPriority, RewardTitle, RewardTalents, RewardArenaPoints, RewardFactionID1, RewardFactionValue1, RewardFactionOverride1, RewardFactionID2, RewardFactionValue2, RewardFactionOverride2, RewardFactionID3, RewardFactionValue3, RewardFactionOverride3, RewardFactionID4, RewardFactionValue4, RewardFactionOverride4, RewardFactionID5, RewardFactionValue5, RewardFactionOverride5, TimeAllowed, AllowableRaces, LogTitle, LogDescription, QuestDescription, AreaDescription, QuestCompletionLog, RequiredNpcOrGo1, RequiredNpcOrGo2, RequiredNpcOrGo3, RequiredNpcOrGo4, RequiredNpcOrGoCount1, RequiredNpcOrGoCount2, RequiredNpcOrGoCount3, RequiredNpcOrGoCount4, RequiredItemId1, RequiredItemId2, RequiredItemId3, RequiredItemId4, RequiredItemId5, RequiredItemId6, RequiredItemCount1, RequiredItemCount2, RequiredItemCount3, RequiredItemCount4, RequiredItemCount5, RequiredItemCount6, Unknown0, ObjectiveText1, ObjectiveText2, ObjectiveText3, ObjectiveText4, VerifiedBuild) VALUES
   (777000, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 21153, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4113, 3066, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
   (777001, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777002, 0, 0, 0, 55500, 36937, 0, 0, 0, 0, 0, 14530, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4095, 3024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Stayin\' alive', 'Speak with Zarevhi, the arcane healer and learn it\'s techniques.', 'Food won\'t keep you alive when you\'re bleeding out. Find the healer here in the Stormspire. They\'ll show you how to patch up your own leaks so you aren\'t constantly running back from the graveyard.', 'Find the arcane healer inside the Stormspire.', 'Find the arcane healer inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the arcane healer inside the Stormspire.', '', '', '', 0),
   (777002, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 777003, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28463, 1, 28468, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4202, 2999, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Gems for the Drip', 'Speak with Dealer Senzik to get your shiny gems.', 'Forget grinding dusty old librams and arcanums to pimp out your hats and legs. Instead, our top engineers cooked up special custom gems made specifically for your head and leg slots. You get the same insane stat boosts, but with way more variety to min-max your build! Go find Dealer Senzik the gem merchant right now and get shiny!', 'Find the gem merchant inside the Stormspire.', 'Find the gem merchant inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find the gem merchant inside the Stormspire.', '', '', '', 0),
@@ -767,7 +1158,7 @@ If you\'re looking to sharpen your skills, there\'s no better teacher than Audi 
 You\'ll find Audi somewhere inside the Stormpike. Speak with her and introduce yourself. Listen well—those who survive the arena are rarely eager to waste words.
 
 Go now, and let her know I sent you.', 'Find former gladiator Audi the Needle inside the Stormspire.', 'Find former gladiator Audi the Needle inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Find former gladiator Audi the Needle inside the Stormspire.', '', '', '', 0),
-  (777006, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 17500, 0, 0, 0, 1750, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Just queue Warsong Gluch already!', 'Still standing here?
+  (777006, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1750, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Just queue Warsong Gluch already!', 'Still standing here?
 
 Warsong Gulch isn\'t going to queue itself. Every moment you hesitate is another opportunity for the enemy to claim victory.
 
@@ -775,42 +1166,42 @@ Join the queue, and show everyone that you\'re more than just another bystander.
 
 If you seek glory, honor, and a worthy challenge, it\'s time to enter Warsong Gulch. There, the Horde and Alliance clash in an endless struggle to capture one another\'s flag, testing both courage and teamwork.
 
-Speak with "Image of Nexus-Prince Haramad" and enlist. The sooner you queue, the sooner you\'ll be fighting for victory.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', '', '', '', 0),
-  (777009, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 13209, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 2', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 18706, 40752, 0, 0, 0, 0, 1, 30, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777010, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 8663, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 3', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 13209, 40752, 0, 0, 0, 0, 1, 60, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777011, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 19024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master - Rank 4', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 8663, 40752, 0, 0, 0, 0, 1, 120, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777014, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5000, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Trial of Justice', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777015, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 666, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Trial of Heroism', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777016, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15000, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Judgment of Champions', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
-  (777017, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Heroes of the Arena', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0, 0, '', '', '', '', 0);
+Speak with "Image of Nexus-Prince Haramad" and enlist. The sooner you queue, the sooner you\'ll be fighting for victory.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', 0, 0, 0, 0, 0, 0, 0, 0, 29434, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 'Find the "Image of Nexus-Prince Haramad" inside the Stormspire.', '', '', '', 0),
+  (777009, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 13209, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Contender', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 18706, 40752, 0, 0, 0, 0, 1, 30, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777010, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 8663, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Master', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 13209, 40752, 0, 0, 0, 0, 1, 60, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777011, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 589824, 0, 19024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Arena Grand Master', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 8663, 40752, 0, 0, 0, 0, 1, 120, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777014, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5000, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Trial of Justice', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 29434, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777015, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 593920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 666, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Trial of Heroism', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777016, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15000, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Judgment of Champions', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 29434, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, '', '', '', '', 0),
+  (777017, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 622592, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Heroes of the Arena', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, '', '', '', '', 0);
 
 -- Reapply sheet-defined item requirements explicitly after quest row generation.
-UPDATE `quest_template`
-SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 1, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
-WHERE `ID` = 777006;
-UPDATE `quest_template`
-SET `RequiredItemId1` = 18706, `RequiredItemCount1` = 1, `RequiredItemId2` = 40752, `RequiredItemCount2` = 30, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
-WHERE `ID` = 777009;
-UPDATE `quest_template`
-SET `RequiredItemId1` = 13209, `RequiredItemCount1` = 1, `RequiredItemId2` = 40752, `RequiredItemCount2` = 60, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
-WHERE `ID` = 777010;
-UPDATE `quest_template`
-SET `RequiredItemId1` = 8663, `RequiredItemCount1` = 1, `RequiredItemId2` = 40752, `RequiredItemCount2` = 120, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
-WHERE `ID` = 777011;
-UPDATE `quest_template`
-SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 15, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
-WHERE `ID` = 777014;
-UPDATE `quest_template`
-SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 20, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
-WHERE `ID` = 777015;
-UPDATE `quest_template`
-SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 45, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
-WHERE `ID` = 777016;
-UPDATE `quest_template`
-SET `RequiredItemId1` = 40752, `RequiredItemCount1` = 60, `RequiredItemId2` = 0, `RequiredItemCount2` = 0, `RequiredItemId3` = 0, `RequiredItemCount3` = 0, `RequiredItemId4` = 0, `RequiredItemCount4` = 0
-WHERE `ID` = 777017;
+UPDATE quest_template
+SET RequiredItemId1 = 29434, RequiredItemCount1 = 1, RequiredItemId2 = 0, RequiredItemCount2 = 0, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
+WHERE ID = 777006;
+UPDATE quest_template
+SET RequiredItemId1 = 18706, RequiredItemCount1 = 1, RequiredItemId2 = 40752, RequiredItemCount2 = 30, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
+WHERE ID = 777009;
+UPDATE quest_template
+SET RequiredItemId1 = 13209, RequiredItemCount1 = 1, RequiredItemId2 = 40752, RequiredItemCount2 = 60, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
+WHERE ID = 777010;
+UPDATE quest_template
+SET RequiredItemId1 = 8663, RequiredItemCount1 = 1, RequiredItemId2 = 40752, RequiredItemCount2 = 120, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
+WHERE ID = 777011;
+UPDATE quest_template
+SET RequiredItemId1 = 29434, RequiredItemCount1 = 10, RequiredItemId2 = 0, RequiredItemCount2 = 0, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
+WHERE ID = 777014;
+UPDATE quest_template
+SET RequiredItemId1 = 40752, RequiredItemCount1 = 15, RequiredItemId2 = 0, RequiredItemCount2 = 0, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
+WHERE ID = 777015;
+UPDATE quest_template
+SET RequiredItemId1 = 29434, RequiredItemCount1 = 25, RequiredItemId2 = 0, RequiredItemCount2 = 0, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
+WHERE ID = 777016;
+UPDATE quest_template
+SET RequiredItemId1 = 40752, RequiredItemCount1 = 35, RequiredItemId2 = 0, RequiredItemCount2 = 0, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
+WHERE ID = 777017;
 
-INSERT INTO `quest_offer_reward` (`ID`, `Emote1`, `Emote2`, `Emote3`, `Emote4`, `EmoteDelay1`, `EmoteDelay2`, `EmoteDelay3`, `EmoteDelay4`, `RewardText`, `VerifiedBuild`) VALUES
+INSERT INTO quest_offer_reward (ID, Emote1, Emote2, Emote3, Emote4, EmoteDelay1, EmoteDelay2, EmoteDelay3, EmoteDelay4, RewardText, VerifiedBuild) VALUES
   (777000, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire, traveler! Please, take a moment to rest, have a warm meal, and enjoy the artificial breeze. Your adventure in the dome starts now, but heed my words: do not step outside the glass. The twisting nether out there will tear a newcomer apart, and I’d prefer not to lose a customer so quickly.', 0),
   (777001, 0, 0, 0, 0, 0, 0, 0, 0, 'Those are reusable, don\'t throw them away !', 0),
   (777002, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome, friend! The healer speaks the truth; forget those primitive enchantments and dusty librams. The Consortium deals in pure, engineered energy!
@@ -874,7 +1265,7 @@ Accept this reward of 15,000 Honor and 150,000 Gold as recognition of your unwav
 
 Accept your reward with pride, and prepare yourself—the arena\'s call never grows silent, and another challenge awaits when the new week begins.', 0);
 
-INSERT INTO `quest_template_addon` (`ID`, `MaxLevel`, `AllowableClasses`, `SourceSpellID`, `PrevQuestID`, `NextQuestID`, `ExclusiveGroup`, `RewardMailTemplateID`, `RewardMailDelay`, `RequiredSkillID`, `RequiredSkillPoints`, `RequiredMinRepFaction`, `RequiredMaxRepFaction`, `RequiredMinRepValue`, `RequiredMaxRepValue`, `ProvidedItemCount`, `SpecialFlags`) VALUES
+INSERT INTO quest_template_addon (ID, MaxLevel, AllowableClasses, SourceSpellID, PrevQuestID, NextQuestID, ExclusiveGroup, RewardMailTemplateID, RewardMailDelay, RequiredSkillID, RequiredSkillPoints, RequiredMinRepFaction, RequiredMaxRepFaction, RequiredMinRepValue, RequiredMaxRepValue, ProvidedItemCount, SpecialFlags) VALUES
   (777000, 19, 0, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777001, 19, 0, 0, 0, 777002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777002, 19, 0, 0, 0, 777003, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
@@ -889,7 +1280,7 @@ INSERT INTO `quest_template_addon` (`ID`, `MaxLevel`, `AllowableClasses`, `Sourc
   (777016, 19, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777017, 19, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32);
 
-INSERT INTO `quest_request_items` (`ID`, `EmoteOnComplete`, `EmoteOnIncomplete`, `CompletionText`, `VerifiedBuild`) VALUES
+INSERT INTO quest_request_items (ID, EmoteOnComplete, EmoteOnIncomplete, CompletionText, VerifiedBuild) VALUES
   (777000, 0, 0, '', 0),
   (777001, 0, 0, 'Speak with Zarevhi, the arcane healer and learn it\'s techniques.', 0),
   (777002, 0, 0, 'Speak with Dealer Senzik to get your shiny gems.', 0),
@@ -913,7 +1304,7 @@ Join the queue, and show everyone that you\'re more than just another bystander.
   (777016, 0, 0, '', 0),
   (777017, 0, 0, '', 0);
 
-INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES
+INSERT INTO creature_queststarter (id, quest) VALUES
   (19531, 777000),
   (19531, 777001),
   (22427, 777002),
@@ -929,7 +1320,7 @@ INSERT INTO `creature_queststarter` (`id`, `quest`) VALUES
   (20084, 777016),
   (20205, 777017);
 
-INSERT INTO `creature_questender` (`id`, `quest`) VALUES
+INSERT INTO creature_questender (id, quest) VALUES
   (19531, 777000),
   (22427, 777001),
   (19538, 777002),
@@ -945,7 +1336,7 @@ INSERT INTO `creature_questender` (`id`, `quest`) VALUES
   (20084, 777016),
   (20205, 777017);
 
-INSERT INTO quest_poi (`QuestId`, `id`, `ObjectiveIndex`, `MapId`, `WorldMapAreaId`, `Floor`, `Priority`, `Flags`, `VerifiedBuild`) VALUES
+INSERT INTO quest_poi (QuestId, id, ObjectiveIndex, MapId, WorldMapAreaId, Floor, Priority, Flags, VerifiedBuild) VALUES
   (777000, 1, -1, 530, 105, 0, 0, 0, 0),
   (777001, 1, -1, 530, 105, 0, 0, 0, 0),
   (777002, 1, -1, 530, 105, 0, 0, 0, 0),
@@ -961,7 +1352,7 @@ INSERT INTO quest_poi (`QuestId`, `id`, `ObjectiveIndex`, `MapId`, `WorldMapArea
   (777016, 1, -1, 530, 105, 0, 0, 0, 0),
   (777017, 1, -1, 530, 105, 0, 0, 0, 0);
 
-INSERT INTO quest_poi_points (`QuestId`, `idx1`, `idx2`, `X`, `Y`) VALUES
+INSERT INTO quest_poi_points (QuestId, idx1, idx2, X, Y) VALUES
   (777000, 1, 0, 4113, 3066),
   (777001, 1, 0, 4095, 3024),
   (777002, 1, 0, 4202, 2999),

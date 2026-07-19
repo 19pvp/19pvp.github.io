@@ -2,3051 +2,3147 @@
 
 USE `19pvp_world`;
 
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Ring of Pure Silver', '', `description`),
-    `name` = 'Ring of Pure Silver',
-    `Quality` = 2
-WHERE `entry` = 1116;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Totem of Infliction', '', `description`),
-    `name` = 'Totem of Infliction',
-    `Quality` = 2
-WHERE `entry` = 1131;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Fire Hardened Buckler', '', `description`),
-    `name` = 'Fire Hardened Buckler',
-    `stat_type1` = 7,
-    `stat_value1` = 5,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 1276;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Minor Channeling Ring', '', `description`),
-    `name` = 'Minor Channeling Ring',
-    `Quality` = 3
-WHERE `entry` = 1449;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Shadowhide Scalper', '', `description`),
-    `name` = 'Shadowhide Scalper',
-    `stat_type1` = 4,
-    `stat_value1` = 3,
-    `stat_type2` = 7,
-    `stat_value2` = 1,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 1459;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Shadowfang', '', `description`),
-    `name` = 'Shadowfang',
-    `Quality` = 4
-WHERE `entry` = 1482;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Bluegill Sandals', '', `description`),
-    `name` = 'Bluegill Sandals',
-    `stat_type1` = 5,
-    `stat_value1` = 2,
-    `stat_type2` = 45,
-    `stat_value2` = 2,
-    `stat_type3` = 7,
-    `stat_value3` = 3,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 1560;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Assassin\'s Blade', '', `description`),
-    `name` = 'Assassin\'s Blade',
-    `Quality` = 3
-WHERE `entry` = 1935;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Sword of the Night Sky', '', `description`),
-    `name` = 'Sword of the Night Sky',
-    `stat_type1` = 45,
-    `stat_value1` = 2,
-    `stat_type2` = 32,
-    `stat_value2` = 2,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 2035;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Tunic of Westfall', '', `description`),
-    `name` = 'Tunic of Westfall',
-    `Quality` = 3
-WHERE `entry` = 2041;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Staff of Westfall', '', `description`),
-    `name` = 'Staff of Westfall',
-    `Quality` = 3
-WHERE `entry` = 2042;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Bluegill Kukri', '', `description`),
-    `name` = 'Bluegill Kukri',
-    `stat_type1` = 32,
-    `stat_value1` = 4,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 2046;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Inferno Robe', '', `description`),
-    `name` = 'Inferno Robe',
-    `Quality` = 4,
-    `stat_type1` = 7,
-    `stat_value1` = 5,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 2231;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Antipodean Rod', '', `description`),
-    `name` = 'Antipodean Rod',
-    `stat_type1` = 5,
-    `stat_value1` = 4,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 2879;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Seal of Wrynn', '', `description`),
-    `name` = 'Seal of Wrynn',
-    `Quality` = 4
-WHERE `entry` = 2933;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Ghostly Mantle', '', `description`),
-    `name` = 'Ghostly Mantle',
-    `Quality` = 3
-WHERE `entry` = 3324;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Robe of Solomon', '', `description`),
-    `name` = 'Robe of Solomon',
-    `stat_type1` = 7,
-    `stat_value1` = 7,
-    `stat_type2` = 45,
-    `stat_value2` = 4,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 3555;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Resilient Poncho', '', `description`),
-    `name` = 'Resilient Poncho',
-    `stat_type1` = 7,
-    `stat_value1` = 5,
-    `stat_type2` = 31,
-    `stat_value2` = 2,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 3561;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Deadskull Shield', '', `description`),
-    `name` = 'Deadskull Shield',
-    `Quality` = 3
-WHERE `entry` = 3761;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Runic Darkblade', '', `description`),
-    `name` = 'Runic Darkblade',
-    `Quality` = 3
-WHERE `entry` = 3822;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Reinforced Woolen Shoulders', '', `description`),
-    `name` = 'Reinforced Woolen Shoulders',
-    `Quality` = 3
-WHERE `entry` = 4315;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Heavy Woolen Pants', '', `description`),
-    `name` = 'Heavy Woolen Pants',
-    `stat_type1` = 5,
-    `stat_value1` = 3,
-    `stat_type2` = 7,
-    `stat_value2` = 6,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 4316;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Flying Tiger Goggles', '', `description`),
-    `name` = 'Flying Tiger Goggles',
-    `stat_type1` = 7,
-    `stat_value1` = 6,
-    `stat_type2` = 31,
-    `stat_value2` = 5,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 4368;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Shadow Goggles', '', `description`),
-    `name` = 'Shadow Goggles',
-    `stat_type1` = 5,
-    `stat_value1` = 8,
-    `stat_type2` = 43,
-    `stat_value2` = 3,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 4373;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Green Tinted Goggles', '', `description`),
-    `name` = 'Green Tinted Goggles',
-    `Quality` = 3,
-    `stat_type1` = 7,
-    `stat_value1` = 8,
-    `stat_type2` = 31,
-    `stat_value2` = 6,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 4385;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Standard scope', '', `description`),
-    `name` = 'Standard scope',
-    `Quality` = 2
-WHERE `entry` = 4406;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Steel-clasped Bracers', '', `description`),
-    `name` = 'Steel-clasped Bracers',
-    `Quality` = 3
-WHERE `entry` = 4534;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Pulsating Hydra Heart', '', `description`),
-    `name` = 'Pulsating Hydra Heart',
-    `stat_type1` = 7,
-    `stat_value1` = 2,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5183;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Taskmaster Axe', '', `description`),
-    `name` = 'Taskmaster Axe',
-    `stat_type1` = 7,
-    `stat_value1` = 8,
-    `stat_type2` = 36,
-    `stat_value2` = 8,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5194;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Gold-flecked Gloves', '', `description`),
-    `name` = 'Gold-flecked Gloves',
-    `stat_type1` = 7,
-    `stat_value1` = 5,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5195;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Rugged Spaulders', '', `description`),
-    `name` = 'Rugged Spaulders',
-    `stat_type1` = 7,
-    `stat_value1` = 8,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5254;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Dry Moss Tunic', '', `description`),
-    `name` = 'Dry Moss Tunic',
-    `stat_type1` = 7,
-    `stat_value1` = 8,
-    `stat_type2` = 32,
-    `stat_value2` = 2,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5317;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Everglow Lantern', '', `description`),
-    `name` = 'Everglow Lantern',
-    `Quality` = 2
-WHERE `entry` = 5323;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Miner\'s Cape', '', `description`),
-    `name` = 'Miner\'s Cape',
-    `stat_type1` = 7,
-    `stat_value1` = 4,
-    `stat_type2` = 36,
-    `stat_value2` = 4,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5444;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Staff of the Purifier', '', `description`),
-    `name` = 'Staff of the Purifier',
-    `Quality` = 2
-WHERE `entry` = 5613;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Seraph\'s Strike', '', `description`),
-    `name` = 'Seraph\'s Strike',
-    `Quality` = 3,
-    `stat_type1` = 4,
-    `stat_value1` = 3,
-    `stat_type2` = 36,
-    `stat_value2` = 10,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5614;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Relic Blade', '', `description`),
-    `name` = 'Relic Blade',
-    `stat_type1` = 7,
-    `stat_value1` = 3,
-    `stat_type2` = 5,
-    `stat_value2` = 1,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5627;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Warchief\'s Girdle', '', `description`),
-    `name` = 'Warchief\'s Girdle',
-    `stat_type1` = 7,
-    `stat_value1` = 5,
-    `stat_type2` = 4,
-    `stat_value2` = 3,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5750;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Glacial Stone', '', `description`),
-    `name` = 'Glacial Stone',
-    `Quality` = 4
-WHERE `entry` = 5815;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Serpent Gloves', '', `description`),
-    `name` = 'Serpent Gloves',
-    `stat_type1` = 36,
-    `stat_value1` = 5,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 5970;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Chausses of Westfall', '', `description`),
-    `name` = 'Chausses of Westfall',
-    `Quality` = 3
-WHERE `entry` = 6087;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Durable Chain Shoulders', '', `description`),
-    `name` = 'Durable Chain Shoulders',
-    `Quality` = 2,
-    `stat_type1` = 7,
-    `stat_value1` = 2,
-    `stat_type2` = 4,
-    `stat_value2` = 2,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 6189;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Kimbra Boots', '', `description`),
-    `name` = 'Kimbra Boots',
-    `Quality` = 2
-WHERE `entry` = 6191;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Sacred Burial Trousers', '', `description`),
-    `name` = 'Sacred Burial Trousers',
-    `Quality` = 3
-WHERE `entry` = 6282;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Grizzled Boots', '', `description`),
-    `name` = 'Grizzled Boots',
-    `Quality` = 3
-WHERE `entry` = 6335;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Eerie Stable Lantern', '', `description`),
-    `name` = 'Eerie Stable Lantern',
-    `stat_type1` = 7,
-    `stat_value1` = 4,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 6341;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Seal of Sylvanas', '', `description`),
-    `name` = 'Seal of Sylvanas',
-    `Quality` = 4
-WHERE `entry` = 6414;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Venomstrike', '', `description`),
-    `name` = 'Venomstrike',
-    `Quality` = 4
-WHERE `entry` = 6469;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Armor of the Fang', '', `description`),
-    `name` = 'Armor of the Fang',
-    `stat_type1` = 7,
-    `stat_value1` = 8,
-    `stat_type2` = 38,
-    `stat_value2` = 16,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 6473;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Wingblade', '', `description`),
-    `name` = 'Wingblade',
-    `Quality` = 3
-WHERE `entry` = 6504;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Crescent Staff', '', `description`),
-    `name` = 'Crescent Staff',
-    `Quality` = 3
-WHERE `entry` = 6505;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Engineer\'s Cloak', '', `description`),
-    `name` = 'Engineer\'s Cloak',
-    `Quality` = 2
-WHERE `entry` = 6667;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Draftsman Boots', '', `description`),
-    `name` = 'Draftsman Boots',
-    `Quality` = 3
-WHERE `entry` = 6668;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Band of Elven Grace', '', `description`),
-    `name` = 'Band of Elven Grace',
-    `Quality` = 2
-WHERE `entry` = 6678;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Gravestone Scepter', '', `description`),
-    `name` = 'Gravestone Scepter',
-    `Quality` = 3
-WHERE `entry` = 7001;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Arctic Buckler', '', `description`),
-    `name` = 'Arctic Buckler',
-    `Quality` = 3
-WHERE `entry` = 7002;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Beetle Clasps', '', `description`),
-    `name` = 'Beetle Clasps',
-    `Quality` = 3
-WHERE `entry` = 7003;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Efflorescent Robe', '', `description`),
-    `name` = 'Efflorescent Robe',
-    `Quality` = 3
-WHERE `entry` = 7334;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Arena Master', '', `description`),
-    `name` = 'Arena Master',
-    `Quality` = 3,
-    `stat_type1` = 7,
-    `stat_value1` = 9,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 29506,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 29506,
-    `spellcooldown_1` = 900000,
-    `spellcategorycooldown_1` = 900000
-WHERE `entry` = 8663;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Pious Legwraps', '', `description`),
-    `name` = 'Pious Legwraps',
-    `Quality` = 3,
-    `stat_type1` = 7,
-    `stat_value1` = 8,
-    `stat_type2` = 36,
-    `stat_value2` = 7,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 10043;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Blackened Defias Armor', '', `description`),
-    `name` = 'Blackened Defias Armor',
-    `Quality` = 4
-WHERE `entry` = 10399;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Trailblazer Boots', '', `description`),
-    `name` = 'Trailblazer Boots',
-    `Quality` = 3
-WHERE `entry` = 10653;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Jutebraid Gloves', '', `description`),
-    `name` = 'Jutebraid Gloves',
-    `Quality` = 3
-WHERE `entry` = 10654;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Talbar Mantle', '', `description`),
-    `name` = 'Talbar Mantle',
-    `Quality` = 3
-WHERE `entry` = 10657;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Demon Band', '', `description`),
-    `name` = 'Demon Band',
-    `stat_type1` = 4,
-    `stat_value1` = 4,
-    `stat_type2` = 7,
-    `stat_value2` = 2,
-    `stat_type3` = 36,
-    `stat_value3` = 2,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 12054;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Thorium shield spike', '', `description`),
-    `name` = 'Thorium shield spike',
-    `Quality` = 2
-WHERE `entry` = 12645;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Firebane Cloak', '', `description`),
-    `name` = 'Firebane Cloak',
-    `stat_type1` = 7,
-    `stat_value1` = 5,
-    `stat_type2` = 32,
-    `stat_value2` = 5,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 12979;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Rakzur Club', '', `description`),
-    `name` = 'Rakzur Club',
-    `stat_type1` = 4,
-    `stat_value1` = 4,
-    `stat_type2` = 7,
-    `stat_value2` = 8,
-    `stat_type3` = 32,
-    `stat_value3` = 5,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 12983;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Razor\'s Edge', '', `description`),
-    `name` = 'Razor\'s Edge',
-    `stat_type1` = 4,
-    `stat_value1` = 4,
-    `stat_type2` = 32,
-    `stat_value2` = 2,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 12990;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Arena Contender', '', `description`),
-    `name` = 'Arena Contender',
-    `Quality` = 2,
-    `stat_type1` = 7,
-    `stat_value1` = 6,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 29506,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 29506,
-    `spellcooldown_1` = 900000,
-    `spellcategorycooldown_1` = 900000
-WHERE `entry` = 13209;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Lower Insigna of Blasting', '', `description`),
-    `name` = 'Lower Insigna of Blasting',
-    `Quality` = 1,
-    `stat_type1` = 32,
-    `stat_value1` = 3,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 42292,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 1182,
-    `spellcooldown_1` = 300000,
-    `spellcategorycooldown_1` = 300000
-WHERE `entry` = 13966;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Aboriginal Shoulder Pads', '', `description`),
-    `name` = 'Aboriginal Shoulder Pads',
-    `Quality` = 2,
-    `stat_type1` = 7,
-    `stat_value1` = 2,
-    `stat_type2` = 5,
-    `stat_value2` = 2,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 14169;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Hulking Bands', '', `description`),
-    `name` = 'Hulking Bands',
-    `stat_type1` = 7,
-    `stat_value1` = 3,
-    `stat_type2` = 4,
-    `stat_value2` = 1,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 14743;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Lupine Mantle', '', `description`),
-    `name` = 'Lupine Mantle',
-    `Quality` = 2,
-    `stat_type1` = 7,
-    `stat_value1` = 2,
-    `stat_type2` = 3,
-    `stat_value2` = 2,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 15019;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Mystic\'s Sphere', '', `description`),
-    `name` = 'Mystic\'s Sphere',
-    `stat_type1` = 7,
-    `stat_value1` = 2,
-    `stat_type2` = 45,
-    `stat_value2` = 3,
-    `stat_type3` = 5,
-    `stat_value3` = 2,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 15946;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Aquarius Belt', '', `description`),
-    `name` = 'Aquarius Belt',
-    `Quality` = 3
-WHERE `entry` = 16608;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Furbolg Medicine Pouch', '', `description`),
-    `name` = 'Furbolg Medicine Pouch',
-    `Quality` = 4
-WHERE `entry` = 16768;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Owlbeard Bracers', '', `description`),
-    `name` = 'Owlbeard Bracers',
-    `stat_type1` = 7,
-    `stat_value1` = 2,
-    `stat_type2` = 5,
-    `stat_value2` = 1,
-    `stat_type3` = 45,
-    `stat_value3` = 1,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 16981;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Screecher Belt', '', `description`),
-    `name` = 'Screecher Belt',
-    `Quality` = 3
-WHERE `entry` = 16987;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Gutterblade', '', `description`),
-    `name` = 'Gutterblade',
-    `Quality` = 3
-WHERE `entry` = 17046;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Lower Insigna of Solidity', '', `description`),
-    `name` = 'Lower Insigna of Solidity',
-    `Quality` = 1,
-    `stat_type1` = 7,
-    `stat_value1` = 3,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 42292,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 1182,
-    `spellcooldown_1` = 300000,
-    `spellcategorycooldown_1` = 300000
-WHERE `entry` = 18468;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Insigna of Solidity', '', `description`),
-    `name` = 'Insigna of Solidity',
-    `Quality` = 2,
-    `stat_type1` = 7,
-    `stat_value1` = 5,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 42292,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 1182,
-    `spellcooldown_1` = 240000,
-    `spellcategorycooldown_1` = 240000
-WHERE `entry` = 18471;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Arena Initiate', '', `description`),
-    `name` = 'Arena Initiate',
-    `Quality` = 1,
-    `stat_type1` = 7,
-    `stat_value1` = 3,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 29506,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 29506,
-    `spellcooldown_1` = 900000,
-    `spellcategorycooldown_1` = 900000
-WHERE `entry` = 18706;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Arena Grand Master', '', `description`),
-    `name` = 'Arena Grand Master',
-    `Quality` = 4,
-    `stat_type1` = 7,
-    `stat_value1` = 12,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 29506,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 29506,
-    `spellcooldown_1` = 900000,
-    `spellcategorycooldown_1` = 900000
-WHERE `entry` = 19024;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Nat Pagle\'s Extreme Anglin\' Boots', '', `description`),
-    `name` = 'Nat Pagle\'s Extreme Anglin\' Boots',
-    `Quality` = 3
-WHERE `entry` = 19969;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Lucky Fishing Hat', '', `description`),
-    `name` = 'Lucky Fishing Hat',
-    `Quality` = 4
-WHERE `entry` = 19972;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Thick Bronze Necklace', '', `description`),
-    `name` = 'Thick Bronze Necklace',
-    `Quality` = 3,
-    `stat_type1` = 7,
-    `stat_value1` = 3,
-    `stat_type2` = 45,
-    `stat_value2` = 5,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 21933;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Ornate Tigerseye Necklace', '', `description`),
-    `name` = 'Ornate Tigerseye Necklace',
-    `stat_type1` = 7,
-    `stat_value1` = 3,
-    `stat_type2` = 32,
-    `stat_value2` = 2,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 21934;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Insigna of Blasting', '', `description`),
-    `name` = 'Insigna of Blasting',
-    `Quality` = 2,
-    `stat_type1` = 32,
-    `stat_value1` = 6,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 42292,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 1182,
-    `spellcooldown_1` = 240000,
-    `spellcategorycooldown_1` = 240000
-WHERE `entry` = 22268;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Slayer\'s Band', '', `description`),
-    `name` = 'Slayer\'s Band',
-    `stat_type1` = 7,
-    `stat_value1` = 3,
-    `stat_type2` = 32,
-    `stat_value2` = 3,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 22979;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Staff of the Sun', '', `description`),
-    `name` = 'Staff of the Sun',
-    `Quality` = 3
-WHERE `entry` = 22980;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Farstrider\'s Longbow', '', `description`),
-    `name` = 'Farstrider\'s Longbow',
-    `Quality` = 3
-WHERE `entry` = 22982;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Dawnblade', '', `description`),
-    `name` = 'Dawnblade',
-    `Quality` = 3
-WHERE `entry` = 22984;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Sin\'dorei Warblade', '', `description`),
-    `name` = 'Sin\'dorei Warblade',
-    `Quality` = 3
-WHERE `entry` = 22995;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Solid azure moonstone', '', `description`),
-    `name` = 'Solid azure moonstone',
-    `Quality` = 2
-WHERE `entry` = 23118;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Felsteel shield spike', '', `description`),
-    `name` = 'Felsteel shield spike',
-    `Quality` = 3
-WHERE `entry` = 23530;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Bold living ruby', '', `description`),
-    `name` = 'Bold living ruby',
-    `Quality` = 2
-WHERE `entry` = 24027;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Delicate living ruby', '', `description`),
-    `name` = 'Delicate living ruby',
-    `Quality` = 2
-WHERE `entry` = 24028;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Bright living ruby', '', `description`),
-    `name` = 'Bright living ruby',
-    `Quality` = 2
-WHERE `entry` = 24031;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Solid star of elune', '', `description`),
-    `name` = 'Solid star of elune',
-    `Quality` = 3
-WHERE `entry` = 24033;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Sparkling star of elune', '', `description`),
-    `name` = 'Sparkling star of elune',
-    `Quality` = 2
-WHERE `entry` = 24035;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Lustrous star of elune', '', `description`),
-    `name` = 'Lustrous star of elune',
-    `Quality` = 2
-WHERE `entry` = 24037;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Brilliant dawnstone', '', `description`),
-    `name` = 'Brilliant dawnstone',
-    `Quality` = 2
-WHERE `entry` = 24047;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Smooth dawnstone', '', `description`),
-    `name` = 'Smooth dawnstone',
-    `Quality` = 2
-WHERE `entry` = 24048;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Greater Insigna of Blasting', '', `description`),
-    `name` = 'Greater Insigna of Blasting',
-    `Quality` = 3,
-    `stat_type1` = 32,
-    `stat_value1` = 9,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 42292,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 1182,
-    `spellcooldown_1` = 180000,
-    `spellcategorycooldown_1` = 180000
-WHERE `entry` = 24551;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Greater Insigna of Solidity', '', `description`),
-    `name` = 'Greater Insigna of Solidity',
-    `Quality` = 3,
-    `stat_type1` = 7,
-    `stat_value1` = 7,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0,
-    `spellid_1` = 0,
-    `spelltrigger_1` = 0,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1,
-    `spellid_2` = 0,
-    `spelltrigger_2` = 0,
-    `spellcharges_2` = 0,
-    `spellppmRate_2` = 0,
-    `spellcooldown_2` = -1,
-    `spellcategory_2` = 0,
-    `spellcategorycooldown_2` = -1,
-    `spellid_3` = 0,
-    `spelltrigger_3` = 0,
-    `spellcharges_3` = 0,
-    `spellppmRate_3` = 0,
-    `spellcooldown_3` = -1,
-    `spellcategory_3` = 0,
-    `spellcategorycooldown_3` = -1,
-    `spellid_4` = 0,
-    `spelltrigger_4` = 0,
-    `spellcharges_4` = 0,
-    `spellppmRate_4` = 0,
-    `spellcooldown_4` = -1,
-    `spellcategory_4` = 0,
-    `spellcategorycooldown_4` = -1,
-    `spellid_5` = 0,
-    `spelltrigger_5` = 0,
-    `spellcharges_5` = 0,
-    `spellppmRate_5` = 0,
-    `spellcooldown_5` = -1,
-    `spellcategory_5` = 0,
-    `spellcategorycooldown_5` = -1,
-    `spellid_1` = 42292,
-    `spelltrigger_1` = 0,
-    `spellcategory_1` = 1182,
-    `spellcooldown_1` = 180000,
-    `spellcategorycooldown_1` = 180000
-WHERE `entry` = 25829;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Stark blood garnet', '', `description`),
-    `name` = 'Stark blood garnet',
-    `Quality` = 2
-WHERE `entry` = 27777;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Invoker\'s Signet', '', `description`),
-    `name` = 'Invoker\'s Signet',
-    `Quality` = 3,
-    `stat_type1` = 5,
-    `stat_value1` = 3,
-    `stat_type2` = 45,
-    `stat_value2` = 2,
-    `stat_type3` = 32,
-    `stat_value3` = 3,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 28303;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Great dawnstone', '', `description`),
-    `name` = 'Great dawnstone',
-    `Quality` = 2
-WHERE `entry` = 31861;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Runed crimson spinel', '', `description`),
-    `name` = 'Runed crimson spinel',
-    `Quality` = 3
-WHERE `entry` = 32196;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Quick dawnstone', '', `description`),
-    `name` = 'Quick dawnstone',
-    `Quality` = 2
-WHERE `entry` = 35315;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant shield spirit', '', `description`),
-    `name` = 'Scroll of enchant shield spirit',
-    `Quality` = 2
-WHERE `entry` = 38816;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant shield lesser block', '', `description`),
-    `name` = 'Scroll of enchant shield lesser block',
-    `Quality` = 2
-WHERE `entry` = 38820;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant cloak greater defense', '', `description`),
-    `name` = 'Scroll of enchant cloak greater defense',
-    `Quality` = 2
-WHERE `entry` = 38825;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant cloak resistance', '', `description`),
-    `name` = 'Scroll of enchant cloak resistance',
-    `Quality` = 2
-WHERE `entry` = 38826;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant shield stamina', '', `description`),
-    `name` = 'Scroll of enchant shield stamina',
-    `Quality` = 2
-WHERE `entry` = 38828;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant boots stamina', '', `description`),
-    `name` = 'Scroll of enchant boots stamina',
-    `Quality` = 2
-WHERE `entry` = 38830;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant chest superior health', '', `description`),
-    `name` = 'Scroll of enchant chest superior health',
-    `Quality` = 2
-WHERE `entry` = 38833;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant cloak lesser agility', '', `description`),
-    `name` = 'Scroll of enchant cloak lesser agility',
-    `Quality` = 2
-WHERE `entry` = 38835;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant boots minor speed', '', `description`),
-    `name` = 'Scroll of enchant boots minor speed',
-    `Quality` = 2
-WHERE `entry` = 38837;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon fiery weapon', '', `description`),
-    `name` = 'Scroll of enchant weapon fiery weapon',
-    `Quality` = 2
-WHERE `entry` = 38838;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant shield greater spirit', '', `description`),
-    `name` = 'Scroll of enchant shield greater spirit',
-    `Quality` = 3
-WHERE `entry` = 38839;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant boots agility', '', `description`),
-    `name` = 'Scroll of enchant boots agility',
-    `Quality` = 2
-WHERE `entry` = 38844;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant bracer greater strength', '', `description`),
-    `name` = 'Scroll of enchant bracer greater strength',
-    `Quality` = 2
-WHERE `entry` = 38846;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant chest stats', '', `description`),
-    `name` = 'Scroll of enchant chest stats',
-    `Quality` = 2
-WHERE `entry` = 38847;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon greater striking', '', `description`),
-    `name` = 'Scroll of enchant weapon greater striking',
-    `Quality` = 2
-WHERE `entry` = 38848;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant bracer greater stamina', '', `description`),
-    `name` = 'Scroll of enchant bracer greater stamina',
-    `Quality` = 2
-WHERE `entry` = 38849;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves minor haste', '', `description`),
-    `name` = 'Scroll of enchant gloves minor haste',
-    `Quality` = 2
-WHERE `entry` = 38851;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant bracer greater intellect', '', `description`),
-    `name` = 'Scroll of enchant bracer greater intellect',
-    `Quality` = 2
-WHERE `entry` = 38852;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant bracer superior spirit', '', `description`),
-    `name` = 'Scroll of enchant bracer superior spirit',
-    `Quality` = 3
-WHERE `entry` = 38853;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant bracer superior strength', '', `description`),
-    `name` = 'Scroll of enchant bracer superior strength',
-    `Quality` = 3
-WHERE `entry` = 38854;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant bracer superior stamina', '', `description`),
-    `name` = 'Scroll of enchant bracer superior stamina',
-    `Quality` = 3
-WHERE `entry` = 38855;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves greater agility', '', `description`),
-    `name` = 'Scroll of enchant gloves greater agility',
-    `Quality` = 2
-WHERE `entry` = 38856;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves greater strength', '', `description`),
-    `name` = 'Scroll of enchant gloves greater strength',
-    `Quality` = 2
-WHERE `entry` = 38857;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant cloak greater resistance', '', `description`),
-    `name` = 'Scroll of enchant cloak greater resistance',
-    `Quality` = 3
-WHERE `entry` = 38858;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant cloak superior defense', '', `description`),
-    `name` = 'Scroll of enchant cloak superior defense',
-    `Quality` = 3
-WHERE `entry` = 38859;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant shield vitality', '', `description`),
-    `name` = 'Scroll of enchant shield vitality',
-    `Quality` = 3
-WHERE `entry` = 38860;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant shield greater stamina', '', `description`),
-    `name` = 'Scroll of enchant shield greater stamina',
-    `Quality` = 3
-WHERE `entry` = 38861;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant boots greater stamina', '', `description`),
-    `name` = 'Scroll of enchant boots greater stamina',
-    `Quality` = 3
-WHERE `entry` = 38862;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant boots greater agility', '', `description`),
-    `name` = 'Scroll of enchant boots greater agility',
-    `Quality` = 3
-WHERE `entry` = 38863;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant chest greater stats', '', `description`),
-    `name` = 'Scroll of enchant chest greater stats',
-    `Quality` = 3
-WHERE `entry` = 38865;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant chest major health', '', `description`),
-    `name` = 'Scroll of enchant chest major health',
-    `Quality` = 3
-WHERE `entry` = 38866;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon icy chill', '', `description`),
-    `name` = 'Scroll of enchant weapon icy chill',
-    `Quality` = 2
-WHERE `entry` = 38868;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant 2h weapon superior impact', '', `description`),
-    `name` = 'Scroll of enchant 2h weapon superior impact',
-    `Quality` = 2
-WHERE `entry` = 38869;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon superior striking', '', `description`),
-    `name` = 'Scroll of enchant weapon superior striking',
-    `Quality` = 3
-WHERE `entry` = 38870;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon lifestealing', '', `description`),
-    `name` = 'Scroll of enchant weapon lifestealing',
-    `Quality` = 3
-WHERE `entry` = 38871;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon crusader', '', `description`),
-    `name` = 'Scroll of enchant weapon crusader',
-    `Quality` = 3
-WHERE `entry` = 38873;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant 2h weapon major spirit', '', `description`),
-    `name` = 'Scroll of enchant 2h weapon major spirit',
-    `Quality` = 2
-WHERE `entry` = 38874;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant 2h weapon major intellect', '', `description`),
-    `name` = 'Scroll of enchant 2h weapon major intellect',
-    `Quality` = 2
-WHERE `entry` = 38875;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon spellpower', '', `description`),
-    `name` = 'Scroll of enchant weapon spellpower',
-    `Quality` = 2
-WHERE `entry` = 38877;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon strength', '', `description`),
-    `name` = 'Scroll of enchant weapon strength',
-    `Quality` = 3
-WHERE `entry` = 38879;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon agility', '', `description`),
-    `name` = 'Scroll of enchant weapon agility',
-    `Quality` = 3
-WHERE `entry` = 38880;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant bracer mana regeneration', '', `description`),
-    `name` = 'Scroll of enchant bracer mana regeneration',
-    `Quality` = 3
-WHERE `entry` = 38881;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant bracer healing power', '', `description`),
-    `name` = 'Scroll of enchant bracer healing power',
-    `Quality` = 3
-WHERE `entry` = 38882;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon mighty spirit', '', `description`),
-    `name` = 'Scroll of enchant weapon mighty spirit',
-    `Quality` = 3
-WHERE `entry` = 38883;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon mighty intellect', '', `description`),
-    `name` = 'Scroll of enchant weapon mighty intellect',
-    `Quality` = 3
-WHERE `entry` = 38884;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves healing power', '', `description`),
-    `name` = 'Scroll of enchant gloves healing power',
-    `Quality` = 2
-WHERE `entry` = 38889;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves superior agility', '', `description`),
-    `name` = 'Scroll of enchant gloves superior agility',
-    `Quality` = 3
-WHERE `entry` = 38890;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant cloak stealth', '', `description`),
-    `name` = 'Scroll of enchant cloak stealth',
-    `Quality` = 3
-WHERE `entry` = 38893;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant 2h weapon agility', '', `description`),
-    `name` = 'Scroll of enchant 2h weapon agility',
-    `Quality` = 3
-WHERE `entry` = 38896;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon major spellpower', '', `description`),
-    `name` = 'Scroll of enchant weapon major spellpower',
-    `Quality` = 3
-WHERE `entry` = 38921;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves blasting', '', `description`),
-    `name` = 'Scroll of enchant gloves blasting',
-    `Quality` = 2
-WHERE `entry` = 38931;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves precise strikes', '', `description`),
-    `name` = 'Scroll of enchant gloves precise strikes',
-    `Quality` = 2
-WHERE `entry` = 38932;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves major strength', '', `description`),
-    `name` = 'Scroll of enchant gloves major strength',
-    `Quality` = 3
-WHERE `entry` = 38933;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves assault', '', `description`),
-    `name` = 'Scroll of enchant gloves assault',
-    `Quality` = 3
-WHERE `entry` = 38934;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant gloves major healing', '', `description`),
-    `name` = 'Scroll of enchant gloves major healing',
-    `Quality` = 3
-WHERE `entry` = 38936;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant weapon major healing', '', `description`),
-    `name` = 'Scroll of enchant weapon major healing',
-    `Quality` = 3
-WHERE `entry` = 38946;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Bold bloodstone', '', `description`),
-    `name` = 'Bold bloodstone',
-    `Quality` = 3
-WHERE `entry` = 39900;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Delicate bloodstone', '', `description`),
-    `name` = 'Delicate bloodstone',
-    `Quality` = 3
-WHERE `entry` = 39905;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Bright bloodstone', '', `description`),
-    `name` = 'Bright bloodstone',
-    `Quality` = 3
-WHERE `entry` = 39906;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Brilliant sun crystal', '', `description`),
-    `name` = 'Brilliant sun crystal',
-    `Quality` = 3
-WHERE `entry` = 39912;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Smooth sun crystal', '', `description`),
-    `name` = 'Smooth sun crystal',
-    `Quality` = 3
-WHERE `entry` = 39914;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Rigid sun crystal', '', `description`),
-    `name` = 'Rigid sun crystal',
-    `Quality` = 3
-WHERE `entry` = 39915;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Quick sun crystal', '', `description`),
-    `name` = 'Quick sun crystal',
-    `Quality` = 3
-WHERE `entry` = 39918;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Sparkling chalcedony', '', `description`),
-    `name` = 'Sparkling chalcedony',
-    `Quality` = 3
-WHERE `entry` = 39920;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Lustrous chalcedony', '', `description`),
-    `name` = 'Lustrous chalcedony',
-    `Quality` = 3
-WHERE `entry` = 39927;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Polished Spaulders of Valor', '', `description`),
-    `name` = 'Polished Spaulders of Valor',
-    `Quality` = 4
-WHERE `entry` = 42949;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Champion Herod\'s Shoulder', '', `description`),
-    `name` = 'Champion Herod\'s Shoulder',
-    `Quality` = 4
-WHERE `entry` = 42950;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Mystical Pauldrons of Elements', '', `description`),
-    `name` = 'Mystical Pauldrons of Elements',
-    `Quality` = 4
-WHERE `entry` = 42951;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Stained Shadowcraft Spaulders', '', `description`),
-    `name` = 'Stained Shadowcraft Spaulders',
-    `Quality` = 4
-WHERE `entry` = 42952;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Preened Ironfeather Shoulders', '', `description`),
-    `name` = 'Preened Ironfeather Shoulders',
-    `Quality` = 4
-WHERE `entry` = 42984;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Tattered Dreadmist Mantle', '', `description`),
-    `name` = 'Tattered Dreadmist Mantle',
-    `Quality` = 4
-WHERE `entry` = 42985;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Mystic Tome', '', `description`),
-    `name` = 'Mystic Tome',
-    `stat_type1` = 45,
-    `stat_value1` = 8,
-    `stat_type2` = 0,
-    `stat_value2` = 0,
-    `stat_type3` = 0,
-    `stat_value3` = 0,
-    `stat_type4` = 0,
-    `stat_value4` = 0,
-    `stat_type5` = 0,
-    `stat_value5` = 0,
-    `stat_type6` = 0,
-    `stat_value6` = 0,
-    `stat_type7` = 0,
-    `stat_value7` = 0,
-    `stat_type8` = 0,
-    `stat_value8` = 0,
-    `stat_type9` = 0,
-    `stat_value9` = 0,
-    `stat_type10` = 0,
-    `stat_value10` = 0,
-    `holy_res` = 0,
-    `fire_res` = 0,
-    `nature_res` = 0,
-    `frost_res` = 0,
-    `shadow_res` = 0,
-    `arcane_res` = 0
-WHERE `entry` = 43515;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Strengthened Stockade Pauldrons', '', `description`),
-    `name` = 'Strengthened Stockade Pauldrons',
-    `Quality` = 4
-WHERE `entry` = 44099;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Pristine Lightforge Spaulders', '', `description`),
-    `name` = 'Pristine Lightforge Spaulders',
-    `Quality` = 4
-WHERE `entry` = 44100;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Prized Beastmaster\'s Mantle', '', `description`),
-    `name` = 'Prized Beastmaster\'s Mantle',
-    `Quality` = 4
-WHERE `entry` = 44101;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Aged Pauldrons of The Five Thunders', '', `description`),
-    `name` = 'Aged Pauldrons of The Five Thunders',
-    `Quality` = 4
-WHERE `entry` = 44102;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Exceptional Stormshroud Shoulders', '', `description`),
-    `name` = 'Exceptional Stormshroud Shoulders',
-    `Quality` = 4
-WHERE `entry` = 44103;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Lasting Feralheart Spaulders', '', `description`),
-    `name` = 'Lasting Feralheart Spaulders',
-    `Quality` = 4
-WHERE `entry` = 44105;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Exquisite Sunderseer Mantle', '', `description`),
-    `name` = 'Exquisite Sunderseer Mantle',
-    `Quality` = 4
-WHERE `entry` = 44107;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Commendation of Bravery', '', `description`),
-    `name` = 'Commendation of Bravery',
-    `Quality` = 1
-WHERE `entry` = 44115;
-
-UPDATE `item_template`
-SET `bonding` = 1,
-    `description` = IF(`name` <> 'Scroll of enchant boots lesser accuracy', '', `description`),
-    `name` = 'Scroll of enchant boots lesser accuracy',
-    `Quality` = 2
-WHERE `entry` = 45628;
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Ring of Pure Silver', '', description),
+    name = 'Ring of Pure Silver',
+    Quality = 2
+WHERE entry = 1116;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Totem of Infliction', '', description),
+    name = 'Totem of Infliction',
+    Quality = 2
+WHERE entry = 1131;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Fire Hardened Buckler', '', description),
+    name = 'Fire Hardened Buckler',
+    stat_type1 = 7,
+    stat_value1 = 5,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 1276;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Minor Channeling Ring', '', description),
+    name = 'Minor Channeling Ring',
+    Quality = 3
+WHERE entry = 1449;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Shadowhide Scalper', '', description),
+    name = 'Shadowhide Scalper',
+    stat_type1 = 4,
+    stat_value1 = 3,
+    stat_type2 = 7,
+    stat_value2 = 1,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 1459;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Shadowfang', '', description),
+    name = 'Shadowfang',
+    Quality = 4
+WHERE entry = 1482;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Bluegill Sandals', '', description),
+    name = 'Bluegill Sandals',
+    stat_type1 = 5,
+    stat_value1 = 2,
+    stat_type2 = 45,
+    stat_value2 = 2,
+    stat_type3 = 7,
+    stat_value3 = 3,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 1560;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Assassin\'s Blade', '', description),
+    name = 'Assassin\'s Blade',
+    Quality = 3
+WHERE entry = 1935;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Sword of the Night Sky', '', description),
+    name = 'Sword of the Night Sky',
+    stat_type1 = 45,
+    stat_value1 = 2,
+    stat_type2 = 32,
+    stat_value2 = 2,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 2035;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Tunic of Westfall', '', description),
+    name = 'Tunic of Westfall',
+    Quality = 3
+WHERE entry = 2041;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Staff of Westfall', '', description),
+    name = 'Staff of Westfall',
+    Quality = 3
+WHERE entry = 2042;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Bluegill Kukri', '', description),
+    name = 'Bluegill Kukri',
+    stat_type1 = 32,
+    stat_value1 = 4,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 2046;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Inferno Robe', '', description),
+    name = 'Inferno Robe',
+    Quality = 4,
+    stat_type1 = 7,
+    stat_value1 = 5,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 2231;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Antipodean Rod', '', description),
+    name = 'Antipodean Rod',
+    stat_type1 = 5,
+    stat_value1 = 4,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 2879;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Seal of Wrynn', '', description),
+    name = 'Seal of Wrynn',
+    Quality = 4
+WHERE entry = 2933;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Ghostly Mantle', '', description),
+    name = 'Ghostly Mantle',
+    Quality = 3
+WHERE entry = 3324;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Robe of Solomon', '', description),
+    name = 'Robe of Solomon',
+    stat_type1 = 7,
+    stat_value1 = 3,
+    stat_type2 = 5,
+    stat_value2 = 4,
+    stat_type3 = 45,
+    stat_value3 = 4,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 3555;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Resilient Poncho', '', description),
+    name = 'Resilient Poncho',
+    stat_type1 = 7,
+    stat_value1 = 5,
+    stat_type2 = 31,
+    stat_value2 = 2,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 3561;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Nature\'s Tunic', '', description),
+    name = 'Nature\'s Tunic',
+    stat_type1 = 7,
+    stat_value1 = 7,
+    stat_type2 = 45,
+    stat_value2 = 4,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 3585;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Deadskull Shield', '', description),
+    name = 'Deadskull Shield',
+    Quality = 3
+WHERE entry = 3761;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Runic Darkblade', '', description),
+    name = 'Runic Darkblade',
+    Quality = 3
+WHERE entry = 3822;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Reinforced Woolen Shoulders', '', description),
+    name = 'Reinforced Woolen Shoulders',
+    Quality = 3
+WHERE entry = 4315;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Heavy Woolen Pants', '', description),
+    name = 'Heavy Woolen Pants',
+    stat_type1 = 5,
+    stat_value1 = 3,
+    stat_type2 = 7,
+    stat_value2 = 6,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 4316;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Flying Tiger Goggles', '', description),
+    name = 'Flying Tiger Goggles',
+    stat_type1 = 7,
+    stat_value1 = 6,
+    stat_type2 = 31,
+    stat_value2 = 5,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 4368;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Shadow Goggles', '', description),
+    name = 'Shadow Goggles',
+    stat_type1 = 5,
+    stat_value1 = 8,
+    stat_type2 = 43,
+    stat_value2 = 3,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 4373;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Green Tinted Goggles', '', description),
+    name = 'Green Tinted Goggles',
+    Quality = 3,
+    stat_type1 = 7,
+    stat_value1 = 8,
+    stat_type2 = 31,
+    stat_value2 = 6,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 4385;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Standard scope', '', description),
+    name = 'Standard scope',
+    Quality = 2
+WHERE entry = 4406;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Steel-clasped Bracers', '', description),
+    name = 'Steel-clasped Bracers',
+    Quality = 3
+WHERE entry = 4534;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Pulsating Hydra Heart', '', description),
+    name = 'Pulsating Hydra Heart',
+    stat_type1 = 7,
+    stat_value1 = 2,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5183;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Taskmaster Axe', '', description),
+    name = 'Taskmaster Axe',
+    stat_type1 = 7,
+    stat_value1 = 8,
+    stat_type2 = 36,
+    stat_value2 = 8,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5194;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Gold-flecked Gloves', '', description),
+    name = 'Gold-flecked Gloves',
+    stat_type1 = 7,
+    stat_value1 = 5,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5195;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Rugged Spaulders', '', description),
+    name = 'Rugged Spaulders',
+    stat_type1 = 7,
+    stat_value1 = 8,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5254;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Dry Moss Tunic', '', description),
+    name = 'Dry Moss Tunic',
+    stat_type1 = 7,
+    stat_value1 = 5,
+    stat_type2 = 3,
+    stat_value2 = 3,
+    stat_type3 = 32,
+    stat_value3 = 2,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5317;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Everglow Lantern', '', description),
+    name = 'Everglow Lantern',
+    Quality = 2
+WHERE entry = 5323;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Miner\'s Cape', '', description),
+    name = 'Miner\'s Cape',
+    stat_type1 = 7,
+    stat_value1 = 4,
+    stat_type2 = 36,
+    stat_value2 = 4,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5444;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Staff of the Purifier', '', description),
+    name = 'Staff of the Purifier',
+    Quality = 2
+WHERE entry = 5613;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Seraph\'s Strike', '', description),
+    name = 'Seraph\'s Strike',
+    Quality = 3,
+    stat_type1 = 4,
+    stat_value1 = 3,
+    stat_type2 = 36,
+    stat_value2 = 10,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5614;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Relic Blade', '', description),
+    name = 'Relic Blade',
+    stat_type1 = 7,
+    stat_value1 = 3,
+    stat_type2 = 5,
+    stat_value2 = 1,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5627;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Warchief\'s Girdle', '', description),
+    name = 'Warchief\'s Girdle',
+    stat_type1 = 7,
+    stat_value1 = 5,
+    stat_type2 = 4,
+    stat_value2 = 3,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5750;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Glacial Stone', '', description),
+    name = 'Glacial Stone',
+    Quality = 4
+WHERE entry = 5815;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Serpent Gloves', '', description),
+    name = 'Serpent Gloves',
+    stat_type1 = 36,
+    stat_value1 = 5,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 5970;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Chausses of Westfall', '', description),
+    name = 'Chausses of Westfall',
+    Quality = 3
+WHERE entry = 6087;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Durable Chain Shoulders', '', description),
+    name = 'Durable Chain Shoulders',
+    Quality = 2,
+    stat_type1 = 7,
+    stat_value1 = 2,
+    stat_type2 = 4,
+    stat_value2 = 2,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 6189;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Kimbra Boots', '', description),
+    name = 'Kimbra Boots',
+    Quality = 2
+WHERE entry = 6191;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Sacred Burial Trousers', '', description),
+    name = 'Sacred Burial Trousers',
+    Quality = 3
+WHERE entry = 6282;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Grizzled Boots', '', description),
+    name = 'Grizzled Boots',
+    Quality = 3
+WHERE entry = 6335;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Eerie Stable Lantern', '', description),
+    name = 'Eerie Stable Lantern',
+    stat_type1 = 7,
+    stat_value1 = 4,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 6341;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Seal of Sylvanas', '', description),
+    name = 'Seal of Sylvanas',
+    Quality = 4
+WHERE entry = 6414;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Venomstrike', '', description),
+    name = 'Venomstrike',
+    Quality = 4
+WHERE entry = 6469;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Armor of the Fang', '', description),
+    name = 'Armor of the Fang',
+    stat_type1 = 7,
+    stat_value1 = 8,
+    stat_type2 = 38,
+    stat_value2 = 16,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 6473;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Wingblade', '', description),
+    name = 'Wingblade',
+    Quality = 3
+WHERE entry = 6504;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Crescent Staff', '', description),
+    name = 'Crescent Staff',
+    Quality = 3
+WHERE entry = 6505;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Engineer\'s Cloak', '', description),
+    name = 'Engineer\'s Cloak',
+    Quality = 2
+WHERE entry = 6667;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Draftsman Boots', '', description),
+    name = 'Draftsman Boots',
+    Quality = 3
+WHERE entry = 6668;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Band of Elven Grace', '', description),
+    name = 'Band of Elven Grace',
+    Quality = 2
+WHERE entry = 6678;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Gravestone Scepter', '', description),
+    name = 'Gravestone Scepter',
+    Quality = 3
+WHERE entry = 7001;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Arctic Buckler', '', description),
+    name = 'Arctic Buckler',
+    Quality = 3
+WHERE entry = 7002;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Beetle Clasps', '', description),
+    name = 'Beetle Clasps',
+    Quality = 3
+WHERE entry = 7003;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Efflorescent Robe', '', description),
+    name = 'Efflorescent Robe',
+    Quality = 3
+WHERE entry = 7334;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Wildwood Chain', '', description),
+    name = 'Wildwood Chain',
+    stat_type1 = 4,
+    stat_value1 = 3,
+    stat_type2 = 7,
+    stat_value2 = 5,
+    stat_type3 = 32,
+    stat_value3 = 2,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 7336;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Arena Master', '', description),
+    name = 'Arena Master',
+    Quality = 3,
+    stat_type1 = 7,
+    stat_value1 = 9,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 29506,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 29506,
+    spellcooldown_1 = 900000,
+    spellcategorycooldown_1 = 900000
+WHERE entry = 8663;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Pious Legwraps', '', description),
+    name = 'Pious Legwraps',
+    Quality = 3,
+    stat_type1 = 7,
+    stat_value1 = 8,
+    stat_type2 = 36,
+    stat_value2 = 7,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 10043;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Blackened Defias Armor', '', description),
+    name = 'Blackened Defias Armor',
+    Quality = 4
+WHERE entry = 10399;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Trailblazer Boots', '', description),
+    name = 'Trailblazer Boots',
+    Quality = 3
+WHERE entry = 10653;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Jutebraid Gloves', '', description),
+    name = 'Jutebraid Gloves',
+    Quality = 3
+WHERE entry = 10654;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Talbar Mantle', '', description),
+    name = 'Talbar Mantle',
+    Quality = 3
+WHERE entry = 10657;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Bot Control Cap', '', description),
+    name = 'Bot Control Cap',
+    stat_type1 = 31,
+    stat_value1 = 11,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 10726;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Demon Band', '', description),
+    name = 'Demon Band',
+    stat_type1 = 4,
+    stat_value1 = 4,
+    stat_type2 = 7,
+    stat_value2 = 2,
+    stat_type3 = 36,
+    stat_value3 = 2,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 12054;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Thorium shield spike', '', description),
+    name = 'Thorium shield spike',
+    Quality = 2
+WHERE entry = 12645;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Firebane Cloak', '', description),
+    name = 'Firebane Cloak',
+    stat_type1 = 7,
+    stat_value1 = 5,
+    stat_type2 = 32,
+    stat_value2 = 5,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 12979;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Rakzur Club', '', description),
+    name = 'Rakzur Club',
+    stat_type1 = 4,
+    stat_value1 = 4,
+    stat_type2 = 7,
+    stat_value2 = 8,
+    stat_type3 = 32,
+    stat_value3 = 5,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 12983;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Razor\'s Edge', '', description),
+    name = 'Razor\'s Edge',
+    stat_type1 = 4,
+    stat_value1 = 4,
+    stat_type2 = 32,
+    stat_value2 = 2,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 12990;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Arena Contender', '', description),
+    name = 'Arena Contender',
+    Quality = 2,
+    stat_type1 = 7,
+    stat_value1 = 6,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 29506,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 29506,
+    spellcooldown_1 = 900000,
+    spellcategorycooldown_1 = 900000
+WHERE entry = 13209;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Lower Insigna of Blasting', '', description),
+    name = 'Lower Insigna of Blasting',
+    Quality = 1,
+    stat_type1 = 32,
+    stat_value1 = 3,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 42292,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 1182,
+    spellcooldown_1 = 300000,
+    spellcategorycooldown_1 = 300000
+WHERE entry = 13966;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Aboriginal Shoulder Pads', '', description),
+    name = 'Aboriginal Shoulder Pads',
+    Quality = 2,
+    stat_type1 = 7,
+    stat_value1 = 2,
+    stat_type2 = 5,
+    stat_value2 = 2,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 14169;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Hulking Bands', '', description),
+    name = 'Hulking Bands',
+    stat_type1 = 7,
+    stat_value1 = 3,
+    stat_type2 = 4,
+    stat_value2 = 1,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 14743;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Lupine Mantle', '', description),
+    name = 'Lupine Mantle',
+    Quality = 2,
+    stat_type1 = 7,
+    stat_value1 = 2,
+    stat_type2 = 3,
+    stat_value2 = 2,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 15019;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Mystic\'s Sphere', '', description),
+    name = 'Mystic\'s Sphere',
+    stat_type1 = 7,
+    stat_value1 = 2,
+    stat_type2 = 45,
+    stat_value2 = 3,
+    stat_type3 = 5,
+    stat_value3 = 2,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 15946;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Aquarius Belt', '', description),
+    name = 'Aquarius Belt',
+    Quality = 3
+WHERE entry = 16608;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Furbolg Medicine Pouch', '', description),
+    name = 'Furbolg Medicine Pouch',
+    Quality = 4
+WHERE entry = 16768;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Owlbeard Bracers', '', description),
+    name = 'Owlbeard Bracers',
+    stat_type1 = 7,
+    stat_value1 = 2,
+    stat_type2 = 5,
+    stat_value2 = 1,
+    stat_type3 = 45,
+    stat_value3 = 1,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 16981;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Screecher Belt', '', description),
+    name = 'Screecher Belt',
+    Quality = 3
+WHERE entry = 16987;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Gutterblade', '', description),
+    name = 'Gutterblade',
+    Quality = 3
+WHERE entry = 17046;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Lower Insigna of Solidity', '', description),
+    name = 'Lower Insigna of Solidity',
+    Quality = 1,
+    stat_type1 = 7,
+    stat_value1 = 3,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 42292,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 1182,
+    spellcooldown_1 = 300000,
+    spellcategorycooldown_1 = 300000
+WHERE entry = 18468;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Insigna of Solidity', '', description),
+    name = 'Insigna of Solidity',
+    Quality = 2,
+    stat_type1 = 7,
+    stat_value1 = 5,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 42292,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 1182,
+    spellcooldown_1 = 240000,
+    spellcategorycooldown_1 = 240000
+WHERE entry = 18471;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Arena Initiate', '', description),
+    name = 'Arena Initiate',
+    Quality = 1,
+    stat_type1 = 7,
+    stat_value1 = 3,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 29506,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 29506,
+    spellcooldown_1 = 900000,
+    spellcategorycooldown_1 = 900000
+WHERE entry = 18706;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Arena Grand Master', '', description),
+    name = 'Arena Grand Master',
+    Quality = 4,
+    stat_type1 = 7,
+    stat_value1 = 12,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 29506,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 29506,
+    spellcooldown_1 = 900000,
+    spellcategorycooldown_1 = 900000
+WHERE entry = 19024;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Nat Pagle\'s Extreme Anglin\' Boots', '', description),
+    name = 'Nat Pagle\'s Extreme Anglin\' Boots',
+    Quality = 3
+WHERE entry = 19969;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Lucky Fishing Hat', '', description),
+    name = 'Lucky Fishing Hat',
+    Quality = 4
+WHERE entry = 19972;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Thick Bronze Necklace', '', description),
+    name = 'Thick Bronze Necklace',
+    Quality = 3,
+    stat_type1 = 7,
+    stat_value1 = 3,
+    stat_type2 = 45,
+    stat_value2 = 5,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 21933;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Ornate Tigerseye Necklace', '', description),
+    name = 'Ornate Tigerseye Necklace',
+    stat_type1 = 7,
+    stat_value1 = 3,
+    stat_type2 = 32,
+    stat_value2 = 2,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 21934;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Insigna of Blasting', '', description),
+    name = 'Insigna of Blasting',
+    Quality = 2,
+    stat_type1 = 32,
+    stat_value1 = 6,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 42292,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 1182,
+    spellcooldown_1 = 240000,
+    spellcategorycooldown_1 = 240000
+WHERE entry = 22268;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Slayer\'s Band', '', description),
+    name = 'Slayer\'s Band',
+    stat_type1 = 7,
+    stat_value1 = 3,
+    stat_type2 = 32,
+    stat_value2 = 3,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 22979;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Staff of the Sun', '', description),
+    name = 'Staff of the Sun',
+    Quality = 3
+WHERE entry = 22980;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Farstrider\'s Longbow', '', description),
+    name = 'Farstrider\'s Longbow',
+    Quality = 3
+WHERE entry = 22982;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Dawnblade', '', description),
+    name = 'Dawnblade',
+    Quality = 3
+WHERE entry = 22984;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Sin\'dorei Warblade', '', description),
+    name = 'Sin\'dorei Warblade',
+    Quality = 3
+WHERE entry = 22995;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Solid azure moonstone', '', description),
+    name = 'Solid azure moonstone',
+    Quality = 2
+WHERE entry = 23118;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Felsteel shield spike', '', description),
+    name = 'Felsteel shield spike',
+    Quality = 3
+WHERE entry = 23530;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Bold living ruby', '', description),
+    name = 'Bold living ruby',
+    Quality = 2
+WHERE entry = 24027;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Delicate living ruby', '', description),
+    name = 'Delicate living ruby',
+    Quality = 2
+WHERE entry = 24028;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Bright living ruby', '', description),
+    name = 'Bright living ruby',
+    Quality = 2
+WHERE entry = 24031;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Solid star of elune', '', description),
+    name = 'Solid star of elune',
+    Quality = 3
+WHERE entry = 24033;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Sparkling star of elune', '', description),
+    name = 'Sparkling star of elune',
+    Quality = 2
+WHERE entry = 24035;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Lustrous star of elune', '', description),
+    name = 'Lustrous star of elune',
+    Quality = 2
+WHERE entry = 24037;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Brilliant dawnstone', '', description),
+    name = 'Brilliant dawnstone',
+    Quality = 2
+WHERE entry = 24047;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Smooth dawnstone', '', description),
+    name = 'Smooth dawnstone',
+    Quality = 2
+WHERE entry = 24048;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Greater Insigna of Blasting', '', description),
+    name = 'Greater Insigna of Blasting',
+    Quality = 3,
+    stat_type1 = 32,
+    stat_value1 = 9,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 42292,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 1182,
+    spellcooldown_1 = 180000,
+    spellcategorycooldown_1 = 180000
+WHERE entry = 24551;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Greater Insigna of Solidity', '', description),
+    name = 'Greater Insigna of Solidity',
+    Quality = 3,
+    stat_type1 = 7,
+    stat_value1 = 7,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0,
+    spellid_1 = 0,
+    spelltrigger_1 = 0,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1,
+    spellid_2 = 0,
+    spelltrigger_2 = 0,
+    spellcharges_2 = 0,
+    spellppmRate_2 = 0,
+    spellcooldown_2 = -1,
+    spellcategory_2 = 0,
+    spellcategorycooldown_2 = -1,
+    spellid_3 = 0,
+    spelltrigger_3 = 0,
+    spellcharges_3 = 0,
+    spellppmRate_3 = 0,
+    spellcooldown_3 = -1,
+    spellcategory_3 = 0,
+    spellcategorycooldown_3 = -1,
+    spellid_4 = 0,
+    spelltrigger_4 = 0,
+    spellcharges_4 = 0,
+    spellppmRate_4 = 0,
+    spellcooldown_4 = -1,
+    spellcategory_4 = 0,
+    spellcategorycooldown_4 = -1,
+    spellid_5 = 0,
+    spelltrigger_5 = 0,
+    spellcharges_5 = 0,
+    spellppmRate_5 = 0,
+    spellcooldown_5 = -1,
+    spellcategory_5 = 0,
+    spellcategorycooldown_5 = -1,
+    spellid_1 = 42292,
+    spelltrigger_1 = 0,
+    spellcategory_1 = 1182,
+    spellcooldown_1 = 180000,
+    spellcategorycooldown_1 = 180000
+WHERE entry = 25829;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Stark blood garnet', '', description),
+    name = 'Stark blood garnet',
+    Quality = 2
+WHERE entry = 27777;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Invoker\'s Signet', '', description),
+    name = 'Invoker\'s Signet',
+    Quality = 3,
+    stat_type1 = 5,
+    stat_value1 = 3,
+    stat_type2 = 45,
+    stat_value2 = 2,
+    stat_type3 = 32,
+    stat_value3 = 3,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 28303;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Great dawnstone', '', description),
+    name = 'Great dawnstone',
+    Quality = 2
+WHERE entry = 31861;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Runed crimson spinel', '', description),
+    name = 'Runed crimson spinel',
+    Quality = 3
+WHERE entry = 32196;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Quick dawnstone', '', description),
+    name = 'Quick dawnstone',
+    Quality = 2
+WHERE entry = 35315;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant shield spirit', '', description),
+    name = 'Scroll of enchant shield spirit',
+    Quality = 2
+WHERE entry = 38816;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant shield lesser block', '', description),
+    name = 'Scroll of enchant shield lesser block',
+    Quality = 2
+WHERE entry = 38820;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant cloak greater defense', '', description),
+    name = 'Scroll of enchant cloak greater defense',
+    Quality = 2
+WHERE entry = 38825;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant cloak resistance', '', description),
+    name = 'Scroll of enchant cloak resistance',
+    Quality = 2
+WHERE entry = 38826;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant shield stamina', '', description),
+    name = 'Scroll of enchant shield stamina',
+    Quality = 2
+WHERE entry = 38828;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant boots stamina', '', description),
+    name = 'Scroll of enchant boots stamina',
+    Quality = 2
+WHERE entry = 38830;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant chest superior health', '', description),
+    name = 'Scroll of enchant chest superior health',
+    Quality = 2
+WHERE entry = 38833;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant cloak lesser agility', '', description),
+    name = 'Scroll of enchant cloak lesser agility',
+    Quality = 2
+WHERE entry = 38835;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant boots minor speed', '', description),
+    name = 'Scroll of enchant boots minor speed',
+    Quality = 2
+WHERE entry = 38837;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon fiery weapon', '', description),
+    name = 'Scroll of enchant weapon fiery weapon',
+    Quality = 2
+WHERE entry = 38838;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant shield greater spirit', '', description),
+    name = 'Scroll of enchant shield greater spirit',
+    Quality = 3
+WHERE entry = 38839;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant boots agility', '', description),
+    name = 'Scroll of enchant boots agility',
+    Quality = 2
+WHERE entry = 38844;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant bracer greater strength', '', description),
+    name = 'Scroll of enchant bracer greater strength',
+    Quality = 2
+WHERE entry = 38846;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant chest stats', '', description),
+    name = 'Scroll of enchant chest stats',
+    Quality = 2
+WHERE entry = 38847;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon greater striking', '', description),
+    name = 'Scroll of enchant weapon greater striking',
+    Quality = 2
+WHERE entry = 38848;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant bracer greater stamina', '', description),
+    name = 'Scroll of enchant bracer greater stamina',
+    Quality = 2
+WHERE entry = 38849;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves minor haste', '', description),
+    name = 'Scroll of enchant gloves minor haste',
+    Quality = 2
+WHERE entry = 38851;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant bracer greater intellect', '', description),
+    name = 'Scroll of enchant bracer greater intellect',
+    Quality = 2
+WHERE entry = 38852;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant bracer superior spirit', '', description),
+    name = 'Scroll of enchant bracer superior spirit',
+    Quality = 3
+WHERE entry = 38853;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant bracer superior strength', '', description),
+    name = 'Scroll of enchant bracer superior strength',
+    Quality = 3
+WHERE entry = 38854;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant bracer superior stamina', '', description),
+    name = 'Scroll of enchant bracer superior stamina',
+    Quality = 3
+WHERE entry = 38855;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves greater agility', '', description),
+    name = 'Scroll of enchant gloves greater agility',
+    Quality = 2
+WHERE entry = 38856;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves greater strength', '', description),
+    name = 'Scroll of enchant gloves greater strength',
+    Quality = 2
+WHERE entry = 38857;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant cloak greater resistance', '', description),
+    name = 'Scroll of enchant cloak greater resistance',
+    Quality = 3
+WHERE entry = 38858;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant cloak superior defense', '', description),
+    name = 'Scroll of enchant cloak superior defense',
+    Quality = 3
+WHERE entry = 38859;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant shield vitality', '', description),
+    name = 'Scroll of enchant shield vitality',
+    Quality = 3
+WHERE entry = 38860;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant shield greater stamina', '', description),
+    name = 'Scroll of enchant shield greater stamina',
+    Quality = 3
+WHERE entry = 38861;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant boots greater stamina', '', description),
+    name = 'Scroll of enchant boots greater stamina',
+    Quality = 3
+WHERE entry = 38862;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant boots greater agility', '', description),
+    name = 'Scroll of enchant boots greater agility',
+    Quality = 3
+WHERE entry = 38863;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant chest greater stats', '', description),
+    name = 'Scroll of enchant chest greater stats',
+    Quality = 3
+WHERE entry = 38865;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant chest major health', '', description),
+    name = 'Scroll of enchant chest major health',
+    Quality = 3
+WHERE entry = 38866;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon icy chill', '', description),
+    name = 'Scroll of enchant weapon icy chill',
+    Quality = 2
+WHERE entry = 38868;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant 2h weapon superior impact', '', description),
+    name = 'Scroll of enchant 2h weapon superior impact',
+    Quality = 2
+WHERE entry = 38869;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon superior striking', '', description),
+    name = 'Scroll of enchant weapon superior striking',
+    Quality = 3
+WHERE entry = 38870;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon lifestealing', '', description),
+    name = 'Scroll of enchant weapon lifestealing',
+    Quality = 3
+WHERE entry = 38871;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon crusader', '', description),
+    name = 'Scroll of enchant weapon crusader',
+    Quality = 3
+WHERE entry = 38873;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant 2h weapon major spirit', '', description),
+    name = 'Scroll of enchant 2h weapon major spirit',
+    Quality = 2
+WHERE entry = 38874;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant 2h weapon major intellect', '', description),
+    name = 'Scroll of enchant 2h weapon major intellect',
+    Quality = 2
+WHERE entry = 38875;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon spellpower', '', description),
+    name = 'Scroll of enchant weapon spellpower',
+    Quality = 2
+WHERE entry = 38877;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon strength', '', description),
+    name = 'Scroll of enchant weapon strength',
+    Quality = 3
+WHERE entry = 38879;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon agility', '', description),
+    name = 'Scroll of enchant weapon agility',
+    Quality = 3
+WHERE entry = 38880;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant bracer mana regeneration', '', description),
+    name = 'Scroll of enchant bracer mana regeneration',
+    Quality = 3
+WHERE entry = 38881;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant bracer healing power', '', description),
+    name = 'Scroll of enchant bracer healing power',
+    Quality = 3
+WHERE entry = 38882;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon mighty spirit', '', description),
+    name = 'Scroll of enchant weapon mighty spirit',
+    Quality = 3
+WHERE entry = 38883;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon mighty intellect', '', description),
+    name = 'Scroll of enchant weapon mighty intellect',
+    Quality = 3
+WHERE entry = 38884;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves healing power', '', description),
+    name = 'Scroll of enchant gloves healing power',
+    Quality = 2
+WHERE entry = 38889;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves superior agility', '', description),
+    name = 'Scroll of enchant gloves superior agility',
+    Quality = 3
+WHERE entry = 38890;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant cloak stealth', '', description),
+    name = 'Scroll of enchant cloak stealth',
+    Quality = 3
+WHERE entry = 38893;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant 2h weapon agility', '', description),
+    name = 'Scroll of enchant 2h weapon agility',
+    Quality = 3
+WHERE entry = 38896;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon major spellpower', '', description),
+    name = 'Scroll of enchant weapon major spellpower',
+    Quality = 3
+WHERE entry = 38921;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves blasting', '', description),
+    name = 'Scroll of enchant gloves blasting',
+    Quality = 2
+WHERE entry = 38931;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves precise strikes', '', description),
+    name = 'Scroll of enchant gloves precise strikes',
+    Quality = 2
+WHERE entry = 38932;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves major strength', '', description),
+    name = 'Scroll of enchant gloves major strength',
+    Quality = 3
+WHERE entry = 38933;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves assault', '', description),
+    name = 'Scroll of enchant gloves assault',
+    Quality = 3
+WHERE entry = 38934;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant gloves major healing', '', description),
+    name = 'Scroll of enchant gloves major healing',
+    Quality = 3
+WHERE entry = 38936;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant weapon major healing', '', description),
+    name = 'Scroll of enchant weapon major healing',
+    Quality = 3
+WHERE entry = 38946;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Bold bloodstone', '', description),
+    name = 'Bold bloodstone',
+    Quality = 3
+WHERE entry = 39900;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Delicate bloodstone', '', description),
+    name = 'Delicate bloodstone',
+    Quality = 3
+WHERE entry = 39905;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Bright bloodstone', '', description),
+    name = 'Bright bloodstone',
+    Quality = 3
+WHERE entry = 39906;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Brilliant sun crystal', '', description),
+    name = 'Brilliant sun crystal',
+    Quality = 3
+WHERE entry = 39912;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Smooth sun crystal', '', description),
+    name = 'Smooth sun crystal',
+    Quality = 3
+WHERE entry = 39914;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Rigid sun crystal', '', description),
+    name = 'Rigid sun crystal',
+    Quality = 3
+WHERE entry = 39915;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Quick sun crystal', '', description),
+    name = 'Quick sun crystal',
+    Quality = 3
+WHERE entry = 39918;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Sparkling chalcedony', '', description),
+    name = 'Sparkling chalcedony',
+    Quality = 3
+WHERE entry = 39920;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Lustrous chalcedony', '', description),
+    name = 'Lustrous chalcedony',
+    Quality = 3
+WHERE entry = 39927;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Polished Spaulders of Valor', '', description),
+    name = 'Polished Spaulders of Valor',
+    Quality = 4
+WHERE entry = 42949;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Champion Herod\'s Shoulder', '', description),
+    name = 'Champion Herod\'s Shoulder',
+    Quality = 4
+WHERE entry = 42950;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Mystical Pauldrons of Elements', '', description),
+    name = 'Mystical Pauldrons of Elements',
+    Quality = 4
+WHERE entry = 42951;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Stained Shadowcraft Spaulders', '', description),
+    name = 'Stained Shadowcraft Spaulders',
+    Quality = 4
+WHERE entry = 42952;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Preened Ironfeather Shoulders', '', description),
+    name = 'Preened Ironfeather Shoulders',
+    Quality = 4
+WHERE entry = 42984;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Tattered Dreadmist Mantle', '', description),
+    name = 'Tattered Dreadmist Mantle',
+    Quality = 4
+WHERE entry = 42985;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Mystic Tome', '', description),
+    name = 'Mystic Tome',
+    stat_type1 = 45,
+    stat_value1 = 8,
+    stat_type2 = 0,
+    stat_value2 = 0,
+    stat_type3 = 0,
+    stat_value3 = 0,
+    stat_type4 = 0,
+    stat_value4 = 0,
+    stat_type5 = 0,
+    stat_value5 = 0,
+    stat_type6 = 0,
+    stat_value6 = 0,
+    stat_type7 = 0,
+    stat_value7 = 0,
+    stat_type8 = 0,
+    stat_value8 = 0,
+    stat_type9 = 0,
+    stat_value9 = 0,
+    stat_type10 = 0,
+    stat_value10 = 0,
+    holy_res = 0,
+    fire_res = 0,
+    nature_res = 0,
+    frost_res = 0,
+    shadow_res = 0,
+    arcane_res = 0
+WHERE entry = 43515;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Strengthened Stockade Pauldrons', '', description),
+    name = 'Strengthened Stockade Pauldrons',
+    Quality = 4
+WHERE entry = 44099;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Pristine Lightforge Spaulders', '', description),
+    name = 'Pristine Lightforge Spaulders',
+    Quality = 4
+WHERE entry = 44100;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Prized Beastmaster\'s Mantle', '', description),
+    name = 'Prized Beastmaster\'s Mantle',
+    Quality = 4
+WHERE entry = 44101;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Aged Pauldrons of The Five Thunders', '', description),
+    name = 'Aged Pauldrons of The Five Thunders',
+    Quality = 4
+WHERE entry = 44102;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Exceptional Stormshroud Shoulders', '', description),
+    name = 'Exceptional Stormshroud Shoulders',
+    Quality = 4
+WHERE entry = 44103;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Lasting Feralheart Spaulders', '', description),
+    name = 'Lasting Feralheart Spaulders',
+    Quality = 4
+WHERE entry = 44105;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Exquisite Sunderseer Mantle', '', description),
+    name = 'Exquisite Sunderseer Mantle',
+    Quality = 4
+WHERE entry = 44107;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Commendation of Bravery', '', description),
+    name = 'Commendation of Bravery',
+    Quality = 1
+WHERE entry = 44115;
+
+UPDATE item_template
+SET bonding = 1,
+    description = IF(name <> 'Scroll of enchant boots lesser accuracy', '', description),
+    name = 'Scroll of enchant boots lesser accuracy',
+    Quality = 2
+WHERE entry = 45628;
 
 -- Apply permanent item spells without making them on-use effects.
-UPDATE `item_template`
-SET `spellid_1` = 23990,
-    `spelltrigger_1` = 1,
-    `spellcharges_1` = 0,
-    `spellppmRate_1` = 0,
-    `spellcooldown_1` = -1,
-    `spellcategory_1` = 0,
-    `spellcategorycooldown_1` = -1
-WHERE `entry` = 19969;
+UPDATE item_template
+SET spellid_1 = 23990,
+    spelltrigger_1 = 1,
+    spellcharges_1 = 0,
+    spellppmRate_1 = 0,
+    spellcooldown_1 = -1,
+    spellcategory_1 = 0,
+    spellcategorycooldown_1 = -1
+WHERE entry = 19969;

@@ -3,151 +3,151 @@
 USE `19pvp_world`;
 
 -- Make every sheet-listed item soulbound and remove any bonus armor stat slots.
-UPDATE `item_template`
-SET `bonding` = 1,
-    `startquest` = 0,
-    `stat_value1` = IF(`stat_type1` = 50, 0, `stat_value1`),
-    `stat_type1` = IF(`stat_type1` = 50, 0, `stat_type1`),
-    `stat_value2` = IF(`stat_type2` = 50, 0, `stat_value2`),
-    `stat_type2` = IF(`stat_type2` = 50, 0, `stat_type2`),
-    `stat_value3` = IF(`stat_type3` = 50, 0, `stat_value3`),
-    `stat_type3` = IF(`stat_type3` = 50, 0, `stat_type3`),
-    `stat_value4` = IF(`stat_type4` = 50, 0, `stat_value4`),
-    `stat_type4` = IF(`stat_type4` = 50, 0, `stat_type4`),
-    `stat_value5` = IF(`stat_type5` = 50, 0, `stat_value5`),
-    `stat_type5` = IF(`stat_type5` = 50, 0, `stat_type5`),
-    `stat_value6` = IF(`stat_type6` = 50, 0, `stat_value6`),
-    `stat_type6` = IF(`stat_type6` = 50, 0, `stat_type6`),
-    `stat_value7` = IF(`stat_type7` = 50, 0, `stat_value7`),
-    `stat_type7` = IF(`stat_type7` = 50, 0, `stat_type7`),
-    `stat_value8` = IF(`stat_type8` = 50, 0, `stat_value8`),
-    `stat_type8` = IF(`stat_type8` = 50, 0, `stat_type8`),
-    `stat_value9` = IF(`stat_type9` = 50, 0, `stat_value9`),
-    `stat_type9` = IF(`stat_type9` = 50, 0, `stat_type9`),
-    `stat_value10` = IF(`stat_type10` = 50, 0, `stat_value10`),
-    `stat_type10` = IF(`stat_type10` = 50, 0, `stat_type10`)
-WHERE `entry` IN (790, 872, 890, 892, 935, 1116, 1121, 1131, 1156, 1276, 1306, 1318, 1449, 1459, 1482, 1483, 1484, 1486, 1560, 1935, 1937, 1974, 2035, 2041, 2042, 2046, 2059, 2167, 2169, 2231, 2256, 2271, 2314, 2516, 2567, 2807, 2879, 2910, 2911, 2933, 3066, 3184, 3194, 3202, 3324, 3415, 3429, 3555, 3561, 3647, 3761, 3822, 4315, 4316, 4320, 4368, 4369, 4373, 4381, 4385, 4406, 4534, 4708, 4800, 4818, 4998, 5183, 5187, 5191, 5192, 5194, 5195, 5196, 5197, 5198, 5199, 5201, 5202, 5243, 5254, 5312, 5317, 5323, 5356, 5404, 5423, 5425, 5426, 5443, 5444, 5613, 5614, 5627, 5750, 5815, 5961, 5970, 6087, 6189, 6191, 6226, 6282, 6319, 6332, 6333, 6335, 6341, 6383, 6414, 6447, 6448, 6449, 6459, 6460, 6465, 6467, 6468, 6469, 6472, 6473, 6504, 6505, 6563, 6568, 6570, 6573, 6577, 6586, 6587, 6629, 6632, 6633, 6667, 6668, 6678, 7001, 7002, 7003, 7230, 7284, 7285, 7334, 8545, 8663, 9766, 9767, 9768, 9782, 9811, 9814, 10043, 10399, 10403, 10410, 10411, 10412, 10413, 10653, 10654, 10657, 11993, 12006, 12054, 12645, 12975, 12976, 12977, 12979, 12982, 12983, 12984, 12987, 12988, 12990, 12992, 12994, 12996, 12997, 13136, 13209, 13245, 13966, 14145, 14147, 14148, 14149, 14150, 14151, 14169, 14171, 14374, 14529, 14530, 14568, 14743, 15019, 15269, 15331, 15500, 15511, 15512, 15946, 16608, 16768, 16981, 16987, 17046, 18468, 18471, 18706, 19024, 19969, 19972, 20425, 20426, 20427, 20428, 20429, 20430, 20431, 20434, 20437, 20438, 20439, 20440, 20441, 20442, 20443, 20444, 21933, 21934, 22268, 22979, 22980, 22982, 22984, 22990, 22995, 23118, 23530, 24027, 24028, 24031, 24033, 24035, 24037, 24047, 24048, 24551, 25829, 25873, 27640, 27777, 28303, 28463, 28468, 29201, 29584, 30804, 31270, 31861, 32196, 35315, 38816, 38820, 38825, 38826, 38828, 38830, 38833, 38835, 38837, 38838, 38839, 38844, 38846, 38847, 38848, 38849, 38851, 38852, 38853, 38854, 38855, 38856, 38857, 38858, 38859, 38860, 38861, 38862, 38863, 38865, 38866, 38868, 38869, 38870, 38871, 38873, 38874, 38875, 38877, 38879, 38880, 38881, 38882, 38883, 38884, 38889, 38890, 38893, 38896, 38921, 38931, 38932, 38933, 38934, 38936, 38946, 39900, 39905, 39906, 39912, 39914, 39915, 39918, 39920, 39927, 42949, 42950, 42951, 42952, 42984, 42985, 43515, 44099, 44100, 44101, 44102, 44103, 44105, 44107, 44115, 45626, 45628, 46978, 51964, 51968, 51978, 51994);
+UPDATE item_template
+SET bonding = 1,
+    startquest = 0,
+    stat_value1 = IF(stat_type1 = 50, 0, stat_value1),
+    stat_type1 = IF(stat_type1 = 50, 0, stat_type1),
+    stat_value2 = IF(stat_type2 = 50, 0, stat_value2),
+    stat_type2 = IF(stat_type2 = 50, 0, stat_type2),
+    stat_value3 = IF(stat_type3 = 50, 0, stat_value3),
+    stat_type3 = IF(stat_type3 = 50, 0, stat_type3),
+    stat_value4 = IF(stat_type4 = 50, 0, stat_value4),
+    stat_type4 = IF(stat_type4 = 50, 0, stat_type4),
+    stat_value5 = IF(stat_type5 = 50, 0, stat_value5),
+    stat_type5 = IF(stat_type5 = 50, 0, stat_type5),
+    stat_value6 = IF(stat_type6 = 50, 0, stat_value6),
+    stat_type6 = IF(stat_type6 = 50, 0, stat_type6),
+    stat_value7 = IF(stat_type7 = 50, 0, stat_value7),
+    stat_type7 = IF(stat_type7 = 50, 0, stat_type7),
+    stat_value8 = IF(stat_type8 = 50, 0, stat_value8),
+    stat_type8 = IF(stat_type8 = 50, 0, stat_type8),
+    stat_value9 = IF(stat_type9 = 50, 0, stat_value9),
+    stat_type9 = IF(stat_type9 = 50, 0, stat_type9),
+    stat_value10 = IF(stat_type10 = 50, 0, stat_value10),
+    stat_type10 = IF(stat_type10 = 50, 0, stat_type10)
+WHERE entry IN (872, 890, 892, 935, 1116, 1121, 1131, 1156, 1276, 1306, 1318, 1449, 1459, 1482, 1483, 1484, 1486, 1560, 1935, 1937, 1974, 2035, 2041, 2042, 2046, 2059, 2167, 2169, 2231, 2256, 2271, 2314, 2516, 2567, 2807, 2879, 2910, 2911, 2933, 3066, 3184, 3194, 3202, 3324, 3415, 3429, 3555, 3561, 3585, 3647, 3761, 3822, 4315, 4316, 4320, 4368, 4369, 4373, 4381, 4385, 4406, 4534, 4708, 4800, 4818, 4998, 5183, 5187, 5191, 5192, 5194, 5195, 5196, 5197, 5198, 5199, 5201, 5202, 5243, 5254, 5312, 5317, 5323, 5356, 5404, 5423, 5425, 5426, 5443, 5444, 5613, 5614, 5627, 5749, 5750, 5815, 5961, 5970, 6087, 6189, 6191, 6226, 6282, 6319, 6332, 6333, 6335, 6341, 6383, 6414, 6447, 6448, 6449, 6459, 6460, 6465, 6467, 6468, 6469, 6472, 6473, 6504, 6505, 6568, 6573, 6577, 6586, 6587, 6629, 6632, 6633, 6667, 6668, 6678, 7001, 7002, 7003, 7230, 7284, 7285, 7334, 7336, 8545, 8663, 9767, 9768, 9811, 10043, 10399, 10403, 10410, 10411, 10412, 10413, 10653, 10654, 10657, 10726, 12054, 12645, 12975, 12976, 12977, 12979, 12982, 12983, 12984, 12987, 12988, 12990, 12992, 12994, 12996, 12997, 13136, 13209, 13245, 13966, 14145, 14147, 14148, 14149, 14150, 14151, 14169, 14374, 14529, 14530, 14568, 14743, 15019, 15196, 15197, 15269, 15331, 15500, 15511, 15512, 15946, 16608, 16768, 16981, 16987, 17046, 18468, 18471, 18706, 19024, 19969, 19972, 20425, 20426, 20427, 20428, 20429, 20430, 20431, 20434, 20437, 20438, 20439, 20440, 20441, 20442, 20443, 20444, 21933, 21934, 22268, 22979, 22980, 22982, 22984, 22990, 22995, 23118, 23530, 24027, 24028, 24031, 24033, 24035, 24037, 24047, 24048, 24551, 25829, 25873, 27640, 27777, 28303, 28463, 28468, 29201, 29584, 30804, 31270, 31861, 32196, 35315, 38816, 38820, 38825, 38826, 38828, 38830, 38833, 38835, 38837, 38838, 38839, 38844, 38846, 38847, 38848, 38849, 38851, 38852, 38853, 38854, 38855, 38856, 38857, 38858, 38859, 38860, 38861, 38862, 38863, 38865, 38866, 38868, 38869, 38870, 38871, 38873, 38874, 38875, 38877, 38879, 38880, 38881, 38882, 38883, 38884, 38889, 38890, 38893, 38896, 38921, 38931, 38932, 38933, 38934, 38936, 38946, 39900, 39905, 39906, 39912, 39914, 39915, 39918, 39920, 39927, 40897, 40899, 40912, 40913, 40914, 40922, 40923, 40924, 41092, 41095, 41096, 41108, 41526, 41530, 41531, 41532, 41534, 41536, 41537, 41540, 42397, 42398, 42402, 42406, 42408, 42410, 42411, 42416, 42455, 42456, 42458, 42461, 42462, 42464, 42465, 42466, 42467, 42470, 42473, 42734, 42735, 42739, 42740, 42741, 42743, 42752, 42753, 42898, 42900, 42907, 42908, 42909, 42910, 42912, 42949, 42950, 42951, 42952, 42955, 42956, 42960, 42961, 42962, 42964, 42966, 42970, 42972, 42973, 42974, 42984, 42985, 43316, 43332, 43335, 43338, 43339, 43340, 43342, 43350, 43354, 43356, 43359, 43361, 43364, 43366, 43367, 43369, 43371, 43379, 43389, 43390, 43395, 43396, 43397, 43398, 43399, 43413, 43417, 43418, 43422, 43423, 43424, 43427, 43430, 43431, 43515, 43725, 44099, 44100, 44101, 44102, 44103, 44105, 44107, 44115, 45626, 45628, 45735, 45778, 45785, 46978, 50077, 50125, 51964, 51968, 51978, 51994);
 
 -- Make sheet-listed gems ordinary non-unique socket gems.
-UPDATE `item_template`
-SET `Flags` = `Flags` & 4294443007,
-    `ItemLimitCategory` = 0
-WHERE `entry` IN (790, 872, 890, 892, 935, 1116, 1121, 1131, 1156, 1276, 1306, 1318, 1449, 1459, 1482, 1483, 1484, 1486, 1560, 1935, 1937, 1974, 2035, 2041, 2042, 2046, 2059, 2167, 2169, 2231, 2256, 2271, 2314, 2516, 2567, 2807, 2879, 2910, 2911, 2933, 3066, 3184, 3194, 3202, 3324, 3415, 3429, 3555, 3561, 3647, 3761, 3822, 4315, 4316, 4320, 4368, 4369, 4373, 4381, 4385, 4406, 4534, 4708, 4800, 4818, 4998, 5183, 5187, 5191, 5192, 5194, 5195, 5196, 5197, 5198, 5199, 5201, 5202, 5243, 5254, 5312, 5317, 5323, 5356, 5404, 5423, 5425, 5426, 5443, 5444, 5613, 5614, 5627, 5750, 5815, 5961, 5970, 6087, 6189, 6191, 6226, 6282, 6319, 6332, 6333, 6335, 6341, 6383, 6414, 6447, 6448, 6449, 6459, 6460, 6465, 6467, 6468, 6469, 6472, 6473, 6504, 6505, 6563, 6568, 6570, 6573, 6577, 6586, 6587, 6629, 6632, 6633, 6667, 6668, 6678, 7001, 7002, 7003, 7230, 7284, 7285, 7334, 8545, 8663, 9766, 9767, 9768, 9782, 9811, 9814, 10043, 10399, 10403, 10410, 10411, 10412, 10413, 10653, 10654, 10657, 11993, 12006, 12054, 12645, 12975, 12976, 12977, 12979, 12982, 12983, 12984, 12987, 12988, 12990, 12992, 12994, 12996, 12997, 13136, 13209, 13245, 13966, 14145, 14147, 14148, 14149, 14150, 14151, 14169, 14171, 14374, 14529, 14530, 14568, 14743, 15019, 15269, 15331, 15500, 15511, 15512, 15946, 16608, 16768, 16981, 16987, 17046, 18468, 18471, 18706, 19024, 19969, 19972, 20425, 20426, 20427, 20428, 20429, 20430, 20431, 20434, 20437, 20438, 20439, 20440, 20441, 20442, 20443, 20444, 21933, 21934, 22268, 22979, 22980, 22982, 22984, 22990, 22995, 23118, 23530, 24027, 24028, 24031, 24033, 24035, 24037, 24047, 24048, 24551, 25829, 25873, 27640, 27777, 28303, 28463, 28468, 29201, 29584, 30804, 31270, 31861, 32196, 35315, 38816, 38820, 38825, 38826, 38828, 38830, 38833, 38835, 38837, 38838, 38839, 38844, 38846, 38847, 38848, 38849, 38851, 38852, 38853, 38854, 38855, 38856, 38857, 38858, 38859, 38860, 38861, 38862, 38863, 38865, 38866, 38868, 38869, 38870, 38871, 38873, 38874, 38875, 38877, 38879, 38880, 38881, 38882, 38883, 38884, 38889, 38890, 38893, 38896, 38921, 38931, 38932, 38933, 38934, 38936, 38946, 39900, 39905, 39906, 39912, 39914, 39915, 39918, 39920, 39927, 42949, 42950, 42951, 42952, 42984, 42985, 43515, 44099, 44100, 44101, 44102, 44103, 44105, 44107, 44115, 45626, 45628, 46978, 51964, 51968, 51978, 51994)
-  AND `class` = 3;
+UPDATE item_template
+SET Flags = Flags & 4294443007,
+    ItemLimitCategory = 0
+WHERE entry IN (872, 890, 892, 935, 1116, 1121, 1131, 1156, 1276, 1306, 1318, 1449, 1459, 1482, 1483, 1484, 1486, 1560, 1935, 1937, 1974, 2035, 2041, 2042, 2046, 2059, 2167, 2169, 2231, 2256, 2271, 2314, 2516, 2567, 2807, 2879, 2910, 2911, 2933, 3066, 3184, 3194, 3202, 3324, 3415, 3429, 3555, 3561, 3585, 3647, 3761, 3822, 4315, 4316, 4320, 4368, 4369, 4373, 4381, 4385, 4406, 4534, 4708, 4800, 4818, 4998, 5183, 5187, 5191, 5192, 5194, 5195, 5196, 5197, 5198, 5199, 5201, 5202, 5243, 5254, 5312, 5317, 5323, 5356, 5404, 5423, 5425, 5426, 5443, 5444, 5613, 5614, 5627, 5749, 5750, 5815, 5961, 5970, 6087, 6189, 6191, 6226, 6282, 6319, 6332, 6333, 6335, 6341, 6383, 6414, 6447, 6448, 6449, 6459, 6460, 6465, 6467, 6468, 6469, 6472, 6473, 6504, 6505, 6568, 6573, 6577, 6586, 6587, 6629, 6632, 6633, 6667, 6668, 6678, 7001, 7002, 7003, 7230, 7284, 7285, 7334, 7336, 8545, 8663, 9767, 9768, 9811, 10043, 10399, 10403, 10410, 10411, 10412, 10413, 10653, 10654, 10657, 10726, 12054, 12645, 12975, 12976, 12977, 12979, 12982, 12983, 12984, 12987, 12988, 12990, 12992, 12994, 12996, 12997, 13136, 13209, 13245, 13966, 14145, 14147, 14148, 14149, 14150, 14151, 14169, 14374, 14529, 14530, 14568, 14743, 15019, 15196, 15197, 15269, 15331, 15500, 15511, 15512, 15946, 16608, 16768, 16981, 16987, 17046, 18468, 18471, 18706, 19024, 19969, 19972, 20425, 20426, 20427, 20428, 20429, 20430, 20431, 20434, 20437, 20438, 20439, 20440, 20441, 20442, 20443, 20444, 21933, 21934, 22268, 22979, 22980, 22982, 22984, 22990, 22995, 23118, 23530, 24027, 24028, 24031, 24033, 24035, 24037, 24047, 24048, 24551, 25829, 25873, 27640, 27777, 28303, 28463, 28468, 29201, 29584, 30804, 31270, 31861, 32196, 35315, 38816, 38820, 38825, 38826, 38828, 38830, 38833, 38835, 38837, 38838, 38839, 38844, 38846, 38847, 38848, 38849, 38851, 38852, 38853, 38854, 38855, 38856, 38857, 38858, 38859, 38860, 38861, 38862, 38863, 38865, 38866, 38868, 38869, 38870, 38871, 38873, 38874, 38875, 38877, 38879, 38880, 38881, 38882, 38883, 38884, 38889, 38890, 38893, 38896, 38921, 38931, 38932, 38933, 38934, 38936, 38946, 39900, 39905, 39906, 39912, 39914, 39915, 39918, 39920, 39927, 40897, 40899, 40912, 40913, 40914, 40922, 40923, 40924, 41092, 41095, 41096, 41108, 41526, 41530, 41531, 41532, 41534, 41536, 41537, 41540, 42397, 42398, 42402, 42406, 42408, 42410, 42411, 42416, 42455, 42456, 42458, 42461, 42462, 42464, 42465, 42466, 42467, 42470, 42473, 42734, 42735, 42739, 42740, 42741, 42743, 42752, 42753, 42898, 42900, 42907, 42908, 42909, 42910, 42912, 42949, 42950, 42951, 42952, 42955, 42956, 42960, 42961, 42962, 42964, 42966, 42970, 42972, 42973, 42974, 42984, 42985, 43316, 43332, 43335, 43338, 43339, 43340, 43342, 43350, 43354, 43356, 43359, 43361, 43364, 43366, 43367, 43369, 43371, 43379, 43389, 43390, 43395, 43396, 43397, 43398, 43399, 43413, 43417, 43418, 43422, 43423, 43424, 43427, 43430, 43431, 43515, 43725, 44099, 44100, 44101, 44102, 44103, 44105, 44107, 44115, 45626, 45628, 45735, 45778, 45785, 46978, 50077, 50125, 51964, 51968, 51978, 51994)
+  AND class = 3;
 
 CREATE TEMPORARY TABLE item_template_relaxed_class_entries AS
-SELECT `entry`
-FROM `item_template`
-WHERE `RequiredLevel` > 19
-   OR `ItemLevel` > 45;
+SELECT entry
+FROM item_template
+WHERE RequiredLevel > 19
+   OR ItemLevel > 45;
 
 -- Normalize custom bracket item levels before relaxing requirements, but preserve
 -- item levels for random-suffix items because their stats scale from ItemLevel.
-UPDATE `item_template`
-SET `ItemLevel` = 35
-WHERE `RandomSuffix` = 0;
+UPDATE item_template
+SET ItemLevel = 35
+WHERE RandomSuffix = 0;
 
 -- Remove class requirements from items that were above the bracket before level normalization.
-UPDATE `item_template`
-SET `AllowableClass` = -1
-WHERE `entry` IN (SELECT `entry` FROM item_template_relaxed_class_entries);
+UPDATE item_template
+SET AllowableClass = -1
+WHERE entry IN (SELECT entry FROM item_template_relaxed_class_entries);
 
 -- Remove item required levels.
-UPDATE `item_template`
-SET `RequiredLevel` = 0;
+UPDATE item_template
+SET RequiredLevel = 0;
 
 DROP TEMPORARY TABLE item_template_relaxed_class_entries;
 
 -- Restrict unrestricted mail and plate armor to warrior/paladin.
-UPDATE `item_template`
-SET `AllowableClass` = 3
-WHERE `class` = 4
-  AND `subclass` IN (3, 4)
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 3
+WHERE class = 4
+  AND subclass IN (3, 4)
+  AND AllowableClass = -1;
 
 -- Restrict unrestricted leather armor to every non-DK class except priest/mage/warlock.
-UPDATE `item_template`
-SET `AllowableClass` = 1103
-WHERE `class` = 4
-  AND `subclass` = 2
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 1103
+WHERE class = 4
+  AND subclass = 2
+  AND AllowableClass = -1;
 
 -- Restrict unrestricted weapons to classes that can learn each weapon type.
-UPDATE `item_template`
-SET `AllowableClass` = 79
-WHERE `class` = 2
-  AND `subclass` = 0
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 79
+WHERE class = 2
+  AND subclass = 0
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 71
-WHERE `class` = 2
-  AND `subclass` = 1
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 71
+WHERE class = 2
+  AND subclass = 1
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 13
-WHERE `class` = 2
-  AND `subclass` IN (2, 3, 16, 18)
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 13
+WHERE class = 2
+  AND subclass IN (2, 3, 16, 18)
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 1115
-WHERE `class` = 2
-  AND `subclass` = 4
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 1115
+WHERE class = 2
+  AND subclass = 4
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 1091
-WHERE `class` = 2
-  AND `subclass` = 5
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 1091
+WHERE class = 2
+  AND subclass = 5
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 1031
-WHERE `class` = 2
-  AND `subclass` = 6
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 1031
+WHERE class = 2
+  AND subclass = 6
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 399
-WHERE `class` = 2
-  AND `subclass` = 7
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 399
+WHERE class = 2
+  AND subclass = 7
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 7
-WHERE `class` = 2
-  AND `subclass` = 8
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 7
+WHERE class = 2
+  AND subclass = 8
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 1493
-WHERE `class` = 2
-  AND `subclass` = 10
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 1493
+WHERE class = 2
+  AND subclass = 10
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 1101
-WHERE `class` = 2
-  AND `subclass` = 13
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 1101
+WHERE class = 2
+  AND subclass = 13
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 1501
-WHERE `class` = 2
-  AND `subclass` = 15
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 1501
+WHERE class = 2
+  AND subclass = 15
+  AND AllowableClass = -1;
 
-UPDATE `item_template`
-SET `AllowableClass` = 400
-WHERE `class` = 2
-  AND `subclass` = 19
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 400
+WHERE class = 2
+  AND subclass = 19
+  AND AllowableClass = -1;
 
 -- Restrict unrestricted shields to warrior/paladin/shaman.
-UPDATE `item_template`
-SET `AllowableClass` = 67
-WHERE `class` = 4
-  AND `subclass` = 6
-  AND `AllowableClass` = -1;
+UPDATE item_template
+SET AllowableClass = 67
+WHERE class = 4
+  AND subclass = 6
+  AND AllowableClass = -1;

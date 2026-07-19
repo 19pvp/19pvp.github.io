@@ -1,6 +1,7 @@
 import worldserverConfig from './config/worldserver.json' with { type: 'json' }
 import aleConfig from './config/ale.json' with { type: 'json' }
 import playerbotsConfig from './config/playerbots.json' with { type: 'json' }
+import cfbgConfig from './config/cfbg.json' with { type: 'json' }
 
 export const projectName = import.meta.dirname!.split('/').at(-1)
 
@@ -31,6 +32,13 @@ export const targets = {
     config: worldserverConfig,
     url:
       'https://raw.githubusercontent.com/mod-playerbots/azerothcore-wotlk/refs/heads/Playerbot/src/server/apps/worldserver/worldserver.conf.dist',
+  },
+  cfbg: {
+    label: 'Cross-Faction Battleground Config',
+    reload: 'reload config',
+    subdir: 'modules/',
+    config: cfbgConfig,
+    url: 'https://raw.githubusercontent.com/azerothcore/mod-cfbg/refs/heads/master/conf/CFBG.conf.dist',
   },
 } as const
 
