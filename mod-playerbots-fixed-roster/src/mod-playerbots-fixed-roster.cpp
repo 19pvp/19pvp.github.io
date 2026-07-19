@@ -355,6 +355,100 @@ public:
         return _roster.size();
     }
 
+    bool RequestRecreate()
+    {
+        if (!_enabled || _roster.empty() || _recreatePending)
+            return false;
+
+        _recreatePending = true;
+        for (WsgFixedRosterEntry const& entry : _roster)
+        {
+            ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(entry.guid);
+            Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
+            if (!bot)
+                continue;
+
+            WorldSession* session = bot->GetSession();
+            if (!session)
+                continue;
+
+            session->KickPlayer("WSG fixed bot roster recreation");
+        }
+
+        LOG_INFO("playerbots", "[WsgFixedBots] Roster recreation requested; waiting for bots to log out.");
+        return true;
+    }
+
+    bool AnyRosterBotOnline() const
+    {
+        return std::any_of(_roster.begin(), _roster.end(), [](WsgFixedRosterEntry const& entry)
+        {
+            ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(entry.guid);
+            return ObjectAccessor::FindConnectedPlayer(guid) != nullptr;
+        });
+    }
+
+    bool ValidateRecreateEntry(WsgFixedRosterEntry const& entry) const
+    {
+        if (!entry.guid)
+            return true;
+
+        uint32 accountId = AccountMgr::GetId(entry.account);
+        if (!accountId)
+        {
+            LOG_ERROR("playerbots", "[WsgFixedBots] Cannot recreate {}: account {} does not exist.",
+                entry.name, entry.account);
+            return false;
+        }
+
+        QueryResult character = CharacterDatabase.Query(
+            "SELECT `account`, `name` FROM `characters` WHERE `guid` = {}", entry.guid);
+        if (!character)
+            return true;
+
+        Field* fields = character->Fetch();
+        uint32 characterAccount = fields[0].Get<uint32>();
+        std::string characterName = fields[1].Get<std::string>();
+        if (characterAccount == accountId && characterName == entry.name)
+            return true;
+
+        LOG_ERROR("playerbots",
+            "[WsgFixedBots] Refusing to recreate {}: GUID {} belongs to account {} / character {}.",
+            entry.name, entry.guid, characterAccount, characterName);
+        return false;
+    }
+
+    void CompleteRecreate()
+    {
+        for (WsgFixedRosterEntry const& entry : _roster)
+        {
+            if (!ValidateRecreateEntry(entry))
+            {
+                _recreatePending = false;
+                return;
+            }
+        }
+
+        for (WsgFixedRosterEntry const& entry : _roster)
+        {
+            if (!entry.guid)
+                continue;
+
+            uint32 accountId = AccountMgr::GetId(entry.account);
+            QueryResult character = CharacterDatabase.Query(
+                "SELECT 1 FROM `characters` WHERE `guid` = {}", entry.guid);
+            if (character)
+                Player::DeleteFromDB(entry.guid, accountId, true, true);
+        }
+
+        PlayerbotsDatabase.Execute("DELETE FROM `playerbots_fixed_roster_guid`");
+        sRandomPlayerbotMgr.ClearFixedRosterCache();
+        _roster.clear();
+        _recreatePending = false;
+        LoadFromDB();
+        LOG_INFO("playerbots", "[WsgFixedBots] Roster recreation complete; recreated {} bot character(s).", _roster.size());
+    }
+
     void LogLoginDiagnostics(WsgFixedRosterEntry const& entry, ObjectGuid guid, uint32 cacheAccountId) const
     {
         QueryResult characterResult = CharacterDatabase.Query(
@@ -434,6 +528,15 @@ public:
 
     void Update(uint32 diff)
     {
+        if (_recreatePending)
+        {
+            if (AnyRosterBotOnline())
+                return;
+
+            CompleteRecreate();
+            return;
+        }
+
         if (!_enabled || _roster.empty())
             return;
 
@@ -486,6 +589,7 @@ public:
 
 private:
     bool _enabled = true;
+    bool _recreatePending = false;
     uint32 _checkMs = 5 * IN_MILLISECONDS;
     uint32 _timer = 0;
     std::vector<WsgFixedRosterEntry> _roster;
@@ -528,6 +632,7 @@ public:
     ChatCommandTable GetCommands() const override
     {
         static ChatCommandTable rosterBotsCommandTable = {
+            {"recreate", HandleRecreateCommand, SEC_GAMEMASTER, Console::Yes},
             {"reload", HandleReloadCommand, SEC_GAMEMASTER, Console::Yes},
         };
 
@@ -542,6 +647,18 @@ public:
     {
         std::size_t const loaded = WsgFixedRosterMgr::Instance().Reload();
         handler->PSendSysMessage("Reloaded WSG fixed bot roster: {} enabled bot(s) with GUIDs.", loaded);
+        return true;
+    }
+
+    static bool HandleRecreateCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        if (!WsgFixedRosterMgr::Instance().RequestRecreate())
+        {
+            handler->SendSysMessage("WSG fixed bot roster recreation is already pending, disabled, or empty.");
+            return false;
+        }
+
+        handler->SendSysMessage("WSG fixed bots are logging out. Their characters will be deleted and recreated shortly.");
         return true;
     }
 };

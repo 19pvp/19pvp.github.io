@@ -31,3 +31,12 @@ After applying roster SQL, reload without restarting:
 ```text
 .rosterbots reload
 ```
+
+To safely replace every fixed-roster character while the server is running:
+
+```text
+.rosterbots recreate
+```
+
+This kicks the fixed bots, waits for their sessions to finish logging out, permanently deletes their character data,
+and recreates the roster from the configured SQL rows. It requires GM security.
