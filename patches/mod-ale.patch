@@ -169,7 +169,7 @@ index a21640d..0eafcfe 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..3547adf 100644
+index c0acc01..8f4af94 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -165,6 +165,10 @@ luaL_Reg GlobalMethods[] =
@@ -183,7 +183,16 @@ index c0acc01..3547adf 100644
      { "PerformIngameSpawn", &LuaGlobalFunctions::PerformIngameSpawn },
      { "CreatePacket", &LuaGlobalFunctions::CreatePacket },
      { "AddVendorItem", &LuaGlobalFunctions::AddVendorItem },
-@@ -566,6 +570,14 @@ ALERegister<Player> PlayerMethods[] =
+@@ -485,6 +489,8 @@ ALERegister<Player> PlayerMethods[] =
+     { "GetGuildId", &LuaPlayer::GetGuildId },
+     { "GetCoinage", &LuaPlayer::GetCoinage },
+     { "GetTeam", &LuaPlayer::GetTeam },
++    { "GetBgTeamId", &LuaPlayer::GetBgTeamId },
++    { "IsCFBGSwapped", &LuaPlayer::IsCFBGSwapped },
+     { "GetItemCount", &LuaPlayer::GetItemCount },
+     { "GetGroup", &LuaPlayer::GetGroup },
+     { "GetGuild", &LuaPlayer::GetGuild },
+@@ -566,6 +572,14 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
@@ -198,7 +207,7 @@ index c0acc01..3547adf 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -1380,6 +1392,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1394,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -587,20 +596,59 @@ index cebb7bc..3e8129b 100644
       * </pre>
       *
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..a1d6894 100644
+index c39801f..bec5570 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
-@@ -10,6 +10,9 @@
+@@ -10,6 +10,14 @@
  #include "Chat.h"
  #include "GameTime.h"
  #include "GossipDef.h"
 +#include "PlayerbotAI.h"
 +#include "PlayerbotMgr.h"
 +#include "BattlegroundMgr.h"
++
++#if __has_include("CFBG.h")
++#include "CFBG.h"
++#define HAS_CFBG 1
++#endif
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -5175,6 +5178,341 @@ namespace LuaPlayer
+@@ -1556,6 +1564,33 @@ namespace LuaPlayer
+         ALE::Push(L, player->GetTeamId());
+         return 1;
+     }
++
++    /**
++     * Returns the [Player]s Battleground [TeamId]
++     *
++     * @return [TeamId] bgTeamId
++     */
++    int GetBgTeamId(lua_State* L, Player* player)
++    {
++        ALE::Push(L, (uint32)player->GetBgTeamId());
++        return 1;
++    }
++
++    /**
++     * Returns true if the player is currently faction swapped by CFBG
++     *
++     * @return bool isCFBGSwapped
++     */
++    int IsCFBGSwapped(lua_State* L, Player* player)
++    {
++        (void)player;
++#if defined(HAS_CFBG)
++        ALE::Push(L, sCFBG->IsPlayerFake(player));
++#else
++        ALE::Push(L, false);
++#endif
++        return 1;
++    }
+     
+     /**
+      * Returns amount of the specified [Item] the [Player] has.
+@@ -5175,6 +5210,341 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }

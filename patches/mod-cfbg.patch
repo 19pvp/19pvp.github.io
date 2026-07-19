@@ -1,0 +1,94 @@
+diff --git a/src/CFBG.cpp b/src/CFBG.cpp
+index a635a5d..07ff4df 100644
+--- a/src/CFBG.cpp
++++ b/src/CFBG.cpp
+@@ -637,32 +637,18 @@ void CFBG::SetFakeRaceAndMorph(Player* player)
+     if (!player->InBattleground() || player->GetTeamId(true) == player->GetBgTeamId() || IsPlayerFake(player))
+         return;
+ 
+-    // generate random race and morph
+-    RandomSkinInfo skinInfo{ GetRandomRaceMorph(player->GetTeamId(true), player->getClass(), player->getGender()) };
+-
+-    uint8 selectedRace = player->GetPlayerSetting("mod-cfbg", SETTING_CFBG_RACE).value;
+-
+-    if (!RandomizeRaces() && selectedRace && IsRaceValidForFaction(player->GetTeamId(true), selectedRace))
+-    {
+-        skinInfo.first = selectedRace;
+-        skinInfo.second = GetMorphFromRace(skinInfo.first, player->getGender());
+-    }
+-
+     FakePlayer fakePlayerInfo
+     {
+-        skinInfo.first,
+-        skinInfo.second,
+-        player->TeamIdForRace(skinInfo.first),
++        player->getRace(true),
++        player->GetDisplayId(),
++        player->GetBgTeamId(),
+         player->getRace(true),
+         player->GetDisplayId(),
+         player->GetNativeDisplayId(),
+         player->GetTeamId(true)
+     };
+ 
+-    player->setRace(fakePlayerInfo.FakeRace);
+     SetFactionForRace(player, fakePlayerInfo.FakeRace, fakePlayerInfo.FakeTeamID);
+-    player->SetDisplayId(fakePlayerInfo.FakeMorph);
+-    player->SetNativeDisplayId(fakePlayerInfo.FakeMorph);
+ 
+     _fakePlayerStore.emplace(player, std::move(fakePlayerInfo));
+ }
+@@ -676,21 +662,10 @@ void CFBG::SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam)
+     if (realTeam == assignedTeam)
+         return;
+ 
+-    // Generate a race/morph from the assigned team's faction (opposite of real faction)
+-    RandomSkinInfo skinInfo{ GetRandomRaceMorph(realTeam, player->getClass(), player->getGender()) };
+-
+-    uint8 selectedRace = player->GetPlayerSetting("mod-cfbg", SETTING_CFBG_RACE).value;
+-
+-    if (!RandomizeRaces() && selectedRace && IsRaceValidForFaction(realTeam, selectedRace))
+-    {
+-        skinInfo.first = selectedRace;
+-        skinInfo.second = GetMorphFromRace(skinInfo.first, player->getGender());
+-    }
+-
+     FakePlayer fakePlayerInfo
+     {
+-        skinInfo.first,
+-        skinInfo.second,
++        player->getRace(true),
++        player->GetDisplayId(),
+         assignedTeam,
+         player->getRace(true),
+         player->GetDisplayId(),
+@@ -698,10 +673,7 @@ void CFBG::SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam)
+         realTeam
+     };
+ 
+-    player->setRace(fakePlayerInfo.FakeRace);
+     SetFactionForRace(player, fakePlayerInfo.FakeRace, assignedTeam);
+-    player->SetDisplayId(fakePlayerInfo.FakeMorph);
+-    player->SetNativeDisplayId(fakePlayerInfo.FakeMorph);
+ 
+     _fakePlayerStore.emplace(player, std::move(fakePlayerInfo));
+ }
+@@ -713,8 +685,16 @@ void CFBG::SetFactionForRace(Player* player, uint8 Race, TeamId teamId)
+ 
+     player->setTeamId(teamId);
+ 
+-    ChrRacesEntry const* DBCRace = sChrRacesStore.LookupEntry(Race);
+-    player->SetFaction(DBCRace ? DBCRace->FactionID : 0);
++    if (player->GetTeamId(true) != teamId)
++    {
++        // Alliance race on Horde team gets Horde faction template (2), Horde race on Alliance team gets Alliance faction template (1)
++        player->SetFaction(teamId == TEAM_ALLIANCE ? 1 : 2);
++    }
++    else
++    {
++        ChrRacesEntry const* DBCRace = sChrRacesStore.LookupEntry(Race);
++        player->SetFaction(DBCRace ? DBCRace->FactionID : 0);
++    }
+ 
+     for (Unit* controlled : player->m_Controlled)
+     {

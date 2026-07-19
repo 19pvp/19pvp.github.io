@@ -67,6 +67,7 @@ type ItemProps = {
 }
 
 type StarterItem = {
+  amount: number
   classId: number
   className: string
   itemId: number
@@ -253,6 +254,9 @@ const teamNameById = {
 } as const
 
 const botReplacedStarterItemId = 4368
+const starterItemAmountById = {
+  21841: 4,
+} as const
 const botOnlyItemTeamById = {
   15196: 1,
   15197: 2,
@@ -641,7 +645,13 @@ const parseStarterItems = (rows: ItemSheetRow[] | undefined) => {
       const key = `${classId}:${itemId}`
       if (seen.has(key)) continue
       seen.add(key)
-      items.push({ classId, className, itemId, name: row.NAME?.trim() || String(itemId) })
+      items.push({
+        amount: starterItemAmountById[itemId as keyof typeof starterItemAmountById] ?? 1,
+        classId,
+        className,
+        itemId,
+        name: row.NAME?.trim() || String(itemId),
+      })
     }
   }
 
@@ -715,6 +725,7 @@ const vendorTierFromValue = (value: string | undefined): VendorTier | undefined 
 }
 
 const vendorCategoryFromItemInfo = (item: VendorItemInfo): VendorCategory | undefined => {
+  if (item.classId === 1 && item.inventoryType === 18) return 'accessory'
   if (item.classId === 3) return 'gem'
   if (item.classId === 16) return 'glyph'
   if (item.inventoryType === 0) return 'enchant'
@@ -737,8 +748,12 @@ const vendorGoldDiscount = (item: VendorItem) => {
   return 0
 }
 
-const vendorNpcSubname = (currency: VendorCurrency, category: VendorCategory) => {
-  if (currency === 'arena') return 'former gladiator'
+const commendationOfBraveryItemId = 44115
+
+const vendorNpcSubname = (currency: VendorCurrency, category: VendorCategory, itemId?: number) => {
+  if (currency === 'arena' || (itemId === commendationOfBraveryItemId && currency === 'heroism')) {
+    return 'former gladiator'
+  }
   if (category === 'enchant') return `enchant ${currency === 'gold' ? 'merchant' : 'quartermaster'}`
   const prefix = category === 'weapon' ? 'weapons' : category
   const suffix = currency === 'gold' ? 'merchant' : 'quartermaster'
@@ -781,7 +796,7 @@ const parseVendorItems = (
       continue
     }
 
-    const npcSubname = vendorNpcSubname(currency, category)
+    const npcSubname = vendorNpcSubname(currency, category, itemId)
     const npc = npcEntriesBySubname.get(npcSubname.toLowerCase())
     if (!npc) {
       questWarnings.push(`${rowLabel}: ignored vendor item, NPC subname ${JSON.stringify(npcSubname)} not found`)
@@ -874,7 +889,7 @@ const parseWsgBotItems = (
   for (const bot of roster) {
     for (const item of starterItems) {
       if (item.itemId !== botReplacedStarterItemId && item.classId === bot.classId) {
-        addBotItem(bot, item.itemId, 1, item.name, 'player starter gear')
+        addBotItem(bot, item.itemId, item.amount, item.name, 'player starter gear')
       }
     }
 
@@ -1091,7 +1106,7 @@ const generateStartingInfoSql = async (starterItems: StarterItem[]) => {
   }
 
   const starterRows = starterItems.map((item) =>
-    `  (0, ${item.classId}, ${item.itemId}, 1, ${sqlString(`${item.className}: ${item.name}`)})`
+    `  (0, ${item.classId}, ${item.itemId}, ${item.amount}, ${sqlString(`${item.className}: ${item.name}`)})`
   )
   const itemRows = [...removalRows, ...starterRows]
   const starterSellPriceUpdate = starterItemIds.length

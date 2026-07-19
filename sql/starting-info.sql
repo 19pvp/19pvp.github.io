@@ -10,7 +10,7 @@ SET map = 530,
     position_z = 339.4637,
     orientation = 1.9342613;
 
-UPDATE item_template SET SellPrice = 1 WHERE entry IN (892, 1276, 1306, 1459, 1560, 2035, 2046, 2516, 2910, 3429, 3555, 3561, 3585, 4316, 4368, 4369, 4708, 4800, 4818, 4998, 5312, 5317, 5356, 5627, 5749, 5750, 5961, 6189, 6333, 6467, 7336, 14169, 14568, 14743, 15019, 15946, 16981, 21934, 22979, 25873, 46978);
+UPDATE item_template SET SellPrice = 1 WHERE entry IN (892, 1276, 1306, 1459, 1560, 2035, 2046, 2516, 2910, 3429, 3555, 3561, 3585, 4316, 4368, 4369, 4708, 4800, 4818, 4998, 5312, 5317, 5356, 5627, 5749, 5750, 5961, 6189, 6333, 6467, 7336, 14169, 14568, 14743, 15019, 15946, 16981, 21841, 21934, 22979, 25873, 46978);
 
 DROP TEMPORARY TABLE IF EXISTS starting_info_item;
 CREATE TEMPORARY TABLE starting_info_item (
@@ -496,6 +496,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 1, 6189, 1, 'Warrior: Durable Chain Shoulders'),
   (0, 1, 7336, 1, 'Warrior: Wildwood Chain'),
   (0, 1, 14743, 1, 'Warrior: Hulking Bands'),
+  (0, 1, 21841, 4, 'Warrior: Netherweave Bag'),
   (0, 1, 21934, 1, 'Warrior: Ornate Tigerseye Necklace'),
   (0, 1, 22979, 1, 'Warrior: Slayer\'s Band'),
   (0, 1, 25873, 1, 'Warrior: Keen Throwing Knife'),
@@ -516,6 +517,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 2, 7336, 1, 'Paladin: Wildwood Chain'),
   (0, 2, 14743, 1, 'Paladin: Hulking Bands'),
   (0, 2, 16981, 1, 'Paladin: Owlbeard Bracers'),
+  (0, 2, 21841, 4, 'Paladin: Netherweave Bag'),
   (0, 2, 21934, 1, 'Paladin: Ornate Tigerseye Necklace'),
   (0, 2, 22979, 1, 'Paladin: Slayer\'s Band'),
   (0, 3, 1306, 1, 'Hunter: Wolfmane Wristguards'),
@@ -531,6 +533,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 3, 6467, 1, 'Hunter: Deviate Scale Gloves'),
   (0, 3, 14568, 1, 'Hunter: Bristlebark Boots'),
   (0, 3, 15019, 1, 'Hunter: Lupine Mantle'),
+  (0, 3, 21841, 4, 'Hunter: Netherweave Bag'),
   (0, 3, 21934, 1, 'Hunter: Ornate Tigerseye Necklace'),
   (0, 3, 22979, 1, 'Hunter: Slayer\'s Band'),
   (0, 4, 1306, 1, 'Rogue: Wolfmane Wristguards'),
@@ -545,6 +548,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 4, 6467, 1, 'Rogue: Deviate Scale Gloves'),
   (0, 4, 14568, 1, 'Rogue: Bristlebark Boots'),
   (0, 4, 15019, 1, 'Rogue: Lupine Mantle'),
+  (0, 4, 21841, 4, 'Rogue: Netherweave Bag'),
   (0, 4, 21934, 1, 'Rogue: Ornate Tigerseye Necklace'),
   (0, 4, 22979, 1, 'Rogue: Slayer\'s Band'),
   (0, 4, 25873, 1, 'Rogue: Keen Throwing Knife'),
@@ -561,6 +565,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 5, 14169, 1, 'Priest: Aboriginal Shoulder Pads'),
   (0, 5, 15946, 1, 'Priest: Mystic\'s Sphere'),
   (0, 5, 16981, 1, 'Priest: Owlbeard Bracers'),
+  (0, 5, 21841, 4, 'Priest: Netherweave Bag'),
   (0, 5, 21934, 1, 'Priest: Ornate Tigerseye Necklace'),
   (0, 5, 22979, 1, 'Priest: Slayer\'s Band'),
   (0, 7, 892, 1, 'Shaman: Gnoll Casting Gloves'),
@@ -577,6 +582,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 7, 14169, 1, 'Shaman: Aboriginal Shoulder Pads'),
   (0, 7, 15019, 1, 'Shaman: Lupine Mantle'),
   (0, 7, 16981, 1, 'Shaman: Owlbeard Bracers'),
+  (0, 7, 21841, 4, 'Shaman: Netherweave Bag'),
   (0, 7, 21934, 1, 'Shaman: Ornate Tigerseye Necklace'),
   (0, 7, 22979, 1, 'Shaman: Slayer\'s Band'),
   (0, 7, 46978, 1, 'Shaman: Totem of the Earthen Ring'),
@@ -593,6 +599,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 8, 14169, 1, 'Mage: Aboriginal Shoulder Pads'),
   (0, 8, 15946, 1, 'Mage: Mystic\'s Sphere'),
   (0, 8, 16981, 1, 'Mage: Owlbeard Bracers'),
+  (0, 8, 21841, 4, 'Mage: Netherweave Bag'),
   (0, 8, 21934, 1, 'Mage: Ornate Tigerseye Necklace'),
   (0, 8, 22979, 1, 'Mage: Slayer\'s Band'),
   (0, 9, 892, 1, 'Warlock: Gnoll Casting Gloves'),
@@ -608,6 +615,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 9, 14169, 1, 'Warlock: Aboriginal Shoulder Pads'),
   (0, 9, 15946, 1, 'Warlock: Mystic\'s Sphere'),
   (0, 9, 16981, 1, 'Warlock: Owlbeard Bracers'),
+  (0, 9, 21841, 4, 'Warlock: Netherweave Bag'),
   (0, 9, 21934, 1, 'Warlock: Ornate Tigerseye Necklace'),
   (0, 9, 22979, 1, 'Warlock: Slayer\'s Band'),
   (0, 11, 892, 1, 'Druid: Gnoll Casting Gloves'),
@@ -622,6 +630,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 11, 15019, 1, 'Druid: Lupine Mantle'),
   (0, 11, 15946, 1, 'Druid: Mystic\'s Sphere'),
   (0, 11, 16981, 1, 'Druid: Owlbeard Bracers'),
+  (0, 11, 21841, 4, 'Druid: Netherweave Bag'),
   (0, 11, 21934, 1, 'Druid: Ornate Tigerseye Necklace'),
   (0, 11, 22979, 1, 'Druid: Slayer\'s Band');
 

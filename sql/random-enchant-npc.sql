@@ -20,7 +20,7 @@ ON DUPLICATE KEY UPDATE
 INSERT INTO `npc_text`
   (`ID`, `text0_0`, `BroadcastTextID0`, `Probability0`, `VerifiedBuild`)
 VALUES
-  (777100, 'Greetings, $n. I can reforge random suffixes and properties on equipped items for one Emblem of Heroism.', 0, 1, 12340)
+  (777100, 'Greetings, $n. I can reforge random suffixes and properties on equipped items for the right price.', 0, 1, 12340)
 ON DUPLICATE KEY UPDATE
   `text0_0` = VALUES(`text0_0`),
   `Probability0` = VALUES(`Probability0`);
