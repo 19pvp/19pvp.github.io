@@ -1,5 +1,5 @@
 diff --git a/src/CFBG.cpp b/src/CFBG.cpp
-index a635a5d..05e5dde 100644
+index a635a5d..722801c 100644
 --- a/src/CFBG.cpp
 +++ b/src/CFBG.cpp
 @@ -58,34 +58,6 @@ CrossFactionGroupInfo::CrossFactionGroupInfo(GroupQueueInfo* groupInfo)
@@ -89,7 +89,7 @@ index a635a5d..05e5dde 100644
 -
 -    return { playerRace, playerMorph };
 -}
- 
+-
 -void CFBG::SetFakeRaceAndMorph(Player* player)
 -{
 -    if (!player->InBattleground() || player->GetTeamId(true) == player->GetBgTeamId() || IsPlayerFake(player))
@@ -124,13 +124,13 @@ index a635a5d..05e5dde 100644
 -
 -    _fakePlayerStore.emplace(player, std::move(fakePlayerInfo));
 -}
--
+ 
 -void CFBG::SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam)
 +void CFBG::SetFakePlayer(Player* player, TeamId assignedTeam)
  {
      if (!player || IsPlayerFake(player))
          return;
-@@ -676,32 +579,13 @@ void CFBG::SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam)
+@@ -676,32 +579,22 @@ void CFBG::SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam)
      if (realTeam == assignedTeam)
          return;
  
@@ -161,10 +161,19 @@ index a635a5d..05e5dde 100644
 -    player->SetDisplayId(fakePlayerInfo.FakeMorph);
 -    player->SetNativeDisplayId(fakePlayerInfo.FakeMorph);
 +    SetFactionForRace(player, player->getRace(true), assignedTeam);
++
++    if (assignedTeam == TEAM_HORDE)
++    {
++        player->SetSkill(SKILL_LANG_ORCISH, 0, 300, 300);
++    }
++    else if (assignedTeam == TEAM_ALLIANCE)
++    {
++        player->SetSkill(SKILL_LANG_COMMON, 0, 300, 300);
++    }
  
      _fakePlayerStore.emplace(player, std::move(fakePlayerInfo));
  }
-@@ -713,8 +597,16 @@ void CFBG::SetFactionForRace(Player* player, uint8 Race, TeamId teamId)
+@@ -713,8 +606,16 @@ void CFBG::SetFactionForRace(Player* player, uint8 Race, TeamId teamId)
  
      player->setTeamId(teamId);
  
@@ -183,7 +192,7 @@ index a635a5d..05e5dde 100644
  
      for (Unit* controlled : player->m_Controlled)
      {
-@@ -735,14 +627,7 @@ void CFBG::ClearFakePlayer(Player* player)
+@@ -735,14 +636,16 @@ void CFBG::ClearFakePlayer(Player* player)
      if (player->IsCharmed())
          player->RemoveCharmAuras();
  
@@ -196,10 +205,19 @@ index a635a5d..05e5dde 100644
 -    player->RestoreDisplayId();
 -    SetFactionForRace(player, _fakePlayerStore[player].RealRace, _fakePlayerStore[player].RealTeamID);
 +    SetFactionForRace(player, player->getRace(true), _fakePlayerStore[player].RealTeamID);
++
++    if (player->GetTeamId(true) == TEAM_ALLIANCE)
++    {
++        player->SetSkill(SKILL_LANG_ORCISH, 0, 0, 0);
++    }
++    else if (player->GetTeamId(true) == TEAM_HORDE)
++    {
++        player->SetSkill(SKILL_LANG_COMMON, 0, 0, 0);
++    }
  
      // Clear forced faction reactions. Rank doesn't matter here, not used when they are removed.
      player->GetReputationMgr().ApplyForceReaction(FACTION_FROSTWOLF_CLAN, REP_FRIENDLY, false);
-@@ -765,11 +650,8 @@ void CFBG::ReapplyFakePlayer(Player* player)
+@@ -765,11 +668,8 @@ void CFBG::ReapplyFakePlayer(Player* player)
          return;
  
      // Re-push the stored fake values after a resurrect so the assigned faction
@@ -213,7 +231,7 @@ index a635a5d..05e5dde 100644
  }
  
  bool CFBG::IsPlayerFake(Player* player)
-@@ -1191,15 +1073,4 @@ void CFBG::SendMessageQueue(BattlegroundQueue* bgQueue, Battleground* bg, PvPDif
+@@ -1191,15 +1091,4 @@ void CFBG::SendMessageQueue(BattlegroundQueue* bgQueue, Battleground* bg, PvPDif
      }
  }
  

@@ -18,5 +18,5 @@
   "CFBG.Show.PlayerName": "0",
   "CFBG.RandomRaceSelection": "1",
   "CFBG.BalanceTeamsOnEntry.Enabled": "1",
-  "CFBG.BalanceTeamsAtStart.Enabled": "1"
+  "CFBG.BalanceTeamsAtStart.Enabled": "0"
 }

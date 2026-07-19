@@ -38,5 +38,5 @@ To safely replace every fixed-roster character while the server is running:
 .rosterbots recreate
 ```
 
-This kicks the fixed bots, waits for their sessions to finish logging out, permanently deletes their character data,
-and recreates the roster from the configured SQL rows. It requires GM security.
+This logs out the fixed bots through the playerbot manager, permanently deletes their character data, and recreates the
+roster from the configured SQL rows. It requires GM security.

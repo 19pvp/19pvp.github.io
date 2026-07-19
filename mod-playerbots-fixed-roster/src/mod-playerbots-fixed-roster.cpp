@@ -240,6 +240,13 @@ public:
         if (!IsFixedBot(playerGuid))
             return;
 
+        uint32 const replacedStarterItemCount = player->GetItemCount(4368, true);
+        if (replacedStarterItemCount)
+        {
+            player->DestroyItemCount(4368, replacedStarterItemCount, true, true);
+            LOG_INFO("playerbots", "[WsgFixedBots] Removed replaced starter item 4368 from {}.", player->GetName());
+        }
+
         QueryResult result = PlayerbotsDatabase.Query(
             "SELECT item.`item`, item.`amount` "
             "FROM `playerbots_fixed_roster` roster "
@@ -368,14 +375,10 @@ public:
             if (!bot)
                 continue;
 
-            WorldSession* session = bot->GetSession();
-            if (!session)
-                continue;
-
-            session->KickPlayer("WSG fixed bot roster recreation");
+            sRandomPlayerbotMgr.LogoutPlayerBot(guid);
         }
 
-        LOG_INFO("playerbots", "[WsgFixedBots] Roster recreation requested; waiting for bots to log out.");
+        LOG_INFO("playerbots", "[WsgFixedBots] Roster recreation requested; logging out bots through the playerbot manager.");
         return true;
     }
 

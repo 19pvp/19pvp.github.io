@@ -40,7 +40,7 @@ end
 local bgTypeId = 2 -- Warsong Gulch
 local level = 19
 local minPlayersPerTeam = 5
-local queueDelayTime = 60
+local queueDelayTime = 10
 local annouceFreq = math.floor(queueDelayTime / 2) -- announce at half time
 local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
@@ -88,7 +88,7 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     for _, assignment in ipairs(assignments) do
         local player = assignment.player
         local teamId = assignment.team
-        if player:InviteToBattleground(bg, teamId) then
+        if player:InviteToBattleground(bg, teamId == 1 and 0 or 1) then
             pendingInvites[player:GetGUIDLow()] = true
             table.insert(balancedRealPlayers[teamId], player)
         else
@@ -154,7 +154,7 @@ CreateLuaEvent(function ()
 
     local waitSeconds = math.floor(longestWait / 1000)
     if realPlayersCount > 0 and waitSeconds > 0 and waitSeconds % annouceFreq == 0 then
-        local timeLeft = 60 - waitSeconds
+        local timeLeft = queueDelayTime - waitSeconds
         if timeLeft > 0 then
             print("[WSG Queue] Queue active. " .. realPlayersCount .. " player(s) waiting. Time left to proc: " .. timeLeft .. "s")
             SendWorldMessage("[WSG Queue] " .. realPlayersCount .. " player(s) waiting in queue. Match starts in " .. timeLeft .. "s.")
