@@ -1,11 +1,100 @@
 diff --git a/src/CFBG.cpp b/src/CFBG.cpp
-index a635a5d..07ff4df 100644
+index a635a5d..05e5dde 100644
 --- a/src/CFBG.cpp
 +++ b/src/CFBG.cpp
-@@ -637,32 +637,18 @@ void CFBG::SetFakeRaceAndMorph(Player* player)
-     if (!player->InBattleground() || player->GetTeamId(true) == player->GetBgTeamId() || IsPlayerFake(player))
-         return;
+@@ -58,34 +58,6 @@ CrossFactionGroupInfo::CrossFactionGroupInfo(GroupQueueInfo* groupInfo)
  
+ CFBG::CFBG()
+ {
+-    _raceData =
+-    {
+-        RaceData{ CLASS_NONE,           { 0 }, { 0 } },
+-        RaceData{ CLASS_WARRIOR,        { RACE_HUMAN, RACE_DWARF, RACE_GNOME, RACE_DRAENEI  }, { RACE_ORC, RACE_TAUREN, RACE_TROLL } },
+-        RaceData{ CLASS_PALADIN,        { RACE_HUMAN, RACE_DWARF, RACE_DRAENEI }, { RACE_BLOODELF } },
+-        RaceData{ CLASS_HUNTER,         { RACE_DWARF, RACE_DRAENEI }, { RACE_ORC, RACE_TAUREN, RACE_TROLL, RACE_BLOODELF } },
+-        RaceData{ CLASS_ROGUE,          { RACE_HUMAN, RACE_DWARF, RACE_GNOME }, { RACE_ORC, RACE_TROLL, RACE_BLOODELF } },
+-        RaceData{ CLASS_PRIEST,         { RACE_HUMAN, RACE_DWARF, RACE_DRAENEI  }, { RACE_TROLL, RACE_BLOODELF } },
+-        RaceData{ CLASS_DEATH_KNIGHT,   { RACE_HUMAN, RACE_DWARF, RACE_GNOME, RACE_DRAENEI }, { RACE_ORC, RACE_TAUREN, RACE_TROLL, RACE_BLOODELF } },
+-        RaceData{ CLASS_SHAMAN,         { RACE_DRAENEI }, { RACE_ORC, RACE_TAUREN, RACE_TROLL  } },
+-        RaceData{ CLASS_MAGE,           { RACE_HUMAN, RACE_GNOME }, { RACE_BLOODELF, RACE_TROLL } },
+-        RaceData{ CLASS_WARLOCK,        { RACE_HUMAN, RACE_GNOME }, { RACE_ORC, RACE_BLOODELF } },
+-        RaceData{ CLASS_NONE,           { 0 }, { 0 } },
+-        RaceData{ CLASS_DRUID,          { RACE_HUMAN }, { RACE_TAUREN } }
+-    };
+-
+-    _raceInfo =
+-    {
+-        CFBGRaceInfo{ RACE_HUMAN,    "human",    TEAM_HORDE    },
+-        CFBGRaceInfo{ RACE_NIGHTELF, "nightelf", TEAM_HORDE    },
+-        CFBGRaceInfo{ RACE_DWARF,    "dwarf",    TEAM_HORDE    },
+-        CFBGRaceInfo{ RACE_GNOME,    "gnome",    TEAM_HORDE    },
+-        CFBGRaceInfo{ RACE_DRAENEI,  "draenei",  TEAM_HORDE    },
+-        CFBGRaceInfo{ RACE_ORC,      "orc",      TEAM_ALLIANCE },
+-        CFBGRaceInfo{ RACE_BLOODELF, "bloodelf", TEAM_ALLIANCE },
+-        CFBGRaceInfo{ RACE_TROLL,    "troll",    TEAM_ALLIANCE },
+-        CFBGRaceInfo{ RACE_TAUREN,   "tauren",   TEAM_ALLIANCE }
+-    };
+ }
+ 
+ CFBG* CFBG::instance()
+@@ -369,11 +341,11 @@ void CFBG::EnforceBGTeamConsistency(Player* player)
+     // Cross-faction: must be faked to `assigned`.
+     FakePlayer const* info = GetFakePlayer(player);
+     if (!info)
+-        SetFakeRaceAndMorph(player);            // not faked yet -> apply
++        SetFakePlayer(player, assigned);            // not faked yet -> apply
+     else if (info->FakeTeamID != assigned)
+     {
+         ClearFakePlayer(player);                // stale wrong-team fake -> redo
+-        SetFakeRaceAndMorph(player);
++        SetFakePlayer(player, assigned);
+     }
+     else
+         ReapplyFakePlayer(player);              // correct side -> re-push reset values
+@@ -597,77 +569,8 @@ void CFBG::BalanceTeamsAtStart(Battleground* bg)
+     }
+ }
+ 
+-uint32 CFBG::GetMorphFromRace(uint8 race, uint8 gender)
+-{
+-    switch (race)
+-    {
+-        case RACE_BLOODELF:
+-            return gender == GENDER_MALE ? FAKE_M_BLOOD_ELF : FAKE_F_BLOOD_ELF;
+-        case RACE_ORC:
+-            return gender == GENDER_MALE ? FAKE_M_FEL_ORC : FAKE_F_ORC;
+-        case RACE_TROLL:
+-            return gender == GENDER_MALE ? FAKE_M_TROLL : FAKE_F_BLOOD_ELF;
+-        case RACE_TAUREN:
+-            return gender == GENDER_MALE ? FAKE_M_TAUREN : FAKE_F_TAUREN;
+-        case RACE_DRAENEI:
+-            return gender == GENDER_MALE ? FAKE_M_BROKEN_DRAENEI : FAKE_F_DRAENEI;
+-        case RACE_DWARF:
+-            return gender == GENDER_MALE ? FAKE_M_DWARF : FAKE_F_HUMAN;
+-        case RACE_GNOME:
+-            return gender == GENDER_MALE ? FAKE_M_GNOME : FAKE_F_GNOME;
+-        case RACE_NIGHTELF: // female is missing and male causes client crashes...
+-        case RACE_HUMAN:
+-            return gender == GENDER_MALE ? FAKE_M_HUMAN : FAKE_F_HUMAN;
+-        default:
+-            // Default: Blood elf.
+-            return gender == GENDER_MALE ? FAKE_M_BLOOD_ELF : FAKE_F_BLOOD_ELF;
+-    }
+-}
+-
+-CFBG::RandomSkinInfo CFBG::GetRandomRaceMorph(TeamId team, uint8 playerClass, uint8 gender)
+-{
+-    uint8 playerRace = Acore::Containers::SelectRandomContainerElement(team == TEAM_ALLIANCE ? _raceData[playerClass].availableRacesH : _raceData[playerClass].availableRacesA);
+-    uint32 playerMorph = GetMorphFromRace(playerRace, gender);
+-
+-    return { playerRace, playerMorph };
+-}
+ 
+-void CFBG::SetFakeRaceAndMorph(Player* player)
+-{
+-    if (!player->InBattleground() || player->GetTeamId(true) == player->GetBgTeamId() || IsPlayerFake(player))
+-        return;
+-
 -    // generate random race and morph
 -    RandomSkinInfo skinInfo{ GetRandomRaceMorph(player->GetTeamId(true), player->getClass(), player->getGender()) };
 -
@@ -17,28 +106,31 @@ index a635a5d..07ff4df 100644
 -        skinInfo.second = GetMorphFromRace(skinInfo.first, player->getGender());
 -    }
 -
-     FakePlayer fakePlayerInfo
-     {
+-    FakePlayer fakePlayerInfo
+-    {
 -        skinInfo.first,
 -        skinInfo.second,
 -        player->TeamIdForRace(skinInfo.first),
-+        player->getRace(true),
-+        player->GetDisplayId(),
-+        player->GetBgTeamId(),
-         player->getRace(true),
-         player->GetDisplayId(),
-         player->GetNativeDisplayId(),
-         player->GetTeamId(true)
-     };
- 
+-        player->getRace(true),
+-        player->GetDisplayId(),
+-        player->GetNativeDisplayId(),
+-        player->GetTeamId(true)
+-    };
+-
 -    player->setRace(fakePlayerInfo.FakeRace);
-     SetFactionForRace(player, fakePlayerInfo.FakeRace, fakePlayerInfo.FakeTeamID);
+-    SetFactionForRace(player, fakePlayerInfo.FakeRace, fakePlayerInfo.FakeTeamID);
 -    player->SetDisplayId(fakePlayerInfo.FakeMorph);
 -    player->SetNativeDisplayId(fakePlayerInfo.FakeMorph);
- 
-     _fakePlayerStore.emplace(player, std::move(fakePlayerInfo));
- }
-@@ -676,21 +662,10 @@ void CFBG::SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam)
+-
+-    _fakePlayerStore.emplace(player, std::move(fakePlayerInfo));
+-}
+-
+-void CFBG::SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam)
++void CFBG::SetFakePlayer(Player* player, TeamId assignedTeam)
+ {
+     if (!player || IsPlayerFake(player))
+         return;
+@@ -676,32 +579,13 @@ void CFBG::SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam)
      if (realTeam == assignedTeam)
          return;
  
@@ -57,23 +149,22 @@ index a635a5d..07ff4df 100644
      {
 -        skinInfo.first,
 -        skinInfo.second,
-+        player->getRace(true),
-+        player->GetDisplayId(),
          assignedTeam,
-         player->getRace(true),
-         player->GetDisplayId(),
-@@ -698,10 +673,7 @@ void CFBG::SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam)
+-        player->getRace(true),
+-        player->GetDisplayId(),
+-        player->GetNativeDisplayId(),
          realTeam
      };
  
 -    player->setRace(fakePlayerInfo.FakeRace);
-     SetFactionForRace(player, fakePlayerInfo.FakeRace, assignedTeam);
+-    SetFactionForRace(player, fakePlayerInfo.FakeRace, assignedTeam);
 -    player->SetDisplayId(fakePlayerInfo.FakeMorph);
 -    player->SetNativeDisplayId(fakePlayerInfo.FakeMorph);
++    SetFactionForRace(player, player->getRace(true), assignedTeam);
  
      _fakePlayerStore.emplace(player, std::move(fakePlayerInfo));
  }
-@@ -713,8 +685,16 @@ void CFBG::SetFactionForRace(Player* player, uint8 Race, TeamId teamId)
+@@ -713,8 +597,16 @@ void CFBG::SetFactionForRace(Player* player, uint8 Race, TeamId teamId)
  
      player->setTeamId(teamId);
  
@@ -92,3 +183,311 @@ index a635a5d..07ff4df 100644
  
      for (Unit* controlled : player->m_Controlled)
      {
+@@ -735,14 +627,7 @@ void CFBG::ClearFakePlayer(Player* player)
+     if (player->IsCharmed())
+         player->RemoveCharmAuras();
+ 
+-    player->setRace(_fakePlayerStore[player].RealRace);
+-    // Restore via the aura-resolution path, not the entry-time snapshot: a
+-    // player who dropped a shapeshift/transform mid-BG must get the real model
+-    // back, one still in the form keeps the form model. RestoreDisplayId's
+-    // no-aura fallback is the native display, so set that first.
+-    player->SetNativeDisplayId(_fakePlayerStore[player].RealNativeMorph);
+-    player->RestoreDisplayId();
+-    SetFactionForRace(player, _fakePlayerStore[player].RealRace, _fakePlayerStore[player].RealTeamID);
++    SetFactionForRace(player, player->getRace(true), _fakePlayerStore[player].RealTeamID);
+ 
+     // Clear forced faction reactions. Rank doesn't matter here, not used when they are removed.
+     player->GetReputationMgr().ApplyForceReaction(FACTION_FROSTWOLF_CLAN, REP_FRIENDLY, false);
+@@ -765,11 +650,8 @@ void CFBG::ReapplyFakePlayer(Player* player)
+         return;
+ 
+     // Re-push the stored fake values after a resurrect so the assigned faction
+-    // and morph survive the ghost->alive transition.
+-    player->setRace(info->FakeRace);
+-    SetFactionForRace(player, info->FakeRace, info->FakeTeamID);
+-    player->SetDisplayId(info->FakeMorph);
+-    player->SetNativeDisplayId(info->FakeMorph);
++    // survives the ghost->alive transition.
++    SetFactionForRace(player, player->getRace(true), info->FakeTeamID);
+ }
+ 
+ bool CFBG::IsPlayerFake(Player* player)
+@@ -1191,15 +1073,4 @@ void CFBG::SendMessageQueue(BattlegroundQueue* bgQueue, Battleground* bg, PvPDif
+     }
+ }
+ 
+-bool CFBG::IsRaceValidForFaction(uint8 teamId, uint8 race)
+-{
+-    for (auto const& raceVariable : _raceInfo)
+-    {
+-        if (race == raceVariable.RaceId && teamId == raceVariable.TeamId)
+-        {
+-            return true;
+-        }
+-    }
+ 
+-    return false;
+-}
+diff --git a/src/CFBG.h b/src/CFBG.h
+index 85752ae..9ceb577 100644
+--- a/src/CFBG.h
++++ b/src/CFBG.h
+@@ -25,58 +25,16 @@ class Group;
+ struct GroupQueueInfo;
+ struct PvPDifficultyEntry;
+ 
+-enum FakeMorphs
+-{
+-    FAKE_M_FEL_ORC        = 21267,
+-    FAKE_F_ORC            = 20316,
+-    FAKE_M_DWARF          = 20317,
+-    FAKE_M_NIGHT_ELF      = 20318,
+-    FAKE_F_DRAENEI        = 20323,
+-    FAKE_M_BROKEN_DRAENEI = 21105,
+-    FAKE_M_TROLL          = 20321,
+-    FAKE_M_HUMAN          = 19723,
+-    FAKE_F_HUMAN          = 19724,
+-    FAKE_M_BLOOD_ELF      = 20578,
+-    FAKE_F_BLOOD_ELF      = 20579,
+-    FAKE_F_GNOME          = 20320,
+-    FAKE_M_GNOME          = 20580,
+-    FAKE_F_TAUREN         = 20584,
+-    FAKE_M_TAUREN         = 20585
+-};
+-
+ constexpr auto FACTION_FROSTWOLF_CLAN = 729;
+ constexpr auto FACTION_STORMPIKE_GUARD = 730;
+ 
+-// Cfbg settings
+-constexpr auto SETTING_CFBG_RACE = 0;
+-
+ struct FakePlayer
+ {
+-    // Fake
+-    uint8   FakeRace;
+-    uint32  FakeMorph;
+-    TeamId  FakeTeamID;
+-
+-    // Real
+-    uint8   RealRace;
+-    uint32  RealMorph;
+-    uint32  RealNativeMorph;
+-    TeamId  RealTeamID;
++    TeamId FakeTeamID;
++    TeamId RealTeamID;
+ };
+ 
+-struct RaceData
+-{
+-    uint8 charClass;
+-    std::vector<uint8> availableRacesA;
+-    std::vector<uint8> availableRacesH;
+-};
+ 
+-struct CFBGRaceInfo
+-{
+-    uint8 RaceId;
+-    std::string RaceName;
+-    uint8 TeamId;
+-};
+ 
+ struct CrossFactionGroupInfo
+ {
+@@ -172,8 +130,7 @@ public:
+     // to the smaller side so the match starts within 1 of even. Real BG premades
+     // are never split. Fired from OnBattlegroundStart.
+     void BalanceTeamsAtStart(Battleground* bg);
+-    void SetFakeRaceAndMorph(Player* player);
+-    void SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam);
++    void SetFakePlayer(Player* player, TeamId assignedTeam);
+     void SetFactionForRace(Player* player, uint8 Race, TeamId teamId);
+     void ClearFakePlayer(Player* player);
+     void DropFakePlayerRecord(Player* player);
+@@ -192,13 +149,9 @@ public:
+     bool FillPlayersToCFBG(BattlegroundQueue* bgqueue, Battleground* bg, BattlegroundBracketId bracket_id);
+     bool CheckCrossFactionMatch(BattlegroundQueue* bgqueue, BattlegroundBracketId bracket_id, uint32 minPlayers, uint32 maxPlayers);
+ 
+-    bool IsRaceValidForFaction(uint8 teamId, uint8 race);
+     TeamId getTeamWithLowerClass(Battleground* bg, Classes c);
+     uint8 getBalanceClassMinLevel(const Battleground* bg) const;
+ 
+-    inline auto GetRaceData() { return &_raceData; }
+-    inline auto GetRaceInfo() { return &_raceInfo; }
+-
+ private:
+     bool isClassJoining(uint8 _class, Player* player, uint32 minLevel);
+ 
+@@ -216,10 +169,6 @@ private:
+     // before the BG raid is assigned (entry hook), GetOriginalGroup() once inside.
+     bool IsPartyCommittedToBG(Player* player, Group* group, Battleground* bg);
+ 
+-    RandomSkinInfo GetRandomRaceMorph(TeamId team, uint8 playerClass, uint8 gender);
+-
+-    uint32 GetMorphFromRace(uint8 race, uint8 gender);
+-
+     // Projected head counts per team: in-BG players plus invited-not-yet-entered
+     // ones. bg == nullptr (formation) yields zeros.
+     std::array<uint32, 2> GetProjectedBaseCounts(Battleground* bg, BattlegroundQueue* queue, BattlegroundBracketId bracketId) const;
+@@ -238,8 +187,6 @@ private:
+     uint32 _wgMajorityNativeKept = 0;
+     std::unordered_map<Player*, bool> _forgetBGPlayersStore;
+ 
+-    std::array<RaceData, 12> _raceData{};
+-    std::array<CFBGRaceInfo, 9> _raceInfo{};
+ 
+     // For config
+     // = false so LoadConfig's disable-transition read is well-defined on the
+diff --git a/src/CFBG_SC.cpp b/src/CFBG_SC.cpp
+index 769f7de..a78ebaf 100644
+--- a/src/CFBG_SC.cpp
++++ b/src/CFBG_SC.cpp
+@@ -335,7 +335,7 @@ public:
+ 
+         std::optional<TeamId> locked = sCFBG->GetWGWarAssignment(player->GetGUID());
+         if (locked && *locked != player->GetTeamId(true))
+-            sCFBG->SetFakeRaceAndMorphForBF(player, *locked);
++            sCFBG->SetFakePlayer(player, *locked);
+     }
+ 
+     void OnBattlefieldPlayerJoinWar(Battlefield* bf, Player* player) override
+@@ -406,7 +406,7 @@ public:
+         }
+ 
+         if (assignedTeam != realTeam)
+-            sCFBG->SetFakeRaceAndMorphForBF(player, assignedTeam);
++            sCFBG->SetFakePlayer(player, assignedTeam);
+     }
+ 
+     void OnBattlefieldPlayerKill(Battlefield* bf, Player* killer, Player* victim) override
+diff --git a/src/cs_cfbg.cpp b/src/cs_cfbg.cpp
+index 20e12fb..f435bed 100644
+--- a/src/cs_cfbg.cpp
++++ b/src/cs_cfbg.cpp
+@@ -34,68 +34,10 @@ public:
+         return commandTable;
+     }
+ 
+-    static bool HandleCFBGChooseRace(ChatHandler* handler, std::string raceInput)
++    static bool HandleCFBGChooseRace(ChatHandler* handler, std::string /*raceInput*/)
+     {
+-        Player* player = handler->GetPlayer();
+-
+-        uint8 raceId = 0;
+-
+-        if (sCFBG->RandomizeRaces())
+-        {
+-            handler->SendSysMessage("Race selection is currently disabled.");
+-            handler->SetSentErrorMessage(true);
+-            return true;
+-        }
+-
+-        for (auto const& raceVariable : *sCFBG->GetRaceInfo())
+-        {
+-            if (raceInput == raceVariable.RaceName)
+-            {
+-                if (player->GetTeamId(true) == raceVariable.TeamId)
+-                {
+-                    raceId = raceVariable.RaceId;
+-                }
+-                else
+-                {
+-                    handler->SendSysMessage("Race not available to your faction.");
+-                    handler->SetSentErrorMessage(true);
+-                    return true;
+-                }
+-                
+-                if (!IsRaceValidForClass(player, raceId))
+-                {
+-                    handler->SendSysMessage("Race not available to your class.");
+-                    handler->SetSentErrorMessage(true);
+-                    return true;
+-                }
+-
+-                if (raceId == RACE_NIGHTELF)
+-                {
+-                    handler->SendSysMessage("Night elf models are not available as the female model is missing and the male one causes client crashes.");
+-                    handler->SetSentErrorMessage(true);
+-                    return true;
+-                }
+-
+-                if (player->getGender() == GENDER_FEMALE && (raceId == RACE_TROLL || raceId == RACE_DWARF))
+-                {
+-                    handler->SendSysMessage("Female models are not available for the following races: troll, dwarf.");
+-                    handler->SetSentErrorMessage(true);
+-                    return true;
+-                }
+-            }
+-        }
+-
+-        player->UpdatePlayerSetting("mod-cfbg", SETTING_CFBG_RACE, raceId);
+-
+-        if (!raceId)
+-        {
+-            handler->SendSysMessage("Race unavailable. CFBG selected race set to random. You will be morphed into a random race when you enter a battleground on the opposite team.");
+-        }
+-        else
+-        {
+-            handler->PSendSysMessage("CFBG selected race set to {}", raceInput);
+-        }
+-
++        handler->SendSysMessage("Race selection is currently disabled.");
++        handler->SetSentErrorMessage(true);
+         return true;
+     }
+ 
+@@ -130,7 +72,6 @@ public:
+         bool const native     = sCFBG->IsPlayingNative(target);
+         bool const forgetBG   = sCFBG->ShouldForgetBGPlayers(target);
+         bool const inBG       = target->InBattleground();
+-        uint8 const preferredRace = target->GetPlayerSetting("mod-cfbg", SETTING_CFBG_RACE).value;
+         FakePlayer const* fake = sCFBG->GetFakePlayer(target);
+ 
+         // === Header ===
+@@ -158,7 +99,6 @@ public:
+         handler->PSendSysMessage("    In battleground    {}", YesNo(inBG));
+         handler->PSendSysMessage("    Class / Gender     {} / {}",
+             uint32(target->getClass()), uint32(target->getGender()));
+-        handler->PSendSysMessage("    Preferred race     {}", uint32(preferredRace));
+         handler->PSendSysMessage("    Forget BG players  {}", YesNo(forgetBG));
+ 
+         // === Fake record ===
+@@ -166,11 +106,8 @@ public:
+         {
+             handler->SendSysMessage(" ");
+             handler->SendSysMessage("  Fake record");
+-            handler->PSendSysMessage("    Fake  team={:<8}  race={}  morph={}",
+-                TeamIdName(fake->FakeTeamID), uint32(fake->FakeRace), fake->FakeMorph);
+-            handler->PSendSysMessage("    Real  team={:<8}  race={}  morph={}  nativeMorph={}",
+-                TeamIdName(fake->RealTeamID), uint32(fake->RealRace),
+-                fake->RealMorph, fake->RealNativeMorph);
++            handler->PSendSysMessage("    Fake  team={:<8}", TeamIdName(fake->FakeTeamID));
++            handler->PSendSysMessage("    Real  team={:<8}", TeamIdName(fake->RealTeamID));
+         }
+ 
+         // === Wintergrasp ===
+@@ -274,24 +211,6 @@ public:
+ 
+         return true;
+     }
+-
+-    static bool IsRaceValidForClass(Player* player, uint8 fakeRace)
+-    {
+-        auto raceData{ *sCFBG->GetRaceData() };
+-
+-        std::vector<uint8> availableRacesForClass = player->GetTeamId(true) == TEAM_HORDE ?
+-            raceData[player->getClass()].availableRacesA : raceData[player->getClass()].availableRacesH;
+-
+-        for (auto const& races : availableRacesForClass)
+-        {
+-            if (races == fakeRace)
+-            {
+-                return true;
+-            }
+-        }
+-
+-        return false;
+-    }
+ };
+ 
+ void AddSC_cfbg_commandscript()

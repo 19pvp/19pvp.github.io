@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..9ac8540 100644
+index d8886ce..0308cfd 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -10,15 +10,17 @@ index d8886ce..9ac8540 100644
  #include "Chat.h"
  #include "ALEEventMgr.h"
  #include "Log.h"
-@@ -23,6 +24,7 @@
+@@ -23,6 +24,9 @@
  #include "Player.h"
  #include "ScriptMgr.h"
  #include "ScriptedGossip.h"
 +#include "BattlegroundQueue.h"
++#include "BattlefieldScript.h"
++#include "Battlefield.h"
  
  class ALE_AllCreatureScript : public AllCreatureScript
  {
-@@ -340,9 +342,18 @@ public:
+@@ -340,9 +344,18 @@ public:
          ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_START,
          ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_END,
          ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_DESTROY,
@@ -38,7 +40,7 @@ index d8886ce..9ac8540 100644
      void OnBattlegroundStart(Battleground* bg) override
      {
          sALE->OnBGStart(bg, bg->GetBgTypeID(), bg->GetInstanceID());
-@@ -362,6 +373,11 @@ public:
+@@ -362,6 +375,11 @@ public:
      {
          sALE->OnBGCreate(bg, bg->GetBgTypeID(), bg->GetInstanceID());
      }
@@ -50,7 +52,7 @@ index d8886ce..9ac8540 100644
  };
  
  class ALE_CommandSC : public CommandSC
-@@ -618,6 +634,8 @@ public:
+@@ -618,6 +636,8 @@ public:
          PLAYERHOOK_ON_TEXT_EMOTE,
          PLAYERHOOK_ON_SPELL_CAST,
          PLAYERHOOK_ON_LOGIN,
@@ -59,7 +61,7 @@ index d8886ce..9ac8540 100644
          PLAYERHOOK_ON_LOGOUT,
          PLAYERHOOK_ON_CREATE,
          PLAYERHOOK_ON_SAVE,
-@@ -737,9 +755,28 @@ public:
+@@ -737,9 +757,28 @@ public:
          sALE->OnQuestAbandon(player, questId);
      }
  
@@ -88,7 +90,7 @@ index d8886ce..9ac8540 100644
      }
  
      void OnPlayerGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action) override
-@@ -832,8 +869,22 @@ public:
+@@ -832,8 +871,22 @@ public:
          sALE->OnLogin(player);
      }
  
@@ -111,8 +113,52 @@ index d8886ce..9ac8540 100644
          sALE->OnLogout(player);
      }
  
+@@ -1340,6 +1393,37 @@ public:
+     }
+ };
+ 
++class ALE_BattlefieldScript : public BattlefieldScript
++{
++public:
++    ALE_BattlefieldScript() : BattlefieldScript("ALE_BattlefieldScript", {
++        BATTLEFIELDHOOK_ON_PLAYER_ENTER_ZONE,
++        BATTLEFIELDHOOK_ON_PLAYER_JOIN_WAR,
++        BATTLEFIELDHOOK_ON_WAR_END,
++        BATTLEFIELDHOOK_ON_PLAYER_KILL
++    }) { }
++
++    void OnBattlefieldPlayerEnterZone(Battlefield* bf, Player* player) override
++    {
++        sALE->OnBattlefieldPlayerEnterZone(bf, player);
++    }
++
++    void OnBattlefieldPlayerJoinWar(Battlefield* bf, Player* player) override
++    {
++        sALE->OnBattlefieldPlayerJoinWar(bf, player);
++    }
++
++    void OnBattlefieldWarEnd(Battlefield* bf, bool endByTimer) override
++    {
++        sALE->OnBattlefieldWarEnd(bf, endByTimer);
++    }
++
++    void OnBattlefieldPlayerKill(Battlefield* bf, Player* killer, Player* victim) override
++    {
++        sALE->OnBattlefieldPlayerKill(bf, killer, victim);
++    }
++};
++
+ // Group all custom scripts
+ void AddSC_ALE()
+ {
+@@ -1365,4 +1449,5 @@ void AddSC_ALE()
+     new ALE_WorldObjectScript();
+     new ALE_WorldScript();
+     new ALE_UnitScript();
++    new ALE_BattlefieldScript();
+ }
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
-index f83dd99..1b3b9da 100644
+index f83dd99..2b071e4 100644
 --- a/src/LuaEngine/Hooks.h
 +++ b/src/LuaEngine/Hooks.h
 @@ -238,8 +238,12 @@ namespace Hooks
@@ -129,19 +175,30 @@ index f83dd99..1b3b9da 100644
      };
  
      enum GuildEvents
-@@ -378,6 +382,7 @@ namespace Hooks
+@@ -378,6 +382,11 @@ namespace Hooks
          BG_EVENT_ON_END                                 = 2,    // (event, bg, bgId, instanceId, winner) - Needs to be added to TC
          BG_EVENT_ON_CREATE                              = 3,    // (event, bg, bgId, instanceId) - Needs to be added to TC
          BG_EVENT_ON_PRE_DESTROY                         = 4,    // (event, bg, bgId, instanceId) - Needs to be added to TC
 +        BG_EVENT_ON_QUEUE_DISTRIBUTION                  = 5,    // (event, bg, bracketId, queueDistributionTable) - Can return true
++        BG_EVENT_ON_BF_PLAYER_ENTER_ZONE                = 6,    // (event, zoneId, typeId, player)
++        BG_EVENT_ON_BF_PLAYER_JOIN_WAR                  = 7,    // (event, zoneId, typeId, player)
++        BG_EVENT_ON_BF_WAR_END                          = 8,    // (event, zoneId, typeId, endByTimer)
++        BG_EVENT_ON_BF_PLAYER_KILL                      = 9,    // (event, zoneId, typeId, killer, victim)
          BG_EVENT_COUNT
      };
  
 diff --git a/src/LuaEngine/LuaEngine.h b/src/LuaEngine/LuaEngine.h
-index a21640d..0eafcfe 100644
+index a21640d..b4e7176 100644
 --- a/src/LuaEngine/LuaEngine.h
 +++ b/src/LuaEngine/LuaEngine.h
-@@ -44,6 +44,7 @@ class AuctionHouseObject;
+@@ -38,12 +38,14 @@ extern "C"
+ };
+ 
+ struct ItemTemplate;
++class Battlefield;
+ typedef BattlegroundTypeId BattleGroundTypeId;
+ typedef AreaTrigger AreaTriggerEntry;
+ class AuctionHouseObject;
  struct AuctionEntry;
  class Battleground;
  typedef Battleground BattleGround;
@@ -149,7 +206,7 @@ index a21640d..0eafcfe 100644
  class Channel;
  class Corpse;
  class Creature;
-@@ -479,6 +480,10 @@ public:
+@@ -479,6 +481,10 @@ public:
      void OnTextEmote(Player* pPlayer, uint32 textEmote, uint32 emoteNum, ObjectGuid guid);
      void OnPlayerSpellCast(Player* pPlayer, Spell* pSpell, bool skipCheck);
      void OnLogin(Player* pPlayer);
@@ -160,11 +217,17 @@ index a21640d..0eafcfe 100644
      void OnLogout(Player* pPlayer);
      void OnCreate(Player* pPlayer);
      void OnDelete(uint32 guid);
-@@ -591,6 +596,7 @@ public:
+@@ -591,6 +597,13 @@ public:
      void OnBGEnd(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId, TeamId winner);
      void OnBGCreate(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
      void OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
 +    bool OnBGQueueDistribution(BattlegroundQueue* queue, BattleGround* bg, BattlegroundBracketId bracketId, std::map<ObjectGuid, uint32>& distribution);
++
++    /* Battlefield */
++    void OnBattlefieldPlayerEnterZone(Battlefield* bf, Player* player);
++    void OnBattlefieldPlayerJoinWar(Battlefield* bf, Player* player);
++    void OnBattlefieldWarEnd(Battlefield* bf, bool endByTimer);
++    void OnBattlefieldPlayerKill(Battlefield* bf, Player* killer, Player* victim);
  
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
@@ -219,10 +282,18 @@ index c0acc01..8f4af94 100644
      { NULL, NULL }
  };
 diff --git a/src/LuaEngine/hooks/BattleGroundHooks.cpp b/src/LuaEngine/hooks/BattleGroundHooks.cpp
-index ec70cf5..af65ac0 100644
+index ec70cf5..390424d 100644
 --- a/src/LuaEngine/hooks/BattleGroundHooks.cpp
 +++ b/src/LuaEngine/hooks/BattleGroundHooks.cpp
-@@ -56,3 +56,60 @@ void ALE::OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instance
+@@ -9,6 +9,7 @@
+ #include "LuaEngine.h"
+ #include "BindingMap.h"
+ #include "ALETemplate.h"
++#include "Battlefield.h"
+ 
+ using namespace Hooks;
+ 
+@@ -56,3 +57,117 @@ void ALE::OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instance
      Push(instanceId);
      CallAllFunctions(BGEventBindings, key);
  }
@@ -282,6 +353,63 @@ index ec70cf5..af65ac0 100644
 +        lua_pop(L, 1);
 +    }
 +    return false;
++}
++
++void ALE::OnBattlefieldPlayerEnterZone(Battlefield* bf, Player* player)
++{
++    if (!ALEConfig::GetInstance().IsALEEnabled())
++        return;
++    auto key = EventKey<BGEvents>(BG_EVENT_ON_BF_PLAYER_ENTER_ZONE);
++    if (!BGEventBindings->HasBindingsFor(key))
++        return;
++    LOCK_ALE;
++    Push(bf ? bf->GetZoneId() : 0);
++    Push(bf ? bf->GetTypeId() : 0);
++    Push(player);
++    CallAllFunctions(BGEventBindings, key);
++}
++
++void ALE::OnBattlefieldPlayerJoinWar(Battlefield* bf, Player* player)
++{
++    if (!ALEConfig::GetInstance().IsALEEnabled())
++        return;
++    auto key = EventKey<BGEvents>(BG_EVENT_ON_BF_PLAYER_JOIN_WAR);
++    if (!BGEventBindings->HasBindingsFor(key))
++        return;
++    LOCK_ALE;
++    Push(bf ? bf->GetZoneId() : 0);
++    Push(bf ? bf->GetTypeId() : 0);
++    Push(player);
++    CallAllFunctions(BGEventBindings, key);
++}
++
++void ALE::OnBattlefieldWarEnd(Battlefield* bf, bool endByTimer)
++{
++    if (!ALEConfig::GetInstance().IsALEEnabled())
++        return;
++    auto key = EventKey<BGEvents>(BG_EVENT_ON_BF_WAR_END);
++    if (!BGEventBindings->HasBindingsFor(key))
++        return;
++    LOCK_ALE;
++    Push(bf ? bf->GetZoneId() : 0);
++    Push(bf ? bf->GetTypeId() : 0);
++    Push(endByTimer);
++    CallAllFunctions(BGEventBindings, key);
++}
++
++void ALE::OnBattlefieldPlayerKill(Battlefield* bf, Player* killer, Player* victim)
++{
++    if (!ALEConfig::GetInstance().IsALEEnabled())
++        return;
++    auto key = EventKey<BGEvents>(BG_EVENT_ON_BF_PLAYER_KILL);
++    if (!BGEventBindings->HasBindingsFor(key))
++        return;
++    LOCK_ALE;
++    Push(bf ? bf->GetZoneId() : 0);
++    Push(bf ? bf->GetTypeId() : 0);
++    Push(killer);
++    Push(victim);
++    CallAllFunctions(BGEventBindings, key);
 +}
 diff --git a/src/LuaEngine/hooks/PlayerHooks.cpp b/src/LuaEngine/hooks/PlayerHooks.cpp
 index 7649274..2531663 100644

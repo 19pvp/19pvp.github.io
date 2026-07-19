@@ -748,12 +748,8 @@ const vendorGoldDiscount = (item: VendorItem) => {
   return 0
 }
 
-const commendationOfBraveryItemId = 44115
-
 const vendorNpcSubname = (currency: VendorCurrency, category: VendorCategory, itemId?: number) => {
-  if (currency === 'arena' || (itemId === commendationOfBraveryItemId && currency === 'heroism')) {
-    return 'former gladiator'
-  }
+  if (currency === 'arena' || currency === 'heroism') return 'former gladiator'
   if (category === 'enchant') return `enchant ${currency === 'gold' ? 'merchant' : 'quartermaster'}`
   const prefix = category === 'weapon' ? 'weapons' : category
   const suffix = currency === 'gold' ? 'merchant' : 'quartermaster'
