@@ -178,10 +178,42 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player)
     print("[WSG Queue] " .. label .. " has left the queue.")
 end)
 
+local function SyncBGPlayerData(map)
+    if not map then return end
+    local bots = {}
+    local hordePlayers = {}
+    local realPlayers = {}
+    for _, p in ipairs(map:GetPlayers()) do
+        local name = p:GetName()
+        if p:IsBot() then
+            table.insert(bots, name)
+        else
+            table.insert(realPlayers, p)
+        end
+        -- GetBgTeamId returns 0 for Alliance, 1 for Horde
+        if p:GetBgTeamId() == 1 then
+            table.insert(hordePlayers, name)
+        end
+    end
+    local payload = table.concat(bots, ",") .. ";" .. table.concat(hordePlayers, ",")
+    for _, p in ipairs(realPlayers) do
+        -- Channel 7 is CHAT_MSG_WHISPER (addon message whisper)
+        p:SendAddonMessage("CFBG_SYNC", payload, 7, p)
+    end
+end
+
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
     local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
     pendingInvites[player:GetGUIDLow()] = nil
     print("[BG Match] " .. label .. " entered Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
+    
+    local map = player:GetMap()
+    if map then
+        -- Delay slightly to ensure player is fully in map and lists are ready
+        CreateLuaEvent(function()
+            SyncBGPlayerData(map)
+        end, 1000, 1)
+    end
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function(event, player)
@@ -191,7 +223,8 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function(event, player)
     end
 end)
 
-local function CheckBGEmpty(player, mapId, instanceId, bg)
+local function CheckBGEmpty(player, mapId, instanceId)
+    local bg = GetBattleground(instanceId, 2) -- Warsong Gulch (2)
     if not bg then
         print("[BG Match] bg not found, can't cleanup")
         return
@@ -219,10 +252,25 @@ end
 
 --  looks like RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg) does not recieve the bg, it's nil.
 -- I don't know how we pass it but it's wrong
-RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
+RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId)
     local botText = player:IsBot() and "Bot" or "Player"
     print("[BG Match] " .. botText .. " " .. player:GetName() .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
-    CheckBGEmpty(player, mapId, instanceId, bg)
+    CheckBGEmpty(player, mapId, instanceId)
+    
+    local map = GetMapById(mapId, instanceId)
+    if map then
+        SyncBGPlayerData(map)
+    end
+end)
+
+RegisterServerEvent(30, function(event, sender, type, prefix, msg, target)
+    if prefix == "CFBG_SYNC" then
+        local map = sender:GetMap()
+        if map then
+            SyncBGPlayerData(map)
+        end
+        return false -- Suppress message forwarding
+    end
 end)
 
 -- 1) We must never allow more than 1 players on each teams

@@ -1,0 +1,7 @@
+## Interface: 30300
+## Title: CFBG Scoreboard Fix
+## Notes: Fixes player faction icons and team representation on the Battleground scoreboard for cross-faction BGs.
+## Author: Antigravity
+## Version: 1.0
+
+CFBGScoreboardFix.lua
