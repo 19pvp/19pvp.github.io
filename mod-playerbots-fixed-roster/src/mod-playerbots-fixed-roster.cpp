@@ -32,6 +32,7 @@ struct WsgFixedRosterEntry
     std::string role;
     uint8 race = 0;
     uint8 class_ = 0;
+    uint8 gender = 255;
 };
 
 struct WsgFixedRosterItem
@@ -79,7 +80,7 @@ public:
         }
 
         QueryResult result = PlayerbotsDatabase.Query(
-            "SELECT g.`guid`, r.`account`, r.`name`, r.`role`, r.`race`, r.`class` "
+            "SELECT g.`guid`, r.`account`, r.`name`, r.`role`, r.`race`, r.`class`, r.`gender` "
             "FROM `playerbots_fixed_roster` r "
             "LEFT JOIN `playerbots_fixed_roster_guid` g ON g.`account` = r.`account` "
             "WHERE r.`enabled` = 1 ORDER BY r.`account`");
@@ -101,6 +102,7 @@ public:
             entry.role = fields[3].Get<std::string>();
             entry.race = fields[4].Get<uint8>();
             entry.class_ = fields[5].Get<uint8>();
+            entry.gender = fields[6].Get<uint8>();
             _roster.push_back(entry);
         } while (result->NextRow());
 
@@ -177,7 +179,7 @@ public:
                 WorldSession* session = new WorldSession(accountId, "", 0x0, nullptr, SEC_PLAYER, EXPANSION_WRATH_OF_THE_LICH_KING,
                                                         time_t(0), LOCALE_enUS, 0, false, false, 0, true);
 
-                uint8 gender = urand(0, 1) ? GENDER_MALE : GENDER_FEMALE;
+                uint8 gender = entry.gender == 255 ? (urand(0, 1) ? GENDER_MALE : GENDER_FEMALE) : entry.gender;
                 uint8 skin = 0;
                 uint8 face = 0;
                 uint8 hairStyle = 0;

@@ -1,3 +1,611 @@
+diff --git a/conf/playerbots.conf.dist b/conf/playerbots.conf.dist
+index 711d0fff..083d82a9 100644
+--- a/conf/playerbots.conf.dist
++++ b/conf/playerbots.conf.dist
+@@ -1004,6 +1004,9 @@ AiPlayerbot.AutoPickTalents = 1
+ # Default: 54197 (Cold Weather Flying)
+ AiPlayerbot.RandomBotSpellIds = "54197"
+ 
++# Spell IDs bots must not learn or cast
++AiPlayerbot.DisabledSpellIds = ""
++
+ # ID of spell to open lootable chests
+ AiPlayerbot.OpenGoSpell = 6477
+ 
+diff --git a/src/Ai/Base/Actions/AcceptQuestAction.cpp b/src/Ai/Base/Actions/AcceptQuestAction.cpp
+index e80bdbe1..054d952c 100644
+--- a/src/Ai/Base/Actions/AcceptQuestAction.cpp
++++ b/src/Ai/Base/Actions/AcceptQuestAction.cpp
+@@ -99,108 +99,12 @@ bool AcceptQuestAction::Execute(Event event)
+     return hasAccept;
+ }
+ 
+-bool AcceptQuestShareAction::Execute(Event event)
++bool AcceptQuestShareAction::Execute(Event)
+ {
+-    Player* master = GetMaster();
+-    Player* bot = botAI->GetBot();
+-
+-    WorldPacket& p = event.getPacket();
+-    p.rpos(0);
+-    uint32 quest;
+-    p >> quest;
+-
+-    Quest const* qInfo = sObjectMgr->GetQuestTemplate(quest);
+-    if (!qInfo || !bot->GetDivider())
+-        return false;
+-
+-    quest = qInfo->GetQuestId();
+-
+-    if (bot->HasQuest(quest))
+-    {
+-        bot->SetDivider(ObjectGuid::Empty);
+-        botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
+-            "quest_already_have_error", "I have this quest", {}));
+-        return false;
+-    }
+-
+-    if (!bot->CanTakeQuest(qInfo, false))
+-    {
+-        // can't take quest
+-        bot->SetDivider(ObjectGuid::Empty);
+-        botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
+-            "quest_cant_take_error", "I can't take this quest", {}));
+-
+-        return false;
+-    }
+-
+-    if (!bot->GetDivider().IsEmpty())
+-    {
+-        // send msg to quest giving player
+-        master->SendPushToPartyResponse(bot, QUEST_PARTY_MSG_ACCEPT_QUEST);
+-        bot->SetDivider(ObjectGuid::Empty);
+-    }
+-
+-    if (bot->CanAddQuest(qInfo, false))
+-    {
+-        bot->AddQuest(qInfo, master);
+-
+-        if (bot->CanCompleteQuest(quest))
+-            bot->CompleteQuest(quest);
+-
+-        // Runsttren: did not add typeid switch from WorldSession::HandleQuestgiverAcceptQuestOpcode!
+-        // I think it's not needed, cause typeid should be TYPEID_PLAYER - and this one is not handled
+-        // there and there is no default case also.
+-
+-        if (qInfo->GetSrcSpell() > 0)
+-        {
+-            bot->CastSpell(bot, qInfo->GetSrcSpell(), true);
+-        }
+-
+-        botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
+-            "quest_accept", "Quest accepted", {}));
+-        return true;
+-    }
+-
+     return false;
+ }
+ 
+-bool ConfirmQuestAction::Execute(Event event)
++bool ConfirmQuestAction::Execute(Event)
+ {
+-    Player* bot = botAI->GetBot();
+-    Player* requester = event.getOwner() ? event.getOwner() : GetMaster();
+-
+-    WorldPacket& p = event.getPacket();
+-    p.rpos(0);
+-    uint32 quest;
+-    p >> quest;
+-    Quest const* qInfo = sObjectMgr->GetQuestTemplate(quest);
+-
+-    if (!qInfo)
+-        return false;
+-
+-    quest = qInfo->GetQuestId();
+-    if (!bot->CanTakeQuest(qInfo, false))
+-    {
+-        // can't take quest
+-        // botAI->TellError("quest_cant_take");
+-        return false;
+-    }
+-
+-    if (bot->CanAddQuest(qInfo, false))
+-    {
+-        bot->AddQuest(qInfo, requester);
+-
+-        if (bot->CanCompleteQuest(quest))
+-            bot->CompleteQuest(quest);
+-
+-        if (qInfo->GetSrcSpell() > 0)
+-        {
+-            bot->CastSpell(bot, qInfo->GetSrcSpell(), true);
+-        }
+-
+-        // botAI->TellMaster("quest_accept");
+-        return true;
+-    }
+-
+     return false;
+ }
+diff --git a/src/Ai/Base/Actions/BuyAction.cpp b/src/Ai/Base/Actions/BuyAction.cpp
+index e3d454dd..515a2bac 100644
+--- a/src/Ai/Base/Actions/BuyAction.cpp
++++ b/src/Ai/Base/Actions/BuyAction.cpp
+@@ -13,242 +13,7 @@
+ #include "Playerbots.h"
+ #include "StatsWeightCalculator.h"
+ 
+-bool BuyAction::Execute(Event event)
++bool BuyAction::Execute(Event)
+ {
+-    bool buyUseful = false;
+-    ItemIds itemIds;
+-    std::string const link = event.getParam();
+-
+-    if (link == "vendor")
+-        buyUseful = true;
+-    else
+-    {
+-        itemIds = chat->parseItems(link);
+-    }
+-
+-    GuidVector vendors = botAI->GetAiObjectContext()->GetValue<GuidVector>("nearest npcs")->Get();
+-
+-    bool vendored = false;
+-    bool result = false;
+-    for (GuidVector::iterator i = vendors.begin(); i != vendors.end(); ++i)
+-    {
+-        ObjectGuid vendorguid = *i;
+-        Creature* pCreature = bot->GetNPCIfCanInteractWith(vendorguid, UNIT_NPC_FLAG_VENDOR);
+-        if (!pCreature)
+-            continue;
+-
+-        vendored = true;
+-
+-        if (buyUseful)
+-        {
+-            // Items are evaluated from high-level to low level.
+-            // For each item the bot checks again if an item is usefull.
+-            // Bot will buy until no usefull items are left.
+-
+-            VendorItemData const* tItems = pCreature->GetVendorItems();
+-            if (!tItems)
+-                continue;
+-
+-            VendorItemList m_items_sorted = tItems->m_items;
+-
+-            m_items_sorted.erase(std::remove_if(m_items_sorted.begin(), m_items_sorted.end(),
+-                                                [](VendorItem* i)
+-                                                {
+-                                                    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(i->item);
+-                                                    return !proto;
+-                                                }),
+-                                 m_items_sorted.end());
+-
+-            if (m_items_sorted.empty())
+-                continue;
+-
+-            StatsWeightCalculator calculator(bot);
+-            calculator.SetItemSetBonus(false);
+-            calculator.SetOverflowPenalty(false);
+-
+-            std::sort(m_items_sorted.begin(), m_items_sorted.end(),
+-                [&calculator](VendorItem* i, VendorItem* j)
+-                {
+-                    ItemTemplate const* item1 = sObjectMgr->GetItemTemplate(i->item);
+-                    ItemTemplate const* item2 = sObjectMgr->GetItemTemplate(j->item);
+-
+-                    if (!item1 || !item2)
+-                        return false;
+-
+-                    float score1 = calculator.CalculateItem(item1->ItemId);
+-                    float score2 = calculator.CalculateItem(item2->ItemId);
+-
+-                    // Fallback to itemlevel if either score is 0
+-                    if (score1 == 0 || score2 == 0)
+-                    {
+-                        score1 = item1->ItemLevel;
+-                        score2 = item2->ItemLevel;
+-                    }
+-                    return score1 > score2; // Sort in descending order (highest score first)
+-                });
+-
+-            std::unordered_map<uint32, float> bestPurchasedItemScore;  // Track best item score per InventoryType
+-
+-            for (auto& tItem : m_items_sorted)
+-            {
+-                uint32 maxPurchases = 1;  // Default to buying once
+-                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(tItem->item);
+-                if (!proto)
+-                    continue;
+-
+-                if (proto->Class == ITEM_CLASS_CONSUMABLE || proto->Class == ITEM_CLASS_PROJECTILE)
+-                {
+-                    maxPurchases = 10;  // Allow up to 10 purchases if it's a consumable or projectile
+-                }
+-
+-                for (uint32 i = 0; i < maxPurchases; i++)
+-                {
+-                    ItemUsage usage = AI_VALUE2(ItemUsage, "item usage", tItem->item);
+-
+-                    uint32 invType = proto->InventoryType;
+-
+-                    // Calculate item score
+-                    float newScore = calculator.CalculateItem(proto->ItemId);
+-
+-                    // Skip if we already bought a better item for this slot
+-                    if (bestPurchasedItemScore.find(invType) != bestPurchasedItemScore.end() &&
+-                        bestPurchasedItemScore[invType] > newScore)
+-                    {
+-                        break;  // Skip lower-scoring items
+-                    }
+-
+-                    // Check the bot's currently equipped item for this slot
+-                    uint8 dstSlot = botAI->FindEquipSlot(proto, NULL_SLOT, true);
+-                    Item* oldItem = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, dstSlot);
+-
+-                    float oldScore = 0.0f;
+-                    if (oldItem)
+-                    {
+-                        ItemTemplate const* oldItemProto = oldItem->GetTemplate();
+-                        if (oldItemProto)
+-                            oldScore = calculator.CalculateItem(oldItemProto->ItemId);
+-                    }
+-
+-                    // Skip if the bot already has a better or equal item equipped
+-                    if (oldScore > newScore)
+-                        break;
+-
+-                    uint32 price = proto->BuyPrice;
+-                    price = uint32(floor(price * bot->GetReputationPriceDiscount(pCreature)));
+-
+-                    NeedMoneyFor needMoneyFor = NeedMoneyFor::none;
+-                    switch (usage)
+-                    {
+-                        case ITEM_USAGE_REPLACE:
+-                        case ITEM_USAGE_EQUIP:
+-                        case ITEM_USAGE_BAD_EQUIP:
+-                        case ITEM_USAGE_BROKEN_EQUIP:
+-                            needMoneyFor = NeedMoneyFor::gear;
+-                            break;
+-                        case ITEM_USAGE_AMMO:
+-                            needMoneyFor = NeedMoneyFor::ammo;
+-                            break;
+-                        case ITEM_USAGE_QUEST:
+-                            needMoneyFor = NeedMoneyFor::anything;
+-                            break;
+-                        case ITEM_USAGE_USE:
+-                            needMoneyFor = NeedMoneyFor::consumables;
+-                            break;
+-                        case ITEM_USAGE_SKILL:
+-                            needMoneyFor = NeedMoneyFor::tradeskill;
+-                            break;
+-                        default:
+-                            break;
+-                    }
+-
+-                    if (needMoneyFor == NeedMoneyFor::none)
+-                        break;
+-
+-                    if (AI_VALUE2(uint32, "free money for", uint32(needMoneyFor)) < price)
+-                        break;
+-
+-                    if (!BuyItem(tItems, vendorguid, proto))
+-                        break;
+-
+-                    // Store the best item score per InventoryType
+-                    bestPurchasedItemScore[invType] = newScore;
+-
+-                    if (needMoneyFor == NeedMoneyFor::gear)
+-                    {
+-                        botAI->DoSpecificAction("equip upgrades packet action");
+-                    }
+-                }
+-            }
+-        }
+-        else
+-        {
+-            if (itemIds.empty())
+-                return false;
+-
+-            for (ItemIds::iterator i = itemIds.begin(); i != itemIds.end(); i++)
+-            {
+-                uint32 itemId = *i;
+-                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                if (!proto)
+-                    continue;
+-
+-                result |= BuyItem(pCreature->GetVendorItems(), vendorguid, proto);
+-
+-                if (!result)
+-                {
+-                    std::ostringstream out;
+-                    out << "Nobody sells " << ChatHelper::FormatItem(proto) << " nearby";
+-                    botAI->TellMaster(out.str());
+-                    continue;
+-                }
+-
+-                ItemUsage usage = AI_VALUE2(ItemUsage, "item usage", itemId);
+-                if (usage == ITEM_USAGE_REPLACE || usage == ITEM_USAGE_EQUIP ||
+-                    usage == ITEM_USAGE_BAD_EQUIP || usage == ITEM_USAGE_BROKEN_EQUIP)
+-                {
+-                    botAI->DoSpecificAction("equip upgrades packet action");
+-                    break;
+-                }
+-            }
+-        }
+-    }
+-
+-    return vendored;
+-}
+-
+-bool BuyAction::BuyItem(VendorItemData const* tItems, ObjectGuid vendorguid, ItemTemplate const* proto)
+-{
+-    if (!tItems || !proto)
+-        return false;
+-
+-    uint32 itemId = proto->ItemId;
+-    uint32 oldCount = bot->GetItemCount(itemId, false);
+-
+-    for (uint32 slot = 0; slot < tItems->GetItemCount(); ++slot)
+-    {
+-        if (tItems->GetItem(slot)->item != itemId)
+-            continue;
+-
+-        uint32 botMoney = bot->GetMoney();
+-        if (botAI->HasCheat(BotCheatMask::gold))
+-            bot->SetMoney(10000000);
+-
+-        bot->BuyItemFromVendorSlot(vendorguid, slot, itemId, 1, NULL_BAG, NULL_SLOT);
+-
+-        if (botAI->HasCheat(BotCheatMask::gold))
+-            bot->SetMoney(botMoney);
+-
+-        uint32 newCount = bot->GetItemCount(itemId, false);
+-        if (newCount > oldCount)
+-        {
+-            std::ostringstream out;
+-            out << "Buying " << ChatHelper::FormatItem(proto);
+-            botAI->TellMaster(out.str());
+-            return true;
+-        }
+-
+-        return false;
+-    }
+-
+     return false;
+ }
+diff --git a/src/Ai/Base/Actions/BuyAction.h b/src/Ai/Base/Actions/BuyAction.h
+index 86ce7ce5..4ec65ef0 100644
+--- a/src/Ai/Base/Actions/BuyAction.h
++++ b/src/Ai/Base/Actions/BuyAction.h
+@@ -25,7 +25,6 @@ public:
+     bool Execute(Event event) override;
+ 
+ private:
+-    bool BuyItem(VendorItemData const* tItems, ObjectGuid vendorguid, ItemTemplate const* proto);
+     bool TradeItem(FindItemVisitor* visitor, int8 slot);
+     bool TradeItem(Item const* item, int8 slot);
+ };
+diff --git a/src/Ai/Base/Actions/GuildCreateActions.cpp b/src/Ai/Base/Actions/GuildCreateActions.cpp
+index 59696ece..2acfd44a 100644
+--- a/src/Ai/Base/Actions/GuildCreateActions.cpp
++++ b/src/Ai/Base/Actions/GuildCreateActions.cpp
+@@ -16,48 +16,6 @@
+ 
+ bool BuyPetitionAction::Execute(Event /*event*/)
+ {
+-    GuidVector vendors = botAI->GetAiObjectContext()->GetValue<GuidVector>("nearest npcs")->Get();
+-    for (GuidVector::iterator i = vendors.begin(); i != vendors.end(); ++i)
+-    {
+-        ObjectGuid vendorguid = *i;
+-        Creature* pCreature = bot->GetNPCIfCanInteractWith(vendorguid, UNIT_NPC_FLAG_PETITIONER);
+-        if (!pCreature)
+-            continue;
+-
+-        std::string const guildName = RandomPlayerbotFactory::CreateRandomGuildName();
+-        if (guildName.empty())
+-            continue;
+-
+-        WorldPacket data(CMSG_PETITION_BUY);
+-
+-        data << pCreature->GetGUID();
+-        data << uint32(0);
+-        data << uint64(0);
+-        data << guildName.c_str();
+-        data << std::string("");
+-        data << uint32(0);
+-        data << uint32(0);
+-        data << uint32(0);
+-        data << uint32(0);
+-        data << uint32(0);
+-        data << uint32(0);
+-        data << uint32(0);
+-        data << uint16(0);
+-        data << uint32(0);
+-        data << uint32(0);
+-        data << uint32(0);
+-
+-        for (uint8 i = 0; i < 10; ++i)
+-            data << std::string("");
+-
+-        data << uint32(0);  // index
+-        data << uint32(0);
+-
+-        bot->GetSession()->HandlePetitionBuyOpcode(data);
+-
+-        return true;
+-    }
+-
+     return false;
+ }
+ 
+diff --git a/src/Ai/Base/Actions/QuestAction.cpp b/src/Ai/Base/Actions/QuestAction.cpp
+index 769cd133..d548a56e 100644
+--- a/src/Ai/Base/Actions/QuestAction.cpp
++++ b/src/Ai/Base/Actions/QuestAction.cpp
+@@ -213,53 +213,8 @@ bool QuestAction::ProcessQuests(WorldObject* questGiver)
+     return true;
+ }
+ 
+-bool QuestAction::AcceptQuest(Quest const* quest, ObjectGuid questGiver)
++bool QuestAction::AcceptQuest(Quest const*, ObjectGuid)
+ {
+-    std::ostringstream out;
+-
+-    uint32 questId = quest->GetQuestId();
+-
+-    if (bot->GetQuestStatus(questId) == QUEST_STATUS_COMPLETE)
+-        out << "Already completed";
+-    else if (!bot->CanTakeQuest(quest, false))
+-    {
+-        if (!bot->SatisfyQuestStatus(quest, false))
+-            out << "Already on";
+-        else
+-            out << "Can't take";
+-    }
+-    else if (!bot->SatisfyQuestLog(false))
+-        out << "Quest log is full";
+-    else if (!bot->CanAddQuest(quest, false))
+-        out << "Bags are full";
+-    else
+-    {
+-        WorldPacket p(CMSG_QUESTGIVER_ACCEPT_QUEST);
+-        uint32 unk1 = 0;
+-        p << questGiver << questId << unk1;
+-        p.rpos(0);
+-        bot->GetSession()->HandleQuestgiverAcceptQuestOpcode(p);
+-
+-        if (bot->GetQuestStatus(questId) == QUEST_STATUS_NONE && sPlayerbotAIConfig.syncQuestWithPlayer)
+-        {
+-            Object* pObject = ObjectAccessor::GetObjectByTypeMask(*bot, questGiver,
+-                                                                  TYPEMASK_UNIT | TYPEMASK_GAMEOBJECT | TYPEMASK_ITEM);
+-            bot->AddQuest(quest, pObject);
+-        }
+-
+-        if (bot->GetQuestStatus(questId) != QUEST_STATUS_NONE && bot->GetQuestStatus(questId) != QUEST_STATUS_REWARDED)
+-        {
+-            BroadcastHelper::BroadcastQuestAccepted(botAI, bot, quest);
+-            out << "Accepted " << chat->FormatQuest(quest);
+-            botAI->TellMaster(out);
+-            return true;
+-        }
+-        out << "Cannot accept";
+-    }
+-
+-    out << " " << chat->FormatQuest(quest);
+-    botAI->TellMaster(out);
+-
+     return false;
+ }
+ 
+diff --git a/src/Ai/Base/Actions/QuestConfirmAcceptAction.cpp b/src/Ai/Base/Actions/QuestConfirmAcceptAction.cpp
+index 4197f53e..64776e0a 100644
+--- a/src/Ai/Base/Actions/QuestConfirmAcceptAction.cpp
++++ b/src/Ai/Base/Actions/QuestConfirmAcceptAction.cpp
+@@ -3,24 +3,7 @@
+ #include "QuestPackets.h"
+ #include "WorldPacket.h"
+ 
+-bool QuestConfirmAcceptAction::Execute(Event event)
++bool QuestConfirmAcceptAction::Execute(Event)
+ {
+-    WorldPacket packet(event.getPacket());
+-    uint32 questId;
+-    packet >> questId;
+-
+-    WorldPacket sendPacket(CMSG_QUEST_CONFIRM_ACCEPT);
+-    sendPacket << questId;
+-    Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+-    if (!quest || !bot->CanAddQuest(quest, true))
+-    {
+-        return false;
+-    }
+-    std::ostringstream out;
+-    out << "Quest: " << chat->FormatQuest(quest) << " confirm accept";
+-    botAI->TellMaster(out);
+-    WorldPackets::Quest::QuestConfirmAcceptClient confirmAccept(std::move(sendPacket));
+-    confirmAccept.Read();
+-    bot->GetSession()->HandleQuestConfirmAccept(confirmAccept);
+-    return true;
++    return false;
+ }
+diff --git a/src/Ai/Base/Actions/SayAction.cpp b/src/Ai/Base/Actions/SayAction.cpp
+index 1e8af760..930f422a 100644
+--- a/src/Ai/Base/Actions/SayAction.cpp
++++ b/src/Ai/Base/Actions/SayAction.cpp
+@@ -144,6 +144,9 @@ bool SayAction::Execute(Event /*event*/)
+ 
+ bool SayAction::isUseful()
+ {
++    if (!sPlayerbotAIConfig.randomBotTalk)
++        return false;
++
+     if (!botAI->AllowActivity())
+         return false;
+ 
+diff --git a/src/Ai/Base/Actions/TravelAction.cpp b/src/Ai/Base/Actions/TravelAction.cpp
+index feb5b973..c547b9ca 100644
+--- a/src/Ai/Base/Actions/TravelAction.cpp
++++ b/src/Ai/Base/Actions/TravelAction.cpp
+@@ -76,30 +76,6 @@ bool MoveToDarkPortalAction::Execute(Event /*event*/)
+         {
+             if (!bot->IsInCombat())
+             {
+-                if (bot->GetTeamId() == TEAM_ALLIANCE)
+-                {
+-                    Quest const* quest = sObjectMgr->GetQuestTemplate(10119);
+-                    CreatureData const* creatureData = sRandomPlayerbotMgr.GetCreatureDataByEntry(16841);
+-                    if (quest && creatureData)
+-                    {
+-                        auto creatureBounds =
+-                            bot->GetMap()->GetCreatureBySpawnIdStore().equal_range(creatureData->spawnId);
+-                        if (creatureBounds.first != creatureBounds.second)
+-                            bot->AddQuest(quest, creatureBounds.first->second);
+-                    }
+-                }
+-                else
+-                {
+-                    Quest const* quest = sObjectMgr->GetQuestTemplate(9407);
+-                    CreatureData const* creatureData = sRandomPlayerbotMgr.GetCreatureDataByEntry(19254);
+-                    if (quest && creatureData)
+-                    {
+-                        auto creatureBounds =
+-                            bot->GetMap()->GetCreatureBySpawnIdStore().equal_range(creatureData->spawnId);
+-                        if (creatureBounds.first != creatureBounds.second)
+-                            bot->AddQuest(quest, creatureBounds.first->second);
+-                    }
+-                }
+             }
+ 
+             return MoveTo(0, -11815.1f, -3190.39f, -30.7338f, false, true);
+diff --git a/src/Ai/Base/Actions/UseItemAction.cpp b/src/Ai/Base/Actions/UseItemAction.cpp
+index 403dbc05..e58e5959 100644
+--- a/src/Ai/Base/Actions/UseItemAction.cpp
++++ b/src/Ai/Base/Actions/UseItemAction.cpp
+@@ -168,20 +168,8 @@ bool UseItemAction::UseItem(Item* item, ObjectGuid goGuid, Item* itemTarget, Uni
+         targetSelected = true;
+     }
+ 
+-    if (uint32 questid = item->GetTemplate()->StartQuest)
+-    {
+-        if (Quest const* qInfo = sObjectMgr->GetQuestTemplate(questid))
+-        {
+-            WorldPacket packet(CMSG_QUESTGIVER_ACCEPT_QUEST, 8 + 4 + 4);
+-            packet << item_guid;
+-            packet << questid;
+-            packet << uint32(0);
+-            bot->GetSession()->HandleQuestgiverAcceptQuestOpcode(packet);
+-
+-            botAI->TellMasterNoFacing("Got quest " + chat->FormatQuest(qInfo));
+-            return true;
+-        }
+-    }
++    if (item->GetTemplate()->StartQuest)
++        return false;
+ 
+     bot->ClearUnitState(UNIT_STATE_CHASE);
+     bot->ClearUnitState(UNIT_STATE_FOLLOW);
 diff --git a/src/Ai/Base/Strategy/BattlegroundStrategy.cpp b/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
 index f414e752..b2b981e4 100644
 --- a/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
@@ -11,6 +619,239 @@ index f414e752..b2b981e4 100644
      triggers.push_back(new TriggerNode("bg invite active", { NextAction("bg status check", relevance)}));
      triggers.push_back(new TriggerNode("timer", { NextAction("bg strategy check", relevance)}));
  }
+diff --git a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
+index 4addfa05..503ec0f4 100644
+--- a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
++++ b/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
+@@ -163,7 +163,7 @@ void ArmsWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+         new TriggerNode(
+             "hamstring",
+             {
+-                NextAction("piercing howl", ACTION_HIGH)
++                NextAction("hamstring", ACTION_HIGH)
+             }
+         )
+     );
+diff --git a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
+index efd7eba2..2746616a 100644
+--- a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
++++ b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
+@@ -22,6 +22,7 @@ public:
+         creators["overpower"] = &overpower;
+         creators["retaliation"] = &retaliation;
+         creators["shattering throw"] = &shattering_throw;
++        creators["hamstring"] = &hamstring;
+ 
+         // temp
+         creators["mortal strike"] = &mortal_strike;
+@@ -213,6 +214,16 @@ private:
+             /*C*/ {}
+         );
+     }
++
++    static ActionNode* hamstring([[maybe_unused]] PlayerbotAI* botAI)
++    {
++        return new ActionNode(
++            "hamstring",
++            /*P*/ { NextAction("battle stance") },
++            /*A*/ {},
++            /*C*/ {}
++        );
++    }
+ };
+ 
+ class GenericWarriorStrategy : public CombatStrategy
+diff --git a/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp b/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp
+index f1eb0d7e..e1ba88f8 100644
+--- a/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp
++++ b/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp
+@@ -307,19 +307,6 @@ bool NewRpgBaseAction::InteractWithNpcOrGameObjectForQuest(ObjectGuid guid)
+             continue;
+ 
+         const QuestStatus& status = bot->GetQuestStatus(item.QuestId);
+-        if (status == QUEST_STATUS_NONE && bot->CanTakeQuest(quest, false) && bot->CanAddQuest(quest, false) &&
+-            IsQuestWorthDoing(quest) && IsQuestCapableDoing(quest))
+-        {
+-            AcceptQuest(quest, guid);
+-            if (botAI->GetMaster())
+-                botAI->TellMasterNoFacing(PlayerbotTextMgr::instance().GetBotTextOrDefault(
+-                    "new_rpg_quest_accepted",
+-                    "Quest accepted %quest",
+-                    {{"%quest", ChatHelper::FormatQuest(quest)}}));
+-            BroadcastHelper::BroadcastQuestAccepted(botAI, bot, quest);
+-            botAI->rpgStatistic.questAccepted++;
+-            LOG_DEBUG("playerbots", "[New RPG] {} accept quest {}", bot->GetName(), quest->GetQuestId());
+-        }
+         if (status == QUEST_STATUS_COMPLETE && bot->CanRewardQuest(quest, 0, false))
+         {
+             TurnInQuest(quest, guid);
+@@ -459,17 +446,6 @@ bool NewRpgBaseAction::IsWithinInteractionDist(Object* questGiver)
+     return false;
+ }
+ 
+-bool NewRpgBaseAction::AcceptQuest(Quest const* quest, ObjectGuid guid)
+-{
+-    WorldPacket p(CMSG_QUESTGIVER_ACCEPT_QUEST);
+-    uint32 unk1 = 0;
+-    p << guid << quest->GetQuestId() << unk1;
+-    p.rpos(0);
+-    bot->GetSession()->HandleQuestgiverAcceptQuestOpcode(p);
+-
+-    return true;
+-}
+-
+ bool NewRpgBaseAction::TurnInQuest(Quest const* quest, ObjectGuid guid)
+ {
+     uint32 questID = quest->GetQuestId();
+@@ -783,20 +759,6 @@ bool NewRpgBaseAction::HasQuestToAcceptOrReward(WorldObject* object)
+             return true;
+         }
+     }
+-    for (uint8 idx = 0; idx < menu.GetMenuItemCount(); idx++)
+-    {
+-        const QuestMenuItem& item = menu.GetItem(idx);
+-        const Quest* quest = sObjectMgr->GetQuestTemplate(item.QuestId);
+-        if (!quest)
+-            continue;
+-
+-        const QuestStatus& status = bot->GetQuestStatus(item.QuestId);
+-        if (status == QUEST_STATUS_NONE && bot->CanTakeQuest(quest, false) && bot->CanAddQuest(quest, false) &&
+-            IsQuestWorthDoing(quest) && IsQuestCapableDoing(quest))
+-        {
+-            return true;
+-        }
+-    }
+     return false;
+ }
+ 
+diff --git a/src/Ai/World/Rpg/Action/NewRpgBaseAction.h b/src/Ai/World/Rpg/Action/NewRpgBaseAction.h
+index 1cef54ab..7f103634 100644
+--- a/src/Ai/World/Rpg/Action/NewRpgBaseAction.h
++++ b/src/Ai/World/Rpg/Action/NewRpgBaseAction.h
+@@ -46,7 +46,6 @@ protected:
+ 
+     /* QUEST RELATED ACTION */
+     bool SearchQuestGiverAndAcceptOrReward();
+-    bool AcceptQuest(Quest const* quest, ObjectGuid guid);
+     bool TurnInQuest(Quest const* quest, ObjectGuid guid);
+     bool OrganizeQuestLog();
+ 
+diff --git a/src/Bot/Factory/PlayerbotFactory.cpp b/src/Bot/Factory/PlayerbotFactory.cpp
+index 2ef0f539..5b3261b4 100644
+--- a/src/Bot/Factory/PlayerbotFactory.cpp
++++ b/src/Bot/Factory/PlayerbotFactory.cpp
+@@ -3232,6 +3232,9 @@ void PlayerbotFactory::InitAvailableSpells()
+             if (!trainerSpell)
+                 continue;
+ 
++            if (sPlayerbotAIConfig.disabledSpellIds.contains(trainerSpell->SpellId))
++                continue;
++
+             if (!trainer->CanTeachSpell(bot, trainerSpell))
+                 continue;
+ 
+@@ -3353,6 +3356,9 @@ void PlayerbotFactory::InitSpecialSpells()
+     {
+         bot->learnSpell(50977, false);
+     }
++
++    for (uint32 spellId : sPlayerbotAIConfig.disabledSpellIds)
++        bot->removeSpell(spellId, SPEC_MASK_ALL, false);
+ }
+ 
+ void PlayerbotFactory::InitTalents(uint32 specNo)
+diff --git a/src/Bot/PlayerbotAI.cpp b/src/Bot/PlayerbotAI.cpp
+index cd7a0993..684ae4d6 100644
+--- a/src/Bot/PlayerbotAI.cpp
++++ b/src/Bot/PlayerbotAI.cpp
+@@ -2944,6 +2944,9 @@ bool PlayerbotAI::Say(const std::string& msg)
+ 
+ bool PlayerbotAI::Whisper(const std::string& msg, const std::string& receiverName)
+ {
++    if (sRandomPlayerbotMgr.IsRandomBot(bot) && !sPlayerbotAIConfig.randomBotTalk)
++        return false;
++
+     const auto receiver = ObjectAccessor::FindPlayerByName(receiverName);
+     if (!receiver)
+     {
+@@ -2969,6 +2972,9 @@ bool PlayerbotAI::TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecuri
+ 
+ bool PlayerbotAI::TellMasterNoFacing(std::string const text, PlayerbotSecurityLevel securityLevel)
+ {
++    if (sRandomPlayerbotMgr.IsRandomBot(bot) && !sPlayerbotAIConfig.randomBotTalk)
++        return false;
++
+     Player* master = GetMaster();
+     PlayerbotAI* masterBotAI = nullptr;
+     if (master)
+@@ -3255,6 +3261,9 @@ bool PlayerbotAI::CanCastSpell(std::string const name, Unit* target, Item* itemT
+ 
+ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell, Item* itemTarget, Item* castItem)
+ {
++    if (sPlayerbotAIConfig.disabledSpellIds.contains(spellid))
++        return false;
++
+     if (!spellid)
+     {
+         if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasRealPlayerMaster()))
+@@ -3435,6 +3444,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
+ 
+ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkHasSpell)
+ {
++    if (sPlayerbotAIConfig.disabledSpellIds.contains(spellid))
++        return false;
++
+     if (!spellid)
+         return false;
+ 
+@@ -3493,6 +3505,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
+ 
+ bool PlayerbotAI::CanCastSpell(uint32 spellid, float x, float y, float z, bool checkHasSpell, Item* itemTarget)
+ {
++    if (sPlayerbotAIConfig.disabledSpellIds.contains(spellid))
++        return false;
++
+     if (!spellid)
+         return false;
+ 
+@@ -3556,6 +3571,9 @@ bool PlayerbotAI::CastSpell(std::string const name, Unit* target, Item* itemTarg
+ 
+ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+ {
++    if (sPlayerbotAIConfig.disabledSpellIds.contains(spellId))
++        return false;
++
+     if (!spellId)
+         return false;
+ 
+@@ -3570,6 +3588,9 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+         return false;
+ 
+     Pet* pet = bot->GetPet();
++    if (!bot->HasSpell(spellId) && (!pet || !pet->HasSpell(spellId)))
++        return false;
++
+     if (pet && pet->HasSpell(spellId))
+     {
+         // List of spell IDs for which we do NOT want to toggle auto-cast or send message
+@@ -3840,11 +3861,17 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+ 
+ bool PlayerbotAI::CastSpell(uint32 spellId, float x, float y, float z, Item* itemTarget)
+ {
++    if (sPlayerbotAIConfig.disabledSpellIds.contains(spellId))
++        return false;
++
+     if (!spellId)
+         return false;
+ 
+     Pet* pet = bot->GetPet();
+     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
++    if (!bot->HasSpell(spellId) && (!pet || !pet->HasSpell(spellId)))
++        return false;
++
+     if (pet && pet->HasSpell(spellId))
+     {
+         bool autocast = false;
 diff --git a/src/Bot/RandomPlayerbotMgr.cpp b/src/Bot/RandomPlayerbotMgr.cpp
 index a1064b4e..ed5d803c 100644
 --- a/src/Bot/RandomPlayerbotMgr.cpp
@@ -132,3 +973,27 @@ index 91fcebb1..45b22e30 100644
  
      // Account lists
      std::vector<uint32> rndBotTypeAccounts;             // Accounts marked as RNDbot (type 1)
+diff --git a/src/PlayerbotAIConfig.cpp b/src/PlayerbotAIConfig.cpp
+index 59293f66..3a0f4660 100644
+--- a/src/PlayerbotAIConfig.cpp
++++ b/src/PlayerbotAIConfig.cpp
+@@ -189,6 +189,7 @@ bool PlayerbotAIConfig::Initialize()
+         randomBotQuestItems);
+     LoadList<std::vector<uint32>>(sConfigMgr->GetOption<std::string>("AiPlayerbot.RandomBotSpellIds", "54197"),
+                                   randomBotSpellIds);
++    LoadSet<std::set<uint32>>(sConfigMgr->GetOption<std::string>("AiPlayerbot.DisabledSpellIds", ""), disabledSpellIds);
+     LoadList<std::vector<uint32>>(
+         sConfigMgr->GetOption<std::string>("AiPlayerbot.PvpProhibitedZoneIds",
+                                            "2255,656,2361,2362,2363,976,35,2268,3425,392,541,1446,3828,3712,3738,3565,"
+diff --git a/src/PlayerbotAIConfig.h b/src/PlayerbotAIConfig.h
+index 91606f80..a9dcb5cb 100644
+--- a/src/PlayerbotAIConfig.h
++++ b/src/PlayerbotAIConfig.h
+@@ -133,6 +133,7 @@ public:
+     std::vector<uint32> randomBotQuestItems;
+     std::vector<uint32> randomBotAccounts;
+     std::vector<uint32> randomBotSpellIds;
++    std::set<uint32> disabledSpellIds;
+     std::vector<uint32> randomBotQuestIds;
+     uint32 randomBotTeleportDistance;
+     float randomGearLoweringChance;

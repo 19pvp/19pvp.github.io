@@ -87,6 +87,8 @@ type WsgBotRosterEntry = {
   classId: number
   className: string
   enabled: boolean
+  genderId: number
+  genderName: keyof typeof playerGenderIdByName
   guid?: number
   name: string
   raceId: number
@@ -241,6 +243,12 @@ const playerRaceIdByName = {
   tauren: 6,
   troll: 8,
   undead: 5,
+} as const
+
+const playerGenderIdByName = {
+  male: 0,
+  female: 1,
+  random: 255,
 } as const
 
 const teamIdByName = {
@@ -549,6 +557,7 @@ const normalizeRosterKey = (value: string) => value.trim().toLowerCase().replace
 const wsgBot = (
   team: 1 | 2,
   name: string,
+  genderName: keyof typeof playerGenderIdByName = 'random',
   raceName: keyof typeof playerRaceIdByName,
   className: keyof typeof wsgClassSlotOrder,
   role: string,
@@ -564,6 +573,8 @@ const wsgBot = (
   raceId: playerRaceIdByName[raceName],
   className,
   classId: playerClassIdByName[className],
+  genderName,
+  genderId: playerGenderIdByName[genderName],
   role,
   spec,
   replacementPriority,
@@ -572,16 +583,16 @@ const wsgBot = (
 })
 
 const defaultWsgBotRoster: WsgBotRosterEntry[] = [
-  wsgBot(1, 'Lofi', 'human', 'priest', 'healer', 'discipline', 5, 'wsg-healer'),
-  wsgBot(1, 'Filo', 'human', 'mage', 'dps', 'frost', 1, 'wsg-ranged-dps'),
-  wsgBot(1, 'Trarife', 'human', 'warrior', 'dps', 'arms', 2, 'wsg-melee-dps'),
-  wsgBot(1, 'Ilfo', 'nightelf', 'hunter', 'dps', 'marksman', 3, 'wsg-ranged-dps'),
-  wsgBot(1, 'Lifo', 'nightelf', 'druid', 'flag-carrier', 'feral', 4, 'wsg-flag-carrier'),
-  wsgBot(2, 'Foli', 'undead', 'priest', 'healer', 'discipline', 5, 'wsg-healer'),
-  wsgBot(2, 'Foil', 'undead', 'mage', 'dps', 'frost', 1, 'wsg-ranged-dps'),
-  wsgBot(2, 'Iolf', 'orc', 'warrior', 'dps', 'arms', 2, 'wsg-melee-dps'),
-  wsgBot(2, 'Iflo', 'troll', 'hunter', 'dps', 'marksman', 3, 'wsg-ranged-dps'),
-  wsgBot(2, 'Olfi', 'tauren', 'druid', 'flag-carrier', 'feral', 4, 'wsg-flag-carrier'),
+  wsgBot(1, 'Monique', 'female', 'human', 'priest', 'healer', 'holy', 5, 'wsg-healer'),
+  wsgBot(1, 'Germaine', 'female', 'draenei', 'mage', 'dps', 'frost', 1, 'wsg-ranged-dps'),
+  wsgBot(1, 'Trarife', 'male', 'dwarf', 'warrior', 'dps', 'protection', 2, 'wsg-melee-dps'),
+  wsgBot(1, 'Patrick', 'male', 'gnome', 'rogue', 'dps', 'combat', 3, 'wsg-melee-dps'),
+  wsgBot(1, 'Marcel', 'male', 'nightelf', 'druid', 'flag-carrier', 'feral', 4, 'wsg-flag-carrier'),
+  wsgBot(2, 'Gerard', 'male', 'undead', 'priest', 'healer', 'holy', 5, 'wsg-healer'),
+  wsgBot(2, 'Yvette', 'female', 'bloodelf', 'mage', 'dps', 'frost', 1, 'wsg-ranged-dps'),
+  wsgBot(2, 'Trerifa', 'female', 'troll', 'warrior', 'dps', 'protection', 2, 'wsg-melee-dps'),
+  wsgBot(2, 'Martine', 'female', 'orc', 'rogue', 'dps', 'combat', 3, 'wsg-melee-dps'),
+  wsgBot(2, 'Michel', 'male', 'tauren', 'druid', 'flag-carrier', 'feral', 4, 'wsg-flag-carrier'),
 ]
 
 const parseOptionalPositiveInt = (value: string | undefined, label: string, rowLabel: string): number | undefined => {
@@ -1847,7 +1858,7 @@ const generateWsgBotRosterSql = (roster: WsgBotRosterEntry[], items: WsgBotItem[
   const rosterRows = roster.map((bot) =>
     `  (${sqlString(bot.account)}, ${sqlString(bot.name)}, ${bot.raceId}, ${bot.classId}, ${sqlString(bot.role)}, ${
       sqlString(bot.spec)
-    }, ${bot.replacementPriority}, ${sqlString(bot.behaviorProfile)}, ${bot.enabled ? 1 : 0})`
+    }, ${bot.genderId}, ${bot.replacementPriority}, ${sqlString(bot.behaviorProfile)}, ${bot.enabled ? 1 : 0})`
   )
   const itemRows = items.map((item) =>
     `  (${sqlString(item.account)}, ${item.itemId}, ${item.amount}, ${sqlString(item.note)}, 1)`
@@ -1867,6 +1878,7 @@ CREATE TABLE IF NOT EXISTS \`playerbots_fixed_roster\` (
   \`class\` tinyint unsigned NOT NULL DEFAULT 0,
   \`role\` varchar(16) NOT NULL DEFAULT '',
   \`spec\` varchar(32) NOT NULL DEFAULT '',
+  \`gender\` tinyint unsigned NOT NULL DEFAULT 255,
   \`replacement_priority\` tinyint unsigned NOT NULL DEFAULT 0,
   \`behavior_profile\` varchar(32) NOT NULL DEFAULT '',
   \`enabled\` tinyint(1) unsigned NOT NULL DEFAULT 1,
@@ -1899,6 +1911,7 @@ INSERT INTO \`playerbots_fixed_roster\` (
   \`class\`,
   \`role\`,
   \`spec\`,
+  \`gender\`,
   \`replacement_priority\`,
   \`behavior_profile\`,
   \`enabled\`
