@@ -234,14 +234,18 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
   if not map then return end
   if map:IsBattleground() then
     for _, player in ipairs(map:GetPlayers()) do
-      player:AddItem(SATCHEL_ITEM_ID, 1)
-      local count = player:GetTeam() == winner and 2 or 1
-      player:AddItem(29434, count)
+      if not player:IsBot() then
+        player:AddItem(SATCHEL_ITEM_ID, 1)
+        local count = player:GetTeam() == winner and 2 or 1
+        player:AddItem(29434, count)
+      end
     end
   elseif map:IsArena() then
     for _, player in ipairs(map:GetPlayers()) do
-      local count = player:GetTeam() == winner and 2 or 1
-      player:AddItem(40752, count)
+      if not player:IsBot() then
+        local count = player:GetTeam() == winner and 2 or 1
+        player:AddItem(40752, count)
+      end
     end
   end
 end)

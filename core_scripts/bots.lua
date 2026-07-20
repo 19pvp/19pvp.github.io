@@ -88,7 +88,7 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     for _, assignment in ipairs(assignments) do
         local player = assignment.player
         local teamId = assignment.team
-        if player:InviteToBattleground(bg, teamId == 1 and 0 or 1) then
+        if player:InviteToBattleground(bg, teamId) then
             pendingInvites[player:GetGUIDLow()] = true
             table.insert(balancedRealPlayers[teamId], player)
         else

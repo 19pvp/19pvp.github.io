@@ -32,6 +32,39 @@ index f21841c0b..d81b35cd2 100644
                      continue;
  
                  DirectoryEntry const entry = { dirPath, AppliedFileEntry::StateConvert("MODULE") };
+diff --git a/src/server/game/Battlegrounds/Battleground.cpp b/src/server/game/Battlegrounds/Battleground.cpp
+index b10feb7b8..c5a2c96ef 100644
+--- a/src/server/game/Battlegrounds/Battleground.cpp
++++ b/src/server/game/Battlegrounds/Battleground.cpp
+@@ -1117,8 +1117,27 @@ void Battleground::RemovePlayerAtLeave(Player* player)
+ 
+         // cast deserter
+         if (isBattleground() && !player->GetSession()->HasPermission(rbac::RBAC_PERM_NO_BATTLEGROUND_DESERTER_DEBUFF) && sWorld->getBoolConfig(CONFIG_BATTLEGROUND_CAST_DESERTER))
++        {
+             if (status == STATUS_IN_PROGRESS || status == STATUS_WAIT_JOIN)
+-                player->ScheduleDelayedOperation(DELAYED_SPELL_CAST_DESERTER);
++            {
++                // Do not apply deserter if the player is currently invited to an arena
++                bool invitedToArena = false;
++                for (uint8 i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
++                {
++                    BattlegroundQueueTypeId queueTypeId = player->GetBattlegroundQueueTypeId(i);
++                    if (queueTypeId != BATTLEGROUND_QUEUE_NONE && BattlegroundMgr::BGArenaType(queueTypeId) > 0)
++                    {
++                        if (player->IsInvitedForBattlegroundQueueType(queueTypeId))
++                        {
++                            invitedToArena = true;
++                            break;
++                        }
++                    }
++                }
++                if (!invitedToArena)
++                    player->ScheduleDelayedOperation(DELAYED_SPELL_CAST_DESERTER);
++            }
++        }
+ 
+         DecreaseInvitedCount(teamId);
+ 
 diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.cpp b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
 index 169f642ec..5ad912f29 100644
 --- a/src/server/game/Battlegrounds/BattlegroundQueue.cpp
@@ -193,7 +226,7 @@ index e6799fec5..392ce779a 100644
          if (member->InBattlegroundQueueForBattlegroundQueueType(bgQueueTypeId))
          {
 diff --git a/src/server/game/Handlers/BattleGroundHandler.cpp b/src/server/game/Handlers/BattleGroundHandler.cpp
-index f9cbfac32..e856cfa5c 100644
+index f9cbfac32..06dab1b38 100644
 --- a/src/server/game/Handlers/BattleGroundHandler.cpp
 +++ b/src/server/game/Handlers/BattleGroundHandler.cpp
 @@ -177,12 +177,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
@@ -224,7 +257,18 @@ index f9cbfac32..e856cfa5c 100644
              else if (member->InBattlegroundQueueForBattlegroundQueueType(bgQueueTypeId)) // queued for this bg
              {
                  err = ERR_BATTLEGROUND_NONE;
-@@ -735,11 +725,10 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
+@@ -533,6 +523,10 @@ void WorldSession::HandleBattleFieldPortOpcode(WorldPacket& recvData)
+             auto playerBgQueueTypeId = _player->GetBattlegroundQueueTypeId(i);
+             if (playerBgQueueTypeId != BATTLEGROUND_QUEUE_NONE && playerBgQueueTypeId != bgQueueTypeId)
+             {
++                // If entering a battleground, do not remove the player from arena queues
++                if (BattlegroundMgr::BGArenaType(bgQueueTypeId) == 0 && BattlegroundMgr::BGArenaType(playerBgQueueTypeId) > 0)
++                    continue;
++
+                 _player->RemoveBattlegroundQueueId(playerBgQueueTypeId);
+                 sBattlegroundMgr->GetBattlegroundQueue(playerBgQueueTypeId).RemovePlayer(_player->GetGUID(), true);
+             }
+@@ -735,11 +729,10 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
          return;
  
      // must have free queue slot

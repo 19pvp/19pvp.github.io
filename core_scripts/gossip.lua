@@ -14,12 +14,8 @@ end
 
 -- Add quests triggers
 RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, quest, opt)
-  local spellId = custom_data.quest_reward_spells[questId]
   local questId = quest:GetId()
-  inspect({
-    ["questId"] = questId,
-    ["spellId"] = spellId,
-  })
+  local spellId = custom_data.quest_reward_spells[questId]
   if spellId then
     player:LearnSpell(spellId)
     return
@@ -39,18 +35,20 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, que
     -- 9 intel
     enchantItem(player, 5749, 1904) --  Scythe Axe
     -- +2 damage
-    enchantItem(player, 4369, 32) --  Deadly Blunderbuss
+    enchantItem(player, 4369, 32)   --  Deadly Blunderbuss
     -- +10 crit
     enchantItem(player, 6467, 2934) --  Deviate Scale Gloves
-    enchantItem(player, 892, 2934) -- Gnoll Casting Gloves
+    enchantItem(player, 892, 2934)  --  Gnoll Casting Gloves
     enchantItem(player, 5312, 2934) --  Riveted Gauntlets
     -- + 3 all stats
     enchantItem(player, 5317, 928) --  Dry Moss Tunic
     enchantItem(player, 3555, 928) --  Robe of Solomon
+    enchantItem(player, 7336, 928) --  Wildwood Chain
+    enchantItem(player, 3585, 928) --  Nature's Tunic
     -- + 5 stamina
     enchantItem(player, 1276, 852) --  Fire Hardened Buckler
     -- +7 stamina
-    enchantItem(player, 1306, 929) --  Wolfmane Wristguards
+    enchantItem(player, 1306, 929)  --  Wolfmane Wristguards
     enchantItem(player, 16981, 929) -- Owlbeard Bracers
     enchantItem(player, 14743, 929) -- Hulking Bands
     -- +30 spell
