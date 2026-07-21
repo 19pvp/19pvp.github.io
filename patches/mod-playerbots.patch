@@ -700,10 +700,19 @@ index 50f7a386..c3c938d3 100644
      }
  
 diff --git a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp b/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
-index 9277cb65..b47c19aa 100644
+index 9277cb65..db42799a 100644
 --- a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
 +++ b/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
-@@ -101,6 +101,7 @@ void GenericMageStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -91,6 +91,8 @@ void GenericMageStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ {
+     RangedCombatStrategy::InitTriggers(triggers);
+ 
++    triggers.push_back(new TriggerNode("polymorph", { NextAction("polymorph", ACTION_INTERRUPT + 1) }));
++
+     // Threat Triggers
+     triggers.push_back(new TriggerNode("high threat", { NextAction("mirror image", 60.0f) }));
+     triggers.push_back(new TriggerNode("medium threat", { NextAction("invisibility", 30.0f) }));
+@@ -101,6 +103,7 @@ void GenericMageStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
      triggers.push_back(new TriggerNode("fire ward", { NextAction("fire ward", 90.0f) }));
      triggers.push_back(new TriggerNode("frost ward", { NextAction("frost ward", 90.0f) }));
      triggers.push_back(new TriggerNode("enemy is close and no firestarter strategy", { NextAction("frost nova", 50.0f) }));
@@ -711,15 +720,15 @@ index 9277cb65..b47c19aa 100644
      triggers.push_back(new TriggerNode("enemy too close for spell and no firestarter strategy", { NextAction("blink back", 35.0f) }));
  
      // Mana Threshold Triggers
-@@ -166,7 +167,7 @@ void MageBoostStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -166,8 +169,6 @@ void MageBoostStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
  
  void MageCcStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
  {
 -    triggers.push_back(new TriggerNode("polymorph", { NextAction("polymorph", 30.0f) }));
-+    triggers.push_back(new TriggerNode("polymorph", { NextAction("polymorph", ACTION_INTERRUPT + 1) }));
- 
+-
      Player* bot = botAI->GetBot();
      int tab = AiFactory::GetPlayerSpecTab(bot);
+     if (tab == MAGE_TAB_FIRE)
 diff --git a/src/Ai/Class/Priest/PriestActions.h b/src/Ai/Class/Priest/PriestActions.h
 index fb57eaec..438339d8 100644
 --- a/src/Ai/Class/Priest/PriestActions.h
@@ -771,6 +780,182 @@ index 399f21c6..8d84d153 100644
          NextAction("smite", ACTION_DEFAULT + 0.2f),
          NextAction("mana burn", ACTION_DEFAULT + 0.1f),
          NextAction("starshards", ACTION_DEFAULT)
+diff --git a/src/Ai/Class/Rogue/Action/RogueActions.cpp b/src/Ai/Class/Rogue/Action/RogueActions.cpp
+index 653d39a3..9a5b6c08 100644
+--- a/src/Ai/Class/Rogue/Action/RogueActions.cpp
++++ b/src/Ai/Class/Rogue/Action/RogueActions.cpp
+@@ -10,6 +10,8 @@
+ #include "Player.h"
+ #include "PlayerbotAIConfig.h"
+ #include "Playerbots.h"
++#include "Random.h"
++#include "Timer.h"
+ 
+ namespace
+ {
+@@ -56,6 +58,43 @@ bool CheckStealthAction::Execute(Event /*event*/)
+     return true;
+ }
+ 
++CastCombatStrafeAction::CastCombatStrafeAction(PlayerbotAI* botAI)
++    : MovementAction(botAI, "combat strafe"), nextStrafeTime(getMSTime() + urand(1000, 2000)), strafesRemaining(0),
++      strafeLeft(urand(0, 1) == 0)
++{
++}
++
++bool CastCombatStrafeAction::isUseful()
++{
++    Unit* target = AI_VALUE(Unit*, "current target");
++    return target && target->IsAlive() && bot->IsInCombat() && botAI->CanMove() && getMSTime() >= nextStrafeTime;
++}
++
++bool CastCombatStrafeAction::Execute(Event /*event*/)
++{
++    Unit* target = AI_VALUE(Unit*, "current target");
++    if (!target || !target->IsAlive() || !bot->IsInCombat())
++        return false;
++
++    if (!strafesRemaining)
++        strafesRemaining = urand(2, 3);
++
++    float angle = bot->GetAngle(target) + (strafeLeft ? M_PI_2 : -M_PI_2);
++    float distance = bot->GetSpeed(MOVE_RUN) * 0.3f;
++    float x = bot->GetPositionX() + cos(angle) * distance;
++    float y = bot->GetPositionY() + sin(angle) * distance;
++    float z = bot->GetPositionZ();
++    bot->UpdateAllowedPositionZ(x, y, z);
++
++    if (!MoveTo(bot->GetMapId(), x, y, z, false, false, false, false, MovementPriority::MOVEMENT_COMBAT, true))
++        return false;
++
++    strafeLeft = !strafeLeft;
++    --strafesRemaining;
++    nextStrafeTime = getMSTime() + (strafesRemaining ? 300 : urand(1000, 2000));
++    return true;
++}
++
+ bool CastVanishAction::isUseful()
+ {
+     // do not use with WSG flag or EYE flag
+diff --git a/src/Ai/Class/Rogue/Action/RogueActions.h b/src/Ai/Class/Rogue/Action/RogueActions.h
+index d234a53a..32f02556 100644
+--- a/src/Ai/Class/Rogue/Action/RogueActions.h
++++ b/src/Ai/Class/Rogue/Action/RogueActions.h
+@@ -7,6 +7,7 @@
+ #define PLAYERBOTS_ROGUEACTIONS_H
+ 
+ #include "GenericSpellActions.h"
++#include "MovementActions.h"
+ #include "UseItemAction.h"
+ 
+ class PlayerbotAI;
+@@ -66,6 +67,20 @@ public:
+     bool isPossible() override { return true; }
+ };
+ 
++class CastCombatStrafeAction : public MovementAction
++{
++public:
++    CastCombatStrafeAction(PlayerbotAI* botAI);
++
++    bool isUseful() override;
++    bool Execute(Event event) override;
++
++private:
++    uint32 nextStrafeTime;
++    uint8 strafesRemaining;
++    bool strafeLeft;
++};
++
+ class CastKickAction : public CastSpellAction
+ {
+ public:
+diff --git a/src/Ai/Class/Rogue/RogueAiObjectContext.cpp b/src/Ai/Class/Rogue/RogueAiObjectContext.cpp
+index 4b4ebab1..66a29b74 100644
+--- a/src/Ai/Class/Rogue/RogueAiObjectContext.cpp
++++ b/src/Ai/Class/Rogue/RogueAiObjectContext.cpp
+@@ -69,6 +69,7 @@ public:
+         creators["kick on enemy healer"] = &RogueTriggerFactoryInternal::kick_on_enemy_healer;
+         creators["unstealth"] = &RogueTriggerFactoryInternal::unstealth;
+         creators["sap"] = &RogueTriggerFactoryInternal::sap;
++        creators["combat strafe"] = &RogueTriggerFactoryInternal::combat_strafe;
+         creators["in stealth"] = &RogueTriggerFactoryInternal::in_stealth;
+         creators["no stealth"] = &RogueTriggerFactoryInternal::no_stealth;
+         creators["stealth"] = &RogueTriggerFactoryInternal::stealth;
+@@ -91,6 +92,7 @@ private:
+     static Trigger* kick_on_enemy_healer(PlayerbotAI* botAI) { return new KickInterruptEnemyHealerSpellTrigger(botAI); }
+     static Trigger* unstealth(PlayerbotAI* botAI) { return new UnstealthTrigger(botAI); }
+     static Trigger* sap(PlayerbotAI* botAI) { return new SapTrigger(botAI); }
++    static Trigger* combat_strafe(PlayerbotAI* botAI) { return new CombatStrafeTrigger(botAI); }
+     static Trigger* in_stealth(PlayerbotAI* botAI) { return new InStealthTrigger(botAI); }
+     static Trigger* no_stealth(PlayerbotAI* botAI) { return new NoStealthTrigger(botAI); }
+     static Trigger* stealth(PlayerbotAI* botAI) { return new StealthTrigger(botAI); }
+@@ -136,6 +138,7 @@ public:
+         creators["unstealth"] = &RogueAiObjectContextInternal::unstealth;
+         creators["sap"] = &RogueAiObjectContextInternal::sap;
+         creators["check stealth"] = &RogueAiObjectContextInternal::check_stealth;
++        creators["combat strafe"] = &RogueAiObjectContextInternal::combat_strafe;
+         creators["envenom"] = &RogueAiObjectContextInternal::envenom;
+         creators["tricks of the trade on main tank"] = &RogueAiObjectContextInternal::tricks_of_the_trade_on_main_tank;
+         creators["use instant poison on main hand"] = &RogueAiObjectContextInternal::use_instant_poison;
+@@ -173,6 +176,7 @@ private:
+     static Action* cheap_shot(PlayerbotAI* botAI) { return new CastCheapShotAction(botAI); }
+     static Action* blind(PlayerbotAI* botAI) { return new CastBlindAction(botAI); }
+     static Action* check_stealth(PlayerbotAI* botAI) { return new CheckStealthAction(botAI); }
++    static Action* combat_strafe(PlayerbotAI* botAI) { return new CastCombatStrafeAction(botAI); }
+     static Action* sap(PlayerbotAI* botAI) { return new CastSapAction(botAI); }
+     static Action* unstealth(PlayerbotAI* botAI) { return new UnstealthAction(botAI); }
+     static Action* envenom(PlayerbotAI* ai) { return new CastEnvenomAction(ai); }
+diff --git a/src/Ai/Class/Rogue/RogueTriggers.h b/src/Ai/Class/Rogue/RogueTriggers.h
+index 01391dc3..fe89fdcb 100644
+--- a/src/Ai/Class/Rogue/RogueTriggers.h
++++ b/src/Ai/Class/Rogue/RogueTriggers.h
+@@ -97,6 +97,17 @@ public:
+     bool IsPossible();
+ };
+ 
++class CombatStrafeTrigger : public Trigger
++{
++public:
++    CombatStrafeTrigger(PlayerbotAI* botAI) : Trigger(botAI, "combat strafe") {}
++
++    bool IsActive() override
++    {
++        return bot->IsInCombat() && bot->GetVictim();
++    }
++};
++
+ class SprintTrigger : public BuffTrigger
+ {
+ public:
+diff --git a/src/Ai/Class/Rogue/Strategy/AssassinationRogueStrategy.cpp b/src/Ai/Class/Rogue/Strategy/AssassinationRogueStrategy.cpp
+index a104fae0..af7b7626 100644
+--- a/src/Ai/Class/Rogue/Strategy/AssassinationRogueStrategy.cpp
++++ b/src/Ai/Class/Rogue/Strategy/AssassinationRogueStrategy.cpp
+@@ -69,6 +69,9 @@ void AssassinationRogueStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
+ {
+     MeleeCombatStrategy::InitTriggers(triggers);
+ 
++    triggers.push_back(new TriggerNode(
++        "combat strafe", { NextAction("combat strafe", ACTION_DEFAULT + 0.1f) }));
++
+     triggers.push_back(
+         new TriggerNode(
+             "high energy available",
+diff --git a/src/Ai/Class/Rogue/Strategy/DpsRogueStrategy.cpp b/src/Ai/Class/Rogue/Strategy/DpsRogueStrategy.cpp
+index 0c3405b9..1bbd5f61 100644
+--- a/src/Ai/Class/Rogue/Strategy/DpsRogueStrategy.cpp
++++ b/src/Ai/Class/Rogue/Strategy/DpsRogueStrategy.cpp
+@@ -78,6 +78,9 @@ void DpsRogueStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ {
+     MeleeCombatStrategy::InitTriggers(triggers);
+ 
++    triggers.push_back(new TriggerNode(
++        "combat strafe", { NextAction("combat strafe", ACTION_DEFAULT + 0.1f) }));
++
+     triggers.push_back(
+         new TriggerNode(
+             "high energy available",
 diff --git a/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp b/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp
 index 6e3c6cdc..2babef13 100644
 --- a/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp
@@ -799,7 +984,7 @@ index 4addfa05..503ec0f4 100644
          )
      );
 diff --git a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
-index 18781ef3..8a003515 100644
+index 18781ef3..92867b0d 100644
 --- a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
 +++ b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
 @@ -36,6 +36,8 @@ void GenericWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
@@ -807,7 +992,7 @@ index 18781ef3..8a003515 100644
      triggers.push_back(new TriggerNode(
          "fear sleep sap", { NextAction("berserker rage", ACTION_EMERGENCY + 1) }));
 +    triggers.push_back(new TriggerNode(
-+        "often", { NextAction("combat jump", ACTION_BG) }));
++        "combat jump", { NextAction("combat jump", ACTION_DEFAULT + 0.1f) }));
  }
  
  class WarrirorAoeStrategyActionNodeFactory : public NamedObjectFactory<ActionNode>
@@ -1310,10 +1495,18 @@ index f1316c2c..444df609 100644
 +
  #endif
 diff --git a/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp b/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
-index 78130772..c0e49e6c 100644
+index 78130772..be29ba64 100644
 --- a/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
 +++ b/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
-@@ -109,7 +109,7 @@ private:
+@@ -93,6 +93,7 @@ public:
+         creators["shockwave"] = &WarriorTriggerFactoryInternal::shockwave;
+         creators["shockwave on snare target"] = &WarriorTriggerFactoryInternal::shockwave_on_snare_target;
+         creators["taste for blood"] = &WarriorTriggerFactoryInternal::taste_for_blood;
++        creators["combat jump"] = &WarriorTriggerFactoryInternal::combat_jump;
+ 
+         creators["thunder clap and rage"] = &WarriorTriggerFactoryInternal::thunderclap_and_rage;
+         creators["intercept can cast"] = &WarriorTriggerFactoryInternal::intercept_can_cast;
+@@ -109,7 +110,7 @@ private:
      static Trigger* defensive_stance(PlayerbotAI* botAI) { return new DefensiveStanceTrigger(botAI); }
      static Trigger* berserker_stance(PlayerbotAI* botAI) { return new BerserkerStanceTrigger(botAI); }
      static Trigger* battle_stance(PlayerbotAI* botAI) { return new BattleStanceTrigger(botAI); }
@@ -1322,7 +1515,15 @@ index 78130772..c0e49e6c 100644
      static Trigger* victory_rush(PlayerbotAI* botAI) { return new VictoryRushTrigger(botAI); }
      static Trigger* death_wish(PlayerbotAI* botAI) { return new DeathWishTrigger(botAI); }
      static Trigger* recklessness(PlayerbotAI* botAI) { return new RecklessnessTrigger(botAI); }
-@@ -214,6 +214,7 @@ public:
+@@ -143,6 +144,7 @@ private:
+     static Trigger* intercept_on_snare_target(PlayerbotAI* botAI) { return new InterceptSnareTrigger(botAI); }
+     static Trigger* spell_reflection(PlayerbotAI* botAI) { return new SpellReflectionTrigger(botAI); }
+     static Trigger* taste_for_blood(PlayerbotAI* botAI) { return new TasteForBloodTrigger(botAI); }
++    static Trigger* combat_jump(PlayerbotAI* botAI) { return new CombatJumpTrigger(botAI); }
+     static Trigger* shockwave_on_snare_target(PlayerbotAI* botAI) { return new ShockwaveSnareTrigger(botAI); }
+     static Trigger* shockwave(PlayerbotAI* botAI) { return new ShockwaveTrigger(botAI); }
+     static Trigger* instant_slam(PlayerbotAI* botAI) { return new SlamInstantTrigger(botAI); }
+@@ -214,6 +216,7 @@ public:
          creators["slam"] = &WarriorAiObjectContextInternal::slam;
          creators["shield slam"] = &WarriorAiObjectContextInternal::shield_slam;
          creators["disarm"] = &WarriorAiObjectContextInternal::disarm;
@@ -1330,7 +1531,7 @@ index 78130772..c0e49e6c 100644
          creators["sunder armor"] = &WarriorAiObjectContextInternal::sunder_armor;
          creators["last stand"] = &WarriorAiObjectContextInternal::last_stand;
          creators["shockwave on snare target"] = &WarriorAiObjectContextInternal::shockwave_on_snare_target;
-@@ -259,6 +260,7 @@ private:
+@@ -259,6 +262,7 @@ private:
      static Action* slam(PlayerbotAI* botAI) { return new CastSlamAction(botAI); }
      static Action* shield_slam(PlayerbotAI* botAI) { return new CastShieldSlamAction(botAI); }
      static Action* disarm(PlayerbotAI* botAI) { return new CastDisarmAction(botAI); }
@@ -1339,7 +1540,7 @@ index 78130772..c0e49e6c 100644
      static Action* overpower(PlayerbotAI* botAI) { return new CastOverpowerAction(botAI); }
      static Action* charge(PlayerbotAI* botAI) { return new CastChargeAction(botAI); }
 diff --git a/src/Ai/Class/Warrior/WarriorTriggers.h b/src/Ai/Class/Warrior/WarriorTriggers.h
-index 15865744..99b4c15b 100644
+index 15865744..ef5ba9d3 100644
 --- a/src/Ai/Class/Warrior/WarriorTriggers.h
 +++ b/src/Ai/Class/Warrior/WarriorTriggers.h
 @@ -39,7 +39,12 @@ BUFF_TRIGGER_A(BloodrageBuffTrigger, "bloodrage");
@@ -1365,6 +1566,21 @@ index 15865744..99b4c15b 100644
  };
  
  class VigilanceTrigger : public BuffOnPartyTrigger
+@@ -86,6 +91,14 @@ public:
+     bool IsActive() override;
+ };
+ 
++class CombatJumpTrigger : public Trigger
++{
++public:
++    CombatJumpTrigger(PlayerbotAI* botAI) : Trigger(botAI, "combat jump") {}
++
++    bool IsActive() override { return bot->IsInCombat(); }
++};
++
+ // class SlamTrigger : public HasAuraTrigger
+ // {
+ // public:
 diff --git a/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp b/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp
 index f1eb0d7e..e1ba88f8 100644
 --- a/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp
