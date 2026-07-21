@@ -661,6 +661,358 @@ index efd7eba2..2746616a 100644
  };
  
  class GenericWarriorStrategy : public CombatStrategy
+diff --git a/src/Ai/Class/Warrior/Strategy/TankWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/TankWarriorStrategy.cpp
+index 727039e2..716eb9b1 100644
+--- a/src/Ai/Class/Warrior/Strategy/TankWarriorStrategy.cpp
++++ b/src/Ai/Class/Warrior/Strategy/TankWarriorStrategy.cpp
+@@ -12,8 +12,13 @@ public:
+     {
+         creators["charge"] = &charge;
+         creators["sunder armor"] = &sunder_armor;
++        creators["hamstring"] = &hamstring;
++        creators["shield bash"] = &shield_bash;
++        creators["shield bash on enemy healer"] = &shield_bash_on_enemy_healer;
++        creators["revenge"] = &revenge;
++        creators["shield block"] = &shield_block;
++        creators["disarm"] = &disarm;
+         creators["commanding shout"] = &commanding_shout;
+-        creators["devastate"] = &devastate;
+         creators["last stand"] = &last_stand;
+         creators["heroic throw on snare target"] = &heroic_throw_on_snare_target;
+         creators["heroic throw taunt"] = &heroic_throw_taunt;
+@@ -27,7 +32,7 @@ private:
+         return new ActionNode(
+             "heroic throw",
+             /*P*/ {},
+-            /*A*/ { NextAction("shield slam") },
++            /*A*/ { NextAction("melee") },
+             /*C*/ {}
+         );
+     }
+@@ -52,12 +57,62 @@ private:
+         );
+     }
+ 
+-    static ActionNode* devastate(PlayerbotAI* /*botAI*/)
++    static ActionNode* hamstring(PlayerbotAI* /*botAI*/)
+     {
+         return new ActionNode(
+-            "devastate",
+-            /*P*/ {},
+-            /*A*/ { NextAction("sunder armor") },
++            "hamstring",
++            /*P*/ { NextAction("battle stance") },
++            /*A*/ {},
++            /*C*/ {}
++        );
++    }
++
++    static ActionNode* shield_bash(PlayerbotAI* /*botAI*/)
++    {
++        return new ActionNode(
++            "shield bash",
++            /*P*/ { NextAction("defensive stance") },
++            /*A*/ {},
++            /*C*/ {}
++        );
++    }
++
++    static ActionNode* shield_bash_on_enemy_healer(PlayerbotAI* /*botAI*/)
++    {
++        return new ActionNode(
++            "shield bash on enemy healer",
++            /*P*/ { NextAction("defensive stance") },
++            /*A*/ {},
++            /*C*/ {}
++        );
++    }
++
++    static ActionNode* revenge(PlayerbotAI* /*botAI*/)
++    {
++        return new ActionNode(
++            "revenge",
++            /*P*/ { NextAction("defensive stance") },
++            /*A*/ {},
++            /*C*/ {}
++        );
++    }
++
++    static ActionNode* shield_block(PlayerbotAI* /*botAI*/)
++    {
++        return new ActionNode(
++            "shield block",
++            /*P*/ { NextAction("defensive stance") },
++            /*A*/ {},
++            /*C*/ {}
++        );
++    }
++
++    static ActionNode* disarm(PlayerbotAI* /*botAI*/)
++    {
++        return new ActionNode(
++            "disarm",
++            /*P*/ { NextAction("defensive stance") },
++            /*A*/ {},
+             /*C*/ {}
+         );
+     }
+@@ -86,7 +141,7 @@ private:
+     {
+         return new ActionNode(
+             "charge",
+-            /*P*/ {},
++            /*P*/ { NextAction("battle stance") },
+             /*A*/ { NextAction("reach melee") },
+             /*C*/ {}
+         );
+@@ -111,9 +166,7 @@ TankWarriorStrategy::TankWarriorStrategy(PlayerbotAI* botAI) : GenericWarriorStr
+ std::vector<NextAction> TankWarriorStrategy::getDefaultActions()
+ {
+     return {
+-        NextAction("devastate", ACTION_DEFAULT + 0.3f),
+-        NextAction("revenge", ACTION_DEFAULT + 0.2f),
+-        NextAction("demoralizing shout", ACTION_DEFAULT + 0.1f),
++        NextAction("demoralizing shout", ACTION_NORMAL + 3),
+         NextAction("melee", ACTION_DEFAULT)
+     };
+ }
+@@ -134,25 +187,16 @@ void TankWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+         new TriggerNode(
+             "enemy out of melee",
+             {
+-                NextAction("heroic throw", ACTION_MOVE + 11),
+-                NextAction("charge", ACTION_MOVE + 10)
++                NextAction("charge", ACTION_MOVE + 11)
+             }
+         )
+     );
+ 
+-    triggers.push_back(
+-        new TriggerNode(
+-            "thunder clap and rage",
+-            {
+-                NextAction("thunder clap", ACTION_MOVE + 11)
+-            }
+-        )
+-    );
+     triggers.push_back(
+         new TriggerNode(
+             "defensive stance",
+             {
+-                NextAction("defensive stance", ACTION_HIGH + 9)
++                NextAction("defensive stance", ACTION_NORMAL + 2)
+             }
+         )
+     );
+@@ -160,7 +204,7 @@ void TankWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+         new TriggerNode(
+             "commanding shout",
+             {
+-                NextAction("commanding shout", ACTION_HIGH + 8)
++                NextAction("commanding shout", ACTION_HIGH)
+             }
+         )
+     );
+@@ -176,40 +220,39 @@ void TankWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+         new TriggerNode(
+             "sunder armor",
+             {
+-                NextAction("devastate", ACTION_HIGH + 2)
++                NextAction("sunder armor", ACTION_DEFAULT + 0.4f)
+             }
+         )
+     );
+     triggers.push_back(
+         new TriggerNode(
+-            "medium rage available",
++            "shield block",
+             {
+-                NextAction("shield slam", ACTION_HIGH + 2),
+-                NextAction("devastate", ACTION_HIGH + 1)
++                NextAction("shield block", ACTION_NORMAL + 5)
+             }
+         )
+     );
+     triggers.push_back(
+         new TriggerNode(
+-            "shield block",
++            "revenge",
+             {
+-                NextAction("shield block", ACTION_INTERRUPT + 1)
++                NextAction("revenge", ACTION_HIGH + 5)
+             }
+         )
+     );
+     triggers.push_back(
+         new TriggerNode(
+-            "revenge",
++            "disarm",
+             {
+-                NextAction("revenge", ACTION_HIGH + 2)
++                NextAction("disarm", ACTION_NORMAL + 4)
+             }
+         )
+     );
+     triggers.push_back(
+         new TriggerNode(
+-            "disarm",
++            "thunder clap",
+             {
+-                NextAction("disarm", ACTION_HIGH + 1)
++                NextAction("thunder clap", ACTION_NORMAL + 3)
+             }
+         )
+     );
+@@ -294,27 +337,11 @@ void TankWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+             }
+         )
+     );
+-    triggers.push_back(
+-        new TriggerNode(
+-            "sword and board",
+-            {
+-                NextAction("shield slam", ACTION_INTERRUPT)
+-            }
+-        )
+-    );
+     triggers.push_back(
+         new TriggerNode(
+             "rend",
+             {
+-                NextAction("rend", ACTION_NORMAL + 1)
+-            }
+-        )
+-    );
+-    triggers.push_back(
+-        new TriggerNode(
+-        "rend on attacker",
+-            {
+-                NextAction("rend on attacker", ACTION_NORMAL + 1)
++                NextAction("rend", ACTION_HIGH + 3)
+             }
+         )
+     );
+@@ -328,17 +355,9 @@ void TankWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+     );
+     triggers.push_back(
+         new TriggerNode(
+-            "high rage available",
+-            {
+-                NextAction("heroic strike", ACTION_HIGH)
+-            }
+-        )
+-    );
+-    triggers.push_back(
+-        new TriggerNode(
+-            "medium rage available",
++            "hamstring",
+             {
+-                NextAction("thunder clap", ACTION_HIGH + 1)
++                NextAction("hamstring", ACTION_HIGH + 4)
+             }
+         )
+     );
+diff --git a/src/Ai/Class/Warrior/Strategy/WarriorPullStrategy.cpp b/src/Ai/Class/Warrior/Strategy/WarriorPullStrategy.cpp
+index 40609f5c..d20c484f 100644
+--- a/src/Ai/Class/Warrior/Strategy/WarriorPullStrategy.cpp
++++ b/src/Ai/Class/Warrior/Strategy/WarriorPullStrategy.cpp
+@@ -9,12 +9,5 @@
+ 
+ std::string WarriorPullStrategy::GetPullActionName() const
+ {
+-    Unit* target = GetTarget();
+-    if (!target)
+-        return PullStrategy::GetPullActionName();
+-
+-    if (botAI->CanCastSpell("heroic throw", target))
+-        return "heroic throw";
+-
+     return PullStrategy::GetPullActionName();
+ }
+diff --git a/src/Ai/Class/Warrior/Strategy/WarriorPullStrategy.h b/src/Ai/Class/Warrior/Strategy/WarriorPullStrategy.h
+index a1b2217b..430338f1 100644
+--- a/src/Ai/Class/Warrior/Strategy/WarriorPullStrategy.h
++++ b/src/Ai/Class/Warrior/Strategy/WarriorPullStrategy.h
+@@ -11,7 +11,7 @@
+ class WarriorPullStrategy : public PullStrategy
+ {
+ public:
+-    WarriorPullStrategy(PlayerbotAI* botAI) : PullStrategy(botAI, "shoot") {}
++    WarriorPullStrategy(PlayerbotAI* botAI) : PullStrategy(botAI, "charge", "battle stance") {}
+ 
+     std::string GetPullActionName() const override;
+ };
+diff --git a/src/Ai/Class/Warrior/WarriorActions.cpp b/src/Ai/Class/Warrior/WarriorActions.cpp
+index 4636f784..039971ab 100644
+--- a/src/Ai/Class/Warrior/WarriorActions.cpp
++++ b/src/Ai/Class/Warrior/WarriorActions.cpp
+@@ -46,6 +46,13 @@ bool CastBerserkerRageAction::isUseful()
+ 
+ bool CastSunderArmorAction::isUseful()
+ {
++    Unit* target = GetTarget();
++    if (!target || !target->ToPlayer() || !botAI->IsCaster(target->ToPlayer()) ||
++        AI_VALUE2(uint8, "rage", "self target") < 60)
++    {
++        return false;
++    }
++
+     Group* group = bot->GetGroup();
+     if (!group)
+         return false;
+diff --git a/src/Ai/Class/Warrior/WarriorActions.h b/src/Ai/Class/Warrior/WarriorActions.h
+index f1316c2c..f43bc1ec 100644
+--- a/src/Ai/Class/Warrior/WarriorActions.h
++++ b/src/Ai/Class/Warrior/WarriorActions.h
+@@ -56,7 +56,7 @@ public:
+ 
+ MELEE_ACTION(CastThunderClapAction, "thunder clap");
+ SNARE_ACTION(CastThunderClapSnareAction, "thunder clap");
+-SNARE_ACTION(CastHamstringAction, "hamstring");
++DEBUFF_CHECKISOWNER_ACTION(CastHamstringAction, "hamstring");
+ MELEE_ACTION(CastOverpowerAction, "overpower");
+ MELEE_ACTION(CastMockingBlowAction, "mocking blow");
+ // BUFF_ACTION(CastRetaliationAction, "retaliation");
+diff --git a/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp b/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
+index 78130772..7fb4037e 100644
+--- a/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
++++ b/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
+@@ -109,7 +109,7 @@ private:
+     static Trigger* defensive_stance(PlayerbotAI* botAI) { return new DefensiveStanceTrigger(botAI); }
+     static Trigger* berserker_stance(PlayerbotAI* botAI) { return new BerserkerStanceTrigger(botAI); }
+     static Trigger* battle_stance(PlayerbotAI* botAI) { return new BattleStanceTrigger(botAI); }
+-    static Trigger* hamstring(PlayerbotAI* botAI) { return new HamstringTrigger(botAI); }
++    static Trigger* hamstring(PlayerbotAI* botAI) { return new HamstringDebuffTrigger(botAI); }
+     static Trigger* victory_rush(PlayerbotAI* botAI) { return new VictoryRushTrigger(botAI); }
+     static Trigger* death_wish(PlayerbotAI* botAI) { return new DeathWishTrigger(botAI); }
+     static Trigger* recklessness(PlayerbotAI* botAI) { return new RecklessnessTrigger(botAI); }
+diff --git a/src/Ai/Class/Warrior/WarriorTriggers.h b/src/Ai/Class/Warrior/WarriorTriggers.h
+index 15865744..99b4c15b 100644
+--- a/src/Ai/Class/Warrior/WarriorTriggers.h
++++ b/src/Ai/Class/Warrior/WarriorTriggers.h
+@@ -39,7 +39,12 @@ BUFF_TRIGGER_A(BloodrageBuffTrigger, "bloodrage");
+ CAN_CAST_TRIGGER(VictoryRushTrigger, "victory rush");
+ HAS_AURA_TRIGGER(SwordAndBoardTrigger, "sword and board");
+ SNARE_TRIGGER(ConcussionBlowTrigger, "concussion blow");
+-SNARE_TRIGGER(HamstringTrigger, "hamstring");
++class HamstringDebuffTrigger : public DebuffTrigger
++{
++public:
++    HamstringDebuffTrigger(PlayerbotAI* botAI)
++        : DebuffTrigger(botAI, "hamstring", 1, true, 8.0f, 2000) {}
++};
+ SNARE_TRIGGER(MockingBlowTrigger, "mocking blow");
+ SNARE_TRIGGER(ThunderClapSnareTrigger, "thunder clap");
+ DEBUFF_TRIGGER(ThunderClapTrigger, "thunder clap");
+@@ -67,7 +72,7 @@ HAS_AURA_TRIGGER(TasteForBloodTrigger, "taste for blood");
+ class RendDebuffTrigger : public DebuffTrigger
+ {
+ public:
+-    RendDebuffTrigger(PlayerbotAI* botAI) : DebuffTrigger(botAI, "rend", 1, true) {}
++    RendDebuffTrigger(PlayerbotAI* botAI) : DebuffTrigger(botAI, "rend", 1, true, 8.0f, 2000) {}
+ };
+ 
+ class VigilanceTrigger : public BuffOnPartyTrigger
 diff --git a/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp b/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp
 index f1eb0d7e..e1ba88f8 100644
 --- a/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp
