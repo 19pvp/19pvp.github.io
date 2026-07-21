@@ -12,6 +12,10 @@
 #include "WorldSession.h"
 #include "Guild.h"
 #include "GuildMgr.h"
+#include "AiFactory.h"
+#include "PlayerbotAIConfig.h"
+#include "PlayerbotFactory.h"
+#include "PlayerbotMgr.h"
 
 #include <algorithm>
 #include <cctype>
@@ -30,6 +34,7 @@ struct WsgFixedRosterEntry
     std::string account;
     std::string name;
     std::string role;
+    std::string spec;
     uint8 race = 0;
     uint8 class_ = 0;
     uint8 gender = 255;
@@ -80,7 +85,7 @@ public:
         }
 
         QueryResult result = PlayerbotsDatabase.Query(
-            "SELECT g.`guid`, r.`account`, r.`name`, r.`role`, r.`race`, r.`class`, r.`gender` "
+            "SELECT g.`guid`, r.`account`, r.`name`, r.`role`, r.`spec`, r.`race`, r.`class`, r.`gender` "
             "FROM `playerbots_fixed_roster` r "
             "LEFT JOIN `playerbots_fixed_roster_guid` g ON g.`account` = r.`account` "
             "WHERE r.`enabled` = 1 ORDER BY r.`account`");
@@ -100,9 +105,10 @@ public:
             entry.account = fields[1].Get<std::string>();
             entry.name = fields[2].Get<std::string>();
             entry.role = fields[3].Get<std::string>();
-            entry.race = fields[4].Get<uint8>();
-            entry.class_ = fields[5].Get<uint8>();
-            entry.gender = fields[6].Get<uint8>();
+            entry.spec = fields[4].Get<std::string>();
+            entry.race = fields[5].Get<uint8>();
+            entry.class_ = fields[6].Get<uint8>();
+            entry.gender = fields[7].Get<uint8>();
             _roster.push_back(entry);
         } while (result->NextRow());
 
@@ -355,6 +361,44 @@ public:
         }
     }
 
+    void ApplyConfiguredSpecsToOnlineBots()
+    {
+        for (WsgFixedRosterEntry const& entry : _roster)
+        {
+            if (entry.class_ != CLASS_WARRIOR || entry.spec != "protection")
+                continue;
+
+            ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(entry.guid);
+            Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
+            PlayerbotAI* botAI = bot ? sPlayerbotsMgr.GetPlayerbotAI(bot) : nullptr;
+            if (!bot || !bot->IsInWorld() || !botAI ||
+                AiFactory::GetPlayerSpecTab(bot) == WARRIOR_TAB_PROTECTION)
+            {
+                continue;
+            }
+
+            int specNo = -1;
+            for (int i = 0; i < MAX_SPECNO; ++i)
+            {
+                if (sPlayerbotAIConfig.premadeSpecName[CLASS_WARRIOR][i] == "prot pvp")
+                {
+                    specNo = i;
+                    break;
+                }
+            }
+
+            if (specNo == -1)
+            {
+                LOG_ERROR("playerbots", "[WsgFixedBots] Could not find the warrior prot pvp talent spec.");
+                continue;
+            }
+
+            PlayerbotFactory::InitTalentsBySpecNo(bot, specNo, true);
+            botAI->ResetStrategies();
+            LOG_INFO("playerbots", "[WsgFixedBots] Applied prot pvp talents to {}.", entry.name);
+        }
+    }
+
     std::size_t Reload()
     {
         LoadConfig();
@@ -552,6 +596,8 @@ public:
         }
 
         _timer = _checkMs;
+
+        ApplyConfiguredSpecsToOnlineBots();
 
         for (WsgFixedRosterEntry const& entry : _roster)
         {

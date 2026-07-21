@@ -1,7 +1,16 @@
 diff --git a/conf/playerbots.conf.dist b/conf/playerbots.conf.dist
-index 711d0fff..083d82a9 100644
+index 711d0fff..07736af1 100644
 --- a/conf/playerbots.conf.dist
 +++ b/conf/playerbots.conf.dist
+@@ -359,7 +359,7 @@ AiPlayerbot.MaxMovementSearchTime = 3
+ AiPlayerbot.ExpireActionTime = 5000
+ 
+ # Max dispel auras duration
+-AiPlayerbot.DispelAuraDuration = 700
++AiPlayerbot.DispelAuraDuration = 2000
+ 
+ # Delay between two bot actions
+ AiPlayerbot.ReactDelay = 100
 @@ -1004,6 +1004,9 @@ AiPlayerbot.AutoPickTalents = 1
  # Default: 54197 (Cold Weather Flying)
  AiPlayerbot.RandomBotSpellIds = "54197"
@@ -619,6 +628,31 @@ index f414e752..b2b981e4 100644
      triggers.push_back(new TriggerNode("bg invite active", { NextAction("bg status check", relevance)}));
      triggers.push_back(new TriggerNode("timer", { NextAction("bg strategy check", relevance)}));
  }
+diff --git a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp b/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
+index 9277cb65..a31498c3 100644
+--- a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
++++ b/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
+@@ -101,6 +101,7 @@ void GenericMageStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+     triggers.push_back(new TriggerNode("fire ward", { NextAction("fire ward", 90.0f) }));
+     triggers.push_back(new TriggerNode("frost ward", { NextAction("frost ward", 90.0f) }));
+     triggers.push_back(new TriggerNode("enemy is close and no firestarter strategy", { NextAction("frost nova", 50.0f) }));
++    triggers.push_back(new TriggerNode("being attacked", { NextAction("frost nova", ACTION_INTERRUPT + 1) }));
+     triggers.push_back(new TriggerNode("enemy too close for spell and no firestarter strategy", { NextAction("blink back", 35.0f) }));
+ 
+     // Mana Threshold Triggers
+diff --git a/src/Ai/Class/Priest/Strategy/GenericPriestStrategy.cpp b/src/Ai/Class/Priest/Strategy/GenericPriestStrategy.cpp
+index 60da1343..4a0cd6c4 100644
+--- a/src/Ai/Class/Priest/Strategy/GenericPriestStrategy.cpp
++++ b/src/Ai/Class/Priest/Strategy/GenericPriestStrategy.cpp
+@@ -38,6 +38,8 @@ void GenericPriestStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ 
+     triggers.push_back(new TriggerNode("enemy too close for spell",
+                                        { NextAction("flee", ACTION_MOVE + 9) }));
++    triggers.push_back(new TriggerNode("enemy is close",
++                                       { NextAction("psychic scream", ACTION_INTERRUPT + 1) }));
+     triggers.push_back(new TriggerNode("often", { NextAction("apply oil", 1.0f) }));
+     triggers.push_back(new TriggerNode("being attacked",
+         { NextAction("power word: shield", ACTION_HIGH + 1) }));
 diff --git a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
 index 4addfa05..503ec0f4 100644
 --- a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
@@ -943,10 +977,10 @@ index a1b2217b..430338f1 100644
      std::string GetPullActionName() const override;
  };
 diff --git a/src/Ai/Class/Warrior/WarriorActions.cpp b/src/Ai/Class/Warrior/WarriorActions.cpp
-index 4636f784..039971ab 100644
+index 4636f784..af88dbaa 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.cpp
 +++ b/src/Ai/Class/Warrior/WarriorActions.cpp
-@@ -46,6 +46,13 @@ bool CastBerserkerRageAction::isUseful()
+@@ -46,6 +46,27 @@ bool CastBerserkerRageAction::isUseful()
  
  bool CastSunderArmorAction::isUseful()
  {
@@ -957,19 +991,54 @@ index 4636f784..039971ab 100644
 +        return false;
 +    }
 +
++    if (botAI->HasSpell("hamstring"))
++    {
++        Aura* aura = botAI->GetAura("hamstring", target, false, true);
++        if (!aura || aura->GetDuration() <= 2000)
++            return false;
++    }
++
++    if (botAI->HasSpell("rend"))
++    {
++        Aura* aura = botAI->GetAura("rend", target, false, true);
++        if (!aura || aura->GetDuration() <= 2000)
++            return false;
++    }
++
      Group* group = bot->GetGroup();
      if (!group)
          return false;
+@@ -71,6 +92,14 @@ bool CastSunderArmorAction::isUseful()
+     return !aura || aura->GetStackAmount() < 5 || aura->GetDuration() <= 6000;
+ }
+ 
++bool CastHamstringAction::isPossible()
++{
++    if (!botAI->HasAura("battle stance", bot))
++        return botAI->HasSpell(spell) && !bot->HasSpellCooldown(AI_VALUE2(uint32, "spell id", spell));
++
++    return CastDebuffSpellAction::isPossible();
++}
++
+ Unit* CastVigilanceAction::GetTarget()
+ {
+     Group* group = bot->GetGroup();
 diff --git a/src/Ai/Class/Warrior/WarriorActions.h b/src/Ai/Class/Warrior/WarriorActions.h
-index f1316c2c..f43bc1ec 100644
+index f1316c2c..65c43af5 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.h
 +++ b/src/Ai/Class/Warrior/WarriorActions.h
-@@ -56,7 +56,7 @@ public:
+@@ -56,7 +56,13 @@ public:
  
  MELEE_ACTION(CastThunderClapAction, "thunder clap");
  SNARE_ACTION(CastThunderClapSnareAction, "thunder clap");
 -SNARE_ACTION(CastHamstringAction, "hamstring");
-+DEBUFF_CHECKISOWNER_ACTION(CastHamstringAction, "hamstring");
++class CastHamstringAction : public CastDebuffSpellAction
++{
++public:
++    CastHamstringAction(PlayerbotAI* botAI) : CastDebuffSpellAction(botAI, "hamstring", true) {}
++
++    bool isPossible() override;
++};
  MELEE_ACTION(CastOverpowerAction, "overpower");
  MELEE_ACTION(CastMockingBlowAction, "mocking blow");
  // BUFF_ACTION(CastRetaliationAction, "retaliation");
@@ -1113,10 +1182,25 @@ index 2ef0f539..5b3261b4 100644
  
  void PlayerbotFactory::InitTalents(uint32 specNo)
 diff --git a/src/Bot/PlayerbotAI.cpp b/src/Bot/PlayerbotAI.cpp
-index cd7a0993..684ae4d6 100644
+index cd7a0993..4ad2d1ce 100644
 --- a/src/Bot/PlayerbotAI.cpp
 +++ b/src/Bot/PlayerbotAI.cpp
-@@ -2944,6 +2944,9 @@ bool PlayerbotAI::Say(const std::string& msg)
+@@ -60,6 +60,14 @@
+ 
+ constexpr uint32 SPELL_TITAN_GRIP = 49152;
+ constexpr uint32 SPELL_DK_FROST_PRESENCE = 48263;
++constexpr uint32 DISPEL_COOLDOWN_MS = 8000;
++
++bool IsDispelSpell(SpellInfo const* spellInfo)
++{
++    return spellInfo && (spellInfo->HasEffect(SPELL_EFFECT_DISPEL) ||
++                         spellInfo->HasEffect(SPELL_EFFECT_DISPEL_MECHANIC) ||
++                         spellInfo->HasEffect(SPELL_EFFECT_STEAL_BENEFICIAL_BUFF));
++}
+ 
+ std::vector<std::string> PlayerbotAI::dispel_whitelist = {
+     "mutating injection",
+@@ -2944,6 +2952,9 @@ bool PlayerbotAI::Say(const std::string& msg)
  
  bool PlayerbotAI::Whisper(const std::string& msg, const std::string& receiverName)
  {
@@ -1126,7 +1210,7 @@ index cd7a0993..684ae4d6 100644
      const auto receiver = ObjectAccessor::FindPlayerByName(receiverName);
      if (!receiver)
      {
-@@ -2969,6 +2972,9 @@ bool PlayerbotAI::TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecuri
+@@ -2969,6 +2980,9 @@ bool PlayerbotAI::TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecuri
  
  bool PlayerbotAI::TellMasterNoFacing(std::string const text, PlayerbotSecurityLevel securityLevel)
  {
@@ -1136,7 +1220,7 @@ index cd7a0993..684ae4d6 100644
      Player* master = GetMaster();
      PlayerbotAI* masterBotAI = nullptr;
      if (master)
-@@ -3255,6 +3261,9 @@ bool PlayerbotAI::CanCastSpell(std::string const name, Unit* target, Item* itemT
+@@ -3255,6 +3269,9 @@ bool PlayerbotAI::CanCastSpell(std::string const name, Unit* target, Item* itemT
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell, Item* itemTarget, Item* castItem)
  {
@@ -1146,7 +1230,7 @@ index cd7a0993..684ae4d6 100644
      if (!spellid)
      {
          if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasRealPlayerMaster()))
-@@ -3435,6 +3444,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
+@@ -3435,6 +3452,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkHasSpell)
  {
@@ -1156,7 +1240,7 @@ index cd7a0993..684ae4d6 100644
      if (!spellid)
          return false;
  
-@@ -3493,6 +3505,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
+@@ -3493,6 +3513,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, float x, float y, float z, bool checkHasSpell, Item* itemTarget)
  {
@@ -1166,7 +1250,7 @@ index cd7a0993..684ae4d6 100644
      if (!spellid)
          return false;
  
-@@ -3556,6 +3571,9 @@ bool PlayerbotAI::CastSpell(std::string const name, Unit* target, Item* itemTarg
+@@ -3556,6 +3579,9 @@ bool PlayerbotAI::CastSpell(std::string const name, Unit* target, Item* itemTarg
  
  bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
  {
@@ -1176,9 +1260,15 @@ index cd7a0993..684ae4d6 100644
      if (!spellId)
          return false;
  
-@@ -3570,6 +3588,9 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+@@ -3569,7 +3595,15 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+     if (!spellInfo)
          return false;
  
++    uint32 now = getMSTime();
++    bool isDispel = IsDispelSpell(spellInfo);
++    if (isDispel && lastDispelCast && getMSTimeDiff(lastDispelCast, now) < DISPEL_COOLDOWN_MS)
++        return false;
++
      Pet* pet = bot->GetPet();
 +    if (!bot->HasSpell(spellId) && (!pet || !pet->HasSpell(spellId)))
 +        return false;
@@ -1186,7 +1276,15 @@ index cd7a0993..684ae4d6 100644
      if (pet && pet->HasSpell(spellId))
      {
          // List of spell IDs for which we do NOT want to toggle auto-cast or send message
-@@ -3840,11 +3861,17 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+@@ -3835,16 +3869,25 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+         TellMasterNoFacing(out);
+     }
+ 
++    if (isDispel)
++        lastDispelCast = now;
++
+     return true;
+ }
  
  bool PlayerbotAI::CastSpell(uint32 spellId, float x, float y, float z, Item* itemTarget)
  {
@@ -1204,6 +1302,18 @@ index cd7a0993..684ae4d6 100644
      if (pet && pet->HasSpell(spellId))
      {
          bool autocast = false;
+diff --git a/src/Bot/PlayerbotAI.h b/src/Bot/PlayerbotAI.h
+index 7940ee31..c2fac79c 100644
+--- a/src/Bot/PlayerbotAI.h
++++ b/src/Bot/PlayerbotAI.h
+@@ -650,6 +650,7 @@ protected:
+     BotCheatMask cheatMask = BotCheatMask::none;
+     Position jumpDestination = Position();
+     uint32 nextTransportCheck = 0;
++    uint32 lastDispelCast = 0;
+     bool spellInterruptRequested = false;
+ };
+ 
 diff --git a/src/Bot/RandomPlayerbotMgr.cpp b/src/Bot/RandomPlayerbotMgr.cpp
 index a1064b4e..ed5d803c 100644
 --- a/src/Bot/RandomPlayerbotMgr.cpp

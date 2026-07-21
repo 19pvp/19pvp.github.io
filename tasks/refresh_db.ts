@@ -328,6 +328,14 @@ const parseNumberProp = (key: keyof QuestProps, value: unknown, rowLabel: string
   return number
 }
 
+const parseGoldProp = (key: keyof QuestProps, value: unknown, rowLabel: string): number | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    questWarnings.push(`${rowLabel}: ignored ${key}, expected a positive number`)
+    return undefined
+  }
+  return Math.floor(value * 10000)
+}
+
 const parseCountedItemArrayProp = (
   key: keyof QuestProps,
   value: unknown,
@@ -413,7 +421,7 @@ const parseQuestProps = (props: string | undefined, rowLabel: string): QuestProp
         break
       }
       case 'RewardGold': {
-        const parsed = parseNumberProp(key, value, rowLabel)
+        const parsed = parseGoldProp(key, value, rowLabel)
         if (parsed) result.RewardGold = parsed
         break
       }

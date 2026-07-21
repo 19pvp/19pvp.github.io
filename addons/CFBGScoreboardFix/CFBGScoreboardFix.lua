@@ -5,7 +5,7 @@ local original_GetBattlefieldScore = GetBattlefieldScore
 local CFBG_ScoreboardBots = {}
 local CFBG_HordePlayers = {}
 
--- Hook GetBattlefieldScore to return faked faction and tag bots
+-- Hook GetBattlefieldScore to return faked faction and tag bots for row rendering
 GetBattlefieldScore = function(index)
     local name, killingBlows, honorableKills, deaths, honorGained, faction, rank, race, class, classToken, damageDone, healingDone = original_GetBattlefieldScore(index)
     
@@ -15,17 +15,16 @@ GetBattlefieldScore = function(index)
         -- Strip realm suffix (e.g. "Name-Realm" -> "Name") to match server names
         local cleanName = string.match(name, "^([^-]+)") or name
         
-        -- Override the faction only if we have received sync data from the server
+        -- Set faction value for row rendering
         if next(CFBG_HordePlayers) ~= nil or next(CFBG_ScoreboardBots) ~= nil then
-            -- Swapped: if the player is in the Horde list, faction is 1, else 0
             if CFBG_HordePlayers[cleanName] then
-                actualFaction = 0 -- Alliance
+                actualFaction = 0 -- Value that renders row correctly
             else
-                actualFaction = 1 -- Horde
+                actualFaction = 1 -- Value that renders row correctly
             end
         end
         
-        -- Tag playerbots with a grey colored [BOT] prefix (color hex: ff9d9d9d)
+        -- Tag playerbots with a grey colored [BOT] prefix
         if CFBG_ScoreboardBots[cleanName] then
             name = "|cff9d9d9d[BOT]|r " .. name
         end
@@ -50,20 +49,20 @@ local function UpdateScoreboardHeaders()
         if name then
             local cleanName = string.match(name, "^([^-]+)") or name
             local isBot = CFBG_ScoreboardBots[cleanName]
-            -- Use the faked faction returned by our override
             local _, _, _, _, _, actualFaction = GetBattlefieldScore(i)
             
-            if actualFaction == 0 then -- Alliance
-                if isBot then
-                    allianceBots = allianceBots + 1
-                else
-                    allianceReal = allianceReal + 1
-                end
-            elseif actualFaction == 1 then -- Horde
+            -- Invert actualFaction here for the header text calculation
+            if actualFaction == 0 then -- Horde
                 if isBot then
                     hordeBots = hordeBots + 1
                 else
                     hordeReal = hordeReal + 1
+                end
+            elseif actualFaction == 1 then -- Alliance
+                if isBot then
+                    allianceBots = allianceBots + 1
+                else
+                    allianceReal = allianceReal + 1
                 end
             end
         end
@@ -95,7 +94,6 @@ frame:SetScript("OnEvent", function(self, event, ...)
         if hooksecurecall then
             hooksecurecall("WorldStateScoreFrame_Update", UpdateScoreboardHeaders)
         else
-            -- Fallback hook if hooksecurecall is somehow unavailable
             local original_Update = WorldStateScoreFrame_Update
             WorldStateScoreFrame_Update = function()
                 original_Update()

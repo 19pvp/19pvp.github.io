@@ -56,7 +56,7 @@
   "AiPlayerbot.DisableMoveSplinePath": "0",
   "AiPlayerbot.MaxMovementSearchTime": "3",
   "AiPlayerbot.ExpireActionTime": "5000",
-  "AiPlayerbot.DispelAuraDuration": "700",
+  "AiPlayerbot.DispelAuraDuration": "2000",
   "AiPlayerbot.ReactDelay": "100",
   "AiPlayerbot.DynamicReactDelay": "1",
   "AiPlayerbot.PassiveDelay": "10000",
