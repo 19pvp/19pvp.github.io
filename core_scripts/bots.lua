@@ -44,8 +44,6 @@ local queueDelayTime = 10
 local annouceFreq = math.floor(queueDelayTime / 2) -- announce at half time
 local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
-local SPELL_WAITING_FOR_RESURRECT = 2584
-local SPELL_SPIRIT_HEAL_MANA = 44535
 
 -- Tracks real players who have been sent an invite popup but haven't entered yet.
 -- Prevents UpdateWSGQueue from re-processing them every second while they decide.
@@ -213,13 +211,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
         CreateLuaEvent(function()
             SyncBGPlayerData(map)
         end, 1000, 1)
-    end
-end)
-
-RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function(event, player)
-    if player:HasAura(SPELL_WAITING_FOR_RESURRECT) then
-        player:RemoveAura(SPELL_WAITING_FOR_RESURRECT)
-        player:CastSpell(player, SPELL_SPIRIT_HEAL_MANA, true)
     end
 end)
 
