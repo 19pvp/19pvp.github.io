@@ -652,19 +652,39 @@ index f414e752..b2b981e4 100644
      triggers.push_back(new TriggerNode("timer", { NextAction("bg strategy check", relevance)}));
  }
 diff --git a/src/Ai/Base/Value/CcTargetValue.cpp b/src/Ai/Base/Value/CcTargetValue.cpp
-index 4903a59f..89ddb456 100644
+index 4903a59f..4cea2a4c 100644
 --- a/src/Ai/Base/Value/CcTargetValue.cpp
 +++ b/src/Ai/Base/Value/CcTargetValue.cpp
-@@ -39,6 +39,13 @@ public:
+@@ -32,13 +32,32 @@ public:
+             return;
+         }
+ 
+-        if (*botAI->GetAiObjectContext()->GetValue<Unit*>("current target") == creature)
++        if (spell != "polymorph" && *botAI->GetAiObjectContext()->GetValue<Unit*>("current target") == creature)
+             return;
+ 
+         uint8 health = static_cast<uint8>(creature->GetHealthPct());
          if (health < sPlayerbotAIConfig.mediumHealth)
              return;
  
 +        bool const hasDot = creature->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE) ||
 +                            creature->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT) ||
 +                            creature->HasAuraType(SPELL_AURA_PERIODIC_LEECH);
-+        if (spell == "polymorph" &&
-+            (health < 80 || !creature->getAttackers().empty() || hasDot))
-+            return;
++        if (spell == "polymorph")
++        {
++            bool hasOtherAttacker = false;
++            for (Unit* attacker : creature->getAttackers())
++            {
++                if (attacker && attacker != bot)
++                {
++                    hasOtherAttacker = true;
++                    break;
++                }
++            }
++
++            if (health < 80 || hasOtherAttacker || hasDot)
++                return;
++        }
 +
          float minDistance = botAI->GetRange("spell");
          Group* group = bot->GetGroup();
@@ -781,7 +801,7 @@ index 399f21c6..8d84d153 100644
          NextAction("mana burn", ACTION_DEFAULT + 0.1f),
          NextAction("starshards", ACTION_DEFAULT)
 diff --git a/src/Ai/Class/Rogue/Action/RogueActions.cpp b/src/Ai/Class/Rogue/Action/RogueActions.cpp
-index 653d39a3..9a5b6c08 100644
+index 653d39a3..54c72015 100644
 --- a/src/Ai/Class/Rogue/Action/RogueActions.cpp
 +++ b/src/Ai/Class/Rogue/Action/RogueActions.cpp
 @@ -10,6 +10,8 @@
@@ -816,10 +836,10 @@ index 653d39a3..9a5b6c08 100644
 +        return false;
 +
 +    if (!strafesRemaining)
-+        strafesRemaining = urand(2, 3);
++        strafesRemaining = 6;
 +
 +    float angle = bot->GetAngle(target) + (strafeLeft ? M_PI_2 : -M_PI_2);
-+    float distance = bot->GetSpeed(MOVE_RUN) * 0.3f;
++    float distance = bot->GetSpeed(MOVE_RUN) * 0.09f;
 +    float x = bot->GetPositionX() + cos(angle) * distance;
 +    float y = bot->GetPositionY() + sin(angle) * distance;
 +    float z = bot->GetPositionZ();
@@ -830,7 +850,7 @@ index 653d39a3..9a5b6c08 100644
 +
 +    strafeLeft = !strafeLeft;
 +    --strafesRemaining;
-+    nextStrafeTime = getMSTime() + (strafesRemaining ? 300 : urand(1000, 2000));
++    nextStrafeTime = strafesRemaining ? getMSTime() : getMSTime() + urand(1000, 2000);
 +    return true;
 +}
 +
