@@ -419,6 +419,18 @@ index 2d78e443..0de002c7 100644
          }
      }
  }
+diff --git a/src/Ai/Base/Actions/GenericSpellActions.h b/src/Ai/Base/Actions/GenericSpellActions.h
+index a5f802a4..5bbdd792 100644
+--- a/src/Ai/Base/Actions/GenericSpellActions.h
++++ b/src/Ai/Base/Actions/GenericSpellActions.h
+@@ -208,6 +208,7 @@ class ResurrectPartyMemberAction : public CastSpellAction
+ public:
+     ResurrectPartyMemberAction(PlayerbotAI* botAI, std::string const spell) : CastSpellAction(botAI, spell) {}
+ 
++    bool isUseful() override { return false; }
+     std::string const GetTargetName() override { return "party member to resurrect"; }
+     std::vector<NextAction> getPrerequisites() override
+     {
 diff --git a/src/Ai/Base/Actions/GuildCreateActions.cpp b/src/Ai/Base/Actions/GuildCreateActions.cpp
 index 59696ece..2acfd44a 100644
 --- a/src/Ai/Base/Actions/GuildCreateActions.cpp
@@ -472,6 +484,67 @@ index 59696ece..2acfd44a 100644
      return false;
  }
  
+diff --git a/src/Ai/Base/Actions/MovementActions.cpp b/src/Ai/Base/Actions/MovementActions.cpp
+index 77190dfe..4d2fabca 100644
+--- a/src/Ai/Base/Actions/MovementActions.cpp
++++ b/src/Ai/Base/Actions/MovementActions.cpp
+@@ -80,6 +80,34 @@ bool MovementAction::JumpTo(uint32 mapId, float x, float y, float z, MovementPri
+     return true;
+ }
+ 
++bool MovementAction::MaybeCombatJump(MovementPriority priority)
++{
++    if (bot->getClass() != CLASS_WARRIOR || !bot->IsAlive())
++        return false;
++
++    uint32 now = getMSTime();
++    if (!bot->IsInCombat())
++    {
++        botAI->SetNextCombatJumpTime(0);
++        return false;
++    }
++
++    if (!botAI->GetNextCombatJumpTime())
++    {
++        botAI->SetNextCombatJumpTime(now + urand(10000, 15000));
++        return false;
++    }
++
++    if (now < botAI->GetNextCombatJumpTime())
++        return false;
++
++    if (!JumpTo(bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ() + 0.02f, priority))
++        return false;
++
++    botAI->SetNextCombatJumpTime(now + urand(10000, 15000));
++    return true;
++}
++
+ bool MovementAction::MoveNear(uint32 mapId, float x, float y, float z, float distance, MovementPriority priority)
+ {
+     float angle = GetFollowAngle();
+@@ -184,6 +212,9 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
+         return false;
+     }
+ 
++    if (MaybeCombatJump(priority))
++        return true;
++
+     bool generatePath = !bot->IsFlying() && !bot->isSwimming();
+     bool disableMoveSplinePath =
+         sPlayerbotAIConfig.disableMoveSplinePath >= 2 ||
+diff --git a/src/Ai/Base/Actions/MovementActions.h b/src/Ai/Base/Actions/MovementActions.h
+index 8c70d6c1..7991f7fb 100644
+--- a/src/Ai/Base/Actions/MovementActions.h
++++ b/src/Ai/Base/Actions/MovementActions.h
+@@ -29,6 +29,7 @@ public:
+ 
+ protected:
+     bool JumpTo(uint32 mapId, float x, float y, float z, MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
++    bool MaybeCombatJump(MovementPriority priority);
+     bool MoveNear(uint32 mapId, float x, float y, float z, float distance = sPlayerbotAIConfig.contactDistance,
+                   MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
+     bool MoveToLOS(WorldObject* target, bool ranged = false);
 diff --git a/src/Ai/Base/Actions/QuestAction.cpp b/src/Ai/Base/Actions/QuestAction.cpp
 index 769cd133..d548a56e 100644
 --- a/src/Ai/Base/Actions/QuestAction.cpp
@@ -1003,19 +1076,6 @@ index 4addfa05..503ec0f4 100644
              }
          )
      );
-diff --git a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
-index 18781ef3..92867b0d 100644
---- a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
-+++ b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
-@@ -36,6 +36,8 @@ void GenericWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
-         "enemy out of melee", { NextAction("reach melee", ACTION_HIGH + 1) }));
-     triggers.push_back(new TriggerNode(
-         "fear sleep sap", { NextAction("berserker rage", ACTION_EMERGENCY + 1) }));
-+    triggers.push_back(new TriggerNode(
-+        "combat jump", { NextAction("combat jump", ACTION_DEFAULT + 0.1f) }));
- }
- 
- class WarrirorAoeStrategyActionNodeFactory : public NamedObjectFactory<ActionNode>
 diff --git a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
 index efd7eba2..2746616a 100644
 --- a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
@@ -1327,19 +1387,10 @@ index a1b2217b..430338f1 100644
      std::string GetPullActionName() const override;
  };
 diff --git a/src/Ai/Class/Warrior/WarriorActions.cpp b/src/Ai/Class/Warrior/WarriorActions.cpp
-index 4636f784..5919d3b4 100644
+index 4636f784..3ea4c5ab 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.cpp
 +++ b/src/Ai/Class/Warrior/WarriorActions.cpp
-@@ -7,6 +7,8 @@
- 
- #include "AiFactory.h"
- #include "Playerbots.h"
-+#include "Random.h"
-+#include "Timer.h"
- 
- namespace
- {
-@@ -17,6 +19,59 @@ constexpr uint32 SPELL_BLESSING_OF_PROTECTION = 41450;
+@@ -17,6 +17,37 @@ constexpr uint32 SPELL_BLESSING_OF_PROTECTION = 41450;
  constexpr uint32 SPELL_SHATTERING_THROW = 64382;
  }
  
@@ -1374,32 +1425,10 @@ index 4636f784..5919d3b4 100644
 +    return IsValidDisarmTarget(botAI, GetTarget()) && CastDebuffSpellOnAttackerAction::isUseful();
 +}
 +
-+CastCombatJumpAction::CastCombatJumpAction(PlayerbotAI* botAI)
-+    : MovementAction(botAI, "combat jump"), nextJumpTime(getMSTime() + urand(10000, 15000))
-+{
-+}
-+
-+bool CastCombatJumpAction::isUseful()
-+{
-+    return bot->IsInCombat() && bot->IsAlive() && getMSTime() >= nextJumpTime && botAI->CanMove();
-+}
-+
-+bool CastCombatJumpAction::Execute(Event /*event*/)
-+{
-+    if (!JumpTo(bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ() + 0.01f,
-+                MovementPriority::MOVEMENT_COMBAT))
-+    {
-+        return false;
-+    }
-+
-+    nextJumpTime = getMSTime() + urand(10000, 15000);
-+    return true;
-+}
-+
  bool CastBerserkerRageAction::isPossible()
  {
      if (botAI->IsInVehicle() && !botAI->IsInVehicle(false, false, true))
-@@ -46,6 +101,27 @@ bool CastBerserkerRageAction::isUseful()
+@@ -46,6 +77,27 @@ bool CastBerserkerRageAction::isUseful()
  
  bool CastSunderArmorAction::isUseful()
  {
@@ -1427,7 +1456,7 @@ index 4636f784..5919d3b4 100644
      Group* group = bot->GetGroup();
      if (!group)
          return false;
-@@ -71,6 +147,14 @@ bool CastSunderArmorAction::isUseful()
+@@ -71,6 +123,14 @@ bool CastSunderArmorAction::isUseful()
      return !aura || aura->GetStackAmount() < 5 || aura->GetDuration() <= 6000;
  }
  
@@ -1443,18 +1472,10 @@ index 4636f784..5919d3b4 100644
  {
      Group* group = bot->GetGroup();
 diff --git a/src/Ai/Class/Warrior/WarriorActions.h b/src/Ai/Class/Warrior/WarriorActions.h
-index f1316c2c..444df609 100644
+index f1316c2c..93f30527 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.h
 +++ b/src/Ai/Class/Warrior/WarriorActions.h
-@@ -8,6 +8,7 @@
- 
- #include "AiObject.h"
- #include "GenericSpellActions.h"
-+#include "MovementActions.h"
- #include "Player.h"
- #include "PlayerbotAI.h"
- #include "ReachTargetActions.h"
-@@ -56,7 +57,13 @@ public:
+@@ -56,7 +56,13 @@ public:
  
  MELEE_ACTION(CastThunderClapAction, "thunder clap");
  SNARE_ACTION(CastThunderClapSnareAction, "thunder clap");
@@ -1469,7 +1490,7 @@ index f1316c2c..444df609 100644
  MELEE_ACTION(CastOverpowerAction, "overpower");
  MELEE_ACTION(CastMockingBlowAction, "mocking blow");
  // BUFF_ACTION(CastRetaliationAction, "retaliation");
-@@ -112,10 +119,23 @@ MELEE_ACTION(CastShieldBashAction, "shield bash");
+@@ -112,10 +118,23 @@ MELEE_ACTION(CastShieldBashAction, "shield bash");
  ENEMY_HEALER_ACTION(CastShieldBashOnEnemyHealerAction, "shield bash");
  MELEE_ACTION(CastRevengeAction, "revenge");
  BUFF_ACTION(CastShieldBlockAction, "shield block");
@@ -1497,36 +1518,19 @@ index f1316c2c..444df609 100644
  BUFF_ACTION(CastShieldWallAction, "shield wall");
  // protection 2.4.3
  PROTECT_ACTION(CastInterveneAction, "intervene");
-@@ -170,4 +190,16 @@ public:
-     Unit* GetTarget() override;
- };
- 
-+class CastCombatJumpAction : public MovementAction
-+{
-+public:
-+    CastCombatJumpAction(PlayerbotAI* botAI);
-+
-+    bool isUseful() override;
-+    bool Execute(Event event) override;
-+
-+private:
-+    uint32 nextJumpTime;
-+};
-+
- #endif
 diff --git a/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp b/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
-index 78130772..be29ba64 100644
+index 78130772..ec3d01c8 100644
 --- a/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
 +++ b/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
-@@ -93,6 +93,7 @@ public:
+@@ -93,7 +93,6 @@ public:
          creators["shockwave"] = &WarriorTriggerFactoryInternal::shockwave;
          creators["shockwave on snare target"] = &WarriorTriggerFactoryInternal::shockwave_on_snare_target;
          creators["taste for blood"] = &WarriorTriggerFactoryInternal::taste_for_blood;
-+        creators["combat jump"] = &WarriorTriggerFactoryInternal::combat_jump;
- 
+-
          creators["thunder clap and rage"] = &WarriorTriggerFactoryInternal::thunderclap_and_rage;
          creators["intercept can cast"] = &WarriorTriggerFactoryInternal::intercept_can_cast;
-@@ -109,7 +110,7 @@ private:
+         creators["intercept and far enemy"] = &WarriorTriggerFactoryInternal::intercept_and_far_enemy;
+@@ -109,7 +108,7 @@ private:
      static Trigger* defensive_stance(PlayerbotAI* botAI) { return new DefensiveStanceTrigger(botAI); }
      static Trigger* berserker_stance(PlayerbotAI* botAI) { return new BerserkerStanceTrigger(botAI); }
      static Trigger* battle_stance(PlayerbotAI* botAI) { return new BattleStanceTrigger(botAI); }
@@ -1535,32 +1539,8 @@ index 78130772..be29ba64 100644
      static Trigger* victory_rush(PlayerbotAI* botAI) { return new VictoryRushTrigger(botAI); }
      static Trigger* death_wish(PlayerbotAI* botAI) { return new DeathWishTrigger(botAI); }
      static Trigger* recklessness(PlayerbotAI* botAI) { return new RecklessnessTrigger(botAI); }
-@@ -143,6 +144,7 @@ private:
-     static Trigger* intercept_on_snare_target(PlayerbotAI* botAI) { return new InterceptSnareTrigger(botAI); }
-     static Trigger* spell_reflection(PlayerbotAI* botAI) { return new SpellReflectionTrigger(botAI); }
-     static Trigger* taste_for_blood(PlayerbotAI* botAI) { return new TasteForBloodTrigger(botAI); }
-+    static Trigger* combat_jump(PlayerbotAI* botAI) { return new CombatJumpTrigger(botAI); }
-     static Trigger* shockwave_on_snare_target(PlayerbotAI* botAI) { return new ShockwaveSnareTrigger(botAI); }
-     static Trigger* shockwave(PlayerbotAI* botAI) { return new ShockwaveTrigger(botAI); }
-     static Trigger* instant_slam(PlayerbotAI* botAI) { return new SlamInstantTrigger(botAI); }
-@@ -214,6 +216,7 @@ public:
-         creators["slam"] = &WarriorAiObjectContextInternal::slam;
-         creators["shield slam"] = &WarriorAiObjectContextInternal::shield_slam;
-         creators["disarm"] = &WarriorAiObjectContextInternal::disarm;
-+        creators["combat jump"] = &WarriorAiObjectContextInternal::combat_jump;
-         creators["sunder armor"] = &WarriorAiObjectContextInternal::sunder_armor;
-         creators["last stand"] = &WarriorAiObjectContextInternal::last_stand;
-         creators["shockwave on snare target"] = &WarriorAiObjectContextInternal::shockwave_on_snare_target;
-@@ -259,6 +262,7 @@ private:
-     static Action* slam(PlayerbotAI* botAI) { return new CastSlamAction(botAI); }
-     static Action* shield_slam(PlayerbotAI* botAI) { return new CastShieldSlamAction(botAI); }
-     static Action* disarm(PlayerbotAI* botAI) { return new CastDisarmAction(botAI); }
-+    static Action* combat_jump(PlayerbotAI* botAI) { return new CastCombatJumpAction(botAI); }
-     static Action* sunder_armor(PlayerbotAI* botAI) { return new CastSunderArmorAction(botAI); }
-     static Action* overpower(PlayerbotAI* botAI) { return new CastOverpowerAction(botAI); }
-     static Action* charge(PlayerbotAI* botAI) { return new CastChargeAction(botAI); }
 diff --git a/src/Ai/Class/Warrior/WarriorTriggers.h b/src/Ai/Class/Warrior/WarriorTriggers.h
-index 15865744..ef5ba9d3 100644
+index 15865744..99b4c15b 100644
 --- a/src/Ai/Class/Warrior/WarriorTriggers.h
 +++ b/src/Ai/Class/Warrior/WarriorTriggers.h
 @@ -39,7 +39,12 @@ BUFF_TRIGGER_A(BloodrageBuffTrigger, "bloodrage");
@@ -1586,21 +1566,6 @@ index 15865744..ef5ba9d3 100644
  };
  
  class VigilanceTrigger : public BuffOnPartyTrigger
-@@ -86,6 +91,14 @@ public:
-     bool IsActive() override;
- };
- 
-+class CombatJumpTrigger : public Trigger
-+{
-+public:
-+    CombatJumpTrigger(PlayerbotAI* botAI) : Trigger(botAI, "combat jump") {}
-+
-+    bool IsActive() override { return bot->IsInCombat(); }
-+};
-+
- // class SlamTrigger : public HasAuraTrigger
- // {
- // public:
 diff --git a/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp b/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp
 index f1eb0d7e..e1ba88f8 100644
 --- a/src/Ai/World/Rpg/Action/NewRpgBaseAction.cpp
@@ -1822,13 +1787,23 @@ index cd7a0993..4ad2d1ce 100644
      {
          bool autocast = false;
 diff --git a/src/Bot/PlayerbotAI.h b/src/Bot/PlayerbotAI.h
-index 7940ee31..c2fac79c 100644
+index 7940ee31..b2add3c4 100644
 --- a/src/Bot/PlayerbotAI.h
 +++ b/src/Bot/PlayerbotAI.h
-@@ -650,6 +650,7 @@ protected:
+@@ -591,6 +591,8 @@ public:
+     bool HasItemInInventory(uint32 itemId);
+     std::vector<std::pair<const Quest*, uint32>> GetCurrentQuestsRequiringItemId(uint32 itemId);
+     uint32 GetReactDelay();
++    uint32 GetNextCombatJumpTime() const { return nextCombatJumpTime; }
++    void SetNextCombatJumpTime(uint32 time) { nextCombatJumpTime = time; }
+ 
+     std::vector<const Quest*> GetAllCurrentQuests();
+     std::vector<const Quest*> GetCurrentIncompleteQuests();
+@@ -650,6 +652,8 @@ protected:
      BotCheatMask cheatMask = BotCheatMask::none;
      Position jumpDestination = Position();
      uint32 nextTransportCheck = 0;
++    uint32 nextCombatJumpTime = 0;
 +    uint32 lastDispelCast = 0;
      bool spellInterruptRequested = false;
  };
