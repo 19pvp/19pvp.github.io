@@ -396,6 +396,29 @@ index 86ce7ce5..4ec65ef0 100644
      bool TradeItem(FindItemVisitor* visitor, int8 slot);
      bool TradeItem(Item const* item, int8 slot);
  };
+diff --git a/src/Ai/Base/Actions/GenericSpellActions.cpp b/src/Ai/Base/Actions/GenericSpellActions.cpp
+index 2d78e443..0de002c7 100644
+--- a/src/Ai/Base/Actions/GenericSpellActions.cpp
++++ b/src/Ai/Base/Actions/GenericSpellActions.cpp
+@@ -26,6 +26,8 @@ using ai::spell::HasSpellOrCategoryCooldown;
+ 
+ namespace
+ {
++    constexpr uint32 SPELL_SHOOT_WAND = 5019;
++
+     std::unordered_set<uint32> const& GetMixedTriggerTrinketSpellIds()
+     {
+         static std::unordered_set<uint32> const mixedTriggerSpellIds = []()
+@@ -427,6 +429,9 @@ CastShootAction::CastShootAction(
+                 spell = "throw";
+                 shootSpellId = 2764;
+                 break;
++            case ITEM_SUBCLASS_WEAPON_WAND:
++                shootSpellId = SPELL_SHOOT_WAND;
++                break;
+         }
+     }
+ }
 diff --git a/src/Ai/Base/Actions/GuildCreateActions.cpp b/src/Ai/Base/Actions/GuildCreateActions.cpp
 index 59696ece..2acfd44a 100644
 --- a/src/Ai/Base/Actions/GuildCreateActions.cpp
@@ -653,6 +676,34 @@ index 60da1343..4a0cd6c4 100644
      triggers.push_back(new TriggerNode("often", { NextAction("apply oil", 1.0f) }));
      triggers.push_back(new TriggerNode("being attacked",
          { NextAction("power word: shield", ACTION_HIGH + 1) }));
+diff --git a/src/Ai/Class/Priest/Strategy/HolyPriestStrategy.cpp b/src/Ai/Class/Priest/Strategy/HolyPriestStrategy.cpp
+index 399f21c6..45bf0185 100644
+--- a/src/Ai/Class/Priest/Strategy/HolyPriestStrategy.cpp
++++ b/src/Ai/Class/Priest/Strategy/HolyPriestStrategy.cpp
+@@ -34,7 +34,8 @@ std::vector<NextAction> HolyPriestStrategy::getDefaultActions()
+     return {
+         NextAction("smite", ACTION_DEFAULT + 0.2f),
+         NextAction("mana burn", ACTION_DEFAULT + 0.1f),
+-        NextAction("starshards", ACTION_DEFAULT)
++        NextAction("starshards", ACTION_DEFAULT),
++        NextAction("shoot", ACTION_DEFAULT - 0.1f)
+     };
+ }
+ 
+diff --git a/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp b/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp
+index 6e3c6cdc..2babef13 100644
+--- a/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp
++++ b/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp
+@@ -14,7 +14,8 @@ std::vector<NextAction> TankWarlockStrategy::getDefaultActions()
+ {
+     return {
+         NextAction("shadow ward", 27.5f),
+-        NextAction("searing pain", 27.0f)
++        NextAction("searing pain", 27.0f),
++        NextAction("shoot", 26.9f)
+     };
+ }
+ 
 diff --git a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
 index 4addfa05..503ec0f4 100644
 --- a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
