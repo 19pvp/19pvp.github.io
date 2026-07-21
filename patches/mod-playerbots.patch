@@ -651,8 +651,56 @@ index f414e752..b2b981e4 100644
      triggers.push_back(new TriggerNode("bg invite active", { NextAction("bg status check", relevance)}));
      triggers.push_back(new TriggerNode("timer", { NextAction("bg strategy check", relevance)}));
  }
+diff --git a/src/Ai/Base/Value/CcTargetValue.cpp b/src/Ai/Base/Value/CcTargetValue.cpp
+index 4903a59f..89ddb456 100644
+--- a/src/Ai/Base/Value/CcTargetValue.cpp
++++ b/src/Ai/Base/Value/CcTargetValue.cpp
+@@ -39,6 +39,13 @@ public:
+         if (health < sPlayerbotAIConfig.mediumHealth)
+             return;
+ 
++        bool const hasDot = creature->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE) ||
++                            creature->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT) ||
++                            creature->HasAuraType(SPELL_AURA_PERIODIC_LEECH);
++        if (spell == "polymorph" &&
++            (health < 80 || !creature->getAttackers().empty() || hasDot))
++            return;
++
+         float minDistance = botAI->GetRange("spell");
+         Group* group = bot->GetGroup();
+         if (!group)
+diff --git a/src/Ai/Base/Value/InvalidTargetValue.cpp b/src/Ai/Base/Value/InvalidTargetValue.cpp
+index 50f7a386..c3c938d3 100644
+--- a/src/Ai/Base/Value/InvalidTargetValue.cpp
++++ b/src/Ai/Base/Value/InvalidTargetValue.cpp
+@@ -6,6 +6,8 @@
+ #include "InvalidTargetValue.h"
+ 
+ #include "AttackersValue.h"
++#include "Item.h"
++#include "ItemTemplate.h"
+ #include "Playerbots.h"
+ #include "Unit.h"
+ 
+@@ -18,10 +20,15 @@ bool InvalidTargetValue::Calculate()
+ 
+     if (target && qualifier == "current target")
+     {
++        Item* ranged = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED);
++        bool const priestCanWandFearedTarget = bot->getClass() == CLASS_PRIEST && target->HasFearAura() && ranged &&
++                                                ranged->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_WAND;
++
+         return target->GetMapId() != bot->GetMapId() || target->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE) ||
+                target->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE) || target->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE_2) ||
+                !target->IsVisible() || !target->IsAlive() || target->IsPolymorphed() || target->IsCharmed() ||
+-               target->HasFearAura() || target->HasUnitState(UNIT_STATE_ISOLATED) || target->IsFriendlyTo(bot) ||
++               (target->HasFearAura() && !priestCanWandFearedTarget) ||
++               target->HasUnitState(UNIT_STATE_ISOLATED) || target->IsFriendlyTo(bot) ||
+                !AttackersValue::IsValidTarget(target, bot);
+     }
+ 
 diff --git a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp b/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
-index 9277cb65..a31498c3 100644
+index 9277cb65..b47c19aa 100644
 --- a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
 +++ b/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
 @@ -101,6 +101,7 @@ void GenericMageStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
@@ -663,8 +711,30 @@ index 9277cb65..a31498c3 100644
      triggers.push_back(new TriggerNode("enemy too close for spell and no firestarter strategy", { NextAction("blink back", 35.0f) }));
  
      // Mana Threshold Triggers
+@@ -166,7 +167,7 @@ void MageBoostStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ 
+ void MageCcStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ {
+-    triggers.push_back(new TriggerNode("polymorph", { NextAction("polymorph", 30.0f) }));
++    triggers.push_back(new TriggerNode("polymorph", { NextAction("polymorph", ACTION_INTERRUPT + 1) }));
+ 
+     Player* bot = botAI->GetBot();
+     int tab = AiFactory::GetPlayerSpecTab(bot);
+diff --git a/src/Ai/Class/Priest/PriestActions.h b/src/Ai/Class/Priest/PriestActions.h
+index fb57eaec..438339d8 100644
+--- a/src/Ai/Class/Priest/PriestActions.h
++++ b/src/Ai/Class/Priest/PriestActions.h
+@@ -95,7 +95,7 @@ public:
+ };
+ AOE_HEAL_ACTION(CastLightwellAction, "lightwell", 15.0f, HealingManaEfficiency::MEDIUM);
+ 
+-SPELL_ACTION(CastSmiteAction, "smite");
++SPELL_ACTION_U(CastSmiteAction, "smite", AI_VALUE2(uint8, "mana", "self target") > 70);
+ SPELL_ACTION(CastHolyNovaAction, "holy nova");
+ 
+ RESS_ACTION(CastResurrectionAction, "resurrection");
 diff --git a/src/Ai/Class/Priest/Strategy/GenericPriestStrategy.cpp b/src/Ai/Class/Priest/Strategy/GenericPriestStrategy.cpp
-index 60da1343..4a0cd6c4 100644
+index 60da1343..ba5c6844 100644
 --- a/src/Ai/Class/Priest/Strategy/GenericPriestStrategy.cpp
 +++ b/src/Ai/Class/Priest/Strategy/GenericPriestStrategy.cpp
 @@ -38,6 +38,8 @@ void GenericPriestStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
@@ -676,20 +746,31 @@ index 60da1343..4a0cd6c4 100644
      triggers.push_back(new TriggerNode("often", { NextAction("apply oil", 1.0f) }));
      triggers.push_back(new TriggerNode("being attacked",
          { NextAction("power word: shield", ACTION_HIGH + 1) }));
+@@ -81,9 +83,9 @@ void PriestHealerDpsStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+                         {
+                             NextAction("shadow word: pain", ACTION_DEFAULT + 0.5f),
+                             NextAction("holy fire", ACTION_DEFAULT + 0.4f),
+-                            NextAction("smite", ACTION_DEFAULT + 0.3f),
+-                            NextAction("mind blast", ACTION_DEFAULT + 0.2f),
+-                            NextAction("shoot", ACTION_DEFAULT) }));
++                            NextAction("shoot", ACTION_DEFAULT + 0.3f),
++                            NextAction("smite", ACTION_DEFAULT + 0.2f),
++                            NextAction("mind blast", ACTION_DEFAULT + 0.1f) }));
+ 
+     triggers.push_back(
+         new TriggerNode("medium aoe and healer should attack",
 diff --git a/src/Ai/Class/Priest/Strategy/HolyPriestStrategy.cpp b/src/Ai/Class/Priest/Strategy/HolyPriestStrategy.cpp
-index 399f21c6..45bf0185 100644
+index 399f21c6..8d84d153 100644
 --- a/src/Ai/Class/Priest/Strategy/HolyPriestStrategy.cpp
 +++ b/src/Ai/Class/Priest/Strategy/HolyPriestStrategy.cpp
-@@ -34,7 +34,8 @@ std::vector<NextAction> HolyPriestStrategy::getDefaultActions()
+@@ -32,6 +32,7 @@ HolyPriestStrategy::HolyPriestStrategy(PlayerbotAI* botAI) : HealPriestStrategy(
+ std::vector<NextAction> HolyPriestStrategy::getDefaultActions()
+ {
      return {
++        NextAction("shoot", ACTION_DEFAULT + 0.3f),
          NextAction("smite", ACTION_DEFAULT + 0.2f),
          NextAction("mana burn", ACTION_DEFAULT + 0.1f),
--        NextAction("starshards", ACTION_DEFAULT)
-+        NextAction("starshards", ACTION_DEFAULT),
-+        NextAction("shoot", ACTION_DEFAULT - 0.1f)
-     };
- }
- 
+         NextAction("starshards", ACTION_DEFAULT)
 diff --git a/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp b/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp
 index 6e3c6cdc..2babef13 100644
 --- a/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp
