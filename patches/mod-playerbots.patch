@@ -798,6 +798,19 @@ index 4addfa05..503ec0f4 100644
              }
          )
      );
+diff --git a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
+index 18781ef3..8a003515 100644
+--- a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
++++ b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
+@@ -36,6 +36,8 @@ void GenericWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+         "enemy out of melee", { NextAction("reach melee", ACTION_HIGH + 1) }));
+     triggers.push_back(new TriggerNode(
+         "fear sleep sap", { NextAction("berserker rage", ACTION_EMERGENCY + 1) }));
++    triggers.push_back(new TriggerNode(
++        "often", { NextAction("combat jump", ACTION_BG) }));
+ }
+ 
+ class WarrirorAoeStrategyActionNodeFactory : public NamedObjectFactory<ActionNode>
 diff --git a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
 index efd7eba2..2746616a 100644
 --- a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
@@ -1109,10 +1122,79 @@ index a1b2217b..430338f1 100644
      std::string GetPullActionName() const override;
  };
 diff --git a/src/Ai/Class/Warrior/WarriorActions.cpp b/src/Ai/Class/Warrior/WarriorActions.cpp
-index 4636f784..af88dbaa 100644
+index 4636f784..5919d3b4 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.cpp
 +++ b/src/Ai/Class/Warrior/WarriorActions.cpp
-@@ -46,6 +46,27 @@ bool CastBerserkerRageAction::isUseful()
+@@ -7,6 +7,8 @@
+ 
+ #include "AiFactory.h"
+ #include "Playerbots.h"
++#include "Random.h"
++#include "Timer.h"
+ 
+ namespace
+ {
+@@ -17,6 +19,59 @@ constexpr uint32 SPELL_BLESSING_OF_PROTECTION = 41450;
+ constexpr uint32 SPELL_SHATTERING_THROW = 64382;
+ }
+ 
++bool IsValidDisarmTarget(PlayerbotAI* botAI, Unit* target)
++{
++    Player* player = target ? target->ToPlayer() : nullptr;
++    if (!player)
++        return false;
++
++    switch (player->getClass())
++    {
++        case CLASS_ROGUE:
++            return !botAI->HasAura("evasion", player);
++        case CLASS_HUNTER:
++            return true;
++        case CLASS_WARRIOR:
++            return !botAI->HasAura("shield block", player);
++        case CLASS_PALADIN:
++            return true;
++        default:
++            return false;
++    }
++}
++
++bool CastDisarmAction::isUseful()
++{
++    return IsValidDisarmTarget(botAI, GetTarget()) && CastDebuffSpellAction::isUseful();
++}
++
++bool CastDisarmOnAttackerAction::isUseful()
++{
++    return IsValidDisarmTarget(botAI, GetTarget()) && CastDebuffSpellOnAttackerAction::isUseful();
++}
++
++CastCombatJumpAction::CastCombatJumpAction(PlayerbotAI* botAI)
++    : MovementAction(botAI, "combat jump"), nextJumpTime(getMSTime() + urand(10000, 15000))
++{
++}
++
++bool CastCombatJumpAction::isUseful()
++{
++    return bot->IsInCombat() && bot->IsAlive() && getMSTime() >= nextJumpTime && botAI->CanMove();
++}
++
++bool CastCombatJumpAction::Execute(Event /*event*/)
++{
++    if (!JumpTo(bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ() + 0.01f,
++                MovementPriority::MOVEMENT_COMBAT))
++    {
++        return false;
++    }
++
++    nextJumpTime = getMSTime() + urand(10000, 15000);
++    return true;
++}
++
+ bool CastBerserkerRageAction::isPossible()
+ {
+     if (botAI->IsInVehicle() && !botAI->IsInVehicle(false, false, true))
+@@ -46,6 +101,27 @@ bool CastBerserkerRageAction::isUseful()
  
  bool CastSunderArmorAction::isUseful()
  {
@@ -1140,7 +1222,7 @@ index 4636f784..af88dbaa 100644
      Group* group = bot->GetGroup();
      if (!group)
          return false;
-@@ -71,6 +92,14 @@ bool CastSunderArmorAction::isUseful()
+@@ -71,6 +147,14 @@ bool CastSunderArmorAction::isUseful()
      return !aura || aura->GetStackAmount() < 5 || aura->GetDuration() <= 6000;
  }
  
@@ -1156,10 +1238,18 @@ index 4636f784..af88dbaa 100644
  {
      Group* group = bot->GetGroup();
 diff --git a/src/Ai/Class/Warrior/WarriorActions.h b/src/Ai/Class/Warrior/WarriorActions.h
-index f1316c2c..65c43af5 100644
+index f1316c2c..444df609 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.h
 +++ b/src/Ai/Class/Warrior/WarriorActions.h
-@@ -56,7 +56,13 @@ public:
+@@ -8,6 +8,7 @@
+ 
+ #include "AiObject.h"
+ #include "GenericSpellActions.h"
++#include "MovementActions.h"
+ #include "Player.h"
+ #include "PlayerbotAI.h"
+ #include "ReachTargetActions.h"
+@@ -56,7 +57,13 @@ public:
  
  MELEE_ACTION(CastThunderClapAction, "thunder clap");
  SNARE_ACTION(CastThunderClapSnareAction, "thunder clap");
@@ -1174,8 +1264,53 @@ index f1316c2c..65c43af5 100644
  MELEE_ACTION(CastOverpowerAction, "overpower");
  MELEE_ACTION(CastMockingBlowAction, "mocking blow");
  // BUFF_ACTION(CastRetaliationAction, "retaliation");
+@@ -112,10 +119,23 @@ MELEE_ACTION(CastShieldBashAction, "shield bash");
+ ENEMY_HEALER_ACTION(CastShieldBashOnEnemyHealerAction, "shield bash");
+ MELEE_ACTION(CastRevengeAction, "revenge");
+ BUFF_ACTION(CastShieldBlockAction, "shield block");
+-DEBUFF_ACTION_U(CastDisarmAction, "disarm",
+-                GetTarget() && GetTarget()->IsPlayer() ? !botAI->IsRanged((Player*)GetTarget())
+-                                                       : CastDebuffSpellAction::isUseful());
+-DEBUFF_ENEMY_ACTION(CastDisarmOnAttackerAction, "disarm");
++bool IsValidDisarmTarget(PlayerbotAI* botAI, Unit* target);
++
++class CastDisarmAction : public CastDebuffSpellAction
++{
++public:
++    CastDisarmAction(PlayerbotAI* botAI) : CastDebuffSpellAction(botAI, "disarm") {}
++
++    bool isUseful() override;
++};
++
++class CastDisarmOnAttackerAction : public CastDebuffSpellOnAttackerAction
++{
++public:
++    CastDisarmOnAttackerAction(PlayerbotAI* botAI) : CastDebuffSpellOnAttackerAction(botAI, "disarm") {}
++
++    bool isUseful() override;
++};
+ BUFF_ACTION(CastShieldWallAction, "shield wall");
+ // protection 2.4.3
+ PROTECT_ACTION(CastInterveneAction, "intervene");
+@@ -170,4 +190,16 @@ public:
+     Unit* GetTarget() override;
+ };
+ 
++class CastCombatJumpAction : public MovementAction
++{
++public:
++    CastCombatJumpAction(PlayerbotAI* botAI);
++
++    bool isUseful() override;
++    bool Execute(Event event) override;
++
++private:
++    uint32 nextJumpTime;
++};
++
+ #endif
 diff --git a/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp b/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
-index 78130772..7fb4037e 100644
+index 78130772..c0e49e6c 100644
 --- a/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
 +++ b/src/Ai/Class/Warrior/WarriorAiObjectContext.cpp
 @@ -109,7 +109,7 @@ private:
@@ -1187,6 +1322,22 @@ index 78130772..7fb4037e 100644
      static Trigger* victory_rush(PlayerbotAI* botAI) { return new VictoryRushTrigger(botAI); }
      static Trigger* death_wish(PlayerbotAI* botAI) { return new DeathWishTrigger(botAI); }
      static Trigger* recklessness(PlayerbotAI* botAI) { return new RecklessnessTrigger(botAI); }
+@@ -214,6 +214,7 @@ public:
+         creators["slam"] = &WarriorAiObjectContextInternal::slam;
+         creators["shield slam"] = &WarriorAiObjectContextInternal::shield_slam;
+         creators["disarm"] = &WarriorAiObjectContextInternal::disarm;
++        creators["combat jump"] = &WarriorAiObjectContextInternal::combat_jump;
+         creators["sunder armor"] = &WarriorAiObjectContextInternal::sunder_armor;
+         creators["last stand"] = &WarriorAiObjectContextInternal::last_stand;
+         creators["shockwave on snare target"] = &WarriorAiObjectContextInternal::shockwave_on_snare_target;
+@@ -259,6 +260,7 @@ private:
+     static Action* slam(PlayerbotAI* botAI) { return new CastSlamAction(botAI); }
+     static Action* shield_slam(PlayerbotAI* botAI) { return new CastShieldSlamAction(botAI); }
+     static Action* disarm(PlayerbotAI* botAI) { return new CastDisarmAction(botAI); }
++    static Action* combat_jump(PlayerbotAI* botAI) { return new CastCombatJumpAction(botAI); }
+     static Action* sunder_armor(PlayerbotAI* botAI) { return new CastSunderArmorAction(botAI); }
+     static Action* overpower(PlayerbotAI* botAI) { return new CastOverpowerAction(botAI); }
+     static Action* charge(PlayerbotAI* botAI) { return new CastChargeAction(botAI); }
 diff --git a/src/Ai/Class/Warrior/WarriorTriggers.h b/src/Ai/Class/Warrior/WarriorTriggers.h
 index 15865744..99b4c15b 100644
 --- a/src/Ai/Class/Warrior/WarriorTriggers.h

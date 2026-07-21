@@ -313,7 +313,7 @@ public:
         if (!IsFixedBot(playerGuid))
             return;
 
-        Guild* guild = sGuildMgr->GetGuildByName("WIP");
+        Guild* guild = sGuildMgr->GetGuildByName("BOOMERS");
 
         // If the player is already in another guild, remove them first to prevent errors
         if (player->GetGuildId() && (!guild || player->GetGuildId() != guild->GetId()))
@@ -328,16 +328,16 @@ public:
         if (!guild)
         {
             guild = new Guild();
-            if (guild->Create(player, "WIP"))
+            if (guild->Create(player, "BOOMERS"))
             {
                 sGuildMgr->AddGuild(guild);
-                LOG_INFO("playerbots", "[WsgFixedBots] Created new guild 'WIP' with leader {}.", player->GetName());
+                LOG_INFO("playerbots", "[WsgFixedBots] Created new guild 'BOOMERS' with leader {}.", player->GetName());
             }
             else
             {
                 delete guild;
                 guild = nullptr;
-                LOG_ERROR("playerbots", "[WsgFixedBots] Failed to create guild 'WIP' programmatically.");
+                LOG_ERROR("playerbots", "[WsgFixedBots] Failed to create guild 'BOOMERS' programmatically.");
             }
         }
         else
@@ -345,7 +345,7 @@ public:
             if (player->GetGuildId() != guild->GetId())
             {
                 guild->AddMember(player->GetGUID());
-                LOG_INFO("playerbots", "[WsgFixedBots] Added bot {} to guild 'WIP'.", player->GetName());
+                LOG_INFO("playerbots", "[WsgFixedBots] Added bot {} to guild 'BOOMERS'.", player->GetName());
             }
         }
     }
