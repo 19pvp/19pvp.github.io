@@ -40,21 +40,22 @@ local suffix_options = {
   [47] = { id = 47, name = "Blocking (Block / Strength)" },
   [29] = { id = 29, name = "Eluding (Dodge / Agility)" },
   -- Tripple stats
-  [54] = { id = 54, name = "Ancestor (Strength / Crit / Stamina)" },
-  [71] = { id = 71, name = "Bandit (Agility / Stamina / Attack Power)" },
-  [56] = { id = 56, name = "Battle (Strength / Stamina / Crit)" },
-  [74] = { id = 74, name = "Beast (Strength / Agility / Stamina)" },
-  [75] = { id = 75, name = "Champion (Strength / Stamina / Defense)" },
-  [73] = { id = 73, name = "Elder (Stamina / Intellect / Mana Per 5 sec.)" },
-  [88] = { id = 88, name = "Foreseer (Intellect / Haste / Spell Power)" },
+  [71] = { id = 71, name = "Bandit (Agility / Attack Power / Stamina)" },
+  [73] = { id = 73, name = "Elder (Intellect / Mana Per 5 sec. / Stamina)" },
   [50] = { id = 50, name = "Hunt (Attack Power / Agility / Intellect)" },
-  [39] = { id = 39, name = "Invoker (Intellect / Spell Power / Crit)" },
-  [77] = { id = 77, name = "Knight (Stamina / Defense / Spell Power)" },
-  [59] = { id = 59, name = "Moon (Intellect / Stamina / Spirit)" },
-  [38] = { id = 38, name = "Prophet (Intellect / Spirit / Spell Power)" },
+  [59] = { id = 59, name = "Moon (Intellect / Spirit / Stamina)" },
+  -- Strenght
+  [86] = { id = 86, name = "Soldier (Strength / Crit / Stamina)" },
+  [74] = { id = 74, name = "Beast (Strength / Agility / Stamina)" },
+  [75] = { id = 75, name = "Champion (Strength / Defense / Stamina)" },
+
+  -- Caster
+  [88] = { id = 88, name = "Foreseer (Spell Power / Intellect / Haste)" },
+  [39] = { id = 39, name = "Invoker (Spell Power / Intellect / Crit)" },
+  [77] = { id = 77, name = "Knight (Spell Power / Defense / Stamina)" },
+  [38] = { id = 38, name = "Prophet (Spell Power /Intellect / Spirit)" },
   [57] = { id = 57, name = "Shadow (Attack Power, Agility / Stamina)" },
-  [86] = { id = 86, name = "Soldier (Strength / Stamina / Crit)" },
-  [58] = { id = 58, name = "Sun (Spell Power / Stamina / Intellect)" },
+  [58] = { id = 58, name = "Sun (Spell Power / Intellect / Stamina)" },
 }
 
 local ITEM_ICON_SIZE = 32
@@ -146,12 +147,41 @@ local function showItems(player, creature)
   player:GossipSendMenu(GOSSIP_TEXT, creature)
 end
 
-local function enchantMenu(info)
+local CLASS_WARRIOR = 1
+local CLASS_PALADIN = 2
+local CLASS_HUNTER  = 3
+local CLASS_ROGUE   = 4
+local CLASS_PRIEST  = 5
+local CLASS_SHAMAN  = 7
+local CLASS_MAGE    = 8
+local CLASS_WARLOCK = 9
+local CLASS_DRUID   = 11
+
+local CLASS_FILTER_KEYWORDS = {
+  ["Agility"]      = { [CLASS_MAGE]=true, [CLASS_PRIEST]=true, [CLASS_WARLOCK]=true, [CLASS_PALADIN]=true },
+  ["Attack Power"] = { [CLASS_WARRIOR]=true, [CLASS_PALADIN]=true, [CLASS_MAGE]=true, [CLASS_PRIEST]=true, [CLASS_WARLOCK]=true },
+  ["Defense"]      = { [CLASS_HUNTER]=true, [CLASS_ROGUE]=true, [CLASS_PRIEST]=true, [CLASS_SHAMAN]=true, [CLASS_MAGE]=true, [CLASS_WARLOCK]=true, },
+  ["Strength"]     = { [CLASS_SHAMAN]=true, [CLASS_MAGE]=true, [CLASS_PRIEST]=true, [CLASS_WARLOCK]=true, [CLASS_ROGUE]=true, [CLASS_HUNTER]=true },
+  ["Block"]        = { [CLASS_DRUID]=true, [CLASS_MAGE]=true, [CLASS_PRIEST]=true, [CLASS_WARLOCK]=true, [CLASS_ROGUE]=true, [CLASS_HUNTER]=true },
+  ["Intellect"]    = { [CLASS_ROGUE]=true, [CLASS_WARRIOR]=true },
+  ["Spell Power"]  = { [CLASS_ROGUE]=true, [CLASS_WARRIOR]=true, [CLASS_HUNTER]=true },
+}
+
+local function isOptionAllowedForClass(optionName, playerClass)
+  for keyword, restrictedClasses in pairs(CLASS_FILTER_KEYWORDS) do
+    if string.find(optionName, keyword, 1, true) and restrictedClasses[playerClass] then
+      return false
+    end
+  end
+  return true
+end
+
+local function enchantMenu(info, playerClass)
   local menu = {}
   if info and info.properties then
     for _, propertyId in ipairs(info.properties) do
       local option = random_enchant_db.property_options[propertyId]
-      if option then
+      if option and (not playerClass or isOptionAllowedForClass(option.name, playerClass)) then
         table.insert(menu, { type = "property", id = propertyId, option = option })
       end
     end
@@ -163,7 +193,7 @@ local function enchantMenu(info)
     table.sort(keys)
     for _, id in ipairs(keys) do
       local option = suffix_options[id]
-      if option then
+      if option and (not playerClass or isOptionAllowedForClass(option.name, playerClass)) then
         table.insert(menu, { type = "suffix", id = id, option = option })
       end
     end
@@ -187,7 +217,7 @@ local function showSuffixes(player, creature, slot, page)
     return
   end
 
-  local menu = enchantMenu(info)
+  local menu = enchantMenu(info, player:GetClass())
   local total = #menu
   if total == 0 then
     player:SendBroadcastMessage("No options available for this item.")
@@ -220,11 +250,10 @@ local function showSuffixes(player, creature, slot, page)
     end
   end
 
-  if page < maxPage then
-    player:GossipMenuAddItem(ICON_GOSSIP, "Next Page >>", PAGE_MENU_SENDER, slot * 1000 + (page + 1))
-  end
-  if page > 1 then
-    player:GossipMenuAddItem(ICON_GOSSIP, "<< Previous Page", PAGE_MENU_SENDER, slot * 1000 + (page - 1))
+  if maxPage > 1 then
+    local nextPage = (page >= maxPage) and 1 or (page + 1)
+    local buttonText = (page >= maxPage) and "<< Previous Page" or "Next Page >>"
+    player:GossipMenuAddItem(ICON_GOSSIP, buttonText, PAGE_MENU_SENDER, slot * 1000 + nextPage)
   end
   player:GossipMenuAddItem(ICON_GOSSIP, "Back", BACK_MENU_SENDER, 0)
   player:GossipSendMenu(GOSSIP_TEXT, creature)
@@ -264,10 +293,10 @@ local function applyOption(player, creature, slot, entry, page)
 
   local allowed = false
   if entry.type == "suffix" then
-    allowed = (suffix_options[entry.id] ~= nil)
+    allowed = (suffix_options[entry.id] ~= nil and isOptionAllowedForClass(entry.option.name, player:GetClass()))
   elseif info.properties then
     for _, allowedId in ipairs(info.properties) do
-      if allowedId == entry.id then
+      if allowedId == entry.id and isOptionAllowedForClass(entry.option.name, player:GetClass()) then
         allowed = true
         break
       end
@@ -334,7 +363,7 @@ RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_SELECT, function(event, pla
     end
 
     local info = random_enchant_db.items[item:GetEntry()]
-    local menu = info and enchantMenu(info) or {}
+    local menu = info and enchantMenu(info, player:GetClass()) or {}
     local enchantIndex = selectedEnchant(slot, intid)
     local page = math.ceil(enchantIndex / ITEMS_PER_PAGE)
     applyOption(player, creature, slot, menu[enchantIndex], page)
