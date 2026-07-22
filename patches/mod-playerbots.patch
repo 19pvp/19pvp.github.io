@@ -519,67 +519,6 @@ index 59696ece..2acfd44a 100644
      return false;
  }
  
-diff --git a/src/Ai/Base/Actions/MovementActions.cpp b/src/Ai/Base/Actions/MovementActions.cpp
-index 77190dfe..4d2fabca 100644
---- a/src/Ai/Base/Actions/MovementActions.cpp
-+++ b/src/Ai/Base/Actions/MovementActions.cpp
-@@ -80,6 +80,34 @@ bool MovementAction::JumpTo(uint32 mapId, float x, float y, float z, MovementPri
-     return true;
- }
- 
-+bool MovementAction::MaybeCombatJump(MovementPriority priority)
-+{
-+    if (bot->getClass() != CLASS_WARRIOR || !bot->IsAlive())
-+        return false;
-+
-+    uint32 now = getMSTime();
-+    if (!bot->IsInCombat())
-+    {
-+        botAI->SetNextCombatJumpTime(0);
-+        return false;
-+    }
-+
-+    if (!botAI->GetNextCombatJumpTime())
-+    {
-+        botAI->SetNextCombatJumpTime(now + urand(10000, 15000));
-+        return false;
-+    }
-+
-+    if (now < botAI->GetNextCombatJumpTime())
-+        return false;
-+
-+    if (!JumpTo(bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ() + 0.02f, priority))
-+        return false;
-+
-+    botAI->SetNextCombatJumpTime(now + urand(10000, 15000));
-+    return true;
-+}
-+
- bool MovementAction::MoveNear(uint32 mapId, float x, float y, float z, float distance, MovementPriority priority)
- {
-     float angle = GetFollowAngle();
-@@ -184,6 +212,9 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
-         return false;
-     }
- 
-+    if (MaybeCombatJump(priority))
-+        return true;
-+
-     bool generatePath = !bot->IsFlying() && !bot->isSwimming();
-     bool disableMoveSplinePath =
-         sPlayerbotAIConfig.disableMoveSplinePath >= 2 ||
-diff --git a/src/Ai/Base/Actions/MovementActions.h b/src/Ai/Base/Actions/MovementActions.h
-index 8c70d6c1..7991f7fb 100644
---- a/src/Ai/Base/Actions/MovementActions.h
-+++ b/src/Ai/Base/Actions/MovementActions.h
-@@ -29,6 +29,7 @@ public:
- 
- protected:
-     bool JumpTo(uint32 mapId, float x, float y, float z, MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
-+    bool MaybeCombatJump(MovementPriority priority);
-     bool MoveNear(uint32 mapId, float x, float y, float z, float distance = sPlayerbotAIConfig.contactDistance,
-                   MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
-     bool MoveToLOS(WorldObject* target, bool ranged = false);
 diff --git a/src/Ai/Base/Actions/QuestAction.cpp b/src/Ai/Base/Actions/QuestAction.cpp
 index 769cd133..d548a56e 100644
 --- a/src/Ai/Base/Actions/QuestAction.cpp
@@ -909,10 +848,16 @@ index 399f21c6..8d84d153 100644
          NextAction("mana burn", ACTION_DEFAULT + 0.1f),
          NextAction("starshards", ACTION_DEFAULT)
 diff --git a/src/Ai/Class/Rogue/Action/RogueActions.cpp b/src/Ai/Class/Rogue/Action/RogueActions.cpp
-index 653d39a3..54c72015 100644
+index 653d39a3..0568d6da 100644
 --- a/src/Ai/Class/Rogue/Action/RogueActions.cpp
 +++ b/src/Ai/Class/Rogue/Action/RogueActions.cpp
-@@ -10,6 +10,8 @@
+@@ -6,10 +6,14 @@
+ #include "RogueActions.h"
+ 
+ #include "Event.h"
++#include "MotionMaster.h"
++#include "MoveSplineInit.h"
+ #include "ObjectGuid.h"
  #include "Player.h"
  #include "PlayerbotAIConfig.h"
  #include "Playerbots.h"
@@ -921,12 +866,12 @@ index 653d39a3..54c72015 100644
  
  namespace
  {
-@@ -56,6 +58,43 @@ bool CheckStealthAction::Execute(Event /*event*/)
+@@ -56,6 +60,57 @@ bool CheckStealthAction::Execute(Event /*event*/)
      return true;
  }
  
 +CastCombatStrafeAction::CastCombatStrafeAction(PlayerbotAI* botAI)
-+    : MovementAction(botAI, "combat strafe"), nextStrafeTime(getMSTime() + urand(1000, 2000)), strafesRemaining(0),
++    : MovementAction(botAI, "combat strafe"), nextStrafeTime(getMSTime() + urand(1000, 2000)),
 +      strafeLeft(urand(0, 1) == 0)
 +{
 +}
@@ -943,22 +888,36 @@ index 653d39a3..54c72015 100644
 +    if (!target || !target->IsAlive() || !bot->IsInCombat())
 +        return false;
 +
-+    if (!strafesRemaining)
-+        strafesRemaining = 6;
-+
 +    float angle = bot->GetAngle(target) + (strafeLeft ? M_PI_2 : -M_PI_2);
-+    float distance = bot->GetSpeed(MOVE_RUN) * 0.09f;
-+    float x = bot->GetPositionX() + cos(angle) * distance;
-+    float y = bot->GetPositionY() + sin(angle) * distance;
++    float const distance = bot->GetSpeed(MOVE_RUN) * 0.045f;
++    float x = bot->GetPositionX();
++    float y = bot->GetPositionY();
 +    float z = bot->GetPositionZ();
-+    bot->UpdateAllowedPositionZ(x, y, z);
++    Movement::PointsArray path;
++    path.emplace_back(x, y, z);
 +
-+    if (!MoveTo(bot->GetMapId(), x, y, z, false, false, false, false, MovementPriority::MOVEMENT_COMBAT, true))
++    for (uint8 step = 0; step < 6; ++step)
++    {
++        float const stepAngle = angle + ((step % 2) ? -M_PI_2 : M_PI_2);
++        x += cos(stepAngle) * distance;
++        y += sin(stepAngle) * distance;
++        z = bot->GetPositionZ();
++        bot->UpdateAllowedPositionZ(x, y, z);
++        path.emplace_back(x, y, z);
++    }
++
++    bot->GetMotionMaster()->Clear();
++    Movement::MoveSplineInit init(bot);
++    init.MovebyPath(path);
++    init.SetVelocity(bot->GetSpeed(MOVE_RUN));
++    int32 const travelTime = init.Launch();
++    if (travelTime <= 0)
 +        return false;
 +
++    AI_VALUE(LastMovement&, "last movement")
++        .Set(bot->GetMapId(), x, y, z, bot->GetOrientation(), travelTime, MovementPriority::MOVEMENT_COMBAT);
 +    strafeLeft = !strafeLeft;
-+    --strafesRemaining;
-+    nextStrafeTime = strafesRemaining ? getMSTime() : getMSTime() + urand(1000, 2000);
++    nextStrafeTime = getMSTime() + urand(1000, 2000);
 +    return true;
 +}
 +
@@ -966,7 +925,7 @@ index 653d39a3..54c72015 100644
  {
      // do not use with WSG flag or EYE flag
 diff --git a/src/Ai/Class/Rogue/Action/RogueActions.h b/src/Ai/Class/Rogue/Action/RogueActions.h
-index d234a53a..32f02556 100644
+index d234a53a..0b22a2b2 100644
 --- a/src/Ai/Class/Rogue/Action/RogueActions.h
 +++ b/src/Ai/Class/Rogue/Action/RogueActions.h
 @@ -7,6 +7,7 @@
@@ -977,7 +936,7 @@ index d234a53a..32f02556 100644
  #include "UseItemAction.h"
  
  class PlayerbotAI;
-@@ -66,6 +67,20 @@ public:
+@@ -66,6 +67,19 @@ public:
      bool isPossible() override { return true; }
  };
  
@@ -991,7 +950,6 @@ index d234a53a..32f02556 100644
 +
 +private:
 +    uint32 nextStrafeTime;
-+    uint8 strafesRemaining;
 +    bool strafeLeft;
 +};
 +
@@ -1782,10 +1740,18 @@ index 2ef0f539..32f58752 100644
  
  void PlayerbotFactory::InitTalents(uint32 specNo)
 diff --git a/src/Bot/PlayerbotAI.cpp b/src/Bot/PlayerbotAI.cpp
-index cd7a0993..4ad2d1ce 100644
+index cd7a0993..5f191ab6 100644
 --- a/src/Bot/PlayerbotAI.cpp
 +++ b/src/Bot/PlayerbotAI.cpp
-@@ -60,6 +60,14 @@
+@@ -44,6 +44,7 @@
+ #include "PlayerbotGuildMgr.h"
+ #include "Playerbots.h"
+ #include "PositionValue.h"
++#include "Random.h"
+ #include "RBAC.h"
+ #include "RandomPlayerbotMgr.h"
+ #include "SayAction.h"
+@@ -60,6 +61,14 @@
  
  constexpr uint32 SPELL_TITAN_GRIP = 49152;
  constexpr uint32 SPELL_DK_FROST_PRESENCE = 48263;
@@ -1800,7 +1766,44 @@ index cd7a0993..4ad2d1ce 100644
  
  std::vector<std::string> PlayerbotAI::dispel_whitelist = {
      "mutating injection",
-@@ -2944,6 +2952,9 @@ bool PlayerbotAI::Say(const std::string& msg)
+@@ -550,10 +559,36 @@ void PlayerbotAI::UpdateAIInternal([[maybe_unused]] uint32 elapsed, bool minimal
+ 
+     DoNextAction(minimal);
+ 
++    MaybeRandomJump();
++
+     if (pmo)
+         pmo->finish();
+ }
+ 
++void PlayerbotAI::MaybeRandomJump()
++{
++    if (bot->getClass() != CLASS_WARRIOR || !bot->IsAlive() || bot->GetVehicle())
++    {
++        nextRandomJumpTime = 0;
++        return;
++    }
++
++    uint32 const now = getMSTime();
++    if (!nextRandomJumpTime)
++    {
++        nextRandomJumpTime = now + urand(10000, 15000);
++        return;
++    }
++
++    if (now < nextRandomJumpTime || !CanMove())
++        return;
++
++    float const speed = bot->GetSpeed(MOVE_RUN);
++    bot->GetMotionMaster()->MoveJump(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ() + 0.02f,
++                                     speed, speed, 1);
++    nextRandomJumpTime = now + urand(10000, 15000);
++}
++
+ void PlayerbotAI::HandleCommands()
+ {
+     ExternalEventHelper helper(aiObjectContext);
+@@ -2944,6 +2979,9 @@ bool PlayerbotAI::Say(const std::string& msg)
  
  bool PlayerbotAI::Whisper(const std::string& msg, const std::string& receiverName)
  {
@@ -1810,7 +1813,7 @@ index cd7a0993..4ad2d1ce 100644
      const auto receiver = ObjectAccessor::FindPlayerByName(receiverName);
      if (!receiver)
      {
-@@ -2969,6 +2980,9 @@ bool PlayerbotAI::TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecuri
+@@ -2969,6 +3007,9 @@ bool PlayerbotAI::TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecuri
  
  bool PlayerbotAI::TellMasterNoFacing(std::string const text, PlayerbotSecurityLevel securityLevel)
  {
@@ -1820,7 +1823,7 @@ index cd7a0993..4ad2d1ce 100644
      Player* master = GetMaster();
      PlayerbotAI* masterBotAI = nullptr;
      if (master)
-@@ -3255,6 +3269,9 @@ bool PlayerbotAI::CanCastSpell(std::string const name, Unit* target, Item* itemT
+@@ -3255,6 +3296,9 @@ bool PlayerbotAI::CanCastSpell(std::string const name, Unit* target, Item* itemT
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell, Item* itemTarget, Item* castItem)
  {
@@ -1830,7 +1833,7 @@ index cd7a0993..4ad2d1ce 100644
      if (!spellid)
      {
          if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasRealPlayerMaster()))
-@@ -3435,6 +3452,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
+@@ -3435,6 +3479,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkHasSpell)
  {
@@ -1840,7 +1843,7 @@ index cd7a0993..4ad2d1ce 100644
      if (!spellid)
          return false;
  
-@@ -3493,6 +3513,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
+@@ -3493,6 +3540,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, float x, float y, float z, bool checkHasSpell, Item* itemTarget)
  {
@@ -1850,7 +1853,7 @@ index cd7a0993..4ad2d1ce 100644
      if (!spellid)
          return false;
  
-@@ -3556,6 +3579,9 @@ bool PlayerbotAI::CastSpell(std::string const name, Unit* target, Item* itemTarg
+@@ -3556,6 +3606,9 @@ bool PlayerbotAI::CastSpell(std::string const name, Unit* target, Item* itemTarg
  
  bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
  {
@@ -1860,7 +1863,7 @@ index cd7a0993..4ad2d1ce 100644
      if (!spellId)
          return false;
  
-@@ -3569,7 +3595,15 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+@@ -3569,7 +3622,15 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
      if (!spellInfo)
          return false;
  
@@ -1876,7 +1879,7 @@ index cd7a0993..4ad2d1ce 100644
      if (pet && pet->HasSpell(spellId))
      {
          // List of spell IDs for which we do NOT want to toggle auto-cast or send message
-@@ -3835,16 +3869,25 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+@@ -3835,16 +3896,25 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
          TellMasterNoFacing(out);
      }
  
@@ -1903,23 +1906,30 @@ index cd7a0993..4ad2d1ce 100644
      {
          bool autocast = false;
 diff --git a/src/Bot/PlayerbotAI.h b/src/Bot/PlayerbotAI.h
-index 7940ee31..b2add3c4 100644
+index 7940ee31..297a955c 100644
 --- a/src/Bot/PlayerbotAI.h
 +++ b/src/Bot/PlayerbotAI.h
-@@ -591,6 +591,8 @@ public:
+@@ -591,7 +591,6 @@ public:
      bool HasItemInInventory(uint32 itemId);
      std::vector<std::pair<const Quest*, uint32>> GetCurrentQuestsRequiringItemId(uint32 itemId);
      uint32 GetReactDelay();
-+    uint32 GetNextCombatJumpTime() const { return nextCombatJumpTime; }
-+    void SetNextCombatJumpTime(uint32 time) { nextCombatJumpTime = time; }
- 
+-
      std::vector<const Quest*> GetAllCurrentQuests();
      std::vector<const Quest*> GetCurrentIncompleteQuests();
-@@ -650,6 +652,8 @@ protected:
+     std::set<uint32> GetAllCurrentQuestIds();
+@@ -616,6 +615,7 @@ private:
+     Item* FindItemInInventory(std::function<bool(ItemTemplate const*)> checkItem) const;
+     void HandleCommands();
+     void HandleCommand(uint32 type, const std::string& text, Player& fromPlayer, const uint32 lang = LANG_UNIVERSAL);
++    void MaybeRandomJump();
+     inline bool IsValidUnit(const Unit* unit) const
+     {
+         return unit && unit->IsInWorld() && !unit->IsDuringRemoveFromWorld();
+@@ -650,6 +650,8 @@ protected:
      BotCheatMask cheatMask = BotCheatMask::none;
      Position jumpDestination = Position();
      uint32 nextTransportCheck = 0;
-+    uint32 nextCombatJumpTime = 0;
++    uint32 nextRandomJumpTime = 0;
 +    uint32 lastDispelCast = 0;
      bool spellInterruptRequested = false;
  };
