@@ -15,6 +15,48 @@ local PAGE_MENU_SENDER = 103
 local ENCHANT_MENU_OFFSET = 10000
 local ITEMS_PER_PAGE = 20
 
+local suffix_options = {
+  -- Single stats
+  [18] = { id = 18, name = "Agility" },
+  [19] = { id = 19, name = "Intellect" },
+  [15] = { id = 15, name = "Spirit" },
+  [84] = { id = 84, name = "Stamina" },
+  [17] = { id = 17, name = "Strength" },
+  [27] = { id = 27, name = "Defense" },
+  [26] = { id = 26, name = "Spell Power" },
+  [20] = { id = 20, name = "Power (Attack Power)" },
+  [99] = { id = 99, name = "Speed (Haste)" },
+  -- Double stats
+  [68] = { id = 68, name = "Bear (Strength / Stamina)" },
+  [12] = { id = 12, name = "Boar (Spirit / Strength)" },
+  [69] = { id = 69, name = "Eagle (Stamina / Intellect)" },
+  [11] = { id = 11, name = "Falcon (Agility / Intellect)" },
+  [10] = { id = 10, name = "Gorilla (Intellect / Strength)" },
+  [78] = { id = 78, name = "Monkey (Agility / Stamina)" },
+  [9]  = { id = 9,  name = "Owl (Intellect / Spirit)" },
+  [14] = { id = 14, name = "Tiger (Agility / Strength)" },
+  [81] = { id = 81, name = "Whale (Stamina / Spirit)" },
+  [13] = { id = 13, name = "Wolf (Agility / Spirit)" },
+  [47] = { id = 47, name = "Blocking (Block / Strength)" },
+  [29] = { id = 29, name = "Eluding (Dodge / Agility)" },
+  -- Tripple stats
+  [54] = { id = 54, name = "Ancestor (Strength / Crit / Stamina)" },
+  [71] = { id = 71, name = "Bandit (Agility / Stamina / Attack Power)" },
+  [56] = { id = 56, name = "Battle (Strength / Stamina / Crit)" },
+  [74] = { id = 74, name = "Beast (Strength / Agility / Stamina)" },
+  [75] = { id = 75, name = "Champion (Strength / Stamina / Defense)" },
+  [73] = { id = 73, name = "Elder (Stamina / Intellect / Mana Per 5 sec.)" },
+  [88] = { id = 88, name = "Foreseer (Intellect / Haste / Spell Power)" },
+  [50] = { id = 50, name = "Hunt (Attack Power / Agility / Intellect)" },
+  [39] = { id = 39, name = "Invoker (Intellect / Spell Power / Crit)" },
+  [77] = { id = 77, name = "Knight (Stamina / Defense / Spell Power)" },
+  [59] = { id = 59, name = "Moon (Intellect / Stamina / Spirit)" },
+  [38] = { id = 38, name = "Prophet (Intellect / Spirit / Spell Power)" },
+  [57] = { id = 57, name = "Shadow (Attack Power, Agility / Stamina)" },
+  [86] = { id = 86, name = "Soldier (Strength / Stamina / Crit)" },
+  [58] = { id = 58, name = "Sun (Spell Power / Stamina / Intellect)" },
+}
+
 local ITEM_ICON_SIZE = 32
 local QUALITY_COST_MULTIPLIER = {
   [0] = 1,
@@ -75,8 +117,7 @@ local function equippedRandomItems(player)
     if item then
       local itemId = item:GetEntry()
       local info = random_enchant_db.items[itemId]
-      local properties = info and (info.properties or {})
-      if info and (#info.suffixes > 0 or #properties > 0) then
+      if info then
         table.insert(items, {
           slot = slot,
           item = item,
@@ -107,12 +148,25 @@ end
 
 local function enchantMenu(info)
   local menu = {}
-  local properties = info.properties or {}
-  for _, suffixId in ipairs(info.suffixes) do
-    table.insert(menu, { type = "suffix", id = suffixId, option = random_enchant_db.suffix_options[suffixId] })
-  end
-  for _, propertyId in ipairs(properties) do
-    table.insert(menu, { type = "property", id = propertyId, option = random_enchant_db.property_options[propertyId] })
+  if info and info.properties then
+    for _, propertyId in ipairs(info.properties) do
+      local option = random_enchant_db.property_options[propertyId]
+      if option then
+        table.insert(menu, { type = "property", id = propertyId, option = option })
+      end
+    end
+  else
+    local keys = {}
+    for id in pairs(suffix_options) do
+      table.insert(keys, id)
+    end
+    table.sort(keys)
+    for _, id in ipairs(keys) do
+      local option = suffix_options[id]
+      if option then
+        table.insert(menu, { type = "suffix", id = id, option = option })
+      end
+    end
   end
   return menu
 end
@@ -127,15 +181,20 @@ local function showSuffixes(player, creature, slot, page)
   end
 
   local info = random_enchant_db.items[item:GetEntry()]
-  local properties = info and (info.properties or {})
-  if not info or (#info.suffixes == 0 and #properties == 0) then
-    player:SendBroadcastMessage("That item has no generated suffix options.")
+  if not info then
+    player:SendBroadcastMessage("That item has no generated random options.")
     showItems(player, creature)
     return
   end
 
   local menu = enchantMenu(info)
   local total = #menu
+  if total == 0 then
+    player:SendBroadcastMessage("No options available for this item.")
+    showItems(player, creature)
+    return
+  end
+
   local maxPage = math.ceil(total / ITEMS_PER_PAGE)
   if maxPage < 1 then maxPage = 1 end
   page = math.max(1, math.min(page, maxPage))
@@ -192,7 +251,7 @@ local function applyOption(player, creature, slot, entry, page)
 
   local info = random_enchant_db.items[item:GetEntry()]
   if not info then
-    player:SendBroadcastMessage("That item has no generated suffix options.")
+    player:SendBroadcastMessage("That item has no generated random options.")
     showItems(player, creature)
     return
   end
@@ -204,13 +263,17 @@ local function applyOption(player, creature, slot, entry, page)
   end
 
   local allowed = false
-  local ids = entry.type == "suffix" and info.suffixes or info.properties
-  for _, allowedId in ipairs(ids) do
-    if allowedId == entry.id then
-      allowed = true
-      break
+  if entry.type == "suffix" then
+    allowed = (suffix_options[entry.id] ~= nil)
+  elseif info.properties then
+    for _, allowedId in ipairs(info.properties) do
+      if allowedId == entry.id then
+        allowed = true
+        break
+      end
     end
   end
+
   if not allowed then
     player:SendBroadcastMessage("That random enchant is not available for this item.")
     showSuffixes(player, creature, slot, page)
