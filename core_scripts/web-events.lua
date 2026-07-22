@@ -153,6 +153,7 @@ end)
 
 local BLACKLISTED_FIRST_WORDS = {
   "info",
+  "talent",
   "reload",
   "lookup",
   "list",

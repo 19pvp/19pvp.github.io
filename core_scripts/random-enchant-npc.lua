@@ -327,6 +327,32 @@ local function applyOption(player, creature, slot, entry, page)
   player:GossipComplete()
 end
 
+local function rerollItemForPlayerClass(player, item)
+  if not item or not player then return end
+  local info = random_enchant_db.items[item:GetEntry()]
+  if not info then return end
+
+  local menu = enchantMenu(info, player:GetClass())
+  if #menu == 0 then return end
+
+  local choice = menu[math.random(#menu)]
+  if not choice then return end
+
+  if choice.type == "suffix" then
+    item:SetRandomSuffix(choice.id)
+  else
+    item:SetRandomProperty(choice.id)
+  end
+end
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_STORE_NEW_ITEM, function(event, player, item, count)
+  rerollItemForPlayerClass(player, item)
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_CREATE_ITEM, function(event, player, item, count)
+  rerollItemForPlayerClass(player, item)
+end)
+
 RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_HELLO, function(event, player, creature)
   showItems(player, creature)
 end)
