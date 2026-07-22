@@ -11,7 +11,9 @@ local ICON_GOSSIP = 7
 local ITEM_MENU_SENDER = 100
 local ENCHANT_MENU_SENDER = 101
 local BACK_MENU_SENDER = 102
-local ENCHANT_MENU_OFFSET = 1000
+local PAGE_MENU_SENDER = 103
+local ENCHANT_MENU_OFFSET = 10000
+local ITEMS_PER_PAGE = 20
 
 local ITEM_ICON_SIZE = 32
 local QUALITY_COST_MULTIPLIER = {
@@ -63,7 +65,7 @@ end
 
 local function enchantCost(item)
   local multiplier = QUALITY_COST_MULTIPLIER[item:GetQuality()] or QUALITY_COST_MULTIPLIER[1]
-  return math.max(10000, item:GetBuyPrice() * multiplier)
+  return 1 -- math.max(10000, item:GetBuyPrice() * multiplier)
 end
 
 local function equippedRandomItems(player)
@@ -115,7 +117,8 @@ local function enchantMenu(info)
   return menu
 end
 
-local function showSuffixes(player, creature, slot)
+local function showSuffixes(player, creature, slot, page)
+  page = page or 1
   local item = player:GetEquippedItemBySlot(slot)
   if not item then
     player:SendBroadcastMessage("That item is no longer equipped.")
@@ -131,39 +134,55 @@ local function showSuffixes(player, creature, slot)
     return
   end
 
-  player:GossipClearMenu()
   local menu = enchantMenu(info)
+  local total = #menu
+  local maxPage = math.ceil(total / ITEMS_PER_PAGE)
+  if maxPage < 1 then maxPage = 1 end
+  page = math.max(1, math.min(page, maxPage))
 
-  for index, entry in ipairs(menu) do
-    local option = entry.option
+  local startIndex = (page - 1) * ITEMS_PER_PAGE + 1
+  local endIndex = math.min(total, page * ITEMS_PER_PAGE)
+
+  player:GossipClearMenu()
+
+  for index = startIndex, endIndex do
+    local entry = menu[index]
+    local option = entry and entry.option
     if option then
       player:GossipMenuAddItem(
         ICON_GOSSIP,
         option.name,
         ENCHANT_MENU_SENDER,
-        ENCHANT_MENU_OFFSET + slot * 100 + index,
+        ENCHANT_MENU_OFFSET + slot * 1000 + index,
         false,
         "Apply "..option.name.." to "..itemName(item).."?",
         enchantCost(item)
       )
     end
   end
+
+  if page < maxPage then
+    player:GossipMenuAddItem(ICON_GOSSIP, "Next Page >>", PAGE_MENU_SENDER, slot * 1000 + (page + 1))
+  end
+  if page > 1 then
+    player:GossipMenuAddItem(ICON_GOSSIP, "<< Previous Page", PAGE_MENU_SENDER, slot * 1000 + (page - 1))
+  end
   player:GossipMenuAddItem(ICON_GOSSIP, "Back", BACK_MENU_SENDER, 0)
   player:GossipSendMenu(GOSSIP_TEXT, creature)
 end
 
 local function selectedEnchant(slot, intid)
-  local index = intid - ENCHANT_MENU_OFFSET - slot * 100
+  local index = (intid - ENCHANT_MENU_OFFSET) - slot * 1000
   if index < 1 then return nil end
   return index
 end
 
 local function selectedSlot(intid)
   if intid < ENCHANT_MENU_OFFSET then return nil end
-  return math.floor((intid - ENCHANT_MENU_OFFSET) / 100)
+  return math.floor((intid - ENCHANT_MENU_OFFSET) / 1000)
 end
 
-local function applyOption(player, creature, slot, entry)
+local function applyOption(player, creature, slot, entry, page)
   local item = player:GetEquippedItemBySlot(slot)
   if not item then
     player:SendBroadcastMessage("That item is no longer equipped.")
@@ -180,7 +199,7 @@ local function applyOption(player, creature, slot, entry)
 
   if not entry or not entry.option then
     player:SendBroadcastMessage("That random enchant is not available for this item.")
-    showSuffixes(player, creature, slot)
+    showSuffixes(player, creature, slot, page)
     return
   end
 
@@ -194,14 +213,14 @@ local function applyOption(player, creature, slot, entry)
   end
   if not allowed then
     player:SendBroadcastMessage("That random enchant is not available for this item.")
-    showSuffixes(player, creature, slot)
+    showSuffixes(player, creature, slot, page)
     return
   end
 
   local cost = enchantCost(item)
   if player:GetCoinage() < cost then
     player:SendBroadcastMessage("You do not have enough gold.")
-    showSuffixes(player, creature, slot)
+    showSuffixes(player, creature, slot, page)
     return
   end
 
@@ -227,7 +246,14 @@ RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_SELECT, function(event, pla
   end
 
   if sender == ITEM_MENU_SENDER then
-    showSuffixes(player, creature, intid)
+    showSuffixes(player, creature, intid, 1)
+    return
+  end
+
+  if sender == PAGE_MENU_SENDER then
+    local slot = math.floor(intid / 1000)
+    local page = intid % 1000
+    showSuffixes(player, creature, slot, page)
     return
   end
 
@@ -246,7 +272,9 @@ RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_SELECT, function(event, pla
 
     local info = random_enchant_db.items[item:GetEntry()]
     local menu = info and enchantMenu(info) or {}
-    applyOption(player, creature, slot, menu[selectedEnchant(slot, intid)])
+    local enchantIndex = selectedEnchant(slot, intid)
+    local page = math.ceil(enchantIndex / ITEMS_PER_PAGE)
+    applyOption(player, creature, slot, menu[enchantIndex], page)
     return
   end
 
