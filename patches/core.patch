@@ -214,10 +214,10 @@ index de0663cdc..e5d906547 100644
  
      // Default score, present in every type
 diff --git a/src/server/game/Entities/Player/Player.cpp b/src/server/game/Entities/Player/Player.cpp
-index f2b3207c7..e24aa6e49 100644
+index f2b3207c7..2cbdab384 100644
 --- a/src/server/game/Entities/Player/Player.cpp
 +++ b/src/server/game/Entities/Player/Player.cpp
-@@ -4888,6 +4888,13 @@ void Player::RepopAtGraveyard()
+@@ -4888,6 +4888,32 @@ void Player::RepopAtGraveyard()
              data << ClosestGrave->z;
              SendDirectMessage(&data);
          }
@@ -225,7 +225,26 @@ index f2b3207c7..e24aa6e49 100644
 +        if (Battleground* bg = GetBattleground())
 +        {
 +            uint32 entry = (GetBgTeamId() == TEAM_ALLIANCE) ? BG_CREATURE_ENTRY_A_SPIRITGUIDE : BG_CREATURE_ENTRY_H_SPIRITGUIDE;
-+            if (Creature* spiritGuide = FindNearestCreature(entry, 100.0f))
++            Creature* spiritGuide = nullptr;
++            float minDistance = 100.0f;
++
++            for (ObjectGuid const& guid : bg->BgCreatures)
++            {
++                if (Creature* creature = GetMap()->GetCreature(guid))
++                {
++                    if (creature->GetEntry() == entry)
++                    {
++                        float dist = creature->GetDistance(ClosestGrave->x, ClosestGrave->y, ClosestGrave->z);
++                        if (dist < minDistance)
++                        {
++                            minDistance = dist;
++                            spiritGuide = creature;
++                        }
++                    }
++                }
++            }
++
++            if (spiritGuide)
 +                bg->AddPlayerToResurrectQueue(spiritGuide->GetGUID(), GetGUID());
 +        }
      }
