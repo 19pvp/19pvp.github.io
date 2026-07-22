@@ -136,6 +136,19 @@ index e80bdbe1..054d952c 100644
 -
      return false;
  }
+diff --git a/src/Ai/Base/Actions/BattleGroundTactics.cpp b/src/Ai/Base/Actions/BattleGroundTactics.cpp
+index 0246a860..001b5055 100644
+--- a/src/Ai/Base/Actions/BattleGroundTactics.cpp
++++ b/src/Ai/Base/Actions/BattleGroundTactics.cpp
+@@ -1680,7 +1680,7 @@ bool BGTactics::Execute(Event /*event*/)
+ 
+         // NOTE: can't use IsInCombat() when in vehicle as player is stuck in combat forever while in vehicle (ac bug?)
+         bool inCombat = bot->GetVehicle() ? (bool)AI_VALUE(Unit*, "enemy player target") : bot->IsInCombat();
+-        if (inCombat && !PlayerHasFlag::IsCapturingFlag(bot))
++        if (inCombat)
+         {
+             // bot->GetMotionMaster()->MovementExpired();
+             return false;
 diff --git a/src/Ai/Base/Actions/BuyAction.cpp b/src/Ai/Base/Actions/BuyAction.cpp
 index e3d454dd..515a2bac 100644
 --- a/src/Ai/Base/Actions/BuyAction.cpp
@@ -396,6 +409,28 @@ index 86ce7ce5..4ec65ef0 100644
      bool TradeItem(FindItemVisitor* visitor, int8 slot);
      bool TradeItem(Item const* item, int8 slot);
  };
+diff --git a/src/Ai/Base/Actions/ChooseTargetActions.cpp b/src/Ai/Base/Actions/ChooseTargetActions.cpp
+index debcfac0..3648575d 100644
+--- a/src/Ai/Base/Actions/ChooseTargetActions.cpp
++++ b/src/Ai/Base/Actions/ChooseTargetActions.cpp
+@@ -17,7 +17,7 @@
+ 
+ bool AttackEnemyPlayerAction::isUseful()
+ {
+-    if (PlayerHasFlag::IsCapturingFlag(bot))
++    if (PlayerHasFlag::IsCapturingFlag(bot) && bot->isMoving())
+         return false;
+ 
+     return !sPlayerbotAIConfig.IsPvpProhibited(bot->GetZoneId(), bot->GetAreaId());
+@@ -139,7 +139,7 @@ bool AttackAnythingAction::isPossible() { return GetTarget() && AttackAction::is
+ 
+ bool DpsAssistAction::isUseful()
+ {
+-    if (PlayerHasFlag::IsCapturingFlag(bot))
++    if (PlayerHasFlag::IsCapturingFlag(bot) && bot->isMoving())
+         return false;
+ 
+     return true;
 diff --git a/src/Ai/Base/Actions/GenericSpellActions.cpp b/src/Ai/Base/Actions/GenericSpellActions.cpp
 index 2d78e443..0de002c7 100644
 --- a/src/Ai/Base/Actions/GenericSpellActions.cpp
@@ -1049,6 +1084,54 @@ index 0c3405b9..1bbd5f61 100644
      triggers.push_back(
          new TriggerNode(
              "high energy available",
+diff --git a/src/Ai/Class/Rogue/Strategy/GenericRogueNonCombatStrategy.cpp b/src/Ai/Class/Rogue/Strategy/GenericRogueNonCombatStrategy.cpp
+index 88838f2d..243dcdf7 100644
+--- a/src/Ai/Class/Rogue/Strategy/GenericRogueNonCombatStrategy.cpp
++++ b/src/Ai/Class/Rogue/Strategy/GenericRogueNonCombatStrategy.cpp
+@@ -7,28 +7,7 @@
+ 
+ #include "Playerbots.h"
+ 
+-class GenericRogueNonCombatStrategyActionNodeFactory : public NamedObjectFactory<ActionNode>
+-{
+-public:
+-    GenericRogueNonCombatStrategyActionNodeFactory()
+-    {
+-        creators["use deadly poison on off hand"] = &use_deadly_poison_on_off_hand;
+-    }
+-
+-private:
+-    static ActionNode* use_deadly_poison_on_off_hand([[maybe_unused]] PlayerbotAI* botAI)
+-    {
+-        return new ActionNode("use deadly poison on off hand",
+-                              /*P*/ {},
+-                              /*A*/ { NextAction("use instant poison on off hand") },
+-                              /*C*/ {});
+-    }
+-};
+-
+-GenericRogueNonCombatStrategy::GenericRogueNonCombatStrategy(PlayerbotAI* botAI) : NonCombatStrategy(botAI)
+-{
+-    actionNodeFactories.Add(new GenericRogueNonCombatStrategyActionNodeFactory());
+-}
++GenericRogueNonCombatStrategy::GenericRogueNonCombatStrategy(PlayerbotAI* botAI) : NonCombatStrategy(botAI) {}
+ 
+ void GenericRogueNonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ {
+@@ -38,13 +17,5 @@ void GenericRogueNonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& trig
+                                        { NextAction("sprint", ACTION_EMERGENCY + 1) }));
+     triggers.push_back(new TriggerNode("enemy flagcarrier near",
+                                        { NextAction("sprint", ACTION_EMERGENCY + 2) }));
+-    triggers.push_back(
+-        new TriggerNode("main hand weapon no enchant",
+-                        { NextAction("use instant poison on main hand", 20.0f) }));
+-
+-    triggers.push_back(
+-        new TriggerNode("off hand weapon no enchant",
+-                        { NextAction("use deadly poison on off hand", 19.0f) }));
+-
+     triggers.push_back(new TriggerNode("often", { NextAction("unstealth", 30.0f) }));
+ }
 diff --git a/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp b/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp
 index 6e3c6cdc..2babef13 100644
 --- a/src/Ai/Class/Warlock/Strategy/TankWarlockStrategy.cpp
@@ -1642,10 +1725,43 @@ index 1cef54ab..7f103634 100644
      bool OrganizeQuestLog();
  
 diff --git a/src/Bot/Factory/PlayerbotFactory.cpp b/src/Bot/Factory/PlayerbotFactory.cpp
-index 2ef0f539..5b3261b4 100644
+index 2ef0f539..32f58752 100644
 --- a/src/Bot/Factory/PlayerbotFactory.cpp
 +++ b/src/Bot/Factory/PlayerbotFactory.cpp
-@@ -3232,6 +3232,9 @@ void PlayerbotFactory::InitAvailableSpells()
+@@ -1078,32 +1078,6 @@ void PlayerbotFactory::InitConsumables()
+             }
+             break;
+         }
+-        case CLASS_ROGUE:
+-        {
+-            std::vector<uint32> instant_poisons = {
+-                INSTANT_POISON_IX, INSTANT_POISON_VIII, INSTANT_POISON_VII, INSTANT_POISON_VI, INSTANT_POISON_V,
+-                INSTANT_POISON_IV, INSTANT_POISON_III, INSTANT_POISON_II, INSTANT_POISON };
+-            std::vector<uint32> deadly_poisons = {
+-                DEADLY_POISON_IX, DEADLY_POISON_VIII, DEADLY_POISON_VII, DEADLY_POISON_VI, DEADLY_POISON_V,
+-                DEADLY_POISON_IV, DEADLY_POISON_III, DEADLY_POISON_II, DEADLY_POISON };
+-            for (uint32 itemId : deadly_poisons)
+-            {
+-                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                if (proto->RequiredLevel > level)
+-                    continue;
+-                items.push_back({itemId, 20});
+-                break;
+-            }
+-            for (uint32 itemId : instant_poisons)
+-            {
+-                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                if (proto->RequiredLevel > level)
+-                    continue;
+-                items.push_back({itemId, 20});
+-                break;
+-            }
+-            break;
+-        }
+         default:
+             break;
+     }
+@@ -3232,6 +3206,9 @@ void PlayerbotFactory::InitAvailableSpells()
              if (!trainerSpell)
                  continue;
  
@@ -1655,7 +1771,7 @@ index 2ef0f539..5b3261b4 100644
              if (!trainer->CanTeachSpell(bot, trainerSpell))
                  continue;
  
-@@ -3353,6 +3356,9 @@ void PlayerbotFactory::InitSpecialSpells()
+@@ -3353,6 +3330,9 @@ void PlayerbotFactory::InitSpecialSpells()
      {
          bot->learnSpell(50977, false);
      }
