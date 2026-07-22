@@ -250,6 +250,49 @@ index f2b3207c7..2cbdab384 100644
      }
      else if (GetPositionZ() < GetMap()->GetMinHeight(GetPositionX(), GetPositionY()))
          TeleportTo(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, GetOrientation());
+diff --git a/src/server/game/Entities/Player/PlayerStorage.cpp b/src/server/game/Entities/Player/PlayerStorage.cpp
+index 04010c812..8488304cf 100644
+--- a/src/server/game/Entities/Player/PlayerStorage.cpp
++++ b/src/server/game/Entities/Player/PlayerStorage.cpp
+@@ -4472,7 +4472,11 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
+                                     {
+                                         if (item_rand->Enchantment[k] == enchant_id)
+                                         {
+-                                            basepoints = int32((item_rand->AllocationPct[k] * item->GetItemSuffixFactor()) / 10000);
++                                            uint32 allocPct = item_rand->AllocationPct[k];
++                                            if (item->GetTemplate() && item->GetTemplate()->ItemLevel <= 60 && allocPct == 7889)
++                                                allocPct = 5259;
++
++                                            basepoints = int32((allocPct * item->GetItemSuffixFactor()) / 10000);
+                                             break;
+                                         }
+                                     }
+@@ -4498,7 +4502,11 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
+                             {
+                                 if (item_rand->Enchantment[k] == enchant_id)
+                                 {
+-                                    enchant_amount = uint32((item_rand->AllocationPct[k] * item->GetItemSuffixFactor()) / 10000);
++                                    uint32 allocPct = item_rand->AllocationPct[k];
++                                    if (item->GetTemplate() && item->GetTemplate()->ItemLevel <= 60 && allocPct == 7889)
++                                        allocPct = 5259;
++
++                                    enchant_amount = uint32((allocPct * item->GetItemSuffixFactor()) / 10000);
+                                     break;
+                                 }
+                             }
+@@ -4518,7 +4526,11 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
+                             {
+                                 if (item_rand_suffix->Enchantment[k] == enchant_id)
+                                 {
+-                                    enchant_amount = uint32((item_rand_suffix->AllocationPct[k] * item->GetItemSuffixFactor()) / 10000);
++                                    uint32 allocPct = item_rand_suffix->AllocationPct[k];
++                                    if (item->GetTemplate() && item->GetTemplate()->ItemLevel <= 60 && allocPct == 7889 && enchant_spell_id == ITEM_MOD_STAMINA)
++                                        allocPct = 5259;
++
++                                    enchant_amount = uint32((allocPct * item->GetItemSuffixFactor()) / 10000);
+                                     break;
+                                 }
+                             }
 diff --git a/src/server/game/Entities/Player/PlayerUpdates.cpp b/src/server/game/Entities/Player/PlayerUpdates.cpp
 index 35ac03d79..7055b688f 100644
 --- a/src/server/game/Entities/Player/PlayerUpdates.cpp
@@ -307,6 +350,36 @@ index 35ac03d79..7055b688f 100644
      }
  
      // If mute expired, remove it from the DB
+diff --git a/src/server/game/Globals/ObjectMgr.cpp b/src/server/game/Globals/ObjectMgr.cpp
+index 849ee2627..c8375251d 100644
+--- a/src/server/game/Globals/ObjectMgr.cpp
++++ b/src/server/game/Globals/ObjectMgr.cpp
+@@ -4314,7 +4314,25 @@ void ObjectMgr::PlayerCreateInfoAddItemHelper(uint32 race_, uint32 class_, uint3
+         return;
+ 
+     if (count > 0)
++    {
+         _playerInfo[race_][class_]->item.push_back(PlayerCreateInfoItem(itemId, count));
++
++        // Override matching DBC outfit item so custom player create item replaces it instead of duplicating
++        for (uint32 gender = 0; gender < GENDER_NONE; ++gender)
++        {
++            if (CharStartOutfitEntry const* entry = GetCharStartOutfitEntry(race_, class_, gender))
++            {
++                for (uint8 x = 0; x < MAX_OUTFIT_ITEMS; ++x)
++                {
++                    if (entry->ItemId[x] > 0 && uint32(entry->ItemId[x]) == itemId)
++                    {
++                        const_cast<CharStartOutfitEntry*>(entry)->ItemId[x] = 0;
++                        break;
++                    }
++                }
++            }
++        }
++    }
+     else
+     {
+         if (count < -1)
 diff --git a/src/server/game/Groups/Group.cpp b/src/server/game/Groups/Group.cpp
 index e6799fec5..392ce779a 100644
 --- a/src/server/game/Groups/Group.cpp
@@ -472,3 +545,28 @@ index 9fd4ff356..8677ae12b 100644
      bool IsCheckNormalMatch(BattlegroundQueue* queue, Battleground* bgTemplate, BattlegroundBracketId bracket_id, uint32 minPlayers, uint32 maxPlayers);
      bool CanSendMessageBGQueue(BattlegroundQueue* queue, Player* leader, Battleground* bg, PvPDifficultyEntry const* bracketEntry);
      bool OnBeforeSendJoinMessageArenaQueue(BattlegroundQueue* queue, Player* leader, GroupQueueInfo* ginfo, PvPDifficultyEntry const* bracketEntry, bool isRated);
+diff --git a/src/server/game/Spells/Auras/SpellAuraEffects.cpp b/src/server/game/Spells/Auras/SpellAuraEffects.cpp
+index 9c4fa8fe8..c32c1689c 100644
+--- a/src/server/game/Spells/Auras/SpellAuraEffects.cpp
++++ b/src/server/game/Spells/Auras/SpellAuraEffects.cpp
+@@ -471,11 +471,15 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
+                                 if (pEnchant)
+                                 {
+                                     for (uint8 t = 0; t < MAX_SPELL_ITEM_ENCHANTMENT_EFFECTS; t++)
+-                                        if (pEnchant->spellid[t] == m_spellInfo->Id)
+-                                        {
+-                                            amount = uint32((item_rand_suffix->AllocationPct[k] * castItem->GetItemSuffixFactor()) / 10000);
+-                                            break;
+-                                        }
++                                         if (pEnchant->spellid[t] == m_spellInfo->Id)
++                                         {
++                                             uint32 allocPct = item_rand_suffix->AllocationPct[k];
++                                             if (castItem->GetTemplate() && castItem->GetTemplate()->ItemLevel <= 60 && allocPct == 7889 && pEnchant->spellid[t] == ITEM_MOD_STAMINA)
++                                                 allocPct = 5259;
++
++                                             amount = uint32((allocPct * castItem->GetItemSuffixFactor()) / 10000);
++                                             break;
++                                         }
+                                 }
+ 
+                                 if (amount)
