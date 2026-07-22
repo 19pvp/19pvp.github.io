@@ -213,6 +213,24 @@ index de0663cdc..e5d906547 100644
      ObjectGuid PlayerGuid;
  
      // Default score, present in every type
+diff --git a/src/server/game/Entities/Player/Player.cpp b/src/server/game/Entities/Player/Player.cpp
+index f2b3207c7..e24aa6e49 100644
+--- a/src/server/game/Entities/Player/Player.cpp
++++ b/src/server/game/Entities/Player/Player.cpp
+@@ -4888,6 +4888,13 @@ void Player::RepopAtGraveyard()
+             data << ClosestGrave->z;
+             SendDirectMessage(&data);
+         }
++
++        if (Battleground* bg = GetBattleground())
++        {
++            uint32 entry = (GetBgTeamId() == TEAM_ALLIANCE) ? BG_CREATURE_ENTRY_A_SPIRITGUIDE : BG_CREATURE_ENTRY_H_SPIRITGUIDE;
++            if (Creature* spiritGuide = FindNearestCreature(entry, 100.0f))
++                bg->AddPlayerToResurrectQueue(spiritGuide->GetGUID(), GetGUID());
++        }
+     }
+     else if (GetPositionZ() < GetMap()->GetMinHeight(GetPositionX(), GetPositionY()))
+         TeleportTo(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, GetOrientation());
 diff --git a/src/server/game/Groups/Group.cpp b/src/server/game/Groups/Group.cpp
 index e6799fec5..392ce779a 100644
 --- a/src/server/game/Groups/Group.cpp
