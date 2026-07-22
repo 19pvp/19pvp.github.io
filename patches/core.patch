@@ -250,6 +250,63 @@ index f2b3207c7..2cbdab384 100644
      }
      else if (GetPositionZ() < GetMap()->GetMinHeight(GetPositionX(), GetPositionY()))
          TeleportTo(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, GetOrientation());
+diff --git a/src/server/game/Entities/Player/PlayerUpdates.cpp b/src/server/game/Entities/Player/PlayerUpdates.cpp
+index 35ac03d79..7055b688f 100644
+--- a/src/server/game/Entities/Player/PlayerUpdates.cpp
++++ b/src/server/game/Entities/Player/PlayerUpdates.cpp
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include "AchievementMgr.h"
++#include "Battleground.h"
+ #include "BattlefieldMgr.h"
+ #include "CellImpl.h"
+ #include "Channel.h"
+@@ -119,6 +120,44 @@ void Player::Update(uint32 p_time)
+         m_Played_time[PLAYED_TIME_LEVEL] += elapsed; // Level played time
+         GetSession()->SetTotalTime(GetSession()->GetTotalTime() + elapsed);
+         m_Last_tick = now;
++
++        // Handle BG Spirit Healer auto-queueing and distance checks dynamically
++        if (!IsAlive() && GetBattlegroundId())
++        {
++            if (Battleground* bg = GetBattleground())
++            {
++                uint32 entry = (GetBgTeamId() == TEAM_ALLIANCE) ? BG_CREATURE_ENTRY_A_SPIRITGUIDE : BG_CREATURE_ENTRY_H_SPIRITGUIDE;
++                Creature* spiritGuide = nullptr;
++                float minDistance = 100.0f;
++
++                for (ObjectGuid const& guid : bg->BgCreatures)
++                {
++                    if (Creature* creature = GetMap()->GetCreature(guid))
++                    {
++                        if (creature->GetEntry() == entry)
++                        {
++                            float dist = GetDistance(creature);
++                            if (dist < minDistance)
++                            {
++                                minDistance = dist;
++                                spiritGuide = creature;
++                            }
++                        }
++                    }
++                }
++
++                if (spiritGuide && minDistance <= 25.0f)
++                {
++                    if (!HasAura(SPELL_WAITING_FOR_RESURRECT))
++                        bg->AddPlayerToResurrectQueue(spiritGuide->GetGUID(), GetGUID());
++                }
++                else
++                {
++                    if (HasAura(SPELL_WAITING_FOR_RESURRECT))
++                        RemoveAurasDueToSpell(SPELL_WAITING_FOR_RESURRECT);
++                }
++            }
++        }
+     }
+ 
+     // If mute expired, remove it from the DB
 diff --git a/src/server/game/Groups/Group.cpp b/src/server/game/Groups/Group.cpp
 index e6799fec5..392ce779a 100644
 --- a/src/server/game/Groups/Group.cpp
