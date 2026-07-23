@@ -396,6 +396,81 @@ index 86ce7ce5..4ec65ef0 100644
      bool TradeItem(FindItemVisitor* visitor, int8 slot);
      bool TradeItem(Item const* item, int8 slot);
  };
+diff --git a/src/Ai/Base/Actions/ChatShortcutActions.cpp b/src/Ai/Base/Actions/ChatShortcutActions.cpp
+index 7982deb4..f9668567 100644
+--- a/src/Ai/Base/Actions/ChatShortcutActions.cpp
++++ b/src/Ai/Base/Actions/ChatShortcutActions.cpp
+@@ -43,9 +43,9 @@ void PositionsResetAction::SetStayPosition(float x, float y, float z)
+     posMap["stay"] = pos;
+ }
+ 
+-bool FollowChatShortcutAction::Execute(Event /*event*/)
++bool FollowChatShortcutAction::Execute(Event event)
+ {
+-    Player* master = GetMaster();
++    Player* master = event.getOwner() ? event.getOwner() : GetMaster();
+     if (!master)
+         return false;
+ 
+@@ -115,9 +115,9 @@ bool FollowChatShortcutAction::Execute(Event /*event*/)
+     return true;
+ }
+ 
+-bool StayChatShortcutAction::Execute(Event /*event*/)
++bool StayChatShortcutAction::Execute(Event event)
+ {
+-    Player* master = GetMaster();
++    Player* master = event.getOwner() ? event.getOwner() : GetMaster();
+     if (!master)
+         return false;
+ 
+@@ -174,9 +174,9 @@ bool FleeChatShortcutAction::Execute(Event /*event*/)
+     return true;
+ }
+ 
+-bool GoawayChatShortcutAction::Execute(Event /*event*/)
++bool GoawayChatShortcutAction::Execute(Event event)
+ {
+-    Player* master = GetMaster();
++    Player* master = event.getOwner() ? event.getOwner() : GetMaster();
+     if (!master)
+         return false;
+ 
+diff --git a/src/Ai/Base/Actions/FollowActions.cpp b/src/Ai/Base/Actions/FollowActions.cpp
+index 21937606..f5c8a86f 100644
+--- a/src/Ai/Base/Actions/FollowActions.cpp
++++ b/src/Ai/Base/Actions/FollowActions.cpp
+@@ -103,7 +103,9 @@ bool FollowAction::Execute(Event /*event*/)
+     std::string const target = formation->GetTargetName();
+ 
+     // Transport handling for moving transports only (boats/zeppelins).
+-    Player* master = botAI->GetMaster();
++    Player* master = botAI->GetBattlegroundCommandTarget();
++    if (!master)
++        master = botAI->GetMaster();
+     if (master && master->IsInWorld() && bot->IsInWorld() && bot->GetMapId() == master->GetMapId())
+     {
+         Map* map = master->GetMap();
+@@ -210,6 +212,9 @@ bool FollowAction::Execute(Event /*event*/)
+     }
+     // end unified transport handling
+ 
++    if (Player* commandTarget = botAI->GetBattlegroundCommandTarget())
++        return Follow(commandTarget);
++
+     bool moved = false;
+     if (!target.empty())
+     {
+@@ -250,6 +255,9 @@ bool FollowAction::isUseful()
+     if (bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL) != nullptr)
+         return false;
+ 
++    if (Player* commandTarget = botAI->GetBattlegroundCommandTarget())
++        return ServerFacade::instance().IsDistanceGreaterThan(bot->GetDistance(commandTarget), sPlayerbotAIConfig.followDistance);
++
+     Formation* formation = AI_VALUE(Formation*, "formation");
+     if (!formation)
+         return false;
 diff --git a/src/Ai/Base/Actions/GenericSpellActions.cpp b/src/Ai/Base/Actions/GenericSpellActions.cpp
 index 2d78e443..0de002c7 100644
 --- a/src/Ai/Base/Actions/GenericSpellActions.cpp
@@ -1510,10 +1585,18 @@ index 2ef0f539..32f58752 100644
  
  void PlayerbotFactory::InitTalents(uint32 specNo)
 diff --git a/src/Bot/PlayerbotAI.cpp b/src/Bot/PlayerbotAI.cpp
-index cd7a0993..fcb74501 100644
+index cd7a0993..df18bcb9 100644
 --- a/src/Bot/PlayerbotAI.cpp
 +++ b/src/Bot/PlayerbotAI.cpp
-@@ -11,6 +11,7 @@
+@@ -5,12 +5,15 @@
+ 
+ #include "PlayerbotAI.h"
+ 
++#include <algorithm>
+ #include <cmath>
++#include <cctype>
+ #include <mutex>
+ #include <sstream>
  #include <string>
  
  #include "AiFactory.h"
@@ -1521,7 +1604,15 @@ index cd7a0993..fcb74501 100644
  #include "BudgetValues.h"
  #include "ChannelMgr.h"
  #include "CharacterPackets.h"
-@@ -60,6 +61,14 @@
+@@ -34,6 +37,7 @@
+ #include "MotionMaster.h"
+ #include "MoveSplineInit.h"
+ #include "NewRpgStrategy.h"
++#include "ObjectAccessor.h"
+ #include "ObjectGuid.h"
+ #include "ObjectMgr.h"
+ #include "PerfMonitor.h"
+@@ -60,6 +64,14 @@
  
  constexpr uint32 SPELL_TITAN_GRIP = 49152;
  constexpr uint32 SPELL_DK_FROST_PRESENCE = 48263;
@@ -1536,18 +1627,214 @@ index cd7a0993..fcb74501 100644
  
  std::vector<std::string> PlayerbotAI::dispel_whitelist = {
      "mutating injection",
-@@ -549,6 +558,7 @@ void PlayerbotAI::UpdateAIInternal([[maybe_unused]] uint32 elapsed, bool minimal
+@@ -548,7 +560,12 @@ void PlayerbotAI::UpdateAIInternal([[maybe_unused]] uint32 elapsed, bool minimal
+     masterIncomingPacketHandlers.Handle(helper);
      masterOutgoingPacketHandlers.Handle(helper);
  
-     DoNextAction(minimal);
+-    DoNextAction(minimal);
++    if ((!bot->InBattleground() || !bot->IsAlive()) && !battlegroundCommand.empty())
++        ResetBattlegroundCommand();
++
 +    HandleFlagDropRequest();
++    if (!flagDropTarget)
++        DoNextAction(minimal);
  
      if (pmo)
          pmo->finish();
-@@ -592,6 +602,43 @@ void PlayerbotAI::HandleCommands()
+@@ -592,6 +609,233 @@ void PlayerbotAI::HandleCommands()
      }
  }
  
++Player* PlayerbotAI::GetBattlegroundCommandTarget()
++{
++    return battlegroundCommandTarget ? GetPlayer(battlegroundCommandTarget) : nullptr;
++}
++
++void PlayerbotAI::SayBattlegroundCommand(std::string const& text)
++{
++    Battleground* bg = bot->GetBattleground();
++    if (!bg)
++        return;
++
++    WorldPacket data;
++    ChatHandler::BuildChatPacket(data, CHAT_MSG_BATTLEGROUND, text.c_str(), LANG_UNIVERSAL, CHAT_TAG_NONE,
++                                 bot->GetGUID(), bot->GetName());
++    bg->SendPacketToTeam(bot->GetBgTeamId(), &data, bot, true);
++}
++
++void PlayerbotAI::ResetBattlegroundCommand()
++{
++    if (battlegroundCommand == "stay")
++    {
++        ChangeStrategy("-stay", BOT_STATE_NON_COMBAT);
++        ChangeStrategy("-stay", BOT_STATE_COMBAT);
++        aiObjectContext->GetValue<PositionInfo>("pos", "stay")->Reset();
++    }
++    else if (battlegroundCommand == "come")
++    {
++        ChangeStrategy("-follow", BOT_STATE_NON_COMBAT);
++        ChangeStrategy("-follow", BOT_STATE_COMBAT);
++    }
++    else if (battlegroundCommand == "flee")
++    {
++        ChangeStrategy("-runaway", BOT_STATE_NON_COMBAT);
++        ChangeStrategy("-runaway", BOT_STATE_COMBAT);
++    }
++    else if (battlegroundCommand == "focus")
++    {
++        aiObjectContext->GetValue<GuidVector>("prioritized targets")->Reset();
++        aiObjectContext->GetValue<Unit*>("current target")->Set(nullptr);
++        bot->SetTarget();
++    }
++    else if (battlegroundCommand == "support")
++    {
++        std::list<ObjectGuid> const noFocusTargets;
++        aiObjectContext->GetValue<std::list<ObjectGuid>>("focus heal targets")->Set(noFocusTargets);
++        ChangeStrategy("-focus heal targets", BOT_STATE_COMBAT);
++    }
++
++    battlegroundCommand.clear();
++    battlegroundCommandTarget = ObjectGuid::Empty;
++    flagDropTarget = ObjectGuid::Empty;
++}
++
++bool PlayerbotAI::HandleGlobalBattlegroundCommand(uint32 type, std::string const& text, Player* fromPlayer)
++{
++    if (!bot->InBattleground() || (type != CHAT_MSG_BATTLEGROUND && type != CHAT_MSG_BATTLEGROUND_LEADER))
++        return false;
++
++    if (!fromPlayer || fromPlayer->GetBattleground() != bot->GetBattleground() ||
++        fromPlayer->GetBgTeamId() != bot->GetBgTeamId())
++        return true;
++
++    std::string command = text;
++    trim(command);
++    std::string lowerCommand = command;
++    std::transform(lowerCommand.begin(), lowerCommand.end(), lowerCommand.begin(),
++                   [](unsigned char c) { return std::tolower(c); });
++
++    size_t separator = lowerCommand.find_first_of(" \t");
++    if (separator == std::string::npos)
++        return false;
++
++    std::string keyword = lowerCommand.substr(0, separator);
++    std::string targetName = command.substr(separator + 1);
++    trim(targetName);
++    if (targetName.empty() || !normalizePlayerName(targetName))
++        return false;
++
++    bool focus = keyword == "focus" || keyword == "attack" || keyword == "kill";
++    bool support = keyword == "support" || keyword == "help" || keyword == "heal";
++    if (!focus && !support)
++        return false;
++
++    Player* target = ObjectAccessor::FindPlayerByName(targetName.c_str());
++    if (!IsValidPlayer(target) || target->GetBattleground() != bot->GetBattleground() || !target->IsAlive())
++        return true;
++
++    if ((focus && target->GetBgTeamId() == bot->GetBgTeamId()) ||
++        (support && target->GetBgTeamId() != bot->GetBgTeamId()))
++        return true;
++
++    if (ServerFacade::instance().IsDistanceGreaterThan(ServerFacade::instance().GetDistance2d(bot, target), 100.0f))
++        return true;
++
++    ResetBattlegroundCommand();
++    battlegroundCommand = focus ? "focus" : "support";
++
++    if (focus)
++    {
++        aiObjectContext->GetValue<GuidVector>("prioritized targets")->Set({target->GetGUID()});
++        aiObjectContext->GetValue<Unit*>("current target")->Set(target);
++        bot->SetTarget(target->GetGUID());
++        DoSpecificAction("attack", Event("bg command", "", fromPlayer), true);
++    }
++    else
++    {
++        std::list<ObjectGuid> const focusTargets = {target->GetGUID()};
++        aiObjectContext->GetValue<std::list<ObjectGuid>>("focus heal targets")->Set(focusTargets);
++        ChangeStrategy("+focus heal targets", BOT_STATE_COMBAT);
++    }
++
++    return true;
++}
++
++bool PlayerbotAI::HandleBattlegroundCommand(uint32 type, std::string const& text, Player* fromPlayer)
++{
++    if (!bot->InBattleground() || (type != CHAT_MSG_WHISPER && type != CHAT_MSG_BATTLEGROUND &&
++                                   type != CHAT_MSG_BATTLEGROUND_LEADER))
++        return false;
++
++    if (!fromPlayer || fromPlayer->GetBattleground() != bot->GetBattleground() ||
++        fromPlayer->GetBgTeamId() != bot->GetBgTeamId())
++        return true;
++
++    if (type != CHAT_MSG_WHISPER && !strstri(text.c_str(), bot->GetName().c_str()))
++        return true;
++
++    bool pass = strstri(text.c_str(), "pass") || strstri(text.c_str(), "give") || strstri(text.c_str(), "drop");
++    bool stay = strstri(text.c_str(), "stay") || strstri(text.c_str(), "wait") ||
++                strstri(text.c_str(), "hold") || strstri(text.c_str(), "defend") || strstri(text.c_str(), "guard");
++    bool come = strstri(text.c_str(), "follow") || strstri(text.c_str(), "come") ||
++                strstri(text.c_str(), "assist") || strstri(text.c_str(), "regroup");
++    bool flee = strstri(text.c_str(), "flee") || strstri(text.c_str(), "runaway") ||
++                strstri(text.c_str(), "run away") || strstri(text.c_str(), "retreat");
++
++    std::string action;
++    if (pass && bot->GetBattlegroundTypeId() == BATTLEGROUND_WS &&
++        (bot->HasAura(BG_WS_SPELL_WARSONG_FLAG) || bot->HasAura(BG_WS_SPELL_SILVERWING_FLAG)))
++    {
++        ResetBattlegroundCommand();
++        battlegroundCommand = "pass";
++        flagDropTarget = fromPlayer->GetGUID();
++        action = "pass the flag";
++    }
++    else if (stay)
++    {
++        ResetBattlegroundCommand();
++        battlegroundCommand = "stay";
++        if (!DoSpecificAction("stay chat shortcut", Event("bg command", "", fromPlayer), true))
++        {
++            ResetBattlegroundCommand();
++            return true;
++        }
++        action = "stay";
++    }
++    else if (come)
++    {
++        ResetBattlegroundCommand();
++        battlegroundCommand = "come";
++        battlegroundCommandTarget = fromPlayer->GetGUID();
++        if (!DoSpecificAction("follow chat shortcut", Event("bg command", "", fromPlayer), true))
++        {
++            ResetBattlegroundCommand();
++            return true;
++        }
++        ChangeStrategy("+follow", BOT_STATE_COMBAT);
++        action = "come";
++    }
++    else if (flee)
++    {
++        ResetBattlegroundCommand();
++        battlegroundCommand = "flee";
++        if (!DoSpecificAction("runaway chat shortcut", Event("bg command", "", fromPlayer), true))
++        {
++            ResetBattlegroundCommand();
++            return true;
++        }
++        action = "flee";
++    }
++    else
++    {
++        if (type == CHAT_MSG_WHISPER)
++            bot->Whisper("You can ask me to stay, come, flee or pass the flag", LANG_UNIVERSAL, fromPlayer);
++        return true;
++    }
++
++    SayBattlegroundCommand("Ok " + fromPlayer->GetName() + ", I will " + action + " now.");
++    return true;
++}
++
 +void PlayerbotAI::HandleFlagDropRequest()
 +{
 +    if (!flagDropTarget)
@@ -1555,14 +1842,14 @@ index cd7a0993..fcb74501 100644
 +
 +    if (!bot->InBattleground() || bot->GetBattlegroundTypeId() != BATTLEGROUND_WS)
 +    {
-+        flagDropTarget = ObjectGuid::Empty;
++        ResetBattlegroundCommand();
 +        return;
 +    }
 +
 +    BattlegroundWS* bg = static_cast<BattlegroundWS*>(bot->GetBattleground());
 +    if (!bot->HasAura(BG_WS_SPELL_WARSONG_FLAG) && !bot->HasAura(BG_WS_SPELL_SILVERWING_FLAG))
 +    {
-+        flagDropTarget = ObjectGuid::Empty;
++        ResetBattlegroundCommand();
 +        return;
 +    }
 +
@@ -1570,14 +1857,14 @@ index cd7a0993..fcb74501 100644
 +    if (!target || !target->IsAlive() || target->GetTeamId() != bot->GetTeamId() ||
 +        target->GetBattleground() != bot->GetBattleground() || !IsSafe(target))
 +    {
-+        flagDropTarget = ObjectGuid::Empty;
++        ResetBattlegroundCommand();
 +        return;
 +    }
 +
 +    if (bot->GetDistance(target) <= INTERACTION_DISTANCE)
 +    {
 +        bg->EventPlayerDroppedFlag(bot);
-+        flagDropTarget = ObjectGuid::Empty;
++        ResetBattlegroundCommand();
 +        bot->StopMoving();
 +        return;
 +    }
@@ -1588,26 +1875,23 @@ index cd7a0993..fcb74501 100644
  std::map<std::string, ChatMsg> chatMap;
  void PlayerbotAI::HandleCommand(uint32 type, const std::string& text, Player& fromPlayer, const uint32 lang)
  {
-@@ -946,6 +993,18 @@ bool PlayerbotAI::IsAllowedCommand(std::string const text)
+@@ -946,6 +1190,15 @@ bool PlayerbotAI::IsAllowedCommand(std::string const text)
  
  void PlayerbotAI::HandleCommand(uint32 type, std::string const text, Player* fromPlayer)
  {
 +    if (!bot)
 +        return;
 +
-+    if (type == CHAT_MSG_WHISPER && fromPlayer && fromPlayer->GetTeamId() == bot->GetTeamId() &&
-+        (strstri(text.c_str(), "drop") || strstri(text.c_str(), "pass") || strstri(text.c_str(), "give")) &&
-+        bot->InBattleground() && bot->GetBattlegroundTypeId() == BATTLEGROUND_WS &&
-+        (bot->HasAura(BG_WS_SPELL_WARSONG_FLAG) || bot->HasAura(BG_WS_SPELL_SILVERWING_FLAG)))
-+    {
-+        flagDropTarget = fromPlayer->GetGUID();
++    if (HandleGlobalBattlegroundCommand(type, text, fromPlayer))
 +        return;
-+    }
++
++    if (HandleBattlegroundCommand(type, text, fromPlayer))
++        return;
 +
      if (!GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_INVITE, type != CHAT_MSG_WHISPER, fromPlayer))
          return;
  
-@@ -2944,6 +3003,9 @@ bool PlayerbotAI::Say(const std::string& msg)
+@@ -2944,6 +3197,9 @@ bool PlayerbotAI::Say(const std::string& msg)
  
  bool PlayerbotAI::Whisper(const std::string& msg, const std::string& receiverName)
  {
@@ -1617,7 +1901,7 @@ index cd7a0993..fcb74501 100644
      const auto receiver = ObjectAccessor::FindPlayerByName(receiverName);
      if (!receiver)
      {
-@@ -2969,6 +3031,9 @@ bool PlayerbotAI::TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecuri
+@@ -2969,6 +3225,9 @@ bool PlayerbotAI::TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecuri
  
  bool PlayerbotAI::TellMasterNoFacing(std::string const text, PlayerbotSecurityLevel securityLevel)
  {
@@ -1627,7 +1911,7 @@ index cd7a0993..fcb74501 100644
      Player* master = GetMaster();
      PlayerbotAI* masterBotAI = nullptr;
      if (master)
-@@ -3255,6 +3320,9 @@ bool PlayerbotAI::CanCastSpell(std::string const name, Unit* target, Item* itemT
+@@ -3255,6 +3514,9 @@ bool PlayerbotAI::CanCastSpell(std::string const name, Unit* target, Item* itemT
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell, Item* itemTarget, Item* castItem)
  {
@@ -1637,7 +1921,7 @@ index cd7a0993..fcb74501 100644
      if (!spellid)
      {
          if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasRealPlayerMaster()))
-@@ -3435,6 +3503,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
+@@ -3435,6 +3697,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkHasSpell)
  {
@@ -1647,7 +1931,7 @@ index cd7a0993..fcb74501 100644
      if (!spellid)
          return false;
  
-@@ -3493,6 +3564,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
+@@ -3493,6 +3758,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, float x, float y, float z, bool checkHasSpell, Item* itemTarget)
  {
@@ -1657,7 +1941,7 @@ index cd7a0993..fcb74501 100644
      if (!spellid)
          return false;
  
-@@ -3556,6 +3630,9 @@ bool PlayerbotAI::CastSpell(std::string const name, Unit* target, Item* itemTarg
+@@ -3556,6 +3824,9 @@ bool PlayerbotAI::CastSpell(std::string const name, Unit* target, Item* itemTarg
  
  bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
  {
@@ -1667,7 +1951,7 @@ index cd7a0993..fcb74501 100644
      if (!spellId)
          return false;
  
-@@ -3569,7 +3646,15 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+@@ -3569,7 +3840,15 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
      if (!spellInfo)
          return false;
  
@@ -1683,7 +1967,7 @@ index cd7a0993..fcb74501 100644
      if (pet && pet->HasSpell(spellId))
      {
          // List of spell IDs for which we do NOT want to toggle auto-cast or send message
-@@ -3835,16 +3920,25 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+@@ -3835,16 +4114,25 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
          TellMasterNoFacing(out);
      }
  
@@ -1710,10 +1994,18 @@ index cd7a0993..fcb74501 100644
      {
          bool autocast = false;
 diff --git a/src/Bot/PlayerbotAI.h b/src/Bot/PlayerbotAI.h
-index 7940ee31..ef9bfc49 100644
+index 7940ee31..327570fa 100644
 --- a/src/Bot/PlayerbotAI.h
 +++ b/src/Bot/PlayerbotAI.h
-@@ -591,7 +591,6 @@ public:
+@@ -391,6 +391,7 @@ public:
+ 
+     std::string const HandleRemoteCommand(std::string const command);
+     void HandleCommand(uint32 type, std::string const text, Player* fromPlayer);
++    Player* GetBattlegroundCommandTarget();
+     void QueueChatResponse(const ChatQueuedReply reply);
+     void HandleBotOutgoingPacket(WorldPacket const& packet);
+     void HandleMasterIncomingPacket(WorldPacket const& packet);
+@@ -591,7 +592,6 @@ public:
      bool HasItemInInventory(uint32 itemId);
      std::vector<std::pair<const Quest*, uint32>> GetCurrentQuestsRequiringItemId(uint32 itemId);
      uint32 GetReactDelay();
@@ -1721,19 +2013,25 @@ index 7940ee31..ef9bfc49 100644
      std::vector<const Quest*> GetAllCurrentQuests();
      std::vector<const Quest*> GetCurrentIncompleteQuests();
      std::set<uint32> GetAllCurrentQuestIds();
-@@ -615,6 +614,7 @@ private:
+@@ -615,6 +615,11 @@ private:
      void UpdateAIGroupMaster();
      Item* FindItemInInventory(std::function<bool(ItemTemplate const*)> checkItem) const;
      void HandleCommands();
++    bool HandleGlobalBattlegroundCommand(uint32 type, std::string const& text, Player* fromPlayer);
++    bool HandleBattlegroundCommand(uint32 type, std::string const& text, Player* fromPlayer);
++    void ResetBattlegroundCommand();
++    void SayBattlegroundCommand(std::string const& text);
 +    void HandleFlagDropRequest();
      void HandleCommand(uint32 type, const std::string& text, Player& fromPlayer, const uint32 lang = LANG_UNIVERSAL);
      inline bool IsValidUnit(const Unit* unit) const
      {
-@@ -650,6 +650,8 @@ protected:
+@@ -650,6 +655,10 @@ protected:
      BotCheatMask cheatMask = BotCheatMask::none;
      Position jumpDestination = Position();
      uint32 nextTransportCheck = 0;
 +    uint32 lastDispelCast = 0;
++    std::string battlegroundCommand;
++    ObjectGuid battlegroundCommandTarget = ObjectGuid::Empty;
 +    ObjectGuid flagDropTarget = ObjectGuid::Empty;
      bool spellInterruptRequested = false;
  };

@@ -69,6 +69,7 @@ RegisterCreatureGossipEvent(22427, ON_HELLO, function(event, player, creature)
   if player:GetSpecsCount() < 2 then
     player:GossipMenuAddItem(ICON_BOOK, "Learn Dual Specialization", 1, 2, false, "Are you sure you want to learn Dual Specialization?", DUAL_SPEC_COST)
   end
+  player:GossipAddQuests(creature)
   player:GossipSendMenu(1, creature)
 end)
 
