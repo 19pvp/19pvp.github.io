@@ -32,7 +32,9 @@ local function groupCandidates(group)
 
     local candidates = {}
     local groupSize = #group.players
-    for allianceCount = 0, groupSize do
+    local minAlliance = groupSize >= 2 and 1 or 0
+    local maxAlliance = groupSize >= 2 and (groupSize - 1) or groupSize
+    for allianceCount = minAlliance, maxAlliance do
         local allianceNativesKept = math.min(allianceCount, #nativeAlliance)
         local hordeMovedToAlliance = allianceCount - allianceNativesKept
         local assignments = {}

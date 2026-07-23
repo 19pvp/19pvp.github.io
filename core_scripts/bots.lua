@@ -83,14 +83,24 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
 
     bg:StartBattleground()
 
+    SendWorldMessage("[WSG Queue Debug] Match procced! Assignments:")
     for _, assignment in ipairs(assignments) do
         local player = assignment.player
         local teamId = assignment.team
+        local teamName = teamNames[teamId] or tostring(teamId)
+        local grp = player:GetGroup()
+        local groupLabel = grp and ("Group#" .. tostring(grp:GetGUID())) or "Solo"
+
+        SendWorldMessage("[WSG Queue Debug] " .. player:GetName() .. " [" .. groupLabel .. "] -> " .. teamName)
+        player:SendBroadcastMessage("[WSG Queue Debug] Assigned to " .. teamName .. " (" .. groupLabel .. ")")
+
         if player:InviteToBattleground(bg, teamId) then
-            pendingInvites[player:GetGUIDLow()] = true
             table.insert(balancedRealPlayers[teamId], player)
         else
-            print("[WSG Queue] Failed to invite " .. player:GetName())
+            local reason = "InviteToBattleground failed (already invited or not found in WSG queue)"
+            print("[WSG Queue] Failed to invite " .. player:GetName() .. ": " .. reason)
+            SendWorldMessage("[WSG Queue Debug] Failed to invite " .. player:GetName() .. ": " .. reason)
+            pendingInvites[player:GetGUIDLow()] = nil -- Clear guard on failure so player can re-queue/re-try if needed
         end
     end
 
@@ -160,6 +170,9 @@ CreateLuaEvent(function ()
     end
 
     if shouldProc and realPlayersCount > 0 then
+        for _, p in ipairs(eligiblePlayers) do
+            pendingInvites[p:GetGUIDLow()] = true
+        end
         ProcessAndStartMatch(eligiblePlayers, realPlayersCount)
     end
 end, 1000, 0)
@@ -180,6 +193,7 @@ local function SyncBGPlayerData(map)
     if not map then return end
     local bots = {}
     local hordePlayers = {}
+    local alliancePlayers = {}
     local realPlayers = {}
     for _, p in ipairs(map:GetPlayers()) do
         local name = p:GetName()
@@ -191,9 +205,11 @@ local function SyncBGPlayerData(map)
         -- GetBgTeamId returns 0 for Alliance, 1 for Horde
         if p:GetBgTeamId() == 1 then
             table.insert(hordePlayers, name)
+        else
+            table.insert(alliancePlayers, name)
         end
     end
-    local payload = table.concat(bots, ",") .. ";" .. table.concat(hordePlayers, ",")
+    local payload = table.concat(bots, ",") .. ";" .. table.concat(hordePlayers, ",") .. ";" .. table.concat(alliancePlayers, ",")
     for _, p in ipairs(realPlayers) do
         -- Channel 7 is CHAT_MSG_WHISPER (addon message whisper)
         p:SendAddonMessage("CFBG_SYNC", payload, 7, p)

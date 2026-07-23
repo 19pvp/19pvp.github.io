@@ -136,6 +136,30 @@ index e80bdbe1..054d952c 100644
 -
      return false;
  }
+diff --git a/src/Ai/Base/Actions/BattleGroundJoinAction.cpp b/src/Ai/Base/Actions/BattleGroundJoinAction.cpp
+index 58ee42cf..fcdf1664 100644
+--- a/src/Ai/Base/Actions/BattleGroundJoinAction.cpp
++++ b/src/Ai/Base/Actions/BattleGroundJoinAction.cpp
+@@ -644,6 +644,9 @@ bool BGLeaveAction::Execute(Event /*event*/)
+     if (!(bot->InBattlegroundQueue() || bot->InBattleground()))
+         return false;
+ 
++    if (bot->InBattleground() && bot->GetSession()->IsBot())
++        return false;
++
+     // botAI->ChangeStrategy("-bg", BOT_STATE_NON_COMBAT);
+ 
+     if (BGStatusAction::LeaveBG(botAI))
+@@ -694,6 +697,9 @@ bool BGStatusAction::LeaveBG(PlayerbotAI* botAI)
+     Battleground* bg = bot->GetBattleground();
+     if (!bg)
+         return false;
++
++    if (bot->GetSession()->IsBot())
++        return false;
+     bool isArena = bg->isArena();
+     bool isRandomBot = sRandomPlayerbotMgr.IsRandomBot(bot);
+ 
 diff --git a/src/Ai/Base/Actions/BuyAction.cpp b/src/Ai/Base/Actions/BuyAction.cpp
 index e3d454dd..515a2bac 100644
 --- a/src/Ai/Base/Actions/BuyAction.cpp
