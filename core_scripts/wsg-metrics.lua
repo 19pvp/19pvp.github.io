@@ -70,10 +70,10 @@ local CC_SPELLS = {
 local function GetStats(player, instanceId)
     if player:IsBot() then return nil end
 
-    if not instanceId then
+    if not instanceId or instanceId == 0 then
         instanceId = player:GetBattlegroundId()
     end
-    if not instanceId then return nil end
+    if not instanceId or instanceId == 0 then return nil end
 
     if not matchStats[instanceId] then
         matchStats[instanceId] = {}

@@ -73,7 +73,7 @@ end
 
 local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     local balancedRealPlayers = { [0] = {}, [1] = {} }
-    local assignments = WsgBalance.assign(GroupQueuedPlayers(queuedPlayers))
+    local assignments = WsgBalance.assign(WsgBalance.groupQueuedPlayers(queuedPlayers))
 
     local bg = CreateBattleground(bgTypeId, bracketId)
     if not bg then
@@ -216,57 +216,143 @@ local function SyncBGPlayerData(map)
     end
 end
 
+local function BalanceBGBots(map, bg, triggerEvent, playerName)
+    if not map or not bg then return end
+
+    local plan = WsgBalance.computeMapBotActions(map, minPlayersPerTeam)
+
+    local removedBotNames = {}
+    for _, bot in ipairs(plan.toRemove) do
+        if bot then
+            local botName = type(bot.GetName) == "function" and bot:GetName() or tostring(bot)
+            table.insert(removedBotNames, botName)
+            print(string.format("[Bot Balance] Removing bot %s from BG.", botName))
+            if type(bot.LeaveBattleground) == "function" then
+                bot:LeaveBattleground()
+            end
+        end
+    end
+
+    local addedInfo = {}
+    for team, count in pairs(plan.toAdd) do
+        if count > 0 then
+            table.insert(addedInfo, count .. " " .. (teamNames[team] or tostring(team)))
+            print(string.format("[Bot Balance] Adding %d bot(s) to %s.", count, teamNames[team]))
+            ShuffleTable(fixedRoster)
+            for _, botName in ipairs(fixedRoster) do
+                if count <= 0 then break end
+                local bot = GetPlayerByName(botName)
+                if bot and not bot:InBattleground() then
+                    bot:AddToBattleground(bg, team)
+                    bot:SetBotStrategy("+bg", 1)
+                    print(string.format("[Bot Balance] Added bot %s to %s.", bot:GetName(), teamNames[team]))
+                    count = count - 1
+                end
+            end
+        end
+    end
+
+    local msgs = {}
+    if #removedBotNames > 0 then
+        table.insert(msgs, "Kicking bot(s): " .. table.concat(removedBotNames, ", "))
+    end
+    if #addedInfo > 0 then
+        table.insert(msgs, "Adding bot(s): " .. table.concat(addedInfo, ", "))
+    end
+
+    local prefix = "[WSG Bot Balance]"
+    if playerName and triggerEvent then
+        prefix = string.format("[WSG Bot Balance] %s %sed ->", playerName, triggerEvent)
+    end
+
+    local msgText
+    if #msgs > 0 then
+        msgText = prefix .. " " .. table.concat(msgs, " | ")
+    else
+        msgText = prefix .. " Roster balanced (No bot actions needed)."
+    end
+
+    print(msgText)
+    SendWorldMessage(msgText)
+end
+
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
     local label = (player:IsBot() and " bot " or " player ") .. player:GetName()
     pendingInvites[player:GetGUIDLow()] = nil
-    print("[BG Match] " .. label .. " entered Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
-    
-    local map = player:GetMap()
-    if map then
-        -- Delay slightly to ensure player is fully in map and lists are ready
-        CreateLuaEvent(function()
+    print(string.format("[DEBUG ON_ENTER_BG] Hook fired! %s entered BG Map %s (Instance %s)", label, tostring(mapId), tostring(instanceId)))
+    SendWorldMessage(string.format("[DEBUG ON_ENTER_BG] Hook fired! %s entered BG Map %s", label, tostring(mapId)))
+
+    if player:IsBot() then return end
+
+    CreateLuaEvent(function()
+        local bg = GetBattleground(instanceId, bgTypeId)
+        local map = bg and bg:GetMap() or player:GetMap()
+        print(string.format("[DEBUG ON_ENTER_BG] Delayed check for %s. Map found: %s, BG found: %s", player:GetName(), tostring(map ~= nil), tostring(bg ~= nil)))
+        if map and bg then
+            BalanceBGBots(map, bg, "join", player:GetName())
             SyncBGPlayerData(map)
-        end, 1000, 1)
-    end
+        end
+    end, 1000, 1)
 end)
 
 local function CheckBGEmpty(player, mapId, instanceId)
     local bg = GetBattleground(instanceId, 2) -- Warsong Gulch (2)
     if not bg then
         print("[BG Match] bg not found, can't cleanup")
-        return
+        return false
     end
     local map = bg:GetMap()
     if not map then
         print("[BG Match] map not found, can't cleanup")
-        return
+        return false
     end
 
     for _, p in ipairs(map:GetPlayers()) do
         if p:GetName() ~= player:GetName() and not p:IsBot() then
             print("[WSG Queue] " .. p:GetName() .. " still remaining in BG, keeping it open.")
-            return
+            return false
         end
     end
 
-    -- No real players left: end the BG.
-    -- BattlegroundMap::Update removes all remaining players (bots) once the timer expires.
-    -- Guard: EndBattleground checks STATUS_IN_PROGRESS internally and is a no-op if already ended.
     print("[WSG Queue] No real players remaining in BG map " .. mapId .. " (Instance " .. instanceId .. "). Ending match.")
     bg:EndBattleground(2)
     bg:SetEndTime(1) -- 1ms cleanup countdown
+    return true
 end
 
---  looks like RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg) does not recieve the bg, it's nil.
--- I don't know how we pass it but it's wrong
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId)
     local botText = player:IsBot() and "Bot" or "Player"
-    print("[BG Match] " .. botText .. " " .. player:GetName() .. " left Battleground Map " .. mapId .. " (Instance " .. instanceId .. ")")
-    CheckBGEmpty(player, mapId, instanceId)
-    
-    local map = GetMapById(mapId, instanceId)
-    if map then
+    print(string.format("[DEBUG ON_LEAVE_BG] Hook fired! %s %s left BG Map %s (Instance %s)", botText, player:GetName(), tostring(mapId), tostring(instanceId)))
+    SendWorldMessage(string.format("[DEBUG ON_LEAVE_BG] Hook fired! %s %s left BG Map %s", botText, player:GetName(), tostring(mapId)))
+
+    local isEmpty = CheckBGEmpty(player, mapId, instanceId)
+    if isEmpty or player:IsBot() then return end
+
+    local bg = GetBattleground(instanceId, bgTypeId)
+    local map = bg and bg:GetMap()
+    print(string.format("[DEBUG ON_LEAVE_BG] Check for %s. Map found: %s, BG found: %s", player:GetName(), tostring(map ~= nil), tostring(bg ~= nil)))
+    if map and bg then
+        BalanceBGBots(map, bg, "leave", player:GetName())
         SyncBGPlayerData(map)
+    end
+end)
+
+-- Standard Eluna Map Change Fallback (Event 28: PLAYER_EVENT_ON_MAP_CHANGE)
+RegisterPlayerEvent(28, function(event, player)
+    if not player or player:IsBot() then return end
+    local inBG = player:InBattleground()
+    print(string.format("[DEBUG ON_MAP_CHANGE (Event 28)] Player %s. MapId: %d, InBG: %s", player:GetName(), player:GetMapId(), tostring(inBG)))
+
+    if inBG then
+        local bgId = player:GetBattlegroundId()
+        local bgType = player:GetBattlegroundTypeId()
+        local bg = (bgId and bgId > 0) and GetBattleground(bgId, (bgType and bgType > 0) and bgType or bgTypeId) or nil
+        local map = bg and bg:GetMap() or player:GetMap()
+        if bg and map then
+            print(string.format("[DEBUG ON_MAP_CHANGE] Player %s is in BG Map %d (Instance %d). Balancing bots...", player:GetName(), bg:GetBgTypeID(), bg:GetInstanceID()))
+            BalanceBGBots(map, bg, "join", player:GetName())
+            SyncBGPlayerData(map)
+        end
     end
 end)
 
