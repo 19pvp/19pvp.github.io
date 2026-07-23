@@ -1377,11 +1377,11 @@ function inspect(value, depth, seen)
   if depth > 10 then return "" end
 
   -- Indentation for better readability
-  local indent = string.rep("  ", depth)
+  local indent = "" -- string.rep("  ", depth)
 
   -- Check for circular references
   if type(value) == "table" and seen[value] then
-    return indent .. "<circular reference>"
+    return indent .. "<self>"
   end
 
   -- Mark the current table as seen
@@ -1390,23 +1390,26 @@ function inspect(value, depth, seen)
   end
 
   -- Determine the type of the value
-  local output = indent .. "(" .. type(value) .. ") "
-
+  local output = "" -- indent .. "(" .. type(value) .. ") "
   if type(value) == "table" then
-    output = output .. "{\n"
+    output = output .. "{ "
+    local first = true
     for k, v in pairs(value) do
-      output = output .. indent .. "  [" .. tostring(k) .. "] = " .. inspect(v, depth + 1, seen) .. ",\n"
+      output = output .. (first and "" or ", ") .. tostring(k) .. ": " .. inspect(v, depth + 1, seen) 
+      first = false
     end
-    output = output .. indent .. "}"
+    output = output .. " }"
     elseif type(value) == "userdata" then
-      output = output .. tostring(value) .. " {\n"
+      output = output .. tostring(value) .. "{ "
 
       -- Check fields of userdata
       local mt = getmetatable(value)
+      local first = true
       if mt then
-        output = output .. indent .. "  __metatable = " .. inspect(mt, depth + 1, seen) .. ",\n"
+        output = output ..  (first and "" or ", ") .. "  __: " .. inspect(mt, depth + 1, seen)
+        first = false
       end
-      output = output .. indent .. "}"
+      output = output .. " }"
   elseif type(value) == "function" then
     output = output .. tostring(value)  -- Show the memory address
   elseif type(value) == "string" then

@@ -85,7 +85,7 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
     bg:StartBattleground()
     activeBGInstances[bg:GetInstanceId()] = bg
 
-    SendWorldMessage("[WSG Queue Debug] Match procced! Assignments:")
+    print("[WSG Queue Debug] Match procced! Assignments:")
     for _, assignment in ipairs(assignments) do
         local player = assignment.player
         local teamId = assignment.team
@@ -93,7 +93,7 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
         local grp = player:GetGroup()
         local groupLabel = grp and ("Group#" .. tostring(grp:GetGUID())) or "Solo"
 
-        SendWorldMessage("[WSG Queue Debug] " .. player:GetName() .. " [" .. groupLabel .. "] -> " .. teamName)
+        print("[WSG Queue Debug] " .. player:GetName() .. " [" .. groupLabel .. "] -> " .. teamName)
         player:SendBroadcastMessage("[WSG Queue Debug] Assigned to " .. teamName .. " (" .. groupLabel .. ")")
 
         if player:InviteToBattleground(bg, teamId) then
@@ -102,7 +102,6 @@ local function ProcessAndStartMatch(queuedPlayers, realPlayersCount)
         else
             local reason = "InviteToBattleground failed (already invited or not found in WSG queue)"
             print("[WSG Queue] Failed to invite -> " .. inspect({ player = player:GetName(), reason = reason }))
-            SendWorldMessage("[WSG Queue Debug] Failed to invite -> " .. inspect({ player = player:GetName(), reason = reason }))
             pendingInvites[player:GetGUIDLow()] = nil -- Clear guard on failure so player can re-queue/re-try if needed
         end
     end
@@ -195,7 +194,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player)
 
     if invitedInstanceId and not player:IsBot() then
         print("[WSG Queue] Real player declined/expired invite -> " .. inspect({ player = player:GetName(), invitedInstanceId = invitedInstanceId }))
-        SendWorldMessage("[WSG Bot Balance] Real player declined/expired invite -> " .. inspect({ player = player:GetName(), invitedInstanceId = invitedInstanceId }))
 
         local bg = GetBattleground(invitedInstanceId, bgTypeId)
         local map = (bg and bg:GetMap()) or GetMapById(489, invitedInstanceId)
@@ -304,7 +302,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
 
     pendingInvites[playerGuidLow] = nil
     print("[DEBUG ON_ENTER_BG] Hook fired -> " .. inspect({ player = playerName, isBot = isBot, mapId = mapId, instanceId = instanceId }))
-    SendWorldMessage("[DEBUG ON_ENTER_BG] Hook fired -> " .. inspect({ player = playerName, isBot = isBot, mapId = mapId }))
 
     if isBot then return end
 
@@ -350,7 +347,6 @@ local function CheckBGEmpty(player, mapId, instanceId)
     end
 
     print("[WSG Queue] No real players remaining in BG -> " .. inspect({ mapId = mapId, instanceId = instId }))
-    SendWorldMessage("[WSG Bot Balance] No real players remaining in BG -> " .. inspect({ instanceId = instId }))
     if bg then
         pcall(function()
             bg:EndBattleground(bgTypeId)
@@ -372,7 +368,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
     local map = GetMapById((mapId and mapId > 0) and mapId or 489, instId)
 
     print("[DEBUG ON_LEAVE_BG] Hook fired -> " .. inspect({ type = botText, player = playerName, mapId = mapId or 489, instanceId = instId }))
-    SendWorldMessage("[DEBUG ON_LEAVE_BG] Hook fired -> " .. inspect({ type = botText, player = playerName, mapId = mapId or 489 }))
 
     local isEmpty = CheckBGEmpty(player, mapId, instId)
     if isEmpty or (player and player:IsBot()) then return end
