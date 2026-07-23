@@ -331,31 +331,49 @@ end
 local function CheckBGEmpty(player, mapId, instanceId)
     local instId = (instanceId and instanceId > 0) and instanceId or 0
     local bg = GetBGInstance(instId)
-    local map = GetMapById(mapId or 489, instId)
-
-    if not map then
-        print("[BG Match] map not found -> " .. inspect({ instanceId = instId }))
+    if not bg then
         return false
     end
 
-    local playerName = player and player:GetName() or ""
-    for _, p in ipairs(map:GetPlayers()) do
-        if p:GetName() ~= playerName and not p:IsBot() then
-            print("[WSG Queue] Real player remaining in BG -> " .. inspect({ player = p:GetName(), instanceId = instId }))
-            return false
+    local departingName = player and player:GetName() or ""
+
+    -- 1. Check if any OTHER real player is inside the BG map
+    local map = GetMapById(mapId or 489, instId)
+    if map then
+        for _, p in ipairs(map:GetPlayers()) do
+            if p:GetName() ~= departingName and not p:IsBot() then
+                print("[WSG Queue] Real player remaining in BG map -> " .. inspect({ player = p:GetName(), instanceId = instId }))
+                return false
+            end
         end
     end
 
-    print("[WSG Queue] No real players remaining in BG -> " .. inspect({ mapId = mapId, instanceId = instId }))
-    if bg then
-        pcall(function()
-            bg:EndBattleground(bgTypeId)
-            bg:SetEndTime(1) -- 1ms cleanup countdown
-        end)
+    -- 2. No real players are inside the map -> Retract all pending invites for this BG instance
+    for guidLow, invInstId in pairs(pendingInvites) do
+        if invInstId == instId then
+            pendingInvites[guidLow] = nil
+            -- Retract invite in-game if player is online
+            for _, p in ipairs(GetPlayersInWorld()) do
+                if p:GetGUIDLow() == guidLow then
+                    print("[WSG Queue] Retracting BG invite -> " .. inspect({ player = p:GetName(), instanceId = instId }))
+                    p:LeaveBattleground()
+                end
+            end
+        end
     end
+
+    print("[WSG Queue] No real players remaining in BG map. Retracting invites and closing BG -> " .. inspect({ mapId = mapId, instanceId = instId }))
+    SendWorldMessage("[WSG Queue] Aborting BG (Instance " .. tostring(instId) .. "): No real players inside.")
+
+    pcall(function()
+        bg:EndBattleground(bgTypeId)
+        bg:SetEndTime(1) -- 1ms cleanup countdown
+    end)
+
     if instId > 0 then
         activeBGInstances[instId] = nil
     end
+
     return true
 end
 
@@ -395,6 +413,46 @@ RegisterPlayerEvent(28, function(event, player)
             BalanceBGBots(map, bg, "join", player:GetName())
             SyncBGPlayerData(map)
         end
+    end
+end)
+
+-- Doors Open Hook (BG_EVENT_ON_START = 1)
+RegisterBGEvent(1, function(event, bg, bgTypeIdVal, instanceId)
+    if not bg then return end
+    local instId = instanceId or bg:GetInstanceId()
+    local map = GetMapById(489, instId)
+
+    local hasRealPlayers = false
+    if map then
+        for _, p in ipairs(map:GetPlayers()) do
+            if not p:IsBot() then
+                hasRealPlayers = true
+                break
+            end
+        end
+    end
+
+    if not hasRealPlayers then
+        print("[WSG Queue] Doors opened for BG, but 0 real players are inside. Retracting invites and closing BG -> " .. inspect({ instanceId = instId }))
+        SendWorldMessage("[WSG Queue] Aborting BG (Instance " .. tostring(instId) .. "): Doors opened with 0 real players.")
+
+        -- Retract any remaining pending invites
+        for guidLow, invInstId in pairs(pendingInvites) do
+            if invInstId == instId then
+                pendingInvites[guidLow] = nil
+                for _, p in ipairs(GetPlayersInWorld()) do
+                    if p:GetGUIDLow() == guidLow then
+                        p:LeaveBattleground()
+                    end
+                end
+            end
+        end
+
+        pcall(function()
+            bg:EndBattleground(bgTypeIdVal or bgTypeId)
+            bg:SetEndTime(1)
+        end)
+        activeBGInstances[instId] = nil
     end
 end)
 

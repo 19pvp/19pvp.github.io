@@ -160,6 +160,38 @@ index d8886ce..d43e94d 100644
      new ALE_UnitScript();
 +    new ALE_BattlefieldScript();
  }
+diff --git a/src/LuaEngine/ALETemplate.h b/src/LuaEngine/ALETemplate.h
+index a8d6fc4..55ca5d2 100644
+--- a/src/LuaEngine/ALETemplate.h
++++ b/src/LuaEngine/ALETemplate.h
+@@ -264,18 +264,25 @@ public:
+         ALEObject** ptrHold = static_cast<ALEObject**>(lua_newuserdata(L, sizeof(ALEObject*)));
+         if (!ptrHold)
+         {
+-            ALE_LOG_ERROR("{} could not create new userdata", tname);
++            ALE_LOG_ERROR("{} could not create new userdata", tname ? tname : "unknown");
+             lua_pushnil(L);
+             return 1;
+         }
+         *ptrHold = new ALEObject(const_cast<T*>(obj), manageMemory);
+ 
+         // Set metatable for it
++        if (!tname)
++        {
++            ALE_LOG_ERROR("missing metatable type name");
++            lua_pop(L, 1);
++            lua_pushnil(L);
++            return 1;
++        }
+         lua_pushstring(L, tname);
+         lua_rawget(L, LUA_REGISTRYINDEX);
+         if (!lua_istable(L, -1))
+         {
+-            ALE_LOG_ERROR("{} missing metatable", tname);
++            ALE_LOG_ERROR("{} missing metatable", tname ? tname : "unknown");
+             lua_pop(L, 2);
+             lua_pushnil(L);
+             return 1;
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
 index f83dd99..2b071e4 100644
 --- a/src/LuaEngine/Hooks.h
