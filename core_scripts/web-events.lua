@@ -32,11 +32,11 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function (event, player)
     "SELECT discord_login FROM discord_account WHERE account_id="
     ..tostring(account_id), function (result)
     if not result then
-    print("Account ID: "..account_id.." logged in !")
+      print("[Web Events] Account logged in -> " .. inspect({ accountId = account_id }))
       return
     end
     local discord_login = result:GetString(0)
-    print("Account ID: "..account_id.." aka "..discord_login.." logged in !")
+    print("[Web Events] Account logged in -> " .. inspect({ accountId = account_id, discordLogin = discord_login }))
     discord_logins[account_id] = discord_login
   end)
 end)

@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..0308cfd 100644
+index d8886ce..d43e94d 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -61,7 +61,7 @@ index d8886ce..0308cfd 100644
          PLAYERHOOK_ON_LOGOUT,
          PLAYERHOOK_ON_CREATE,
          PLAYERHOOK_ON_SAVE,
-@@ -737,9 +757,28 @@ public:
+@@ -737,9 +757,31 @@ public:
          sALE->OnQuestAbandon(player, questId);
      }
  
@@ -75,26 +75,29 @@ index d8886ce..0308cfd 100644
      {
          sALE->OnMapChanged(player);
 +
-+        bool wasInBG = playersInBG.find(player->GetGUID()) != playersInBG.end();
++        auto it = playersInBG.find(player->GetGUID());
++        bool wasInBG = (it != playersInBG.end());
 +        bool nowInBG = player->InBattleground();
 +        if (nowInBG && !wasInBG)
 +        {
-+            playersInBG.insert(player->GetGUID());
-+            sALE->OnEnterBG(player, player->GetBattleground());
++            Battleground* bg = player->GetBattleground();
++            playersInBG[player->GetGUID()] = bg;
++            sALE->OnEnterBG(player, bg);
 +        }
 +        else if (!nowInBG && wasInBG)
 +        {
-+            playersInBG.erase(player->GetGUID());
-+            sALE->OnLeaveBG(player, nullptr);
++            Battleground* oldBG = it->second;
++            playersInBG.erase(it);
++            sALE->OnLeaveBG(player, oldBG);
 +        }
      }
  
      void OnPlayerGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action) override
-@@ -832,8 +871,22 @@ public:
+@@ -832,8 +874,22 @@ public:
          sALE->OnLogin(player);
      }
  
-+    std::set<ObjectGuid> playersInBG;
++    std::map<ObjectGuid, Battleground*> playersInBG;
 +
 +    void OnPlayerJoinBG(Player* player) override
 +    {
@@ -113,7 +116,7 @@ index d8886ce..0308cfd 100644
          sALE->OnLogout(player);
      }
  
-@@ -1340,6 +1393,37 @@ public:
+@@ -1340,6 +1396,37 @@ public:
      }
  };
  
@@ -151,7 +154,7 @@ index d8886ce..0308cfd 100644
  // Group all custom scripts
  void AddSC_ALE()
  {
-@@ -1365,4 +1449,5 @@ void AddSC_ALE()
+@@ -1365,4 +1452,5 @@ void AddSC_ALE()
      new ALE_WorldObjectScript();
      new ALE_WorldScript();
      new ALE_UnitScript();

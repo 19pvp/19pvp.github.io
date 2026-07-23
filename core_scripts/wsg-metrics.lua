@@ -353,7 +353,7 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
 
     end
 
-    print("[WSG Metrics] Closing match instance " .. instanceId .. ". Sending PVP_BG_STATS web event...")
+    print("[WSG Metrics] Closing match instance -> " .. inspect({ instanceId = instanceId, winner = winner }))
     SendWebEvent('PVP_BG_STATS', nil, {
         instanceId = instanceId,
         winner = winner,
