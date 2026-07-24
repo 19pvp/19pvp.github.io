@@ -5,5 +5,5 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
         botText = "Bot"
     end
     
-    print("[WSG Queue Debug] Queue enter -> " .. inspect({ player = player:GetName(), isBot = isBot }))
+    print("[WSG Queue Debug] Queue enter " .. inspect({ player = player:GetName(), isBot = isBot }))
 end)

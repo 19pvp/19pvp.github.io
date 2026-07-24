@@ -2336,14 +2336,6 @@ custom_data = {
     items = {
 ${itemIds.filter((itemId) => randomEnchantItemIds.has(itemId)).map(luaItem).join('\n')}
     },
-    suffix_options = {
-${
-  [...usedSuffixOptions.values()]
-    .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id)
-    .map(luaOption)
-    .join('\n')
-}
-    },
     property_options = {
 ${
   [...usedPropertyOptions.values()]
@@ -2356,12 +2348,15 @@ ${
   quest_reward_spells = {
 ${luaQuestRewardSpells}
   },
+  wsg_bot_specs = {
+${luaWsgBotStartupSpecs}
+  },
 }
 `
 
 await Deno.writeTextFile('core_scripts/custom-data.lua', lua)
 console.log(
-  `wrote ${randomEnchantItemIds.size} items, ${usedSuffixOptions.size} suffix options, ${usedPropertyOptions.size} property options and ${
+  `wrote ${randomEnchantItemIds.size} items, ${usedPropertyOptions.size} property options and ${
     quests.filter((quest) => quest.props.LearnSpell).length
   } quest reward spells`,
 )
@@ -2419,6 +2414,7 @@ ORDER BY npc
         positionsByNpc,
         npcNames,
         npcSubnames,
+        npcLevels,
         npcSpawnSwaps,
         satchelItems,
         satchelAlwaysDropItems,
