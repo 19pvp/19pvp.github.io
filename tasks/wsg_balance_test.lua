@@ -220,7 +220,7 @@ local plan1 = balance.computeBotActions({
     [1] = { realCount = 1, bots = { "botH1", "botH2", "botH3", "botH4", "botH5" } },
 }, 5)
 assert(#plan1.toRemove == 1 and plan1.toRemove[1] == "botH1", "computeBotActions must return 1 Horde bot to remove when 2nd real player joins")
-assert(plan1.toAdd[0] == 0 and plan1.toAdd[1] == 0, "No bots to add")
+assert(#plan1.toAdd[0] == 0 and #plan1.toAdd[1] == 0, "No bots to add")
 
 -- 8f: Edge Case 10v9 (Alliance: 5 real + 5 bots = 10; Horde: 4 real + 5 bots = 9). Single player joins Horde -> Horde real becomes 5 -> All 5 Horde bots leave to make room for real players!
 local plan10v9 = balance.computeBotActions({
@@ -241,7 +241,7 @@ local planGroupJoin = balance.computeBotActions({
     [0] = { realCount = 2, bots = { "botA1", "botA2", "botA3" } },
     [1] = { realCount = 3, bots = { "botH1", "botH2", "botH3", "botH4" } },
 }, 5)
-assert(#planGroupJoin.toRemove == 2 and planGroupJoin.toRemove[1] == "botH1" and planGroupJoin.toRemove[2] == "botH2", "Group join: 2 Horde bots removed when Horde real count increases by 2")
+assert(#planGroupJoin.toRemove == 2, "Ongoing group join: 2 Horde bots removed when 2 real players join Horde")
 
 -- 8i: Over 10 real players (6 Alliance real + 2 bots vs 5 Horde real + 3 bots) -> All 5 bots removed
 local planOver10 = balance.computeBotActions({
@@ -252,16 +252,16 @@ assert(#planOver10.toRemove == 5, "Over 10 real players: all 5 remaining bots mu
 
 print("  -> PASSED: Bot target calculations, 10v9 edge cases, capacity frees, and group join bot diffs verified.")
 
--- 9. Player Leave Bot Replacement Tests (Never swap teams, fill with bots)
+-- 9. Player Leave Bot Replacement (No mid-match team swaps)
 print("[Test 9] Player Leave Bot Replacement (No mid-match team swaps)...")
 
--- 9a: 1 Real Alliance leaves a match (real Alliance drops to 3 vs 5H real) -> 1 Alliance bot added to fill slot!
+-- 9a: 1 Real Alliance player leaves (real Alliance drops from 4 to 3 vs 5H real) -> 1 Alliance bot added to fill slot (real diff becomes 2, 0 team swaps!)
 local leavePlan1 = balance.computeBotActions({
     [0] = { realCount = 3, bots = { "botA1" } },
     [1] = { realCount = 5, bots = {} },
 }, 5)
 assert(#leavePlan1.toRemove == 0, "No bots removed when real player leaves")
-assert(leavePlan1.toAdd[0] == 1 and leavePlan1.toAdd[1] == 0, "1 Alliance bot added to replace leaving real player (3A real + 2 bots = 5A total vs 5H real)")
+assert(#leavePlan1.toAdd[0] == 1 and #leavePlan1.toAdd[1] == 0, "1 Alliance bot added to replace leaving real player (3A real + 2 bots = 5A total vs 5H real)")
 
 -- 9b: 2 Real Alliance players leave (real Alliance drops to 2 vs 5H real) -> 2 Alliance bots added to fill slots (real diff becomes 3, 0 team swaps!)
 local leavePlan2 = balance.computeBotActions({
@@ -269,7 +269,7 @@ local leavePlan2 = balance.computeBotActions({
     [1] = { realCount = 5, bots = {} },
 }, 5)
 assert(#leavePlan2.toRemove == 0, "No bots removed when 2 real players leave")
-assert(leavePlan2.toAdd[0] == 2 and leavePlan2.toAdd[1] == 0, "2 Alliance bots added to replace 2 leaving real players (2A real + 3 bots = 5A total vs 5H real)")
+assert(#leavePlan2.toAdd[0] == 2 and #leavePlan2.toAdd[1] == 0, "2 Alliance bots added to replace 2 leaving real players (2A real + 3 bots = 5A total vs 5H real)")
 
 -- 9c: Subsequent real player joins after leave (2A real + 3 bots vs 5H real) -> Assigns to Alliance (2A < 5H), 1 Alliance bot removed!
 local joinAfterLeaveAssigns, _ = balance.assign({ { players = { player("newA", 0) } } }, 2, 5)
@@ -372,7 +372,7 @@ local extracted = balance.extractRoster(mockMap)
 assert(extracted[0].realCount == 1 and #extracted[0].bots == 1 and #extracted[1].bots == 1, "extractRoster parses real vs bot counts correctly")
 
 local mapPlan = balance.computeMapBotActions(mockMap, 5)
-assert(mapPlan.toAdd[0] == 3 and mapPlan.toAdd[1] == 4, "computeMapBotActions returns correct bot target additions")
+assert(#mapPlan.toAdd[0] == 3 and #mapPlan.toAdd[1] == 4, "computeMapBotActions returns correct bot target additions")
 
 print("  -> PASSED: Map roster extraction and map bot action calculation verified.")
 
@@ -386,9 +386,107 @@ local emptyRealPlan = balance.computeBotActions({
     [1] = { realCount = 0, bots = { "botH1", "botH2", "botH3", "botH4", "botH5" } },
 }, 5)
 assert(#emptyRealPlan.toRemove == 9, "When last real player leaves (0 real players), all 9 remaining bots are kicked")
-assert(emptyRealPlan.toAdd[0] == 0 and emptyRealPlan.toAdd[1] == 0, "No bots added when 0 real players remain")
+assert(#emptyRealPlan.toAdd[0] == 0 and #emptyRealPlan.toAdd[1] == 0, "No bots added when 0 real players remain")
 
 print("  -> PASSED: All bots kicked when no real players remain in BG.")
 
-print("\nwsg_balance_test: ok (All 15 test suites passed cleanly)")
+-- 16. Bot Selection & Addition Class Priority
+print("[Test 16] Bot Selection & Addition Class Priority...")
+
+-- 16a: No Warrior in team -> Warrior (class 1) picked first
+local teamNoWarrior = { { name = "RealPriest", class = 5 } }
+local added1 = balance.selectClassesToAdd(teamNoWarrior, 1)
+assert(added1[1] == 1, "Warrior (class 1) is picked first when no warrior is in team")
+
+-- 16b: Real player is a Warrior -> Warrior is skipped (already in team), Druid (11) picked first
+local teamRealWarrior = { { name = "RealWarrior", class = 1 } }
+local addedRealWarr = balance.selectClassesToAdd(teamRealWarrior, 2)
+assert(addedRealWarr[1] == 11, "Druid (11) is picked first when real Warrior is already in team")
+assert(addedRealWarr[2] == 8, "Mage (8) is picked second when real Warrior is already in team")
+
+-- 16c: 3-player premade (Warrior, Druid, Mage) -> Unrepresented Priest (5) and Rogue (4) added next
+local teamTrio = {
+    { name = "RealWarrior", class = 1 },
+    { name = "RealDruid", class = 11 },
+    { name = "RealMage", class = 8 },
+}
+local addedTrio = balance.selectClassesToAdd(teamTrio, 2)
+assert(addedTrio[1] == 5, "Priest (5) is added first to complete unrepresented classes")
+assert(addedTrio[2] == 4, "Rogue (4) is added second to complete unrepresented classes")
+
+-- 16d: 2 real players (Priest, Rogue) -> Warrior (1) -> Druid (11) -> Mage (8)
+local teamDuo = { { name = "RealPriest", class = 5 }, { name = "RealRogue", class = 4 } }
+local addedDuo = balance.selectClassesToAdd(teamDuo, 3)
+assert(addedDuo[1] == 1, "Warrior (1) added first when missing")
+assert(addedDuo[2] == 11, "Druid (11) added second")
+assert(addedDuo[3] == 8, "Mage (8) added third")
+
+-- 16e: Empty team 5-bot add -> Sequence MUST be Warrior(1) -> Druid(11) -> Mage(8) -> Priest(5) -> Rogue(4)
+local emptyTeam = {}
+local added5 = balance.selectClassesToAdd(emptyTeam, 5)
+assert(added5[1] == 1, "1st bot added to empty team is Warrior (1)")
+assert(added5[2] == 11, "2nd bot added to empty team is Druid (11)")
+assert(added5[3] == 8, "3rd bot added to empty team is Mage (8)")
+assert(added5[4] == 5, "4th bot added to empty team is Priest (5)")
+assert(added5[5] == 4, "5th bot added to empty team is Rogue (4)")
+
+print("  -> PASSED: Bot addition selection sequence across diverse team compositions verified.")
+
+-- 17. Bot Removal Class Priority & Order
+print("[Test 17] Bot Removal Class Priority & Order...")
+
+-- 17a: 5 unique class bots in team -> Full removal sequence must be Rogue(4) -> Priest(5) -> Mage(8) -> Druid(11) -> Warrior(1)
+local unique5Bots = {
+    { name = "BotWarr", class = 1 },
+    { name = "BotDruid", class = 11 },
+    { name = "BotMage", class = 8 },
+    { name = "BotPriest", class = 5 },
+    { name = "BotRogue", class = 4 },
+}
+local fullRemovalOrder = balance.sortBotsForRemoval(unique5Bots, unique5Bots)
+assert(fullRemovalOrder[1].class == 4, "1st bot removed is Rogue (4)")
+assert(fullRemovalOrder[2].class == 5, "2nd bot removed is Priest (5)")
+assert(fullRemovalOrder[3].class == 8, "3rd bot removed is Mage (8)")
+assert(fullRemovalOrder[4].class == 11, "4th bot removed is Druid (11)")
+assert(fullRemovalOrder[5].class == 1, "5th bot removed is Warrior (1)")
+
+-- 17b: Real Priest joins {Warrior, Druid, Mage, Priest, Rogue} -> Duplicated Priest bot leaves
+local teamPlusRealPriest = {
+    { name = "BotWarr", class = 1 },
+    { name = "BotDruid", class = 11 },
+    { name = "BotMage", class = 8 },
+    { name = "BotPriest", class = 5 },
+    { name = "BotRogue", class = 4 },
+    { name = "RealPriest", class = 5 }, -- Real player joining
+}
+local removeForRealPriest = balance.sortBotsForRemoval(unique5Bots, teamPlusRealPriest)
+assert(removeForRealPriest[1].class == 5, "Duplicated Priest (5) bot leaves when real Priest joins")
+
+-- 17c: Real Warrior joins {Warrior, Druid, Mage, Priest, Rogue} -> Duplicated Warrior bot leaves
+local teamPlusRealWarr = {
+    { name = "BotWarr", class = 1 },
+    { name = "BotDruid", class = 11 },
+    { name = "BotMage", class = 8 },
+    { name = "BotPriest", class = 5 },
+    { name = "BotRogue", class = 4 },
+    { name = "RealWarrior", class = 1 }, -- Real player joining
+}
+local removeForRealWarr = balance.sortBotsForRemoval(unique5Bots, teamPlusRealWarr)
+assert(removeForRealWarr[1].class == 1, "Duplicated Warrior (1) bot leaves when real Warrior joins")
+
+-- 17d: Duplicated class removal priority (2 Rogues, 2 Warriors, 1 Druid)
+local duplicatedTeam = {
+    { name = "BotWarr1", class = 1 },
+    { name = "BotWarr2", class = 1 },
+    { name = "BotRogue1", class = 4 },
+    { name = "BotRogue2", class = 4 },
+    { name = "BotDruid", class = 11 },
+}
+local dupRemovalOrder = balance.sortBotsForRemoval(duplicatedTeam, duplicatedTeam)
+assert(dupRemovalOrder[1].class == 4, "Duplicated Rogue (4) is removed before duplicated Warrior (1) or single Druid (11)")
+assert(dupRemovalOrder[#dupRemovalOrder].class == 11, "Single Druid (11) is preserved over duplicated classes")
+
+print("  -> PASSED: Bot removal order across diverse real player join scenarios verified.")
+
+print("\nwsg_balance_test: ok (All 17 test suites passed cleanly)")
 

@@ -28,6 +28,7 @@ type ItemSheetRow = {
 type NpcSheetRow = {
   GUID?: string
   ID?: string
+  LEVEL?: string
   GUILD?: string
   NAME?: string
 }
@@ -219,7 +220,6 @@ const itemStatTypeByKey = {
 } as const
 
 const playerClassIdByName = {
-  deathknight: 6,
   deathKnight: 6,
   druid: 11,
   hunter: 3,
@@ -263,17 +263,19 @@ const teamNameById = {
 
 const botReplacedStarterItemId = 4368
 const starterItemAmountById = {
-  21841: 4,
+  21841: 4, // Bags
+  6265: 10, // Soul Shards
 } as const
 const botOnlyItemTeamById = {
-  15196: 1,
-  15197: 2,
+  15196: 1, // Tabard Alliance
+  15197: 2, // Tabard Horde
 } as const
 
 const wsgClassSlotOrder = {
   priest: 1,
   mage: 2,
   warrior: 3,
+  rogue: 4,
   hunter: 4,
   druid: 5,
 } as const
@@ -628,8 +630,8 @@ const parseWsgBotRoster = (): WsgBotRosterEntry[] => {
   for (const team of [1, 2]) {
     const teamBots = roster.filter((bot) => bot.team === team)
     const classes = teamBots.map((bot) => bot.className).sort().join(',')
-    if (classes !== 'druid,hunter,mage,priest,warrior') {
-      questWarnings.push(`WSG_BOT: team ${team} should contain priest, mage, warrior, hunter, and druid`)
+    if (classes !== 'druid,mage,priest,rogue,warrior') {
+      questWarnings.push(`WSG_BOT: team ${team} should contain priest, mage, warrior, rogue, and druid`)
     }
   }
 
@@ -672,6 +674,17 @@ const parseStarterItems = (rows: ItemSheetRow[] | undefined) => {
         name: row.NAME?.trim() || String(itemId),
       })
     }
+  }
+
+  const warlockClassId = playerClassIdByName.warlock
+  if (!items.some((item) => item.classId === warlockClassId && item.itemId === 6265)) {
+    items.push({
+      amount: starterItemAmountById[6265] ?? 10,
+      classId: warlockClassId,
+      className: 'Warlock',
+      itemId: 6265,
+      name: 'Soul Shard',
+    })
   }
 
   return items.sort((a, b) => a.classId - b.classId || a.itemId - b.itemId)
@@ -751,6 +764,8 @@ const vendorCategoryFromItemInfo = (item: VendorItemInfo): VendorCategory | unde
   if ([2, 11, 12, 16].includes(item.inventoryType)) return 'accessory'
   if (
     item.classId === 2 ||
+    item.classId === 6 ||
+    item.classId === 11 ||
     (item.classId === 4 && (item.subclassId === 6 || [14, 23].includes(item.inventoryType)))
   ) {
     return 'weapon'
@@ -1244,14 +1259,29 @@ const parseNpcNames = (rows: NpcSheetRow[] | undefined) => {
   return names
 }
 
+const parseNpcLevels = (rows: NpcSheetRow[] | undefined) => {
+  const levels = new Map<number, number>()
+  for (const [index, row] of (rows ?? []).entries()) {
+    const rowLabel = `NPC row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
+    if (!row.ID?.trim() || !row.LEVEL?.trim()) continue
+    const id = parseRequiredInt(row.ID, 'ID', rowLabel)
+    const level = parseRequiredInt(row.LEVEL, 'LEVEL', rowLabel)
+    if (!id || !level) continue
+    levels.set(id, level)
+  }
+  return levels
+}
+
 const parseNpcSpawnSwaps = (rows: NpcSheetRow[] | undefined) => {
   const swaps: NpcSpawnSwap[] = []
   for (const [index, row] of (rows ?? []).entries()) {
     const rowLabel = `NPC row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
     if (!row.GUID?.trim()) continue
 
-    const guid = Number(row.GUID)
-    if (!Number.isInteger(guid) || guid <= 0) continue
+    const guids = row.GUID.split(',')
+      .map((value) => Number(value.trim()))
+      .filter((guid) => Number.isInteger(guid) && guid > 0)
+    if (!guids.length) continue
 
     const id = row.ID?.trim() ? Number(row.ID) : invisibleNpcEntry
     if (!Number.isInteger(id) || id <= 0) {
@@ -1259,7 +1289,7 @@ const parseNpcSpawnSwaps = (rows: NpcSheetRow[] | undefined) => {
       continue
     }
 
-    swaps.push({ guid, id })
+    swaps.push(...guids.map((guid) => ({ guid, id })))
   }
   return swaps.sort((a, b) => a.guid - b.guid)
 }
@@ -1582,6 +1612,7 @@ const generateQuestSql = (
   positionsByNpc: Map<number, CreaturePositionRow>,
   npcNames: Map<number, string>,
   npcSubnames: Map<number, string>,
+  npcLevels: Map<number, number>,
   npcSpawnSwaps: NpcSpawnSwap[],
   satchelItems: SatchelItem[],
   satchelAlwaysDropItems: SatchelDropItem[],
@@ -1613,6 +1644,8 @@ const generateQuestSql = (
   const npcNameCase = npcNameRows.map(([id, name]) => `  WHEN ${id} THEN ${sqlString(name)}`).join('\n')
   const npcSubnameRows = [...npcSubnames.entries()].sort(([a], [b]) => a - b)
   const npcSubnameCase = npcSubnameRows.map(([id, subname]) => `  WHEN ${id} THEN ${sqlString(subname)}`).join('\n')
+  const npcLevelRows = [...npcLevels.entries()].sort(([a], [b]) => a - b)
+  const npcLevelCase = npcLevelRows.map(([id, level]) => `  WHEN ${id} THEN ${level}`).join('\n')
   const npcSpawnSwapRows = npcSpawnSwaps
     .map((swap) => `UPDATE \`creature\` SET \`id\` = ${swap.id} WHERE \`guid\` = ${swap.guid};`)
     .join('\n')
@@ -1720,9 +1753,13 @@ UPDATE item_template SET \`RequiredReputationFaction\` = 0, \`RequiredReputation
 UPDATE item_template SET \`AllowableClass\` = -1 WHERE (\`entry\` = 18468);
 UPDATE item_template SET \`socketColor_1\` = 4, \`socketContent_1\` = 1 WHERE (\`InventoryType\` IN (1, 7));
 UPDATE item_template SET \`RequiredSkill\` = 0, \`RequiredSkillRank\` = 0 WHERE \`RequiredSkill\` > 0;
-UPDATE item_template SET \`name\` = 'Smoked Speckled Tastyfish', \`spellcharges_1\` = 0, \`description\` = 'The first bite is delicious. The thousandth is still a surprise.', \`Quality\` = 2, \`flags\` = \`flags\` | 32, \`SellPrice\` = 0, \`bonding\` = 1 WHERE (\`entry\` = 21153);
-UPDATE item_template SET \`name\` = 'Infinite Bandage', \`Quality\` = 2, \`flags\` = \`flags\` | 32, \`spellcharges_1\` = 0, \`SellPrice\` = 0, \`bonding\` = 1 WHERE (\`entry\` = 14530);
+UPDATE item_template SET \`name\` = 'Smoked Speckled Tastyfish', \`spellcharges_1\` = 0, \`BuyCount\` = 1, stackable = 1, \`description\` = 'The first bite is delicious. The thousandth is still a surprise.', \`Quality\` = 2, \`flags\` = \`flags\` | 32, \`SellPrice\` = 0, \`bonding\` = 1 WHERE (\`entry\` = 21153);
+UPDATE item_template SET \`name\` = 'Infinite Bandage', \`Quality\` = 2, \`BuyCount\` = 1, \`flags\` = \`flags\` | 32, \`spellcharges_1\` = 0, \`SellPrice\` = 0, \`BuyCount\` = 1, stackable = 1, \`bonding\` = 1 WHERE (\`entry\` = 14530);
 UPDATE item_template SET \`Quality\` = 3, \`spellcharges_1\` = 0 WHERE (\`entry\` = 4381);
+UPDATE item_template SET stackable = 32 WHERE entry = 6265;
+UPDATE item_template SET \`BuyCount\` = 1, stackable = 1, description = 'Unlimited ammunition, You will never draw a blank.' WHERE entry IN (2519, 2515, 2516, 2512, 8068);
+UPDATE item_template SET \`FlagsExtra\` = 0 WHERE entry = 25829; -- remove alliance only on greater insigna
+UPDATE item_template SET spellid_1 = 0, spellcooldown_1 = 0, description = 'Infused with healing power far beyond your level.' WHERE entry = 16768;
 
 UPDATE \`creature_template\` SET \`npcflag\` = \`npcflag\` | 2 WHERE \`entry\` IN (${
     [...new Set(quests.flatMap((quest) => [quest.giver, quest.taker]))].sort((a, b) => a - b).join(', ')
@@ -1748,6 +1785,19 @@ ${npcSubnameCase}
 END
 WHERE \`entry\` IN (${npcSubnameRows.map(([id]) => id).join(', ')});`
       : '-- No NPC subname rows.'
+  }
+
+${
+    npcLevelRows.length
+      ? `UPDATE \`creature_template\`
+SET \`minlevel\` = CASE \`entry\`
+${npcLevelCase}
+END,
+    \`maxlevel\` = CASE \`entry\`
+${npcLevelCase}
+END
+WHERE \`entry\` IN (${npcLevelRows.map(([id]) => id).join(', ')});`
+      : '-- No NPC level rows.'
   }
 
 ${npcSpawnSwapRows || '-- No NPC spawn swaps.'}
@@ -2161,6 +2211,12 @@ const enchantStats = (enchantIds: number[], values: number[]) =>
     ].filter((stat) => stat.id > 0 && stat.value > 0)
   }).sort((a, b) => a.id - b.id)
 
+const isResistanceEnchant = (enchantId: number) => {
+  const enchant = dbc.enchant.get(enchantId)
+  if (!enchant) return false
+  return enchant.Effect_1 === 2 || enchant.Effect_2 === 2 || enchant.Effect_3 === 2
+}
+
 const scoreStats = (stats: { id: number; value: number }[]) => stats.reduce((total, stat) => total + stat.value, 0)
 const optionKey = (option: RandomEnchantOption) => option.stats.map((stat) => stat.id).join(':')
 
@@ -2170,6 +2226,7 @@ const propertyOptionsById = new Map<number, RandomEnchantOption>()
 for (const suffix of dbc.suffix.values()) {
   const name = suffix.Name_Lang_enUS.trim()
   if (!name || name.toLowerCase().includes('test')) continue
+  if (name.toLowerCase().includes('resistance') || name.toLowerCase().includes('protection')) continue
 
   const enchants = [
     suffix.Enchantment_1,
@@ -2178,6 +2235,8 @@ for (const suffix of dbc.suffix.values()) {
     suffix.Enchantment_4,
     suffix.Enchantment_5,
   ].filter((id) => id > 0)
+  if (enchants.some(isResistanceEnchant)) continue
+
   const allocations = [
     suffix.AllocationPct_1,
     suffix.AllocationPct_2,
@@ -2202,6 +2261,7 @@ for (const suffix of dbc.suffix.values()) {
 for (const property of dbc.properties.values()) {
   const name = property.Name_Lang_enUS.trim()
   if (!name || name.toLowerCase().includes('test')) continue
+  if (name.toLowerCase().includes('resistance') || name.toLowerCase().includes('protection')) continue
 
   const enchants = [
     property.Enchantment_1,
@@ -2210,6 +2270,8 @@ for (const property of dbc.properties.values()) {
     property.Enchantment_4,
     property.Enchantment_5,
   ].filter((id) => id > 0)
+  if (enchants.some(isResistanceEnchant)) continue
+
   const values = enchants.map((id) => {
     const enchant = dbc.enchant.get(id)
     if (!enchant) return 0
@@ -2289,16 +2351,13 @@ for (const options of itemPropertyOptions.values()) {
 }
 
 const luaItem = (itemId: number) => {
-  const suffixes = itemSuffixOptions.get(itemId) ?? []
   const properties = itemPropertyOptions.get(itemId) ?? []
   const item = dbc.item.get(itemId)
   const display = item ? dbc.itemDisplay.get(item.DisplayInfoID) : undefined
   const icon = display?.InventoryIcon_1 ?? ''
   return `    [${itemId}] = { random_suffix = ${itemRandomSuffix.get(itemId) ?? 0}, random_property = ${
     itemRandomProperty.get(itemId) ?? 0
-  }, icon = ${luaString(icon)}, suffixes = ${luaArray(suffixes, (option) => String(option.id))}, properties = ${
-    luaArray(properties, (option) => String(option.id))
-  } },`
+  }, icon = ${luaString(icon)}${properties.length ? `, properties = ${luaArray(properties, (option) => String(option.id))}` : ''}},`
 }
 
 const luaOption = (option: RandomEnchantOption) =>
@@ -2309,6 +2368,7 @@ const luaOption = (option: RandomEnchantOption) =>
 const quests = parseQuests(gsheetData.QUEST)
 const npcSubnames = parseNpcSubnames(gsheetData.NPC)
 const npcNames = parseNpcNames(gsheetData.NPC)
+const npcLevels = parseNpcLevels(gsheetData.NPC)
 const npcSpawnSwaps = parseNpcSpawnSwaps(gsheetData.NPC)
 const npcEntriesBySubname = buildNpcEntryBySubname(npcSubnames)
 const satchelItems = parseSatchelItems(gsheetData.ITEM, itemInfoById)
@@ -2323,6 +2383,19 @@ const satchelAlwaysDropItems = satchelAlwaysDropItemIds.flatMap((itemId) => {
 const vendorItems = parseVendorItems(gsheetData.ITEM, itemInfoById)
 const wsgBotRoster = parseWsgBotRoster()
 const wsgBotItems = parseWsgBotItems([], wsgBotRoster, starterItems, botStarterItems)
+const wsgBotStartupSpecsByClass = {
+  [playerClassIdByName.mage]: { talents: '--3400003', glyphs: [42741,43359] },
+  [playerClassIdByName.priest]: { talents: '-23005-', glyphs: [55674,43371] },
+  [playerClassIdByName.druid]: { talents: '--230032', glyphs: [40914,43335] },
+  [playerClassIdByName.warrior]: { talents: '050-005-', glyphs: [43417,43395] },
+  [playerClassIdByName.rogue]: { talents: '-025-030', glyphs: [42974,43379] },
+} as const
+
+const luaWsgBotStartupSpecs = Object.entries(wsgBotStartupSpecsByClass)
+  .map(([classId, spec]) =>
+    `    [${classId}] = { talents = ${luaString(spec.talents)}, glyphs = ${luaArray(spec.glyphs, String)} },`
+  )
+  .join('\n')
 const luaQuestRewardSpells = quests
   .filter((quest) => quest.props.LearnSpell)
   .sort((a, b) => a.id - b.id)

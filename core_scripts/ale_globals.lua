@@ -1257,7 +1257,7 @@ GUILD_EVENT_ON_ITEM_MOVE      = 9 -- (event, guild, player, item, isSrcBank, src
 GUILD_EVENT_ON_EVENT          = 10 -- (event, guild, eventType, plrGUIDLow1, plrGUIDLow2, newRank)  // TODO
 GUILD_EVENT_ON_BANK_EVENT     = 11 -- (event, guild, eventType, tabId, playerGUIDLow, itemOrMoney, itemStackCount, destTabId)
 
--- RegisterServerEvent
+-- RegisterServerEvent / RegisterPacketEvent
 SERVER_EVENT_ON_NETWORK_START           = 1 -- Not Implemented
 SERVER_EVENT_ON_NETWORK_STOP            = 2 -- Not Implemented
 SERVER_EVENT_ON_SOCKET_OPEN             = 3 -- Not Implemented
@@ -1265,6 +1265,9 @@ SERVER_EVENT_ON_SOCKET_CLOSE            = 4 -- Not Implemented
 SERVER_EVENT_ON_PACKET_RECEIVE          = 5 -- (event, packet, player) - Player only if accessible. Can return false, newPacket
 SERVER_EVENT_ON_PACKET_RECEIVE_UNKNOWN  = 6 -- Not Implemented
 SERVER_EVENT_ON_PACKET_SEND             = 7 -- (event, packet, player) - Player only if accessible. Can return false, newPacket
+
+-- Movement Opcodes
+CMSG_MOVE_JUMP                          = 187
 WORLD_EVENT_ON_OPEN_STATE_CHANGE        = 8 -- (event, open) - Needs core support on Mangos
 WORLD_EVENT_ON_CONFIG_LOAD              = 9 -- (event, reload)
 WORLD_EVENT_ON_SHUTDOWN_INIT            = 11 -- (event, code, mask)

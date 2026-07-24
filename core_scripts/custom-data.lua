@@ -12,7 +12,7 @@ custom_data = {
     [9768] = { random_suffix = 0, random_property = 1045, icon = "INV_Bracer_12", properties = { 1801, 2030, 94, 1707, 95, 96, 842, 928, 758, 1012, 502 }},
     [9767] = { random_suffix = 0, random_property = 794, icon = "INV_Boots_03", properties = { 134, 135, 848, 248, 763, 1018 }},
     [15511] = { random_suffix = 0, random_property = 584, icon = "INV_Pants_03", properties = { 2034, 1554, 189, 1191, 1106, 851, 936, 596, 681, 1021 }},
-    [15512] = { random_suffix = 0, random_property = 2010, icon = "INV_Shield_11", properties = { 111, 108, 114, 115, 1185, 1100, 930, 590, 675 }},
+    [15512] = { random_suffix = 0, random_property = 2010, icon = "INV_Shield_11", properties = { 111, 1654, 108, 114, 115, 1185, 1100, 930, 590, 675 }},
     [3184] = { random_suffix = 0, random_property = 5189, icon = "INV_Weapon_ShortBlade_01", properties = { 18, 1801, 2030, 1550, 22, 24, 1097, 238, 502 }},
     [15269] = { random_suffix = 0, random_property = 5201, icon = "INV_Axe_21", properties = { 167, 2036, 1554, 184, 189, 1191, 1106, 851, 599, 681, 1023, 511 }},
     [15500] = { random_suffix = 0, random_property = 500, icon = "INV_Chest_Chain_04", properties = { 1554, 184, 189, 1191, 1106, 851, 936, 596, 681, 1021 }},
@@ -21,7 +21,7 @@ custom_data = {
     [6568] = { random_suffix = 0, random_property = 542, icon = "INV_Pants_01", properties = { 14, 2034, 1714, 179, 6, 851, 247, 596, 766, 1021 }},
     [51994] = { random_suffix = 381, random_property = 0, icon = "INV_Misc_Cape_03"},
     [51964] = { random_suffix = 383, random_property = 0, icon = "INV_Belt_03"},
-    [15331] = { random_suffix = 0, random_property = 1067, icon = "INV_Bracer_06", properties = { 111, 2030, 112, 1551, 113, 114, 845, 234, 590, 760, 1015, 505 } },
+    [15331] = { random_suffix = 0, random_property = 1067, icon = "INV_Bracer_06", properties = { 111, 2030, 112, 1551, 113, 114, 845, 234, 590, 760, 1015, 505 }},
     },
     property_options = {
     [14] = { id = 14, name = "of Agility", score = 1, enchants = { 74 }, stats = { { id = 3, value = 1 } } },
@@ -103,6 +103,8 @@ custom_data = {
     [777001] = 55500,
   },
   wsg_bot_specs = {
+    [1] = { talents = "050-005-", glyphs = { 43417, 43395 } },
+    [4] = { talents = "-025-030", glyphs = { 42974, 43379 } },
     [5] = { talents = "-23005-", glyphs = { 55674, 43371 } },
     [8] = { talents = "--3400003", glyphs = { 42741, 43359 } },
     [11] = { talents = "--230032", glyphs = { 40914, 43335 } },

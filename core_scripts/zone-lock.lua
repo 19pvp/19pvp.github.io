@@ -24,6 +24,30 @@ local allowed_areas = {
 local AREA_STORMSPIRE = 3738
 local AREA_GM_ISLAND  = 876
 
+local function AddSanctuary(player)
+  if not player then return end
+  player:SetFFA(false)
+  player:SetPvP(false)
+  player:SetSanctuary(true)
+
+  local pet = type(player.GetPet) == "function" and player:GetPet()
+  if pet then
+    pet:SetFFA(false)
+    pet:SetPvP(false)
+    pet:SetSanctuary(true)
+  end
+end
+
+local function RemoveSanctuary(player)
+  if not player then return end
+  player:SetSanctuary(false)
+
+  local pet = type(player.GetPet) == "function" and player:GetPet()
+  if pet then
+    pet:SetSanctuary(false)
+  end
+end
+
 local function checkBotHoldingPen(player)
   if not player or not player:IsBot() then return false end
   if player:InBattleground() then return false end
@@ -33,9 +57,7 @@ local function checkBotHoldingPen(player)
   local BOT_AREA = 876
   local BOT_PHASE = 4294967295
 
-  player:SetFFA(false)
-  player:SetPvP(false)
-  player:SetSanctuary(true)
+  AddSanctuary(player)
 
   if player:IsDead() then
     player:ResurrectPlayer(1.0, false)
@@ -58,11 +80,9 @@ local function applySanctuary(eventId, delay, repeats, player)
   if not player then return end
   local areaId = player:GetAreaId()
   if player:InBattleground() or (areaId ~= AREA_STORMSPIRE and areaId ~= AREA_GM_ISLAND) then
-    player:SetSanctuary(false)
+    RemoveSanctuary(player)
   else
-    player:SetFFA(false)
-    player:SetPvP(false)
-    player:SetSanctuary(true)
+    AddSanctuary(player)
   end
 end
 
@@ -94,7 +114,7 @@ local AURA_PREPARATION = 44521
 local AURA_ASPHYXIATION = 71665
 function resetCooldownInBattleground(player)
   if player:InBattleground() then
-    player:SetSanctuary(false)
+    RemoveSanctuary(player)
     if player:HasAura(AURA_PREPARATION) then
       player:RemoveArenaSpellCooldowns()
     end
@@ -132,7 +152,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_MAP_CHANGE, function (event, player)
   if player then
     local areaId = player:GetAreaId()
     if player:InBattleground() or (areaId ~= AREA_STORMSPIRE and areaId ~= AREA_GM_ISLAND) then
-      player:SetSanctuary(false)
+      RemoveSanctuary(player)
     end
     checkBotHoldingPen(player)
   end
@@ -140,7 +160,17 @@ end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_COMBAT, function (event, player)
   if player then
-    player:SetSanctuary(false)
+    RemoveSanctuary(player)
+  end
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_PET_ADDED_TO_WORLD, function (event, player, pet)
+  if not player or not pet then return end
+  local areaId = player:GetAreaId()
+  if not player:InBattleground() and (areaId == AREA_STORMSPIRE or areaId == AREA_GM_ISLAND or player:GetZoneId() == 876) then
+    AddSanctuary(player)
+  else
+    RemoveSanctuary(player)
   end
 end)
 
@@ -165,4 +195,48 @@ RegisterServerEvent(ELUNA_EVENT_ON_LUA_STATE_OPEN, function (event)
   local players = GetPlayersInWorld()
   if not players then return end
   for _, p in ipairs(players) do checkBotHoldingPen(p) end
+end)
+
+local SPELL_SPEED_BOOST = 23451
+local SPELL_PARACHUTE   = 44795
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
+    if not player or not aura then return end
+    local auraId = aura:GetAuraId()
+    if auraId ~= SPELL_SPEED_BOOST then return end
+
+    print("[Rocket Boots Debug] Speed aura 23451 applied to " .. player:GetName())
+
+    local pGuid = player:GetGUIDLow()
+    local fallStartTime = nil
+
+    local timerId
+    timerId = CreateLuaEvent(function()
+        local p = GetPlayerByGUID(pGuid)
+        if not p or not p:HasAura(SPELL_SPEED_BOOST) then
+            print("[Rocket Boots Debug] Speed aura 23451 ended or player offline for GUID " .. pGuid .. ", stopping timer.")
+            RemoveEventById(timerId)
+            return
+        end
+
+        local isFalling = p:IsFalling()
+        if isFalling then
+            local now = GetCurrTime()
+            if not fallStartTime then
+                fallStartTime = now
+                print("[Rocket Boots Debug] " .. p:GetName() .. " started falling at time " .. now .. " (Z: " .. p:GetZ() .. ")")
+            else
+                local fallDuration = now - fallStartTime
+                if fallDuration >= 3500 and not p:HasAura(SPELL_PARACHUTE) then
+                    print("[Rocket Boots Debug] " .. p:GetName() .. " fell for " .. fallDuration .. "ms! Casting parachute " .. SPELL_PARACHUTE)
+                    p:CastSpell(p, SPELL_PARACHUTE, true)
+                end
+            end
+        else
+            if fallStartTime then
+                print("[Rocket Boots Debug] " .. p:GetName() .. " landed. Resetting fall timer.")
+            end
+            fallStartTime = nil
+        end
+    end, 100, 0)
 end)

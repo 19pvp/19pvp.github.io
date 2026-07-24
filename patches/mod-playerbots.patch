@@ -21,6 +21,31 @@ index 711d0fff..07736af1 100644
  # ID of spell to open lootable chests
  AiPlayerbot.OpenGoSpell = 6477
  
+diff --git a/src/Ai/Base/Actions/AcceptInvitationAction.cpp b/src/Ai/Base/Actions/AcceptInvitationAction.cpp
+index deb1159a..2459f206 100644
+--- a/src/Ai/Base/Actions/AcceptInvitationAction.cpp
++++ b/src/Ai/Base/Actions/AcceptInvitationAction.cpp
+@@ -19,6 +19,20 @@ bool AcceptInvitationAction::Execute(Event event)
+     if (!grp)
+         return false;
+     WorldPacket packet = event.getPacket();
++
++    if (!packet.empty())
++    {
++        Player* inviter = ObjectAccessor::FindPlayer(grp->GetLeaderGUID());
++        if (inviter)
++        {
++            WorldPacket data(SMSG_GROUP_DECLINE, 10);
++            data << bot->GetName();
++            inviter->SendDirectMessage(&data);
++        }
++        bot->UninviteFromGroup();
++        return false;
++    }
++
+     uint8 flag;
+     std::string name;
+     packet >> flag >> name;
 diff --git a/src/Ai/Base/Actions/AcceptQuestAction.cpp b/src/Ai/Base/Actions/AcceptQuestAction.cpp
 index e80bdbe1..054d952c 100644
 --- a/src/Ai/Base/Actions/AcceptQuestAction.cpp
