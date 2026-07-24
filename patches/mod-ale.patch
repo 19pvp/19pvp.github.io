@@ -616,7 +616,7 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..d783eb1 100644
+index cebb7bc..9e343a2 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,9 @@
@@ -769,7 +769,7 @@ index cebb7bc..d783eb1 100644
       * };
       * </pre>
       *
-@@ -1432,6 +1561,53 @@ namespace LuaGlobalFunctions
+@@ -1432,6 +1561,56 @@ namespace LuaGlobalFunctions
          return 0;
      }
  
@@ -812,10 +812,13 @@ index cebb7bc..d783eb1 100644
 +            }
 +        };
 +
++        ChannelMgr* allianceMgr = ChannelMgr::forTeam(TEAM_ALLIANCE);
++        ChannelMgr* hordeMgr = ChannelMgr::forTeam(TEAM_HORDE);
++
 +        if (teamId == TEAM_ALLIANCE || teamId == 2)
-+            sendToMgr(ChannelMgr::forTeam(TEAM_ALLIANCE));
-+        if (teamId == TEAM_HORDE || teamId == 2)
-+            sendToMgr(ChannelMgr::forTeam(TEAM_HORDE));
++            sendToMgr(allianceMgr);
++        if ((teamId == TEAM_HORDE || teamId == 2) && hordeMgr != allianceMgr)
++            sendToMgr(hordeMgr);
 +
 +        return 0;
 +    }

@@ -57,19 +57,8 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_CHANNEL_CHAT, function(event, player, msg, T
     SendWebEvent('GENERAL_CHANNEL_MESSAGE', player, {
       message = msg:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("^%s+", ""):gsub("%s+$", "")
     })
-    local classColor = classColors[player:GetClass()] or "|cFFFFFFFF" 
-    local team = player:GetTeam() == 1 and "Horde" or "Alliance"
-    local name = player:GetName()
-    local login = getDiscordName(player:GetAccountId()) or player:GetAccountName()
-    SendWorldMessage("[|cFFFFA5001|r]"
-      .."[|Hplayer:"..name.."|h|cFFFFA500"..login.."|r"
-      .."|TInterface\\FriendsFrame\\PlusManz-"..team..":12|t"
-      ..classColor..name.."|h|r]: "
-      ..msg
-    )
-    return false -- Prevents the message from duplicating in the original chat
+    return true -- Let native WoW channel chat handle broadcasting the message in General
   end
-  --]]
 end)
 
 AuthDBQuery([[
@@ -128,19 +117,13 @@ function DisplayNewMessages(result)
       local classColor = classColors[player:GetClass()] or "|cFFFFFFFF" 
       local team = player:GetTeam() == 1 and "Horde" or "Alliance"
       local name = player:GetName()
-      msg = "[|Hplayer:"..name.."|h|cFFFFA500"..login.."|r"
-      .."|TInterface\\FriendsFrame\\PlusManz-"..team..":12|t"
-      ..classColor..name.."|h|r]: "..msg
+      msg = "[|Hplayer:"..name.."|h"..name.."|h|r]: ".. classColor .. "@" .. login .. "|r " .. msg
     else
-      msg = "[|cFFFFA500"..login.."|r]: "..msg
+      msg = "[@" .. login.."]: " .. msg
     end
 
     local fullMsg = msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions)
-    if SendChannelMessage then
-      SendChannelMessage("General", fullMsg)
-    else
-      SendWorldMessage("[|cFFFFA5001|r]"..fullMsg)
-    end
+    SendChannelMessage("General", fullMsg)
     print("[Web Events] Displaying Discord message -> " .. msg)
     AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
   until not result:NextRow()  
