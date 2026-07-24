@@ -76,19 +76,23 @@ local function checkBotHoldingPen(player)
   return true
 end
 
-local function applySanctuary(eventId, delay, repeats, player)
+local STORMSPIRE_MIN_Z = 250.0 -- Adjust threshold for upper platform vs lower ground
+local function updateSanctuaryState(player)
   if not player then return end
   local areaId = player:GetAreaId()
-  if player:InBattleground() or (areaId ~= AREA_STORMSPIRE and areaId ~= AREA_GM_ISLAND) then
-    RemoveSanctuary(player)
-  else
+  local isInStormspire = areaId == AREA_STORMSPIRE and player:GetZ() >= STORMSPIRE_MIN_Z
+  if not player:InBattleground() and (isInStormspire or areaId == AREA_GM_ISLAND) then
     AddSanctuary(player)
+  else
+    RemoveSanctuary(player)
   end
 end
 
 local function scheduleSanctuary(player)
   -- Area updates run before the core applies its normal PvP-area state.
-  player:RegisterEvent(applySanctuary, 100, 1)
+  player:RegisterEvent(function (eventId, delay, repeats, player)
+    updateSanctuaryState(player)
+  end, 100, 1)
 end
 
 function Teleport (map, x, y, z, o)
@@ -199,10 +203,21 @@ end)
 
 local SPELL_SPEED_BOOST = 23451
 local SPELL_PARACHUTE   = 44795
+local SPELL_DESERTER_BG  = 26013
+local SPELL_DESERTER_LFG = 71041
+local DESERTER_DURATION_MS = 5 * 60 * 1000 -- 5 minutes (120,000 ms)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
     if not player or not aura then return end
     local auraId = aura:GetAuraId()
+
+    if auraId == SPELL_DESERTER_BG or auraId == SPELL_DESERTER_LFG then
+        aura:SetDuration(DESERTER_DURATION_MS)
+        aura:SetMaxDuration(DESERTER_DURATION_MS)
+        print("[Deserter] Adjusted debuff duration to 5m for " .. player:GetName())
+        return
+    end
+
     if auraId ~= SPELL_SPEED_BOOST then return end
 
     print("[Rocket Boots Debug] Speed aura 23451 applied to " .. player:GetName())
@@ -240,3 +255,9 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         end
     end, 100, 0)
 end)
+
+CreateLuaEvent(function()
+  for _, player in ipairs(GetPlayersInWorld()) do
+    updateSanctuaryState(player)
+  end
+end, 1000, 0)
