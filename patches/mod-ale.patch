@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..d43e94d 100644
+index d8886ce..36a5b23 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -93,7 +93,7 @@ index d8886ce..d43e94d 100644
      }
  
      void OnPlayerGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action) override
-@@ -832,8 +874,22 @@ public:
+@@ -832,8 +874,27 @@ public:
          sALE->OnLogin(player);
      }
  
@@ -109,6 +109,11 @@ index d8886ce..d43e94d 100644
 +        sALE->OnPlayerLeaveBGQueue(player);
 +    }
 +
++    void OnPlayerWhoRequest(Player* player, Player* target) override
++    {
++        sALE->OnWhoRequest(player, target);
++    }
++
 +
      void OnPlayerLogout(Player* player) override
      {
@@ -116,7 +121,7 @@ index d8886ce..d43e94d 100644
          sALE->OnLogout(player);
      }
  
-@@ -1340,6 +1396,37 @@ public:
+@@ -1340,6 +1401,37 @@ public:
      }
  };
  
@@ -154,7 +159,7 @@ index d8886ce..d43e94d 100644
  // Group all custom scripts
  void AddSC_ALE()
  {
-@@ -1365,4 +1452,5 @@ void AddSC_ALE()
+@@ -1365,4 +1457,5 @@ void AddSC_ALE()
      new ALE_WorldObjectScript();
      new ALE_WorldScript();
      new ALE_UnitScript();
@@ -193,10 +198,10 @@ index a8d6fc4..55ca5d2 100644
              lua_pushnil(L);
              return 1;
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
-index f83dd99..2b071e4 100644
+index f83dd99..69ef301 100644
 --- a/src/LuaEngine/Hooks.h
 +++ b/src/LuaEngine/Hooks.h
-@@ -238,8 +238,12 @@ namespace Hooks
+@@ -238,8 +238,13 @@ namespace Hooks
          PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
          PLAYER_EVENT_ON_DEAL_DAMAGE                         =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
          PLAYER_EVENT_ON_RELEASED_GHOST                      =     73,       // (event, player)
@@ -204,13 +209,14 @@ index f83dd99..2b071e4 100644
 +        PLAYER_EVENT_ON_ENTER_BG                            =   7001,       // (event, player, mapId, instanceId)
 +        PLAYER_EVENT_ON_LEAVE_BG                            =   7002,       // (event, player, mapId, instanceId)
 +        PLAYER_EVENT_ON_BG_QUEUE_LEAVE                      =   7003,       // (event, player)
++        PLAYER_EVENT_ON_WHO_REQUEST                         =   7004,       // (event, requesterPlayer, targetPlayer)
  
 -        PLAYER_EVENT_COUNT
-+        PLAYER_EVENT_COUNT                                  =   7004
++        PLAYER_EVENT_COUNT                                  =   7005
      };
  
      enum GuildEvents
-@@ -378,6 +382,11 @@ namespace Hooks
+@@ -378,6 +383,11 @@ namespace Hooks
          BG_EVENT_ON_END                                 = 2,    // (event, bg, bgId, instanceId, winner) - Needs to be added to TC
          BG_EVENT_ON_CREATE                              = 3,    // (event, bg, bgId, instanceId) - Needs to be added to TC
          BG_EVENT_ON_PRE_DESTROY                         = 4,    // (event, bg, bgId, instanceId) - Needs to be added to TC
@@ -223,7 +229,7 @@ index f83dd99..2b071e4 100644
      };
  
 diff --git a/src/LuaEngine/LuaEngine.h b/src/LuaEngine/LuaEngine.h
-index a21640d..b4e7176 100644
+index a21640d..de4bd8b 100644
 --- a/src/LuaEngine/LuaEngine.h
 +++ b/src/LuaEngine/LuaEngine.h
 @@ -38,12 +38,14 @@ extern "C"
@@ -241,7 +247,7 @@ index a21640d..b4e7176 100644
  class Channel;
  class Corpse;
  class Creature;
-@@ -479,6 +481,10 @@ public:
+@@ -479,6 +481,11 @@ public:
      void OnTextEmote(Player* pPlayer, uint32 textEmote, uint32 emoteNum, ObjectGuid guid);
      void OnPlayerSpellCast(Player* pPlayer, Spell* pSpell, bool skipCheck);
      void OnLogin(Player* pPlayer);
@@ -249,10 +255,11 @@ index a21640d..b4e7176 100644
 +    void OnPlayerLeaveBGQueue(Player* pPlayer);
 +    void OnEnterBG(Player* pPlayer, Battleground* bg);
 +    void OnLeaveBG(Player* pPlayer, Battleground* bg);
++    void OnWhoRequest(Player* requester, Player* target);
      void OnLogout(Player* pPlayer);
      void OnCreate(Player* pPlayer);
      void OnDelete(uint32 guid);
-@@ -591,6 +597,13 @@ public:
+@@ -591,6 +598,13 @@ public:
      void OnBGEnd(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId, TeamId winner);
      void OnBGCreate(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
      void OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
@@ -456,10 +463,10 @@ index ec70cf5..390424d 100644
 +    CallAllFunctions(BGEventBindings, key);
 +}
 diff --git a/src/LuaEngine/hooks/PlayerHooks.cpp b/src/LuaEngine/hooks/PlayerHooks.cpp
-index 7649274..2531663 100644
+index 7649274..24e5f17 100644
 --- a/src/LuaEngine/hooks/PlayerHooks.cpp
 +++ b/src/LuaEngine/hooks/PlayerHooks.cpp
-@@ -344,6 +344,40 @@ void ALE::OnLogin(Player* pPlayer)
+@@ -344,6 +344,48 @@ void ALE::OnLogin(Player* pPlayer)
      CallAllFunctions(PlayerEventBindings, key);
  }
  
@@ -494,6 +501,14 @@ index 7649274..2531663 100644
 +    Push(bg ? bg->GetMapId() : 0);
 +    Push(bg ? bg->GetInstanceID() : 0);
 +    Push(bg);
++    CallAllFunctions(PlayerEventBindings, key);
++}
++
++void ALE::OnWhoRequest(Player* requester, Player* target)
++{
++    START_HOOK(PLAYER_EVENT_ON_WHO_REQUEST);
++    Push(requester);
++    Push(target);
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
 +
@@ -616,7 +631,7 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..9e343a2 100644
+index cebb7bc..932b214 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,9 @@
@@ -769,7 +784,7 @@ index cebb7bc..9e343a2 100644
       * };
       * </pre>
       *
-@@ -1432,6 +1561,56 @@ namespace LuaGlobalFunctions
+@@ -1432,6 +1561,70 @@ namespace LuaGlobalFunctions
          return 0;
      }
  
@@ -778,8 +793,9 @@ index cebb7bc..9e343a2 100644
 +     *
 +     * @param string channelName : channel name (e.g. "General")
 +     * @param string message : message text
-+     * @param uint32 teamId : optional teamId (0 = Alliance, 1 = Horde, default: TEAM_NEUTRAL/all)
++     * @param uint32 teamId : optional teamId (0 = Alliance, 1 = Horde, default: 2 = all)
 +     * @param uint32 lang : optional language (default: LANG_UNIVERSAL)
++     * @param Player|string sender : optional Player object or sender name string
 +     */
 +    int SendChannelMessage(lua_State* L)
 +    {
@@ -787,6 +803,8 @@ index cebb7bc..9e343a2 100644
 +        const char* message = ALE::CHECKVAL<const char*>(L, 2);
 +        uint32 teamId = ALE::CHECKVAL<uint32>(L, 3, 2); // default neutral/both
 +        uint32 lang = ALE::CHECKVAL<uint32>(L, 4, LANG_UNIVERSAL);
++        Player* senderPlayer = ALE::CHECKOBJ<Player>(L, 5, false);
++        const char* senderName = senderPlayer ? nullptr : ALE::CHECKVAL<const char*>(L, 5, nullptr);
 +
 +        if (!channelName || !message)
 +            return 0;
@@ -806,7 +824,18 @@ index cebb7bc..9e343a2 100644
 +                if (cnameLower == search || cnameLower.rfind(search + " - ", 0) == 0 || cnameLower.find(search) != std::string::npos)
 +                {
 +                    WorldPacket data;
-+                    ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, LANG_UNIVERSAL, ObjectGuid::Empty, ObjectGuid::Empty, message, 0, "", "", 0, false, cname);
++                    if (senderPlayer)
++                    {
++                        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), senderPlayer, senderPlayer, message, 0, cname);
++                    }
++                    else if (senderName && *senderName)
++                    {
++                        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), ObjectGuid::Empty, ObjectGuid::Empty, message, 0, senderName, "", 0, false, cname);
++                    }
++                    else
++                    {
++                        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), ObjectGuid::Empty, ObjectGuid::Empty, message, 0, "", "", 0, false, cname);
++                    }
 +                    channel->SendToAll(&data);
 +                }
 +            }

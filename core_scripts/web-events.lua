@@ -113,17 +113,8 @@ function DisplayNewMessages(result)
     local login = (not result:IsNull(1) and result:GetString(1)) or "Discord"
     local msg = result:GetString(3)
     local player = account_id and GetActivePlayerForAccount(account_id)
-    if player then
-      local classColor = classColors[player:GetClass()] or "|cFFFFFFFF" 
-      local team = player:GetTeam() == 1 and "Horde" or "Alliance"
-      local name = player:GetName()
-      msg = "[|Hplayer:"..name.."|h"..name.."|h|r]: ".. classColor .. "@" .. login .. "|r " .. msg
-    else
-      msg = "[@" .. login.."]: " .. msg
-    end
-
     local fullMsg = msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions)
-    SendChannelMessage("General", fullMsg)
+    SendChannelMessage("General", fullMsg, 2, 0, player and player or login)
     print("[Web Events] Displaying Discord message -> " .. msg)
     AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
   until not result:NextRow()  
@@ -237,4 +228,26 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
       end
     end
   end
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_WHO_REQUEST, function(event, requester, target)
+  if not requester or not target then return end
+  local accountId = target:GetAccountId()
+  local targetName = target:GetName()
+  AuthDBQueryAsync("SELECT da.discord_login, a.joindate, a.username FROM account a LEFT JOIN discord_account da ON a.id = da.discord_id OR a.id = da.account_id WHERE a.id = " .. tostring(accountId), function(result)
+    if not result then return end
+    local discordLogin = not result:IsNull(0) and result:GetString(0) or "None"
+    local joinDate = not result:IsNull(1) and result:GetString(1) or ""
+    local accountName = not result:IsNull(2) and result:GetString(2) or ""
+
+    local infoMsg = "|cFFFFA500[Who Info]|r " .. targetName .. ": Discord: " .. discordLogin
+    if joinDate ~= "" then
+      infoMsg = infoMsg .. " | Joined: " .. joinDate:sub(1, 10)
+    end
+    if requester:IsGM() and accountName ~= "" then
+      infoMsg = infoMsg .. " | Account: " .. accountName
+    end
+
+    requester:SendBroadcastMessage(infoMsg)
+  end)
 end)

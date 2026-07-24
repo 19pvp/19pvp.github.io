@@ -1226,6 +1226,7 @@ PLAYER_EVENT_ON_BG_QUEUE_ENTER         = 7000 -- (event, player)
 PLAYER_EVENT_ON_ENTER_BG               = 7001 -- (event, player, mapId, instanceId)
 PLAYER_EVENT_ON_LEAVE_BG               = 7002 -- (event, player, mapId, instanceId, bg)
 PLAYER_EVENT_ON_BG_QUEUE_LEAVE         = 7003 -- (event, player)
+PLAYER_EVENT_ON_WHO_REQUEST            = 7004 -- (event, requesterPlayer, targetPlayer)
 
 
 -- RegisterMapEvent

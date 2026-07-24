@@ -458,6 +458,25 @@ index f9cbfac32..06dab1b38 100644
          SendPacket(&data);
          return;
      }
+diff --git a/src/server/game/Handlers/MiscHandler.cpp b/src/server/game/Handlers/MiscHandler.cpp
+index da9480a6b..9862c2dc7 100644
+--- a/src/server/game/Handlers/MiscHandler.cpp
++++ b/src/server/game/Handlers/MiscHandler.cpp
+@@ -411,6 +411,14 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recvData)
+ 
+     SendPacket(&data);
+     LOG_DEBUG("network", "WORLD: Send SMSG_WHO Message");
++
++    if (displaycount == 1 && !packetPlayerName.empty())
++    {
++        if (Player* targetPlayer = ObjectAccessor::FindPlayerByName(packetPlayerName))
++        {
++            sScriptMgr->OnPlayerWhoRequest(_player, targetPlayer);
++        }
++    }
+ }
+ 
+ void WorldSession::HandleLogoutRequestOpcode(WorldPackets::Character::LogoutRequest& /*logoutRequest*/)
 diff --git a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
 index 9881a25f0..246cd3a8a 100644
 --- a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
@@ -497,7 +516,7 @@ index 108f3cf7f..21a2bd6fc 100644
  
      [[nodiscard]] virtual bool CanSendMessageBGQueue(BattlegroundQueue* /*queue*/, Player* /*leader*/, Battleground* /*bg*/, PvPDifficultyEntry const* /*bracketEntry*/) { return true; }
 diff --git a/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp b/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
-index 5ee4be5e1..7051ba5e2 100644
+index 5ee4be5e1..b0557a412 100644
 --- a/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
 +++ b/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
 @@ -353,6 +353,11 @@ void ScriptMgr::OnPlayerJoinBG(Player* player)
@@ -512,8 +531,20 @@ index 5ee4be5e1..7051ba5e2 100644
  void ScriptMgr::OnPlayerJoinArena(Player* player)
  {
      CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PLAYER_JOIN_ARENA, script->OnPlayerJoinArena(player));
+@@ -955,6 +960,11 @@ void ScriptMgr::OnPlayerBeforeGetLevelForXPGain(Player const* player, uint8& lev
+     level = std::clamp(level, uint8(1), uint8(sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL)));
+ }
+ 
++void ScriptMgr::OnPlayerWhoRequest(Player* player, Player* target)
++{
++    CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_WHO_REQUEST, script->OnPlayerWhoRequest(player, target));
++}
++
+ PlayerScript::PlayerScript(const char* name, std::vector<uint16> enabledHooks)
+     : ScriptObject(name, PLAYERHOOK_END)
+ {
 diff --git a/src/server/game/Scripting/ScriptDefines/PlayerScript.h b/src/server/game/Scripting/ScriptDefines/PlayerScript.h
-index b718b81c5..579492da0 100644
+index b718b81c5..fc7753e76 100644
 --- a/src/server/game/Scripting/ScriptDefines/PlayerScript.h
 +++ b/src/server/game/Scripting/ScriptDefines/PlayerScript.h
 @@ -98,6 +98,7 @@ enum PlayerHook
@@ -524,7 +555,15 @@ index b718b81c5..579492da0 100644
      PLAYERHOOK_ON_PLAYER_JOIN_ARENA,
      PLAYERHOOK_GET_CUSTOM_GET_ARENA_TEAM_ID,
      PLAYERHOOK_GET_CUSTOM_ARENA_PERSONAL_RATING,
-@@ -419,6 +420,9 @@ public:
+@@ -220,6 +221,7 @@ enum PlayerHook
+     PLAYERHOOK_ON_GET_REPUTATION_PRICE_DISCOUNT,
+     PLAYERHOOK_ON_LEARN_TAXI_NODE,
+     PLAYERHOOK_ON_BEFORE_GET_LEVEL_FOR_XP_GAIN,
++    PLAYERHOOK_ON_WHO_REQUEST,
+     PLAYERHOOK_END
+ };
+ 
+@@ -419,6 +421,9 @@ public:
      // After player enters queue for BG
      virtual void OnPlayerJoinBG(Player* /*player*/) { }
  
@@ -534,8 +573,17 @@ index b718b81c5..579492da0 100644
      // After player enters queue for Arena
      virtual void OnPlayerJoinArena(Player* /*player*/) { }
  
+@@ -856,6 +861,8 @@ public:
+      * @param level The level that should be used for XP gain calculations
+      */
+     virtual void OnPlayerBeforeGetLevelForXPGain(Player const* /*player*/, uint8& /*level*/) {}
++
++    virtual void OnPlayerWhoRequest(Player* /*player*/, Player* /*target*/) {}
+ };
+ 
+ #endif
 diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
-index 9fd4ff356..8677ae12b 100644
+index 9fd4ff356..077f8517d 100644
 --- a/src/server/game/Scripting/ScriptMgr.h
 +++ b/src/server/game/Scripting/ScriptMgr.h
 @@ -376,6 +376,7 @@ public: /* PlayerScript */
@@ -546,7 +594,15 @@ index 9fd4ff356..8677ae12b 100644
      void OnPlayerJoinArena(Player* player);
      void OnPlayerGetMaxPersonalArenaRatingRequirement(Player const* player, uint32 minSlot, uint32& maxArenaRating) const;
      void OnPlayerLootItem(Player* player, Item* item, uint32 count, ObjectGuid lootguid);
-@@ -625,6 +626,7 @@ public: /* BGScript */
+@@ -426,6 +427,7 @@ public: /* PlayerScript */
+     void OnPlayerUpdateCraftingSkill(Player* player, SkillLineAbilityEntry const* skill, uint32 currentLevel, uint32& gain);
+     bool OnPlayerUpdateFishingSkill(Player* player, int32 skill, int32 zone_skill, int32 chance, int32 roll);
+     bool OnPlayerCanAreaExploreAndOutdoor(Player* player);
++    void OnPlayerWhoRequest(Player* player, Player* target);
+     void OnPlayerVictimRewardBefore(Player* player, Player* victim, uint32& killer_title, int32& victim_rank);
+     void OnPlayerVictimRewardAfter(Player* player, Player* victim, uint32& killer_title, int32& victim_rank, float& honor_f);
+     void OnPlayerCustomScalingStatValueBefore(Player* player, ItemTemplate const* proto, uint8 slot, bool apply, uint32& CustomScalingStatValue);
+@@ -625,6 +627,7 @@ public: /* BGScript */
      void OnAddGroup(BattlegroundQueue* queue, GroupQueueInfo* ginfo, uint32& index, Player* leader, Group* group, BattlegroundTypeId bgTypeId, PvPDifficultyEntry const* bracketEntry,
          uint8 arenaType, bool isRated, bool isPremade, uint32 arenaRating, uint32 matchmakerRating, uint32 arenaTeamId, uint32 opponentsArenaTeamId);
      bool CanFillPlayersToBG(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id);
