@@ -90,10 +90,10 @@ CREATE TABLE IF NOT EXISTS discord_message (
 --end
 
 local query_check_new_messages = [[
-SELECT id, discord_login, account_id, message
+SELECT discord_message.id, discord_account.discord_login, discord_account.account_id, message
 FROM discord_message
-JOIN discord_account ON discord_message.discord_id = discord_account.discord_id
-LIMIT 1
+LEFT JOIN discord_account ON discord_message.discord_id = discord_account.discord_id
+LIMIT 10
 ]]
 
 function GetActivePlayerForAccount(account_id)
@@ -114,31 +114,35 @@ function ReplaceDiscordMentions(account_id, login)
   return "|cFFFFA500@"..login.."|r"
 end
 
-local handledMessages = {}
+local isQuerying = false
 function DisplayNewMessages(result)
+  isQuerying = false
   if not result then return end
-  local processId = math.random()
   repeat
     local message_id = result:GetUInt32(0)
-    if handledMessages[message_id] == nil then
-      local account_id = result:GetUInt32(2)
-      local login = result:GetString(1)
-      local msg = result:GetString(3)
-      local player = GetActivePlayerForAccount(account_id)
-      if player then
-        local classColor = classColors[player:GetClass()] or "|cFFFFFFFF" 
-        local team = player:GetTeam() == 1 and "Horde" or "Alliance"
-        local name = player:GetName()
-        msg = "[|Hplayer:"..name.."|h|cFFFFA500"..login.."|r"
-        .."|TInterface\\FriendsFrame\\PlusManz-"..team..":12|t"
-        ..classColor..name.."|h|r]: "..msg
-      else
-        msg = "[|cFFFFA500"..login.."|r]: "..msg
-      end
-
-      SendWorldMessage("[|cFFFFA5001|r]"..msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions))
-      AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
+    local account_id = not result:IsNull(2) and result:GetUInt32(2) or nil
+    local login = (not result:IsNull(1) and result:GetString(1)) or "Discord"
+    local msg = result:GetString(3)
+    local player = account_id and GetActivePlayerForAccount(account_id)
+    if player then
+      local classColor = classColors[player:GetClass()] or "|cFFFFFFFF" 
+      local team = player:GetTeam() == 1 and "Horde" or "Alliance"
+      local name = player:GetName()
+      msg = "[|Hplayer:"..name.."|h|cFFFFA500"..login.."|r"
+      .."|TInterface\\FriendsFrame\\PlusManz-"..team..":12|t"
+      ..classColor..name.."|h|r]: "..msg
+    else
+      msg = "[|cFFFFA500"..login.."|r]: "..msg
     end
+
+    local fullMsg = msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions)
+    if SendChannelMessage then
+      SendChannelMessage("General", fullMsg)
+    else
+      SendWorldMessage("[|cFFFFA5001|r]"..fullMsg)
+    end
+    print("[Web Events] Displaying Discord message -> " .. msg)
+    AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
   until not result:NextRow()  
 end
 
@@ -146,8 +150,9 @@ local elapsed = 500
 ClearServerEvents(WORLD_EVENT_ON_UPDATE)
 RegisterServerEvent(WORLD_EVENT_ON_UPDATE, function (event, diff)
   elapsed = elapsed + diff
-  if elapsed < 500 then return end
+  if elapsed < 500 or isQuerying then return end
   elapsed = 0
+  isQuerying = true
   AuthDBQueryAsync(query_check_new_messages, DisplayNewMessages)
 end)
 

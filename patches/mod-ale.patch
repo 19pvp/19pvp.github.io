@@ -267,10 +267,18 @@ index a21640d..b4e7176 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..2e1f8a9 100644
+index c0acc01..829e1b7 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
-@@ -165,6 +165,10 @@ luaL_Reg GlobalMethods[] =
+@@ -153,6 +153,7 @@ luaL_Reg GlobalMethods[] =
+     { "ReloadALE", &LuaGlobalFunctions::ReloadALE },
+     { "RunCommand", &LuaGlobalFunctions::RunCommand },
+     { "SendWorldMessage", &LuaGlobalFunctions::SendWorldMessage },
++    { "SendChannelMessage", &LuaGlobalFunctions::SendChannelMessage },
+     { "WorldDBQuery", &LuaGlobalFunctions::WorldDBQuery },
+     { "WorldDBQueryAsync", &LuaGlobalFunctions::WorldDBQueryAsync },
+     { "WorldDBExecute", &LuaGlobalFunctions::WorldDBExecute },
+@@ -165,6 +166,10 @@ luaL_Reg GlobalMethods[] =
      { "CreateLuaEvent", &LuaGlobalFunctions::CreateLuaEvent },
      { "RemoveEventById", &LuaGlobalFunctions::RemoveEventById },
      { "RemoveEvents", &LuaGlobalFunctions::RemoveEvents },
@@ -281,7 +289,7 @@ index c0acc01..2e1f8a9 100644
      { "PerformIngameSpawn", &LuaGlobalFunctions::PerformIngameSpawn },
      { "CreatePacket", &LuaGlobalFunctions::CreatePacket },
      { "AddVendorItem", &LuaGlobalFunctions::AddVendorItem },
-@@ -485,6 +489,8 @@ ALERegister<Player> PlayerMethods[] =
+@@ -485,6 +490,8 @@ ALERegister<Player> PlayerMethods[] =
      { "GetGuildId", &LuaPlayer::GetGuildId },
      { "GetCoinage", &LuaPlayer::GetCoinage },
      { "GetTeam", &LuaPlayer::GetTeam },
@@ -290,7 +298,7 @@ index c0acc01..2e1f8a9 100644
      { "GetItemCount", &LuaPlayer::GetItemCount },
      { "GetGroup", &LuaPlayer::GetGroup },
      { "GetGuild", &LuaPlayer::GetGuild },
-@@ -566,6 +572,15 @@ ALERegister<Player> PlayerMethods[] =
+@@ -566,6 +573,15 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
@@ -306,7 +314,7 @@ index c0acc01..2e1f8a9 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -1380,6 +1395,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1396,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -608,18 +616,20 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..3e8129b 100644
+index cebb7bc..d783eb1 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
-@@ -14,6 +14,7 @@
+@@ -14,6 +14,9 @@
  #include "GameTime.h"
  #include "SharedDefines.h"
  #include "OutdoorPvPMgr.h"
 +#include "BattlegroundMgr.h"
++#include "ChannelMgr.h"
++#include "Channel.h"
  #include "../../../../src/server/scripts/OutdoorPvP/OutdoorPvPNA.h"
  
  
-@@ -163,6 +164,128 @@ namespace LuaGlobalFunctions
+@@ -163,6 +166,128 @@ namespace LuaGlobalFunctions
          return 1;
      }
  
@@ -748,7 +758,7 @@ index cebb7bc..3e8129b 100644
      /**
       * Returns the instance ID of the Lua state. Returns 0 for continent maps and the world state.
       *
-@@ -794,6 +917,10 @@ namespace LuaGlobalFunctions
+@@ -794,6 +919,10 @@ namespace LuaGlobalFunctions
       *     PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                 =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
       *     PLAYER_EVENT_ON_DEAL_DAMAGE                          =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
       *     PLAYER_EVENT_ON_RELEASED_GHOST                       =     73,       // (event, player)
@@ -759,6 +769,60 @@ index cebb7bc..3e8129b 100644
       * };
       * </pre>
       *
+@@ -1432,6 +1561,53 @@ namespace LuaGlobalFunctions
+         return 0;
+     }
+ 
++    /**
++     * Sends a message to a channel (or all channel instances) by channel name.
++     *
++     * @param string channelName : channel name (e.g. "General")
++     * @param string message : message text
++     * @param uint32 teamId : optional teamId (0 = Alliance, 1 = Horde, default: TEAM_NEUTRAL/all)
++     * @param uint32 lang : optional language (default: LANG_UNIVERSAL)
++     */
++    int SendChannelMessage(lua_State* L)
++    {
++        const char* channelName = ALE::CHECKVAL<const char*>(L, 1);
++        const char* message = ALE::CHECKVAL<const char*>(L, 2);
++        uint32 teamId = ALE::CHECKVAL<uint32>(L, 3, 2); // default neutral/both
++        uint32 lang = ALE::CHECKVAL<uint32>(L, 4, LANG_UNIVERSAL);
++
++        if (!channelName || !message)
++            return 0;
++
++        auto sendToMgr = [&](ChannelMgr* mgr)
++        {
++            if (!mgr) return;
++            std::string search = channelName;
++            std::transform(search.begin(), search.end(), search.begin(), ::tolower);
++            for (auto const& [name, channel] : mgr->GetChannels())
++            {
++                if (!channel) continue;
++                std::string cname = channel->GetName();
++                std::string cnameLower = cname;
++                std::transform(cnameLower.begin(), cnameLower.end(), cnameLower.begin(), ::tolower);
++
++                if (cnameLower == search || cnameLower.rfind(search + " - ", 0) == 0 || cnameLower.find(search) != std::string::npos)
++                {
++                    WorldPacket data;
++                    ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, LANG_UNIVERSAL, ObjectGuid::Empty, ObjectGuid::Empty, message, 0, "", "", 0, false, cname);
++                    channel->SendToAll(&data);
++                }
++            }
++        };
++
++        if (teamId == TEAM_ALLIANCE || teamId == 2)
++            sendToMgr(ChannelMgr::forTeam(TEAM_ALLIANCE));
++        if (teamId == TEAM_HORDE || teamId == 2)
++            sendToMgr(ChannelMgr::forTeam(TEAM_HORDE));
++
++        return 0;
++    }
++
+     template <typename T>
+     static int DBQueryAsync(lua_State* L, DatabaseWorkerPool<T>& db)
+     {
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
 index c39801f..166b424 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h

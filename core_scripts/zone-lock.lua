@@ -209,13 +209,14 @@ local DESERTER_DURATION_MS = 5 * 60 * 1000 -- 5 minutes (120,000 ms)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
     if not player or not aura then return end
+    if player:InBattleground() then return end
     local auraId = aura:GetAuraId()
 
     if auraId == SPELL_DESERTER_BG or auraId == SPELL_DESERTER_LFG then
-        aura:SetDuration(DESERTER_DURATION_MS)
-        aura:SetMaxDuration(DESERTER_DURATION_MS)
-        print("[Deserter] Adjusted debuff duration to 5m for " .. player:GetName())
-        return
+      local duration = player:IsBot() and 1500 or DESERTER_DURATION_MS
+      aura:SetDuration(duration)
+      aura:SetMaxDuration(duration)
+      return
     end
 
     if auraId ~= SPELL_SPEED_BOOST then return end

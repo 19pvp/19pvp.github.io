@@ -227,6 +227,26 @@ index 1c5bbefe8..c812ddfbb 100644
          std::string playerName = player->GetName();
          std::wstring widePlayerName;
  
+diff --git a/src/server/game/Chat/Channels/Channel.h b/src/server/game/Chat/Channels/Channel.h
+index 32e9bec91..3dc8b3e0d 100644
+--- a/src/server/game/Chat/Channels/Channel.h
++++ b/src/server/game/Chat/Channels/Channel.h
+@@ -216,6 +216,7 @@ public:
+     void FlagsNotify(Player* p);
+     static void CleanOldChannelsInDB();
+     void ToggleModeration(Player* p);
++    void SendToAll(WorldPacket* data, ObjectGuid guid = ObjectGuid::Empty);
+ 
+     // pussywizard:
+     void AddWatching(Player* p);
+@@ -262,7 +263,6 @@ private:
+     void MakeModerationOn(WorldPacket* data, ObjectGuid guid);
+     void MakeModerationOff(WorldPacket* data, ObjectGuid guid);
+ 
+-    void SendToAll(WorldPacket* data, ObjectGuid guid = ObjectGuid::Empty);
+     void SendToAllButOne(WorldPacket* data, ObjectGuid who);
+     void SendToOne(WorldPacket* data, ObjectGuid who);
+     void SendToAllWatching(WorldPacket* data);
 diff --git a/src/server/game/Entities/Player/Player.cpp b/src/server/game/Entities/Player/Player.cpp
 index f2b3207c7..2cbdab384 100644
 --- a/src/server/game/Entities/Player/Player.cpp
@@ -265,7 +285,7 @@ index f2b3207c7..2cbdab384 100644
      else if (GetPositionZ() < GetMap()->GetMinHeight(GetPositionX(), GetPositionY()))
          TeleportTo(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, GetOrientation());
 diff --git a/src/server/game/Entities/Player/PlayerUpdates.cpp b/src/server/game/Entities/Player/PlayerUpdates.cpp
-index 35ac03d79..7055b688f 100644
+index 35ac03d79..21aa05f3c 100644
 --- a/src/server/game/Entities/Player/PlayerUpdates.cpp
 +++ b/src/server/game/Entities/Player/PlayerUpdates.cpp
 @@ -16,6 +16,7 @@
@@ -321,6 +341,24 @@ index 35ac03d79..7055b688f 100644
      }
  
      // If mute expired, remove it from the DB
+@@ -543,7 +582,7 @@ void Player::UpdateLocalChannels(uint32 newZone)
+             {
+                 if (!(channel->flags & CHANNEL_DBC_FLAG_GLOBAL))
+                 {
+-                    if (channel->flags & CHANNEL_DBC_FLAG_CITY_ONLY &&
++                    if ((channel->flags & CHANNEL_DBC_FLAG_CITY_ONLY || channel->ChannelID == 1) &&
+                         usedChannel)
+                         continue; // Already on the channel, as city channel
+                                   // names are not changing
+@@ -551,7 +590,7 @@ void Player::UpdateLocalChannels(uint32 newZone)
+                     char        new_channel_name_buf[100];
+                     std::string currentNameExt;
+ 
+-                    if (channel->flags & CHANNEL_DBC_FLAG_CITY_ONLY)
++                    if (channel->flags & CHANNEL_DBC_FLAG_CITY_ONLY || channel->ChannelID == 1)
+                         currentNameExt = sObjectMgr->GetAcoreStringForDBCLocale(LANG_CHANNEL_CITY);
+                     else
+                         currentNameExt = current_zone_name;
 diff --git a/src/server/game/Globals/ObjectMgr.cpp b/src/server/game/Globals/ObjectMgr.cpp
 index 849ee2627..c8375251d 100644
 --- a/src/server/game/Globals/ObjectMgr.cpp
