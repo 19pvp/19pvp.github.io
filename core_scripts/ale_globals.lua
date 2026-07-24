@@ -1293,6 +1293,10 @@ ELUNA_EVENT_ON_LUA_STATE_OPEN           = 33 -- (event) - triggers after all scr
 GAME_EVENT_START                        = 34 -- (event, gameeventid)
 GAME_EVENT_STOP                         = 35 -- (event, gameeventid)
 
+-- RegisterCreatureGossipEvent
+GOSSIP_EVENT_ON_HELLO                           = 1 -- (event, player, creature)
+GOSSIP_EVENT_ON_SELECT                          = 2 -- (event, player, creature, sender, intid, code)
+
 -- RegisterCreatureEvent
 -- RegisterUniqueCreatureEvent
 CREATURE_EVENT_ON_ENTER_COMBAT              = 1 -- (event, creature, target) - Can return true to stop normal action

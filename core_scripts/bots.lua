@@ -179,6 +179,62 @@ CreateLuaEvent(function ()
     end
 end, 1000, 0)
 
+local function GetBGInstance(instanceId)
+    if not instanceId or instanceId <= 0 then
+        return nil
+    end
+    return activeBGInstances[instanceId] or GetBattleground(instanceId, bgTypeId)
+end
+
+local function CheckBGEmpty(player, mapId, instanceId)
+    local instId = (instanceId and instanceId > 0) and instanceId or 0
+    local bg = GetBGInstance(instId)
+    if not bg then
+        return false
+    end
+
+    local departingName = player and player:GetName() or ""
+
+    -- 1. Check if any OTHER real player is inside the BG map
+    local map = GetMapById(mapId or 489, instId)
+    if map then
+        for _, p in ipairs(map:GetPlayers()) do
+            if p:GetName() ~= departingName and not p:IsBot() then
+                print("[WSG Queue] Real player remaining in BG map -> " .. inspect({ player = p:GetName(), instanceId = instId }))
+                return false
+            end
+        end
+    end
+
+    -- 2. No real players are inside the map -> Retract all pending invites for this BG instance
+    for guidLow, invInstId in pairs(pendingInvites) do
+        if invInstId == instId then
+            pendingInvites[guidLow] = nil
+            -- Retract invite in-game if player is online
+            for _, p in ipairs(GetPlayersInWorld()) do
+                if p:GetGUIDLow() == guidLow then
+                    print("[WSG Queue] Retracting BG invite -> " .. inspect({ player = p:GetName(), instanceId = instId }))
+                    p:LeaveBattleground()
+                end
+            end
+        end
+    end
+
+    print("[WSG Queue] No real players remaining in BG map. Retracting invites and closing BG -> " .. inspect({ mapId = mapId, instanceId = instId }))
+    SendWorldMessage("[WSG Queue] Aborting BG (Instance " .. tostring(instId) .. "): No real players inside.")
+
+    pcall(function()
+        bg:EndBattleground(bgTypeId)
+        bg:SetEndTime(1) -- 1ms cleanup countdown
+    end)
+
+    if instId > 0 then
+        activeBGInstances[instId] = nil
+    end
+
+    return true
+end
+
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     pendingInvites[player:GetGUIDLow()] = nil -- should not be needed but keep as safety
     print("[WSG Queue] Player queued -> " .. inspect({ player = player:GetName(), isBot = player:IsBot() }))
@@ -316,67 +372,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
     end, 1000, 1)
 end)
 
-local function GetBGInstance(instanceId)
-    if instanceId and instanceId > 0 then
-        return activeBGInstances[instanceId] or GetBattleground(instanceId, bgTypeId)
-    end
-    for instId, bgObj in pairs(activeBGInstances) do
-        if bgObj then
-            return bgObj
-        end
-    end
-    return nil
-end
-
-local function CheckBGEmpty(player, mapId, instanceId)
-    local instId = (instanceId and instanceId > 0) and instanceId or 0
-    local bg = GetBGInstance(instId)
-    if not bg then
-        return false
-    end
-
-    local departingName = player and player:GetName() or ""
-
-    -- 1. Check if any OTHER real player is inside the BG map
-    local map = GetMapById(mapId or 489, instId)
-    if map then
-        for _, p in ipairs(map:GetPlayers()) do
-            if p:GetName() ~= departingName and not p:IsBot() then
-                print("[WSG Queue] Real player remaining in BG map -> " .. inspect({ player = p:GetName(), instanceId = instId }))
-                return false
-            end
-        end
-    end
-
-    -- 2. No real players are inside the map -> Retract all pending invites for this BG instance
-    for guidLow, invInstId in pairs(pendingInvites) do
-        if invInstId == instId then
-            pendingInvites[guidLow] = nil
-            -- Retract invite in-game if player is online
-            for _, p in ipairs(GetPlayersInWorld()) do
-                if p:GetGUIDLow() == guidLow then
-                    print("[WSG Queue] Retracting BG invite -> " .. inspect({ player = p:GetName(), instanceId = instId }))
-                    p:LeaveBattleground()
-                end
-            end
-        end
-    end
-
-    print("[WSG Queue] No real players remaining in BG map. Retracting invites and closing BG -> " .. inspect({ mapId = mapId, instanceId = instId }))
-    SendWorldMessage("[WSG Queue] Aborting BG (Instance " .. tostring(instId) .. "): No real players inside.")
-
-    pcall(function()
-        bg:EndBattleground(bgTypeId)
-        bg:SetEndTime(1) -- 1ms cleanup countdown
-    end)
-
-    if instId > 0 then
-        activeBGInstances[instId] = nil
-    end
-
-    return true
-end
-
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
     local botText = (player and player:IsBot()) and "Bot" or "Player"
     local playerName = player and player:GetName() or "Unknown"
@@ -398,7 +393,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
 end)
 
 -- Standard Eluna Map Change Fallback (Event 28: PLAYER_EVENT_ON_MAP_CHANGE)
-RegisterPlayerEvent(28, function(event, player)
+RegisterPlayerEvent(PLAYER_EVENT_ON_MAP_CHANGE, function(event, player)
     if not player or player:IsBot() then return end
     local inBG = player:InBattleground()
     print("[DEBUG ON_MAP_CHANGE (Event 28)] Map change -> " .. inspect({ player = player:GetName(), mapId = player:GetMapId(), inBG = inBG }))
@@ -417,7 +412,7 @@ RegisterPlayerEvent(28, function(event, player)
 end)
 
 -- Doors Open Hook (BG_EVENT_ON_START = 1)
-RegisterBGEvent(1, function(event, bg, bgTypeIdVal, instanceId)
+RegisterBGEvent(BG_EVENT_ON_START, function(event, bg, bgTypeIdVal, instanceId)
     if not bg then return end
     local instId = instanceId or bg:GetInstanceId()
     local map = GetMapById(489, instId)
@@ -456,7 +451,7 @@ RegisterBGEvent(1, function(event, bg, bgTypeIdVal, instanceId)
     end
 end)
 
-RegisterServerEvent(30, function(event, sender, type, prefix, msg, target)
+RegisterServerEvent(ADDON_EVENT_ON_MESSAGE, function(event, sender, type, prefix, msg, target)
     if prefix == "CFBG_SYNC" then
         local map = sender:GetMap()
         if map then

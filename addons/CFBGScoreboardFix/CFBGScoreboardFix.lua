@@ -4,6 +4,7 @@ local original_GetBattlefieldScore = GetBattlefieldScore
 -- Tables to store data synchronized from the server
 local CFBG_ScoreboardBots = {}
 local CFBG_HordePlayers = {}
+local CFBG_AlliancePlayers = {}
 
 -- Hook GetBattlefieldScore to return faked faction and tag bots for row rendering
 GetBattlefieldScore = function(index)
@@ -15,13 +16,11 @@ GetBattlefieldScore = function(index)
         -- Strip realm suffix (e.g. "Name-Realm" -> "Name") to match server names
         local cleanName = string.match(name, "^([^-]+)") or name
         
-        -- Set faction value for row rendering
-        if next(CFBG_HordePlayers) ~= nil or next(CFBG_ScoreboardBots) ~= nil then
-            if CFBG_HordePlayers[cleanName] then
-                actualFaction = 0 -- Value that renders row correctly
-            else
-                actualFaction = 1 -- Value that renders row correctly
-            end
+        -- Set faction value for row rendering (0 = Horde, 1 = Alliance)
+        if CFBG_HordePlayers[cleanName] then
+            actualFaction = 0
+        elseif CFBG_AlliancePlayers[cleanName] then
+            actualFaction = 1
         end
         
         -- Tag playerbots with a grey colored [BOT] prefix
@@ -51,7 +50,7 @@ local function UpdateScoreboardHeaders()
             local isBot = CFBG_ScoreboardBots[cleanName]
             local _, _, _, _, _, actualFaction = GetBattlefieldScore(i)
             
-            -- Invert actualFaction here for the header text calculation
+            -- Invert actualFaction here for the header text calculation (0 = Horde, 1 = Alliance)
             if actualFaction == 0 then -- Horde
                 if isBot then
                     hordeBots = hordeBots + 1
@@ -84,6 +83,7 @@ end
 -- Frame to manage initialization and event listening
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("CHAT_MSG_ADDON")
 
 frame:SetScript("OnEvent", function(self, event, ...)
@@ -109,26 +109,36 @@ frame:SetScript("OnEvent", function(self, event, ...)
             end)
         end
         
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        wipe(CFBG_ScoreboardBots)
+        wipe(CFBG_HordePlayers)
+        wipe(CFBG_AlliancePlayers)
+        
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, message = ...
         if prefix == "CFBG_SYNC" then
             DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Received sync payload:|r " .. tostring(message))
             
-            wipe(CFBG_ScoreboardBots)
-            wipe(CFBG_HordePlayers)
+            -- Split payload: "bot1,bot2;hordeplayer1,hordeplayer2;allianceplayer1,allianceplayer2"
+            local botsSection, hordeSection, allianceSection = string.match(message, "^([^;]*);?([^;]*);?(.*)$")
             
-            -- Split payload: "bot1,bot2;hordeplayer1,hordeplayer2"
-            local botsSection, hordeSection = string.match(message, "^([^;]*);(.*)$")
-            
-            if botsSection then
+            if botsSection and botsSection ~= "" then
                 for botName in string.gmatch(botsSection, "[^,]+") do
                     CFBG_ScoreboardBots[botName] = true
                 end
             end
             
-            if hordeSection then
+            if hordeSection and hordeSection ~= "" then
                 for playerName in string.gmatch(hordeSection, "[^,]+") do
                     CFBG_HordePlayers[playerName] = true
+                    CFBG_AlliancePlayers[playerName] = nil
+                end
+            end
+            
+            if allianceSection and allianceSection ~= "" then
+                for playerName in string.gmatch(allianceSection, "[^,]+") do
+                    CFBG_AlliancePlayers[playerName] = true
+                    CFBG_HordePlayers[playerName] = nil
                 end
             end
             

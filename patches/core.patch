@@ -213,6 +213,20 @@ index de0663cdc..e5d906547 100644
      ObjectGuid PlayerGuid;
  
      // Default score, present in every type
+diff --git a/src/server/game/Cache/WhoListCacheMgr.cpp b/src/server/game/Cache/WhoListCacheMgr.cpp
+index 1c5bbefe8..c812ddfbb 100644
+--- a/src/server/game/Cache/WhoListCacheMgr.cpp
++++ b/src/server/game/Cache/WhoListCacheMgr.cpp
+@@ -39,6 +39,9 @@ void WhoListCacheMgr::Update()
+         if (!player->FindMap() || player->GetSession()->PlayerLoading())
+             continue;
+ 
++        if (player->GetSession()->IsBot())
++            continue;
++
+         std::string playerName = player->GetName();
+         std::wstring widePlayerName;
+ 
 diff --git a/src/server/game/Entities/Player/Player.cpp b/src/server/game/Entities/Player/Player.cpp
 index f2b3207c7..2cbdab384 100644
 --- a/src/server/game/Entities/Player/Player.cpp
