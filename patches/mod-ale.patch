@@ -267,7 +267,7 @@ index a21640d..b4e7176 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..8f4af94 100644
+index c0acc01..2e1f8a9 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -165,6 +165,10 @@ luaL_Reg GlobalMethods[] =
@@ -290,10 +290,11 @@ index c0acc01..8f4af94 100644
      { "GetItemCount", &LuaPlayer::GetItemCount },
      { "GetGroup", &LuaPlayer::GetGroup },
      { "GetGuild", &LuaPlayer::GetGuild },
-@@ -566,6 +572,14 @@ ALERegister<Player> PlayerMethods[] =
+@@ -566,6 +572,15 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
++    { "Command", &LuaPlayer::Command },
 +    { "SetBotStrategy", &LuaPlayer::SetBotStrategy },
 +    { "HasBotStrategy", &LuaPlayer::HasBotStrategy },
 +    { "JoinBattlegroundQueue", &LuaPlayer::JoinBattlegroundQueue },
@@ -305,7 +306,7 @@ index c0acc01..8f4af94 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -1380,6 +1394,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1395,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -759,7 +760,7 @@ index cebb7bc..3e8129b 100644
       * </pre>
       *
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..bec5570 100644
+index c39801f..166b424 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -10,6 +10,14 @@
@@ -811,10 +812,37 @@ index c39801f..bec5570 100644
      
      /**
       * Returns amount of the specified [Item] the [Player] has.
-@@ -5175,6 +5210,341 @@ namespace LuaPlayer
+@@ -5175,6 +5210,368 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
++
++    /**
++     * Sends a command to the playerbot.
++     *
++     * @param string command
++     * @return bool success
++     */
++    int Command(lua_State* L, Player* player)
++    {
++        if (!player)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        PlayerbotAI* botAI = sPlayerbotsMgr.GetPlayerbotAI(player);
++        if (!botAI)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        std::string command = ALE::CHECKVAL<std::string>(L, 2);
++        botAI->HandleCommand(CHAT_MSG_WHISPER, command, player);
++        ALE::Push(L, true);
++        return 1;
++    }
 +
 +
 +    /**
