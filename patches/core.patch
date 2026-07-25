@@ -213,6 +213,21 @@ index de0663cdc..e5d906547 100644
      ObjectGuid PlayerGuid;
  
      // Default score, present in every type
+diff --git a/src/server/game/Battlegrounds/Zones/BattlegroundWS.h b/src/server/game/Battlegrounds/Zones/BattlegroundWS.h
+index ff3dc64d6..832c5e087 100644
+--- a/src/server/game/Battlegrounds/Zones/BattlegroundWS.h
++++ b/src/server/game/Battlegrounds/Zones/BattlegroundWS.h
+@@ -42,8 +42,8 @@ enum BG_WS_TimerOrScore
+     BG_WS_FLAG_RESPAWN_TIME         = 23 * IN_MILLISECONDS
+ };
+ constexpr Milliseconds BG_WS_FLAG_DROP_TIME = 10s;
+-constexpr Milliseconds BG_WS_SPELL_FORCE_TIME = 600s;
+-constexpr Milliseconds BG_WS_SPELL_BRUTAL_TIME = 900s;
++constexpr Milliseconds BG_WS_SPELL_FORCE_TIME = 240s;
++constexpr Milliseconds BG_WS_SPELL_BRUTAL_TIME = 480s;
+ constexpr Milliseconds BG_WS_DOOR_DESPAWN_TIME = 5s;
+ 
+ enum BG_WS_BroadcastTexts
 diff --git a/src/server/game/Cache/WhoListCacheMgr.cpp b/src/server/game/Cache/WhoListCacheMgr.cpp
 index 1c5bbefe8..c812ddfbb 100644
 --- a/src/server/game/Cache/WhoListCacheMgr.cpp

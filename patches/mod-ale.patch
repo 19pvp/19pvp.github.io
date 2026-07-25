@@ -631,7 +631,7 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..f1831ac 100644
+index cebb7bc..dcf35da 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,9 @@
@@ -837,7 +837,7 @@ index cebb7bc..f1831ac 100644
 +                                "SELECT c.guid FROM characters c "
 +                                "JOIN acore_auth.account a ON a.id = c.account "
 +                                "JOIN acore_auth.discord_account da ON da.account_id = a.id OR da.discord_login = a.username "
-+                                "WHERE da.discord_login = {} OR a.username = {} "
++                                "WHERE da.discord_login = '{}' OR a.username = '{}' "
 +                                "ORDER BY c.logout_time DESC LIMIT 1",
 +                                senderName, senderName);
 +                            if (res)

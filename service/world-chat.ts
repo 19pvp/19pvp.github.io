@@ -163,6 +163,8 @@ const syncUserDataNow = async (member?: DiscordMember, user = member?.user): Pro
     userData.account &&
       (activeUsersByAccount[userData.account] = userData)
   }
+  activeUsers[user.id] = userData
+  activeUsers[String(id)] = userData
 
   if (userData.gmLevel == null) {
     const access = await auth.sql`

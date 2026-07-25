@@ -145,8 +145,8 @@ RegisterServerEvent(WORLD_EVENT_ON_UPDATE, function (event, diff)
     local onlineCount = #GetPlayersInWorld()
     local currentDate = os.date("%Y-%m-%d %H:%M:%S")
     local testMsg = "System Status [" .. currentDate .. "]: Online Players: " .. tostring(onlineCount)
-    --SendChannelMessage("General", testMsg, 2, 0, "system")
-    --print("[Web Events] Test timer sent broadcast -> " .. testMsg)
+    SendChannelMessage("General", testMsg, 2, 0, "system")
+    print("[Web Events] Test timer sent broadcast -> " .. testMsg)
   end
 
   if elapsed < 500 or isQuerying then return end
