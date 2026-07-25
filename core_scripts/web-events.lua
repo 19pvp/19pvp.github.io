@@ -110,33 +110,22 @@ end
 
 local isQuerying = false
 function DisplayNewMessages(result)
-  if not result then
-    isQuerying = false
-    return
-  end
-  local processedAny = false
+  isQuerying = false
+  if not result then return end
   repeat
-    processedAny = true
     local message_id = result:GetUInt32(0)
-    local login = result:GetString(1)
-    local account_id = result:GetUInt32(2)
+    local login = not result:IsNull(1) and result:GetString(1) or nil
+    local account_id = not result:IsNull(2) and result:GetUInt32(2) or 0
     local msg = result:GetString(3)
     
     -- Delete from DB first to prevent duplicate processing if Lua error occurs during broadcast
     AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
-    local player = GetActivePlayerForAccount(account_id)
+    local player = account_id > 0 and GetActivePlayerForAccount(account_id) or nil
     local classColor = (player and classColors[player:GetClass()]) or "|c9B59B600" 
     local fullMsg = (login and (classColor.."@"..login.."|r ") or "")..msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions)
     SendChannelMessage("General", fullMsg, 2, 0, player or account_id)
     print("[Web Events] Displaying Discord message [" .. tostring(message_id) .. "] -> " .. msg)
   until not result:NextRow()
-
-  if processedAny then
-    -- Repoll immediately to drain remaining queue without waiting for the 500ms timer
-    AuthDBQueryAsync(query_check_new_messages, DisplayNewMessages)
-  else
-    isQuerying = false
-  end
 end
 
 local elapsed = 500

@@ -375,7 +375,7 @@ index 35ac03d79..21aa05f3c 100644
                      else
                          currentNameExt = current_zone_name;
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index 5912e36eb..56ceb4ea7 100644
+index 5912e36eb..84565b8f7 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
 @@ -2358,31 +2358,11 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited)
@@ -432,7 +432,7 @@ index 5912e36eb..56ceb4ea7 100644
      }
  
      // Roll chance
-@@ -11725,6 +11705,36 @@ int32 Unit::ModSpellDuration(SpellInfo const* spellProto, Unit const* target, in
+@@ -11725,6 +11705,40 @@ int32 Unit::ModSpellDuration(SpellInfo const* spellProto, Unit const* target, in
                  break;
          }
      }
@@ -457,9 +457,13 @@ index 5912e36eb..56ceb4ea7 100644
 +        }
 +    }
 +
-+    // Apply school resistance to negative magic aura durations, except DoTs.
-+    // DoTs keep their duration and only have their periodic damage resisted.
-+    if (!hasPeriodicDamageAura && !positive && duration > 0 && !(spellProto->GetSchoolMask() & SPELL_SCHOOL_MASK_NORMAL) &&
++    // Apply school resistance to negative magic aura durations, except DoTs
++    // and channeled spells. Entangling Roots is both a DoT and a root, so its
++    // duration is resisted as well.
++    bool isEntanglingRoots = spellProto->SpellFamilyName == SPELLFAMILY_DRUID &&
++        spellProto->HasAura(SPELL_AURA_MOD_ROOT);
++    if ((!hasPeriodicDamageAura || isEntanglingRoots) && !spellProto->IsChanneled() && !positive && duration > 0 &&
++        !(spellProto->GetSchoolMask() & SPELL_SCHOOL_MASK_NORMAL) &&
 +        (!(spellProto->GetSchoolMask() & SPELL_SCHOOL_MASK_HOLY) || target->IsCreature()))
 +    {
 +        float resist = GetEffectiveResistChance(this, spellProto->GetSchoolMask(), target, spellProto);
