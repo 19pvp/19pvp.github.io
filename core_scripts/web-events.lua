@@ -105,25 +105,50 @@ end
 
 local isQuerying = false
 function DisplayNewMessages(result)
-  isQuerying = false
-  if not result then return end
+  if not result then
+    isQuerying = false
+    return
+  end
+  local processedAny = false
   repeat
+    processedAny = true
     local message_id = result:GetUInt32(0)
     local account_id = not result:IsNull(2) and result:GetUInt32(2) or nil
     local login = (not result:IsNull(1) and result:GetString(1)) or "Discord"
     local msg = result:GetString(3)
+    
+    -- Delete from DB first to prevent duplicate processing if Lua error occurs during broadcast
+    AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
+    
     local player = account_id and GetActivePlayerForAccount(account_id)
     local fullMsg = msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions)
-    SendChannelMessage("General", fullMsg, 2, 0, player and player or login)
-    print("[Web Events] Displaying Discord message -> " .. msg)
-    AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
-  until not result:NextRow()  
+    SendChannelMessage("General", fullMsg, 2, 0, (player and player:IsInWorld()) and player or login)
+    print("[Web Events] Displaying Discord message [" .. tostring(message_id) .. "] -> " .. msg)
+  until not result:NextRow()
+
+  if processedAny then
+    -- Repoll immediately to drain remaining queue without waiting for the 500ms timer
+    AuthDBQueryAsync(query_check_new_messages, DisplayNewMessages)
+  else
+    isQuerying = false
+  end
 end
 
 local elapsed = 500
+local testElapsed = 0
 ClearServerEvents(WORLD_EVENT_ON_UPDATE)
 RegisterServerEvent(WORLD_EVENT_ON_UPDATE, function (event, diff)
   elapsed = elapsed + diff
+  testElapsed = testElapsed + diff
+  if testElapsed >= 10000 then
+    testElapsed = 0
+    local onlineCount = #GetPlayersInWorld()
+    local currentDate = os.date("%Y-%m-%d %H:%M:%S")
+    local testMsg = "System Status [" .. currentDate .. "]: Online Players: " .. tostring(onlineCount)
+    --SendChannelMessage("General", testMsg, 2, 0, "system")
+    --print("[Web Events] Test timer sent broadcast -> " .. testMsg)
+  end
+
   if elapsed < 500 or isQuerying then return end
   elapsed = 0
   isQuerying = true

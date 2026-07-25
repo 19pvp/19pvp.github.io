@@ -4,7 +4,7 @@ const TOKEN = env.GEMINI_TOKEN
 const prompt =
   "Write a very concise description of this image for blind peoples, max 20 words, less if possible, be informal and casual. Your answer must start with 'Image of', avoid ponctuation."
 export const describeImage = async (imageUrl: string): Promise<string> => {
-  const imageRes = await fetch(imageUrl)
+  const imageRes = await fetch(imageUrl, { signal: AbortSignal.timeout(5000) })
   const imageBuff = await imageRes.arrayBuffer()
   const parts = [
     { text: prompt },
@@ -14,6 +14,7 @@ export const describeImage = async (imageUrl: string): Promise<string> => {
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${TOKEN}`,
     {
       method: 'POST',
+      signal: AbortSignal.timeout(5000),
       body: JSON.stringify({
         contents: [{ parts }],
         generationConfig: { temperature: 0.4, topK: 32, topP: 1, maxOutputTokens: 4096, stopSequences: [] },
@@ -27,5 +28,5 @@ export const describeImage = async (imageUrl: string): Promise<string> => {
     },
   )
   const output = await geminiRes.json()
-  return output.candidates[0].content.parts[0].text
+  return output?.candidates?.[0]?.content?.parts?.[0]?.text || ''
 }

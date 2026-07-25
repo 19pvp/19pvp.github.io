@@ -97,7 +97,7 @@ const toDiscordAccount = (
   extra: Pick<DiscordAccount, 'gmLevel' | 'syncAction'> = {},
 ): DiscordAccount => ({
   ...row,
-  id: row.id,
+  id: BigInt(row.id),
   login: String(row.login),
   account: Number(row.account),
   ...extra,
@@ -142,12 +142,11 @@ const ensureDiscordAccount = async (discordId: bigint, login: string, username: 
 }
 
 const syncUserDataNow = async (member?: DiscordMember, user = member?.user): Promise<DiscordAccount | undefined> => {
-  if (!member) return
-  user || (user = member.user)
+  user || (user = member?.user)
   if (!user || user.bot) return
 
-  const gmLevel = member.roles.reduce(getHighestGMLevel, 0)
-  const displayLogin = member.nick || user.global_name || user.username
+  const gmLevel = member?.roles ? member.roles.reduce(getHighestGMLevel, 0) : 0
+  const displayLogin = member?.nick || user.global_name || user.username
   const login = toDiscordLogin(user, displayLogin)
   const accountUsername = toAccountUsername(user, displayLogin)
   const id = BigInt(user.id)
@@ -158,6 +157,7 @@ const syncUserDataNow = async (member?: DiscordMember, user = member?.user): Pro
     userData = await ensureDiscordAccount(id, login, accountUsername)
     userData.gmLevel = cachedGmLevel
     activeUsers[user.id] = userData
+    activeUsers[String(id)] = userData
     syncAction = userData.syncAction || syncAction
 
     userData.account &&
@@ -191,9 +191,9 @@ const syncUserDataNow = async (member?: DiscordMember, user = member?.user): Pro
   userData.syncAction = syncAction
   return userData
 }
-
 const syncUserData = (member?: DiscordMember, user = member?.user) => {
-  if (!member || !user || user.bot) return
+  user || (user = member?.user)
+  if (!user || user.bot) return
   const currentSync = activeUserSyncs.get(user.id)
   if (currentSync) return currentSync
   const sync = syncUserDataNow(member, user)
@@ -485,8 +485,8 @@ const _guildMemberUpdateExample = {
   avatar: null
 }
 */
-discord.on.GUILD_MEMBER_ADD((member: DiscordMember) => syncUserData(member))
-discord.on.GUILD_MEMBER_UPDATE((member: DiscordMember) => syncUserData(member))
+discord.on.GUILD_MEMBER_ADD((member: DiscordMember) => { syncUserData(member)?.catch((err) => console.error('GUILD_MEMBER_ADD sync error:', err)) })
+discord.on.GUILD_MEMBER_UPDATE((member: DiscordMember) => { syncUserData(member)?.catch((err) => console.error('GUILD_MEMBER_UPDATE sync error:', err)) })
 
 /*
 const _wowMessageEvent = {

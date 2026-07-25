@@ -88,7 +88,7 @@ public:
             "SELECT g.`guid`, r.`account`, r.`name`, r.`role`, r.`spec`, r.`race`, r.`class`, r.`gender` "
             "FROM `playerbots_fixed_roster` r "
             "LEFT JOIN `playerbots_fixed_roster_guid` g ON g.`account` = r.`account` "
-            "WHERE r.`enabled` = 1 ORDER BY r.`account`");
+            "WHERE r.`enabled` = 1 AND r.`name` != 'System' ORDER BY r.`account`");
 
         if (!result)
         {

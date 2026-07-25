@@ -285,9 +285,9 @@ const connect = (failCount: number) => {
     reconnect()
   })
 
-  const run = (fn: DiscordHandler, d: DiscordPayload) => {
+  const run = async (fn: DiscordHandler, d: DiscordPayload) => {
     try {
-      fn(d)
+      await fn(d)
     } catch (err) {
       const stack = stacks.get(fn)
       console.log(brightRed('ERROR:'))

@@ -603,6 +603,7 @@ const defaultWsgBotRoster: WsgBotRosterEntry[] = [
   wsgBot(2, 'Trerifa', 'female', 'troll', 'warrior', 'dps', 'protection', 2, 'wsg-melee-dps'),
   wsgBot(2, 'Martine', 'female', 'orc', 'rogue', 'dps', 'combat', 3, 'wsg-melee-dps'),
   wsgBot(2, 'Michel', 'male', 'tauren', 'druid', 'flag-carrier', 'feral', 4, 'wsg-flag-carrier'),
+  wsgBot(1, 'System', 'male', 'human', 'warlock', 'dps', 'affliction', 0, 'wsg-ranged-dps'),
 ]
 
 const parseOptionalPositiveInt = (value: string | undefined, label: string, rowLabel: string): number | undefined => {
