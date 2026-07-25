@@ -631,7 +631,7 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..4501700 100644
+index cebb7bc..00add1d 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,9 @@
@@ -784,7 +784,7 @@ index cebb7bc..4501700 100644
       * };
       * </pre>
       *
-@@ -1432,6 +1561,71 @@ namespace LuaGlobalFunctions
+@@ -1432,6 +1561,70 @@ namespace LuaGlobalFunctions
          return 0;
      }
  
@@ -830,8 +830,7 @@ index cebb7bc..4501700 100644
 +                    }
 +                    else if (senderName && *senderName)
 +                    {
-+                        std::string formattedMsg = std::string("[|cFF7289DA") + senderName + "|r]: " + message;
-+                        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), ObjectGuid::Empty, ObjectGuid::Empty, formattedMsg, 0, "", "", 0, false, cname);
++                        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), ObjectGuid::Empty, ObjectGuid::Empty, message, 0, std::string("[") + senderName + "]", "", 0, false, cname);
 +                    }
 +                    else
 +                    {

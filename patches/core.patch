@@ -359,6 +359,101 @@ index 35ac03d79..21aa05f3c 100644
                          currentNameExt = sObjectMgr->GetAcoreStringForDBCLocale(LANG_CHANNEL_CITY);
                      else
                          currentNameExt = current_zone_name;
+diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
+index 5912e36eb..56ceb4ea7 100644
+--- a/src/server/game/Entities/Unit/Unit.cpp
++++ b/src/server/game/Entities/Unit/Unit.cpp
+@@ -2358,31 +2358,11 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited)
+     {
+         float averageResist = Unit::GetEffectiveResistChance(attacker, schoolMask, victim);
+ 
+-        float discreteResistProbability[11];
+-        for (uint32 i = 0; i < 11; ++i)
+-        {
+-            discreteResistProbability[i] = 0.5f - 2.5f * std::fabs(0.1f * i - averageResist);
+-            if (discreteResistProbability[i] < 0.0f)
+-                discreteResistProbability[i] = 0.0f;
+-        }
+-
+-        if (averageResist <= 0.1f)
+-        {
+-            discreteResistProbability[0] = 1.0f - 7.5f * averageResist;
+-            discreteResistProbability[1] = 5.0f * averageResist;
+-            discreteResistProbability[2] = 2.5f * averageResist;
+-        }
+-
+-        float r = float(rand_norm());
+-        uint32 i = 0;
+-        float probabilitySum = discreteResistProbability[0];
+-
+-        while (r >= probabilitySum && i < 10)
+-            probabilitySum += discreteResistProbability[++i];
++        // Apply resistance as a deterministic damage reduction. Keep at least
++        // one point of the original damage so resistance can never fully resist it.
++        float damageResisted = float(damage) * averageResist;
+ 
+-        float damageResisted = float(damage * i / 10);
+-
+-        if (damageResisted) // if equal to 0, checking these is pointless
++        if (damageResisted > 0.0f) // if equal to 0, checking these is pointless
+         {
+             if (attacker)
+             {
+@@ -2407,6 +2387,8 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited)
+                 if (armorReduction < damageResisted) // pick the lower one, the weakest resistance counts
+                     damageResisted = armorReduction;
+             }
++
++            damageResisted = std::clamp(damageResisted, 0.0f, float(damage - 1));
+         }
+ 
+         dmgInfo.ResistDamage(uint32(damageResisted));
+@@ -3618,8 +3600,6 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit* victim, SpellInfo const* spellInfo
+             tmp += victim->GetMaxNegativeAuraModifierByMiscValue(SPELL_AURA_MOD_DEBUFF_RESISTANCE, int32(spellInfo->Dispel)) * 100;
+         }
+ 
+-        if (spellInfo->HasAttribute(SPELL_ATTR0_CU_BINARY_SPELL) && (spellInfo->GetSchoolMask() & (SPELL_SCHOOL_MASK_NORMAL | SPELL_SCHOOL_MASK_HOLY)) == 0)
+-            tmp += int32(Unit::GetEffectiveResistChance(this, spellInfo->GetSchoolMask(), victim, spellInfo) * 10000.0f);
+     }
+ 
+     // Roll chance
+@@ -11725,6 +11705,36 @@ int32 Unit::ModSpellDuration(SpellInfo const* spellProto, Unit const* target, in
+                 break;
+         }
+     }
++
++    bool hasPeriodicDamageAura = false;
++    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
++    {
++        if (!(effectMask & (1 << i)))
++            continue;
++
++        switch (spellProto->Effects[i].ApplyAuraName)
++        {
++            case SPELL_AURA_PERIODIC_DAMAGE:
++            case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
++            case SPELL_AURA_PERIODIC_LEECH:
++            case SPELL_AURA_PERIODIC_HEALTH_FUNNEL:
++            case SPELL_AURA_PERIODIC_DUMMY:
++                hasPeriodicDamageAura = true;
++                break;
++            default:
++                break;
++        }
++    }
++
++    // Apply school resistance to negative magic aura durations, except DoTs.
++    // DoTs keep their duration and only have their periodic damage resisted.
++    if (!hasPeriodicDamageAura && !positive && duration > 0 && !(spellProto->GetSchoolMask() & SPELL_SCHOOL_MASK_NORMAL) &&
++        (!(spellProto->GetSchoolMask() & SPELL_SCHOOL_MASK_HOLY) || target->IsCreature()))
++    {
++        float resist = GetEffectiveResistChance(this, spellProto->GetSchoolMask(), target, spellProto);
++        duration = std::max(1, int32(float(duration) * (1.0f - resist)));
++    }
++
+     return std::max(duration, 0);
+ }
+ 
 diff --git a/src/server/game/Globals/ObjectMgr.cpp b/src/server/game/Globals/ObjectMgr.cpp
 index 849ee2627..c8375251d 100644
 --- a/src/server/game/Globals/ObjectMgr.cpp
