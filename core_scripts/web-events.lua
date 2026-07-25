@@ -231,11 +231,15 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_WHO_REQUEST, function(event, requester, target)
+  print("[Web Events] PLAYER_EVENT_ON_WHO_REQUEST -> " .. inspect({ requester = requester and requester:GetName(), target = target and target:GetName() }))
   if not requester or not target then return end
   local accountId = target:GetAccountId()
   local targetName = target:GetName()
   AuthDBQueryAsync("SELECT da.discord_login, a.joindate, a.username FROM account a LEFT JOIN discord_account da ON a.id = da.discord_id OR a.id = da.account_id WHERE a.id = " .. tostring(accountId), function(result)
-    if not result then return end
+    if not result then
+      print("[Web Events] AuthDBQueryAsync returned nil result for accountId: " .. tostring(accountId))
+      return
+    end
     local discordLogin = not result:IsNull(0) and result:GetString(0) or "None"
     local joinDate = not result:IsNull(1) and result:GetString(1) or ""
     local accountName = not result:IsNull(2) and result:GetString(2) or ""
@@ -248,6 +252,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_WHO_REQUEST, function(event, requester, targ
       infoMsg = infoMsg .. " | Account: " .. accountName
     end
 
+    print("[Web Events] Sending Who Info to " .. requester:GetName() .. " -> " .. infoMsg)
     requester:SendBroadcastMessage(infoMsg)
   end)
 end)

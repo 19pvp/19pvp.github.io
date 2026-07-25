@@ -458,25 +458,55 @@ index f9cbfac32..06dab1b38 100644
          SendPacket(&data);
          return;
      }
+diff --git a/src/server/game/Handlers/ChannelHandler.cpp b/src/server/game/Handlers/ChannelHandler.cpp
+index 2193daaab..9d120cb43 100644
+--- a/src/server/game/Handlers/ChannelHandler.cpp
++++ b/src/server/game/Handlers/ChannelHandler.cpp
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include "ChannelMgr.h"
++#include "Language.h"
+ #include "ObjectMgr.h"                                      // for normalizePlayerName
+ #include "Player.h"
+ #include <cctype>
+@@ -28,7 +29,19 @@ void WorldSession::HandleJoinChannel(WorldPacket& recvPacket)
+ 
+     recvPacket >> channelId >> unknown1 >> unknown2 >> channelName >> password;
+ 
+-    LOG_DEBUG("chat.system", "CMSG_JOIN_CHANNEL {} Channel: {}, unk1: {}, unk2: {}, channel: {}, password: {}", GetPlayerInfo(), channelId, unknown1, unknown2, channelName, password);
++    if (channelId == 1 || channelName == "General" || channelName.rfind("General - ", 0) == 0)
++    {
++        channelId = 1;
++        ChatChannelsEntry const* chEntry = sChatChannelsStore.LookupEntry(1);
++        if (chEntry)
++        {
++            char channel_name_buf[100];
++            std::string cityStr = sObjectMgr->GetAcoreStringForDBCLocale(LANG_CHANNEL_CITY);
++            snprintf(channel_name_buf, 100, chEntry->pattern[GetSessionDbcLocale()], cityStr.c_str());
++            channelName = channel_name_buf;
++        }
++    }
++
+     if (channelId)
+     {
+         ChatChannelsEntry const* channel = sChatChannelsStore.LookupEntry(channelId);
 diff --git a/src/server/game/Handlers/MiscHandler.cpp b/src/server/game/Handlers/MiscHandler.cpp
-index da9480a6b..9862c2dc7 100644
+index da9480a6b..c1cf2e4b8 100644
 --- a/src/server/game/Handlers/MiscHandler.cpp
 +++ b/src/server/game/Handlers/MiscHandler.cpp
-@@ -411,6 +411,14 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recvData)
+@@ -403,6 +403,11 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recvData)
+         data << uint8(gender);                            // player gender
+         data << uint32(playerZoneId);                     // player zone id
  
-     SendPacket(&data);
-     LOG_DEBUG("network", "WORLD: Send SMSG_WHO Message");
-+
-+    if (displaycount == 1 && !packetPlayerName.empty())
-+    {
-+        if (Player* targetPlayer = ObjectAccessor::FindPlayerByName(packetPlayerName))
++        if (Player* targetPlayer = ObjectAccessor::FindPlayer(target.GetGuid()))
 +        {
 +            sScriptMgr->OnPlayerWhoRequest(_player, targetPlayer);
 +        }
-+    }
- }
++
+         ++displaycount;
+     }
  
- void WorldSession::HandleLogoutRequestOpcode(WorldPackets::Character::LogoutRequest& /*logoutRequest*/)
 diff --git a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
 index 9881a25f0..246cd3a8a 100644
 --- a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
