@@ -631,7 +631,7 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..dcf35da 100644
+index cebb7bc..1637255 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,9 @@
@@ -784,7 +784,7 @@ index cebb7bc..dcf35da 100644
       * };
       * </pre>
       *
-@@ -1432,6 +1561,105 @@ namespace LuaGlobalFunctions
+@@ -1432,6 +1561,68 @@ namespace LuaGlobalFunctions
          return 0;
      }
  
@@ -804,7 +804,7 @@ index cebb7bc..dcf35da 100644
 +        uint32 teamId = ALE::CHECKVAL<uint32>(L, 3, 2); // default neutral/both
 +        uint32 lang = ALE::CHECKVAL<uint32>(L, 4, LANG_UNIVERSAL);
 +        Player* senderPlayer = ALE::CHECKOBJ<Player>(L, 5, false);
-+        const char* senderName = senderPlayer ? nullptr : ALE::CHECKVAL<const char*>(L, 5, nullptr);
++        uint32 accountId = senderPlayer ? 0 : ALE::CHECKVAL<uint32>(L, 5, 0);
 +
 +        if (!channelName || !message)
 +            return 0;
@@ -826,52 +826,15 @@ index cebb7bc..dcf35da 100644
 +                    WorldPacket data;
 +                    ObjectGuid senderGuid = senderPlayer ? senderPlayer->GetGUID() : ObjectGuid::Empty;
 +
-+                    if (!senderGuid && senderName && *senderName)
++                    if (!senderGuid && accountId != 0)
 +                    {
-+                        // 1. Check if senderName matches a character in sCharacterCache
-+                        senderGuid = sCharacterCache->GetCharacterGuidByName(senderName);
-+                        if (!senderGuid)
-+                        {
-+                            // 2. Look up the last played character for the account associated with senderName/account
-+                            QueryResult res = CharacterDatabase.Query(
-+                                "SELECT c.guid FROM characters c "
-+                                "JOIN acore_auth.account a ON a.id = c.account "
-+                                "JOIN acore_auth.discord_account da ON da.account_id = a.id OR da.discord_login = a.username "
-+                                "WHERE da.discord_login = '{}' OR a.username = '{}' "
-+                                "ORDER BY c.logout_time DESC LIMIT 1",
-+                                senderName, senderName);
-+                            if (res)
-+                            {
-+                                senderGuid = ObjectGuid::Create<HighGuid::Player>((*res)[0].Get<uint32>());
-+                            }
-+                        }
++                        QueryResult res = CharacterDatabase.Query("SELECT guid FROM characters WHERE account = {} ORDER BY logout_time DESC LIMIT 1", accountId);
++                        if (res)
++                            senderGuid = ObjectGuid::Create<HighGuid::Player>((*res)[0].Get<uint32>());
 +                    }
 +
-+                    if (!senderGuid)
-+                    {
-+                        // 3. Fallback to bot "System" or any online player GUID
-+                        if (Player* systemBot = ObjectAccessor::FindPlayerByName("System", false))
-+                        {
-+                            senderGuid = systemBot->GetGUID();
-+                        }
-+                        else
-+                        {
-+                            for (auto const& [guid, player] : ObjectAccessor::GetPlayers())
-+                            {
-+                                if (player && player->IsInWorld())
-+                                {
-+                                    senderGuid = player->GetGUID();
-+                                    break;
-+                                }
-+                            }
-+                        }
-+                    }
-+
-+                    if (senderGuid)
-+                    {
-+                        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), senderGuid, senderGuid, message, 0, "", "", 0, false, cname);
-+                        channel->SendToAll(&data);
-+                    }
++                    ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), senderGuid, senderGuid, message, 0, "", "", 0, false, cname);
++                    channel->SendToAll(&data);
 +                }
 +            }
 +        };

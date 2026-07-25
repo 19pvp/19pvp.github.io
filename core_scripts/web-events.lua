@@ -57,7 +57,12 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_CHANNEL_CHAT, function(event, player, msg, T
     SendWebEvent('GENERAL_CHANNEL_MESSAGE', player, {
       message = msg:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("^%s+", ""):gsub("%s+$", "")
     })
-    return true -- Let native WoW channel chat handle broadcasting the message in General
+
+    local classColor = classColors[player:GetClass()] or "|c9B59B600" 
+    local login = getDiscordName(player:GetAccountId()) or player:GetAccountName()
+    local fullMsg = classColor.."@"..login.."|r "..msg
+    SendChannelMessage("General", fullMsg, 2, 0, player or account_id)
+    return false -- Prevents the message from duplicating in the original chat
   end
 end)
 
@@ -100,7 +105,7 @@ end
 function ReplaceDiscordMentions(account_id, login)
   local player = GetActivePlayerForAccount(tonumber(account_id))
   if player then return getPlayerNameLink(player) end
-  return "|cFFFFA500@"..login.."|r"
+  return "|c9B59B600@"..login.."|r"
 end
 
 local isQuerying = false
@@ -113,16 +118,16 @@ function DisplayNewMessages(result)
   repeat
     processedAny = true
     local message_id = result:GetUInt32(0)
-    local account_id = not result:IsNull(2) and result:GetUInt32(2) or nil
-    local login = (not result:IsNull(1) and result:GetString(1)) or "Discord"
+    local login = result:GetString(1)
+    local account_id = result:GetUInt32(2)
     local msg = result:GetString(3)
     
     -- Delete from DB first to prevent duplicate processing if Lua error occurs during broadcast
     AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
-    
-    local player = account_id and GetActivePlayerForAccount(account_id)
-    local fullMsg = msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions)
-    SendChannelMessage("General", fullMsg, 2, 0, (player and player:IsInWorld()) and player or login)
+    local player = GetActivePlayerForAccount(account_id)
+    local classColor = (player and classColors[player:GetClass()]) or "|c9B59B600" 
+    local fullMsg = (login and (classColor.."@"..login.."|r ") or "")..msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions)
+    SendChannelMessage("General", fullMsg, 2, 0, player or account_id)
     print("[Web Events] Displaying Discord message [" .. tostring(message_id) .. "] -> " .. msg)
   until not result:NextRow()
 
@@ -135,20 +140,9 @@ function DisplayNewMessages(result)
 end
 
 local elapsed = 500
-local testElapsed = 0
 ClearServerEvents(WORLD_EVENT_ON_UPDATE)
 RegisterServerEvent(WORLD_EVENT_ON_UPDATE, function (event, diff)
   elapsed = elapsed + diff
-  testElapsed = testElapsed + diff
-  if testElapsed >= 10000 then
-    testElapsed = 0
-    local onlineCount = #GetPlayersInWorld()
-    local currentDate = os.date("%Y-%m-%d %H:%M:%S")
-    local testMsg = "System Status [" .. currentDate .. "]: Online Players: " .. tostring(onlineCount)
-    SendChannelMessage("General", testMsg, 2, 0, "system")
-    print("[Web Events] Test timer sent broadcast -> " .. testMsg)
-  end
-
   if elapsed < 500 or isQuerying then return end
   elapsed = 0
   isQuerying = true

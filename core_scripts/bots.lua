@@ -3,7 +3,7 @@ print("[WSG Queue Debug] Loading bots.lua script...")
 local WsgBalance = require("wsg_balance")
 
 local fixedRoster = {}
-local query = CharDBQuery("SELECT name FROM 19pvp_playerbots.playerbots_fixed_roster WHERE enabled = 1 AND name != 'System'")
+local query = CharDBQuery("SELECT name FROM 19pvp_playerbots.playerbots_fixed_roster WHERE enabled = 1")
 if query then
     repeat
         local name = query:GetString(0)
