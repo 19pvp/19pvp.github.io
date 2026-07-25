@@ -1,0 +1,23 @@
+{
+  "tasks": {
+    "dev": "deno run --watch --unstable-raw-imports -A main.ts",
+    "desktop": "deno desktop --unstable-raw-imports -A main.ts",
+    "desktop:dev": "deno desktop --hmr --unstable-raw-imports -A main.ts",
+    "test": "deno test -A --unstable-raw-imports"
+  },
+  "desktop": {
+    "app": {
+      "name": "19PvP Launcher",
+      "identifier": "com.19pvp.launcher"
+    }
+  },
+  "nodeModulesDir": "none",
+  "fmt": {
+    "singleQuote": true,
+    "semiColons": false
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1",
+    "webtorrent": "./vendor/webtorrent/index.js"
+  }
+}
