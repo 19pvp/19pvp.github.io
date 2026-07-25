@@ -13,8 +13,21 @@ end
 print("[Fixed Roster] Loaded enabled bots " .. inspect(fixedRoster))
 
 local startupBotSpecs = custom_data and custom_data.wsg_bot_specs or {}
+
+local function ReplaceWarriorWeapon(bot)
+    if not bot or bot:GetClass() ~= 1 then return end
+
+    local oldCount = bot:GetItemCount(1459)
+    if oldCount > 0 then bot:RemoveItem(1459, oldCount) end
+
+    local weapon = bot:GetItemByEntry(1482)
+    if not weapon then weapon = bot:AddItem(1482, 1) end
+    if weapon then weapon:SetEnchantment(1900, 0, 0) end
+end
+
 local function InitializeBot(bot)
     if not bot or not bot:IsBot() then return end
+    ReplaceWarriorWeapon(bot)
     local spec = startupBotSpecs[bot:GetClass()]
     if not spec then return end
     bot:Command("talents apply " .. spec.talents)
