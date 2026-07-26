@@ -61,7 +61,10 @@ end)
 local DUAL_SPEC_SPELL = 63645
 local ICON_BOOK = 3
 local ICON_INTERACT_COG = 4
+local ICON_VENDOR = 1
 local DUAL_SPEC_COST = 100000-- 10 Gold in copper
+local NPC_ITEM_VENDOR = 20205
+local VENDOR_MENU_SENDER = 20205
 
 RegisterCreatureGossipEvent(22427, ON_HELLO, function(event, player, creature)
   player:GossipClearMenu()
@@ -94,4 +97,20 @@ RegisterCreatureGossipEvent(22427, ON_SELECT, function(event, player, creature, 
     end
   end
   player:GossipComplete()
+end)
+
+RegisterCreatureGossipEvent(NPC_ITEM_VENDOR, ON_HELLO, function(event, player, creature)
+  player:GossipClearMenu()
+  player:GossipAddQuests(creature)
+  player:GossipMenuAddItem(ICON_VENDOR, "Browse my heirlooms", VENDOR_MENU_SENDER, 1)
+  player:GossipSendMenu(1, creature)
+  return true
+end)
+
+RegisterCreatureGossipEvent(NPC_ITEM_VENDOR, ON_SELECT, function(event, player, creature, sender, intid)
+  if sender == VENDOR_MENU_SENDER and intid == 1 then
+    player:SendListInventory(creature)
+    return true
+  end
+  return false
 end)
