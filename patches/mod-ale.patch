@@ -274,10 +274,19 @@ index a21640d..de4bd8b 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..ffaf4c1 100644
+index c0acc01..2afd1c6 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
-@@ -153,6 +153,7 @@ luaL_Reg GlobalMethods[] =
+@@ -107,6 +107,8 @@ luaL_Reg GlobalMethods[] =
+     { "GetQuest", &LuaGlobalFunctions::GetQuest },
+     { "GetPlayerByGUID", &LuaGlobalFunctions::GetPlayerByGUID },
+     { "GetPlayerByName", &LuaGlobalFunctions::GetPlayerByName },
++    { "LoginFixedRosterBot", &LuaGlobalFunctions::LoginFixedRosterBot },
++    { "LogoutFixedRosterBot", &LuaGlobalFunctions::LogoutFixedRosterBot },
+     { "GetGameTime", &LuaGlobalFunctions::GetGameTime },
+     { "GetPlayersInWorld", &LuaGlobalFunctions::GetPlayersInWorld },
+     { "GetGuildByName", &LuaGlobalFunctions::GetGuildByName },
+@@ -153,6 +155,7 @@ luaL_Reg GlobalMethods[] =
      { "ReloadALE", &LuaGlobalFunctions::ReloadALE },
      { "RunCommand", &LuaGlobalFunctions::RunCommand },
      { "SendWorldMessage", &LuaGlobalFunctions::SendWorldMessage },
@@ -285,7 +294,7 @@ index c0acc01..ffaf4c1 100644
      { "WorldDBQuery", &LuaGlobalFunctions::WorldDBQuery },
      { "WorldDBQueryAsync", &LuaGlobalFunctions::WorldDBQueryAsync },
      { "WorldDBExecute", &LuaGlobalFunctions::WorldDBExecute },
-@@ -165,6 +166,10 @@ luaL_Reg GlobalMethods[] =
+@@ -165,6 +168,10 @@ luaL_Reg GlobalMethods[] =
      { "CreateLuaEvent", &LuaGlobalFunctions::CreateLuaEvent },
      { "RemoveEventById", &LuaGlobalFunctions::RemoveEventById },
      { "RemoveEvents", &LuaGlobalFunctions::RemoveEvents },
@@ -296,7 +305,7 @@ index c0acc01..ffaf4c1 100644
      { "PerformIngameSpawn", &LuaGlobalFunctions::PerformIngameSpawn },
      { "CreatePacket", &LuaGlobalFunctions::CreatePacket },
      { "AddVendorItem", &LuaGlobalFunctions::AddVendorItem },
-@@ -358,6 +363,7 @@ ALERegister<Unit> UnitMethods[] =
+@@ -358,6 +365,7 @@ ALERegister<Unit> UnitMethods[] =
      { "SetPvP", &LuaUnit::SetPvP },
      { "SetFFA", &LuaUnit::SetFFA },
      { "SetSanctuary", &LuaUnit::SetSanctuary },
@@ -304,7 +313,7 @@ index c0acc01..ffaf4c1 100644
      // {"SetCanFly", &LuaUnit::SetCanFly},                             // :SetCanFly(apply) - UNDOCUMENTED
      // {"SetVisible", &LuaUnit::SetVisible},                           // :SetVisible(x) - UNDOCUMENTED
      { "SetOwnerGUID", &LuaUnit::SetOwnerGUID },
-@@ -485,6 +491,8 @@ ALERegister<Player> PlayerMethods[] =
+@@ -485,6 +493,8 @@ ALERegister<Player> PlayerMethods[] =
      { "GetGuildId", &LuaPlayer::GetGuildId },
      { "GetCoinage", &LuaPlayer::GetCoinage },
      { "GetTeam", &LuaPlayer::GetTeam },
@@ -313,7 +322,7 @@ index c0acc01..ffaf4c1 100644
      { "GetItemCount", &LuaPlayer::GetItemCount },
      { "GetGroup", &LuaPlayer::GetGroup },
      { "GetGuild", &LuaPlayer::GetGuild },
-@@ -566,6 +574,15 @@ ALERegister<Player> PlayerMethods[] =
+@@ -566,6 +576,15 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
@@ -329,7 +338,7 @@ index c0acc01..ffaf4c1 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -1380,6 +1397,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1399,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -639,20 +648,21 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..1637255 100644
+index cebb7bc..f836296 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
-@@ -14,6 +14,9 @@
+@@ -14,6 +14,10 @@
  #include "GameTime.h"
  #include "SharedDefines.h"
  #include "OutdoorPvPMgr.h"
 +#include "BattlegroundMgr.h"
 +#include "ChannelMgr.h"
 +#include "Channel.h"
++#include "RandomPlayerbotMgr.h"
  #include "../../../../src/server/scripts/OutdoorPvP/OutdoorPvPNA.h"
  
  
-@@ -163,6 +166,128 @@ namespace LuaGlobalFunctions
+@@ -163,6 +167,128 @@ namespace LuaGlobalFunctions
          return 1;
      }
  
@@ -781,7 +791,78 @@ index cebb7bc..1637255 100644
      /**
       * Returns the instance ID of the Lua state. Returns 0 for continent maps and the world state.
       *
-@@ -794,6 +919,10 @@ namespace LuaGlobalFunctions
+@@ -215,6 +341,70 @@ namespace LuaGlobalFunctions
+         return 1;
+     }
+ 
++    /**
++     * Requests login of an offline fixed-roster playerbot.
++     *
++     * @param string name
++     * @return bool requestAccepted
++     */
++    int LoginFixedRosterBot(lua_State* L)
++    {
++        bool accepted = false;
++    #if defined(MOD_PLAYERBOTS)
++        const char* name = ALE::CHECKVAL<const char*>(L, 1);
++        ObjectGuid guid = sCharacterCache->GetCharacterGuidByName(name);
++        if (guid.GetCounter() && sRandomPlayerbotMgr.IsFixedRosterBot(guid.GetCounter()))
++        {
++            Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
++            if (bot)
++            {
++                accepted = true;
++            }
++            else
++            {
++                uint32 accountId = sCharacterCache->GetCharacterAccountIdByGuid(guid);
++                if (accountId)
++                {
++                    sRandomPlayerbotMgr.RegisterManualRandomBot(guid.GetCounter(), accountId);
++                    sRandomPlayerbotMgr.AddPlayerBot(guid, 0);
++                    accepted = true;
++                }
++            }
++        }
++    #else
++        (void)L;
++    #endif
++        ALE::Push(L, accepted);
++        return 1;
++    }
++
++    /**
++     * Requests logout of an online fixed-roster playerbot.
++     *
++     * @param string name
++     * @return bool requestAccepted
++     */
++    int LogoutFixedRosterBot(lua_State* L)
++    {
++        bool accepted = false;
++    #if defined(MOD_PLAYERBOTS)
++        const char* name = ALE::CHECKVAL<const char*>(L, 1);
++        ObjectGuid guid = sCharacterCache->GetCharacterGuidByName(name);
++        if (guid.GetCounter() && sRandomPlayerbotMgr.IsFixedRosterBot(guid.GetCounter()))
++        {
++            if (sRandomPlayerbotMgr.GetPlayerBot(guid))
++            {
++                sRandomPlayerbotMgr.LogoutPlayerBot(guid);
++                accepted = true;
++            }
++        }
++    #else
++        (void)L;
++    #endif
++        ALE::Push(L, accepted);
++        return 1;
++    }
++
+     /**
+      * Returns game time in seconds
+      *
+@@ -794,6 +984,10 @@ namespace LuaGlobalFunctions
       *     PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                 =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
       *     PLAYER_EVENT_ON_DEAL_DAMAGE                          =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
       *     PLAYER_EVENT_ON_RELEASED_GHOST                       =     73,       // (event, player)
@@ -792,7 +873,7 @@ index cebb7bc..1637255 100644
       * };
       * </pre>
       *
-@@ -1432,6 +1561,68 @@ namespace LuaGlobalFunctions
+@@ -1432,6 +1626,68 @@ namespace LuaGlobalFunctions
          return 0;
      }
  
@@ -862,16 +943,17 @@ index cebb7bc..1637255 100644
      static int DBQueryAsync(lua_State* L, DatabaseWorkerPool<T>& db)
      {
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..166b424 100644
+index c39801f..8eff018 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
-@@ -10,6 +10,14 @@
+@@ -10,6 +10,15 @@
  #include "Chat.h"
  #include "GameTime.h"
  #include "GossipDef.h"
 +#include "PlayerbotAI.h"
 +#include "PlayerbotMgr.h"
 +#include "BattlegroundMgr.h"
++#include "RandomPlayerbotMgr.h"
 +
 +#if __has_include("CFBG.h")
 +#include "CFBG.h"
@@ -880,7 +962,7 @@ index c39801f..166b424 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -1556,6 +1564,33 @@ namespace LuaPlayer
+@@ -1556,6 +1565,33 @@ namespace LuaPlayer
          ALE::Push(L, player->GetTeamId());
          return 1;
      }
@@ -914,7 +996,16 @@ index c39801f..166b424 100644
      
      /**
       * Returns amount of the specified [Item] the [Player] has.
-@@ -5175,6 +5210,368 @@ namespace LuaPlayer
+@@ -5149,7 +5185,7 @@ namespace LuaPlayer
+     #endif
+         return 1;
+     }
+-    
++
+     /**
+      * Returns the [Player]s spent talent points in each talent tree for the active spec
+      *
+@@ -5175,6 +5211,368 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }

@@ -589,6 +589,9 @@ public:
         if (!_enabled || _roster.empty())
             return;
 
+        if (!KEEP_BOTS_ONLINE)
+            return;
+
         if (_timer > diff)
         {
             _timer -= diff;
@@ -610,9 +613,10 @@ public:
             ObjectGuid guid = ObjectGuid::Create<HighGuid::Player>(entry.guid);
             Player* bot = ObjectAccessor::FindConnectedPlayer(guid);
 
-            if (bot && bot->IsInWorld())
+            if (bot)
             {
-                LOG_DEBUG("playerbots", "[WsgFixedBots] Bot {} (GUID {}) is already online.", entry.name, entry.guid);
+                LOG_DEBUG("playerbots", "[WsgFixedBots] Bot {} (GUID {}) is already connected{}.", entry.name, entry.guid,
+                          bot->IsInWorld() ? " and online" : "; login/logout is still in progress");
                 continue;
             }
 
@@ -639,6 +643,7 @@ public:
     }
 
 private:
+    static constexpr bool KEEP_BOTS_ONLINE = false;
     bool _enabled = true;
     bool _recreatePending = false;
     uint32 _checkMs = 5 * IN_MILLISECONDS;
