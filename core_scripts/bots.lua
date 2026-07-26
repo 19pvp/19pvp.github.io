@@ -52,6 +52,24 @@ local activeBGInstances = {}
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function(event, player)
     InitializeBot(player)
+
+    local info = player and fixedRoster[player:GetName()]
+    if info and info.pending then
+        info.pending.lastAttemptAt = 0
+    end
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_LOGOUT, function(event, player)
+    local info = player and fixedRoster[player:GetName()]
+    local pending = info and info.pending
+    if not pending then return end
+
+    if pending.state == "rejoining" then
+        pending.state = "joining"
+        pending.lastAttemptAt = 0
+    else
+        info.pending = nil
+    end
 end)
 
 local function GetAvailableBotByClass(team, classId)
@@ -69,6 +87,7 @@ local function LogoutFixedRosterBotAfterWsg(botName)
     if not info then return end
     info.pending = {
         state = "leaving",
+        lastAttemptAt = 0,
     }
 end
 
@@ -133,24 +152,40 @@ end
 CreateLuaEvent(function()
     for botName, info in pairs(fixedRoster) do
         local pending = info.pending
-        if pending and pending.state == "joining" then
-            local bg = GetBattleground(pending.instanceId, bgTypeId)
-            if not bg then
-                info.pending = nil
-            else
-                local bot = GetPlayerByName(botName)
-                if bot and bot:IsInWorld() then
-                    local teamId = pending.teamId
+        if pending then
+            local now = GetCurrTime()
+            if pending.state == "joining" then
+                local bg = GetBattleground(pending.instanceId, bgTypeId)
+                if not bg then
                     info.pending = nil
-                    if AddBotToBattleground(bot, bg, teamId) then
-                        print("[WSG] Added logged-in bot to team " .. inspect({ bot = botName, team = teamNames[teamId] or teamId }))
-                    end
-                elseif not bot then
-                    local now = GetCurrTime()
-                    if now - pending.lastAttemptAt >= 5000 then
+                else
+                    local bot = GetPlayerByName(botName)
+                    if bot and bot:IsInWorld() then
+                        local teamId = pending.teamId
+                        info.pending = nil
+                        if AddBotToBattleground(bot, bg, teamId) then
+                            print("[WSG] Added logged-in bot to team " .. inspect({ bot = botName, team = teamNames[teamId] or teamId }))
+                        end
+                    elseif not bot and now - pending.lastAttemptAt >= 5000 then
                         local accepted = LoginFixedRosterBot(botName)
                         pending.lastAttemptAt = now
                         print("[WSG] Requested bot login " .. inspect({ bot = botName, accepted = accepted }))
+                    end
+                end
+            elseif pending.state == "leaving" or pending.state == "rejoining" then
+                local bot = GetPlayerByName(botName)
+                if not bot then
+                    if pending.state == "rejoining" then
+                        pending.state = "joining"
+                        pending.lastAttemptAt = 0
+                    else
+                        info.pending = nil
+                    end
+                elseif not bot:InBattleground() and now - pending.lastAttemptAt >= 1000 then
+                    local accepted = LogoutFixedRosterBot(botName)
+                    if accepted then
+                        pending.lastAttemptAt = now
+                        print("[WSG] Requested logout; bot will remain offline until WSG needs it " .. inspect({ bot = botName }))
                     end
                 end
             end
@@ -515,12 +550,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_MAP_CHANGE, function(event, player)
 
             local accepted = LogoutFixedRosterBot(botName)
             if accepted then
-                if pending.state == "rejoining" then
-                    pending.state = "joining"
-                    pending.lastAttemptAt = 0
-                else
-                    info.pending = nil
-                end
+                pending.lastAttemptAt = GetCurrTime()
                 print("[WSG] Requested logout; bot will remain offline until WSG needs it " .. inspect({ bot = botName }))
             else
                 print("[WSG] Failed to request logout for " .. botName)
