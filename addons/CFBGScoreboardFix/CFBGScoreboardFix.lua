@@ -88,7 +88,7 @@ frame:RegisterEvent("CHAT_MSG_ADDON")
 
 frame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Scoreboard Fix Loaded!|r")
+        -- DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Scoreboard Fix Loaded!|r")
         
         -- Hook the scoreboard update securely
         if hooksecurecall then
@@ -104,7 +104,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
         -- Hook the scoreboard opening to automatically request a data sync from the server
         if WorldStateScoreFrame then
             WorldStateScoreFrame:HookScript("OnShow", function()
-                DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Sending sync request to server...|r")
+                -- DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Sending sync request to server...|r")
                 SendAddonMessage("CFBG_SYNC", "REQ", "BATTLEGROUND")
             end)
         end
@@ -117,7 +117,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, message = ...
         if prefix == "CFBG_SYNC" then
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Received sync payload:|r " .. tostring(message))
+            -- DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Received sync payload:|r " .. tostring(message))
             
             -- Split payload: "bot1,bot2;hordeplayer1,hordeplayer2;allianceplayer1,allianceplayer2"
             local botsSection, hordeSection, allianceSection = string.match(message, "^([^;]*);?([^;]*);?(.*)$")
