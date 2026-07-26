@@ -23,9 +23,11 @@ local allowed_areas = {
 
 local AREA_STORMSPIRE = 3738
 local AREA_GM_ISLAND  = 876
-
+local players_sanctuary_state = {}
 local function AddSanctuary(player)
   if not player then return end
+  if players_sanctuary_state[player:GetGUIDLow()] then return end
+  players_sanctuary_state[player:GetGUIDLow()] = true
   player:SetFFA(false)
   player:SetPvP(false)
   player:SetSanctuary(true)
@@ -40,13 +42,15 @@ end
 
 local function RemoveSanctuary(player)
   if not player then return end
-  player:SetSanctuary(false)
-
+  if not players_sanctuary_state[player:GetGUIDLow()] then return end
+  players_sanctuary_state[player:GetGUIDLow()] = false
   local pet = type(player.GetPet) == "function" and player:GetPet()
-  if pet then
-    pet:SetSanctuary(false)
-  end
+  if pet then pet:SetSanctuary(false) end
 end
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_LOGOUT, function(event, player)
+  if player then players_sanctuary_state[player:GetGUIDLow()] = nil end
+end)
 
 local function checkBotHoldingPen(player)
   if not player or not player:IsBot() then return false end
@@ -76,8 +80,6 @@ local function checkBotHoldingPen(player)
   return true
 end
 
-local dueling_players = {}
-
 local STORMSPIRE_MIN_Z = 250.0 -- Adjust threshold for upper platform vs lower ground
 local function isSanctuaryZone(player)
   if not player or player:InBattleground() then return false end
@@ -89,7 +91,8 @@ end
 local function updateSanctuaryState(player)
   if not player then return false end
   local sanctuary = isSanctuaryZone(player)
-  if sanctuary and not dueling_players[player:GetGUIDLow()] then
+  local inCombat = type(player.IsInCombat) == "function" and player:IsInCombat()
+  if sanctuary and not inCombat then
     AddSanctuary(player)
   else
     RemoveSanctuary(player)
@@ -171,12 +174,8 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_MAP_CHANGE, function (event, player)
   end
 end)
 
-RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_COMBAT, function (event, player)
-  if player then
-    RemoveSanctuary(player)
-  end
-end)
-
+RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_COMBAT, function (_, player) updateSanctuaryState(player) end)
+RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_COMBAT, function (_, player) updateSanctuaryState(player) end)
 RegisterPlayerEvent(PLAYER_EVENT_ON_PET_ADDED_TO_WORLD, function (event, player, pet)
   if not player or not pet then return end
   local areaId = player:GetAreaId()
@@ -186,7 +185,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_PET_ADDED_TO_WORLD, function (event, player,
     RemoveSanctuary(player)
   end
 end)
-
 RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function (event, player)
   if checkBotHoldingPen(player) then return end
   scheduleSanctuary(player)
@@ -204,19 +202,13 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function (event, player)
   TeleportMainGraveyard(player)
 end)
 
-RegisterPlayerEvent(PLAYER_EVENT_ON_DUEL_START, function (event, player1, player2)
-  if player1 then dueling_players[player1:GetGUIDLow()] = true end
-  if player2 then dueling_players[player2:GetGUIDLow()] = true end
-  if updateSanctuaryState(player1) and player1 then player1:RemoveArenaSpellCooldowns() end
-  if updateSanctuaryState(player2) and player2 then player2:RemoveArenaSpellCooldowns() end
-end)
-
-RegisterPlayerEvent(PLAYER_EVENT_ON_DUEL_END, function (event, winner, loser, type)
-  if winner then dueling_players[winner:GetGUIDLow()] = nil end
-  if loser then dueling_players[loser:GetGUIDLow()] = nil end
-  if updateSanctuaryState(winner) and winner then winner:RemoveArenaSpellCooldowns() end
-  if updateSanctuaryState(loser) and loser then loser:RemoveArenaSpellCooldowns() end
-end)
+function resetCooldownIfSanctuary(event, player1, player2)
+  if not isSanctuaryZone(player1) and not isSanctuaryZone(player2) then return end
+  if player1 then player1:RemoveArenaSpellCooldowns() end
+  if player2 then player2:RemoveArenaSpellCooldowns() end
+end
+RegisterPlayerEvent(PLAYER_EVENT_ON_DUEL_START, resetCooldownIfSanctuary)
+RegisterPlayerEvent(PLAYER_EVENT_ON_DUEL_END, resetCooldownIfSanctuary)
 
 RegisterServerEvent(ELUNA_EVENT_ON_LUA_STATE_OPEN, function (event)
   local players = GetPlayersInWorld()
