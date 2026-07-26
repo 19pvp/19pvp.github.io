@@ -459,8 +459,8 @@ username <new username> <new password>
   console.log('[general]:', fullMessage)
   try {
   const result = await auth.sql`
-    INSERT INTO discord_message (message, discord_id)
-    VALUES (${fullMessage}, ${id})
+    INSERT INTO discord_message (world_id, message, discord_id)
+    VALUES (${env.WORLD_ID}, ${fullMessage}, ${id})
   `
   console.log('message inserted:', { result })
 } catch (err) {

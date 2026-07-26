@@ -69,26 +69,20 @@ end)
 AuthDBQuery([[
 CREATE TABLE IF NOT EXISTS discord_message (
   id          INT PRIMARY KEY AUTO_INCREMENT,
+  world_id    INT NOT NULL DEFAULT 1,
   discord_id  BIGINT UNSIGNED NOT NULL,
   message     VARCHAR(255) NOT NULL,
   FOREIGN KEY (discord_id) REFERENCES discord_account(discord_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ]])
 
---function IsAlliance(race)
---  return race == 11 -- draenai
---      or race == 4 -- night elf
---      or race == 3 -- dwarf
---      or race == 1 -- human
---      or race == 7 -- gnome
---end
-
-local query_check_new_messages = [[
+local query_check_new_messages = string.format([[
 SELECT discord_message.id, discord_account.discord_login, discord_account.account_id, message
 FROM discord_message
 LEFT JOIN discord_account ON discord_message.discord_id = discord_account.discord_id
+WHERE world_id = %d
 LIMIT 10
-]]
+]], GetRealmID())
 
 function GetActivePlayerForAccount(account_id)
   for _, player in ipairs(GetPlayersInWorld()) do

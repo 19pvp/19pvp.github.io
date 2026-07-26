@@ -204,8 +204,31 @@ local function CheckBGEmpty(player, mapId, instanceId)
 end
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
-    pendingInvites[player:GetGUIDLow()] = nil
-    print("[WSG Queue] Player queued " .. inspect({ player = player:GetName(), isBot = player:IsBot() }))
+    if not player or player:IsBot() then return end
+    local guidLow = player:GetGUIDLow()
+    pendingInvites[guidLow] = nil
+    print("[WSG Queue] Player queued " .. inspect({ player = player:GetName(), isBot = false }))
+
+    -- Check if there is an active running BG instance to immediately invite into
+    for instanceId, bg in pairs(activeBGInstances) do
+        if bg then
+            local map = bg:GetMap() or GetMapById(489, instanceId)
+            if map then
+                local roster = WsgBalance.extractRoster(map)
+                if roster then
+                    local allianceTotal = #roster[0].players
+                    local hordeTotal = #roster[1].players
+                    local targetTeam = (allianceTotal <= hordeTotal) and 0 or 1
+
+                    print("[WSG Queue] Inviting late-queueing player to existing BG instance " .. inspect({ player = player:GetName(), instanceId = instanceId, targetTeam = targetTeam }))
+                    if player:InviteToBattleground(bg, targetTeam) then
+                        pendingInvites[guidLow] = instanceId
+                        break
+                    end
+                end
+            end
+        end
+    end
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player)
@@ -301,13 +324,33 @@ local function BalanceBGBots(map, bg, triggerEvent, playerName)
     local msgText
     if #msgs > 0 then
         msgText = prefix .. " " .. table.concat(msgs, " | ")
-    else
-        msgText = prefix .. " Roster balanced (No bot actions needed)."
+        print(msgText)
+        SendWorldMessage(msgText)
     end
-
-    print(msgText)
-    SendWorldMessage(msgText)
 end
+
+-- Periodic BG Balance Check (every 5 seconds)
+CreateLuaEvent(function()
+    for instanceId, bg in pairs(activeBGInstances) do
+        if bg then
+            local map = bg:GetMap() or GetMapById(489, instanceId)
+            if map then
+                local hasRealPlayers = false
+                for _, p in ipairs(map:GetPlayers()) do
+                    if not p:IsBot() then
+                        hasRealPlayers = true
+                        break
+                    end
+                end
+
+                if hasRealPlayers then
+                    BalanceBGBots(map, bg, "periodic_check")
+                    SyncBGPlayerData(map)
+                end
+            end
+        end
+    end
+end, 5000, 0)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
     if not player then return end
