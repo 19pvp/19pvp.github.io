@@ -12,8 +12,14 @@ local ITEM_MENU_SENDER = 100
 local ENCHANT_MENU_SENDER = 101
 local BACK_MENU_SENDER = 102
 local PAGE_MENU_SENDER = 103
+local BETA_GEAR_MENU_SENDER = 104
 local ENCHANT_MENU_OFFSET = 10000
 local ITEMS_PER_PAGE = 20
+
+local BETA_GEAR_GOLD = 1000 * 10000
+local BETA_GEAR_HONOR = 75000
+local BETA_GEAR_ITEM = 51999
+local BETA_GEAR_ITEM_COUNT = 5
 
 local suffix_options = {
   -- Single stats
@@ -133,11 +139,12 @@ end
 
 local function showItems(player, creature)
   player:GossipClearMenu()
+  player:GossipMenuAddItem(ICON_GOSSIP, "[BETA] give me full gear already", BETA_GEAR_MENU_SENDER, 0)
 
   local items = equippedRandomItems(player)
   if #items == 0 then
     player:SendBroadcastMessage("Equip an item with random suffix options first.")
-    player:GossipComplete()
+    player:GossipSendMenu(GOSSIP_TEXT, creature)
     return
   end
 
@@ -358,6 +365,15 @@ RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_HELLO, function(event, play
 end)
 
 RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_SELECT, function(event, player, creature, sender, intid)
+  if sender == BETA_GEAR_MENU_SENDER then
+    player:AddItem(BETA_GEAR_ITEM, BETA_GEAR_ITEM_COUNT)
+    player:ModifyMoney(BETA_GEAR_GOLD)
+    player:ModifyHonorPoints(BETA_GEAR_HONOR)
+    player:SendBroadcastMessage("You received 1,000 gold, 75,000 honor, and 25 of item 51999.")
+    player:GossipComplete()
+    return
+  end
+
   if sender == BACK_MENU_SENDER then
     showItems(player, creature)
     return
