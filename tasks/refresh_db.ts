@@ -2174,18 +2174,18 @@ SET \`RequiredLevel\` = 0;
 
 DROP TEMPORARY TABLE item_template_relaxed_class_entries;
 
--- Restrict unrestricted mail and plate armor to warrior/paladin.
+-- Treat unrestricted plate heirlooms as mail at level 19: warrior/paladin.
 UPDATE item_template
 SET \`AllowableClass\` = 3
 WHERE \`class\` = 4
-  AND \`subclass\` IN (3, 4)
+  AND \`subclass\` = 4
   AND \`AllowableClass\` = -1;
 
--- Restrict unrestricted leather armor to every non-DK class except priest/mage/warlock.
+-- Treat unrestricted mail heirlooms as leather at level 19.
 UPDATE item_template
 SET \`AllowableClass\` = 1103
 WHERE \`class\` = 4
-  AND \`subclass\` = 2
+  AND \`subclass\` IN (2, 3)
   AND \`AllowableClass\` = -1;
 
 -- Restrict unrestricted weapons to classes that can learn each weapon type.
