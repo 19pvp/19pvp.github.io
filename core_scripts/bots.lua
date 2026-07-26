@@ -337,14 +337,15 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
                     end
 
                     if #queueGroup > 0 then
-                        local allianceCount = #roster[0].players
-                        local hordeCount = #roster[1].players
+                        local allianceCount = roster[0].realCount
+                        local hordeCount = roster[1].realCount
                         local grouped = WsgBalance.groupQueuedPlayers(queueGroup)
                         local assignments, _, decision = WsgBalance.assign(grouped, allianceCount, hordeCount)
 
                         print("[WSG Queue Debug] Late-queue team decision " .. inspect({
                             instanceId = instanceId,
                             current = { alliance = allianceCount, horde = hordeCount },
+                            currentWithBots = { alliance = #roster[0].players, horde = #roster[1].players },
                             queued = { alliance = decision.incomingAlliance, horde = decision.incomingHorde },
                             assigned = { alliance = decision.assignedAlliance, horde = decision.assignedHorde },
                             final = { alliance = decision.finalAlliance, horde = decision.finalHorde, difference = decision.finalDifference },
