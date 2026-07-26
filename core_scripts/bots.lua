@@ -50,6 +50,21 @@ local teamNames = { [0] = "alliance", [1] = "horde" }
 local pendingInvites = {}
 local activeBGInstances = {}
 
+local restoredInstances = {}
+for _, player in ipairs(GetPlayersInWorld()) do
+    if player:InBattleground() and player:GetBattlegroundTypeId() == bgTypeId then
+        local instanceId = player:GetBattlegroundId()
+        local bg = GetBattleground(instanceId, bgTypeId)
+        if bg and not activeBGInstances[instanceId] then
+            activeBGInstances[instanceId] = bg
+            table.insert(restoredInstances, instanceId)
+        end
+    end
+end
+if #restoredInstances > 0 then
+    print("[WSG Queue] Restored active WSG instances after script reload " .. inspect({ instances = restoredInstances }))
+end
+
 RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function(event, player)
     InitializeBot(player)
 
