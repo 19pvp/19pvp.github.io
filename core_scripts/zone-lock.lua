@@ -23,16 +23,14 @@ local allowed_areas = {
 
 local AREA_STORMSPIRE = 3738
 local AREA_GM_ISLAND  = 876
-local players_sanctuary_state = {}
 local function AddSanctuary(player)
   if not player then return end
-  if players_sanctuary_state[player:GetGUIDLow()] then return end
-  players_sanctuary_state[player:GetGUIDLow()] = true
+  if player:IsInSanctuary() then return end
   player:SetFFA(false)
   player:SetPvP(false)
   player:SetSanctuary(true)
 
-  local pet = type(player.GetPet) == "function" and player:GetPet()
+  local pet = player:GetPet()
   if pet then
     pet:SetFFA(false)
     pet:SetPvP(false)
@@ -42,15 +40,11 @@ end
 
 local function RemoveSanctuary(player)
   if not player then return end
-  if not players_sanctuary_state[player:GetGUIDLow()] then return end
-  players_sanctuary_state[player:GetGUIDLow()] = false
-  local pet = type(player.GetPet) == "function" and player:GetPet()
+  if not player:IsInSanctuary() then return end
+  player:SetSanctuary(false)
+  local pet = player:GetPet()
   if pet then pet:SetSanctuary(false) end
 end
-
-RegisterPlayerEvent(PLAYER_EVENT_ON_LOGOUT, function(event, player)
-  if player then players_sanctuary_state[player:GetGUIDLow()] = nil end
-end)
 
 local function checkBotHoldingPen(player)
   if not player or not player:IsBot() then return false end
