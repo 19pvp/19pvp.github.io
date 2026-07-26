@@ -274,7 +274,7 @@ index a21640d..de4bd8b 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..829e1b7 100644
+index c0acc01..ffaf4c1 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -153,6 +153,7 @@ luaL_Reg GlobalMethods[] =
@@ -296,7 +296,15 @@ index c0acc01..829e1b7 100644
      { "PerformIngameSpawn", &LuaGlobalFunctions::PerformIngameSpawn },
      { "CreatePacket", &LuaGlobalFunctions::CreatePacket },
      { "AddVendorItem", &LuaGlobalFunctions::AddVendorItem },
-@@ -485,6 +490,8 @@ ALERegister<Player> PlayerMethods[] =
+@@ -358,6 +363,7 @@ ALERegister<Unit> UnitMethods[] =
+     { "SetPvP", &LuaUnit::SetPvP },
+     { "SetFFA", &LuaUnit::SetFFA },
+     { "SetSanctuary", &LuaUnit::SetSanctuary },
++    { "IsInSanctuary", &LuaUnit::IsInSanctuary },
+     // {"SetCanFly", &LuaUnit::SetCanFly},                             // :SetCanFly(apply) - UNDOCUMENTED
+     // {"SetVisible", &LuaUnit::SetVisible},                           // :SetVisible(x) - UNDOCUMENTED
+     { "SetOwnerGUID", &LuaUnit::SetOwnerGUID },
+@@ -485,6 +491,8 @@ ALERegister<Player> PlayerMethods[] =
      { "GetGuildId", &LuaPlayer::GetGuildId },
      { "GetCoinage", &LuaPlayer::GetCoinage },
      { "GetTeam", &LuaPlayer::GetTeam },
@@ -305,7 +313,7 @@ index c0acc01..829e1b7 100644
      { "GetItemCount", &LuaPlayer::GetItemCount },
      { "GetGroup", &LuaPlayer::GetGroup },
      { "GetGuild", &LuaPlayer::GetGuild },
-@@ -566,6 +573,15 @@ ALERegister<Player> PlayerMethods[] =
+@@ -566,6 +574,15 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
@@ -321,7 +329,7 @@ index c0acc01..829e1b7 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -1380,6 +1396,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1397,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -1276,3 +1284,25 @@ index c39801f..166b424 100644
  };
  #endif
 -
+diff --git a/src/LuaEngine/methods/UnitMethods.h b/src/LuaEngine/methods/UnitMethods.h
+index 1ded5af..2e65eaa 100644
+--- a/src/LuaEngine/methods/UnitMethods.h
++++ b/src/LuaEngine/methods/UnitMethods.h
+@@ -1792,6 +1792,17 @@ namespace LuaUnit
+         return 0;
+     }
+ 
++    /**
++     * Returns `true` if the [Unit] is currently in sanctuary.
++     *
++     * @return bool isInSanctuary
++     */
++    int IsInSanctuary(lua_State* L, Unit* unit)
++    {
++        ALE::Push(L, unit->IsInSanctuary());
++        return 1;
++    }
++
+     /**
+      * Sets the [Unit]'s critter companion by GUID.
+      *
