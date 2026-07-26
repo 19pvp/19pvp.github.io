@@ -10,7 +10,7 @@ SET map = 530,
     position_z = 339.4637,
     orientation = 1.9342613;
 
-UPDATE item_template SET SellPrice = 1 WHERE entry IN (892, 1276, 1306, 1459, 1560, 2035, 2046, 2516, 2910, 3429, 3555, 3561, 3585, 4316, 4368, 4369, 4708, 4800, 4818, 4998, 5312, 5317, 5356, 5627, 5749, 5750, 5961, 6189, 6333, 6467, 7336, 14169, 14568, 14743, 15019, 15946, 16981, 21841, 21934, 22979, 25873, 46978);
+UPDATE item_template SET SellPrice = 1 WHERE entry IN (892, 1276, 1306, 1459, 1560, 2035, 2046, 2512, 2516, 2910, 3429, 3555, 3561, 3585, 4316, 4368, 4369, 4708, 4800, 4818, 4998, 5312, 5317, 5356, 5627, 5749, 5750, 5961, 6189, 6265, 6333, 6467, 7336, 14169, 14568, 14743, 15019, 15946, 16981, 21841, 21934, 22979, 25873, 46978);
 
 DROP TEMPORARY TABLE IF EXISTS starting_info_item;
 CREATE TEMPORARY TABLE starting_info_item (
@@ -84,7 +84,6 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (2, 3, 6948, -1, 'remove DBC outfit item 6948'),
   (2, 3, 2101, -1, 'remove DBC outfit item 2101'),
   (2, 3, 2504, -1, 'remove DBC outfit item 2504'),
-  (2, 3, 2512, -1, 'remove DBC outfit item 2512'),
   (2, 4, 2105, -1, 'remove DBC outfit item 2105'),
   (2, 4, 120, -1, 'remove DBC outfit item 120'),
   (2, 4, 121, -1, 'remove DBC outfit item 121'),
@@ -181,7 +180,6 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (4, 3, 129, -1, 'remove DBC outfit item 129'),
   (4, 3, 2504, -1, 'remove DBC outfit item 2504'),
   (4, 3, 2101, -1, 'remove DBC outfit item 2101'),
-  (4, 3, 2512, -1, 'remove DBC outfit item 2512'),
   (4, 3, 6948, -1, 'remove DBC outfit item 6948'),
   (4, 4, 2092, -1, 'remove DBC outfit item 2092'),
   (4, 4, 49, -1, 'remove DBC outfit item 49'),
@@ -339,7 +337,6 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (8, 1, 6948, -1, 'remove DBC outfit item 6948'),
   (8, 3, 12282, -1, 'remove DBC outfit item 12282'),
   (8, 3, 2101, -1, 'remove DBC outfit item 2101'),
-  (8, 3, 2512, -1, 'remove DBC outfit item 2512'),
   (8, 3, 2504, -1, 'remove DBC outfit item 2504'),
   (8, 3, 6126, -1, 'remove DBC outfit item 6126'),
   (8, 3, 127, -1, 'remove DBC outfit item 127'),
@@ -394,7 +391,6 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (10, 3, 6948, -1, 'remove DBC outfit item 6948'),
   (10, 3, 2101, -1, 'remove DBC outfit item 2101'),
   (10, 3, 20980, -1, 'remove DBC outfit item 20980'),
-  (10, 3, 2512, -1, 'remove DBC outfit item 2512'),
   (10, 4, 20982, -1, 'remove DBC outfit item 20982'),
   (10, 4, 20897, -1, 'remove DBC outfit item 20897'),
   (10, 4, 20896, -1, 'remove DBC outfit item 20896'),
@@ -451,7 +447,6 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (11, 3, 6948, -1, 'remove DBC outfit item 6948'),
   (11, 3, 23347, -1, 'remove DBC outfit item 23347'),
   (11, 3, 2101, -1, 'remove DBC outfit item 2101'),
-  (11, 3, 2512, -1, 'remove DBC outfit item 2512'),
   (11, 5, 1396, -1, 'remove DBC outfit item 1396'),
   (11, 5, 6097, -1, 'remove DBC outfit item 6097'),
   (11, 5, 3661, -1, 'remove DBC outfit item 3661'),
@@ -485,6 +480,8 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (11, 8, 6948, -1, 'remove DBC outfit item 6948'),
   (0, 1, 1276, 1, 'Warrior: Fire Hardened Buckler'),
   (0, 1, 1459, 1, 'Warrior: Shadowhide Scalper'),
+  (0, 1, 2512, 1, 'Warrior: Rough Arrow'),
+  (0, 1, 2516, 1, 'Warrior: Light Shot'),
   (0, 1, 2910, 1, 'Warrior: Gold Militia Boot'),
   (0, 1, 3561, 1, 'Warrior: Resilient Poncho'),
   (0, 1, 4368, 1, 'Warrior: Flying Tiger Goggles'),
@@ -521,7 +518,8 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 2, 21934, 1, 'Paladin: Ornate Tigerseye Necklace'),
   (0, 2, 22979, 1, 'Paladin: Slayer\'s Band'),
   (0, 3, 1306, 1, 'Hunter: Wolfmane Wristguards'),
-  (0, 3, 2516, 1, 'Hunter: Light Bolt'),
+  (0, 3, 2512, 1, 'Hunter: Rough Arrow'),
+  (0, 3, 2516, 1, 'Hunter: Light Shot'),
   (0, 3, 3429, 1, 'Hunter: Guardsman Belt'),
   (0, 3, 3561, 1, 'Hunter: Resilient Poncho'),
   (0, 3, 4368, 1, 'Hunter: Flying Tiger Goggles'),
@@ -538,6 +536,8 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 3, 22979, 1, 'Hunter: Slayer\'s Band'),
   (0, 4, 1306, 1, 'Rogue: Wolfmane Wristguards'),
   (0, 4, 2046, 1, 'Rogue: Bluegill Kukri'),
+  (0, 4, 2512, 1, 'Rogue: Rough Arrow'),
+  (0, 4, 2516, 1, 'Rogue: Light Shot'),
   (0, 4, 3429, 1, 'Rogue: Guardsman Belt'),
   (0, 4, 3561, 1, 'Rogue: Resilient Poncho'),
   (0, 4, 4368, 1, 'Rogue: Flying Tiger Goggles'),
@@ -612,6 +612,7 @@ INSERT INTO starting_info_item (race, class, itemid, amount, note) VALUES
   (0, 9, 4998, 1, 'Warlock: Blood Ring'),
   (0, 9, 5356, 1, 'Warlock: Branding Rod'),
   (0, 9, 5627, 1, 'Warlock: Relic Blade'),
+  (0, 9, 6265, 10, 'Warlock: Soul Shard'),
   (0, 9, 14169, 1, 'Warlock: Aboriginal Shoulder Pads'),
   (0, 9, 15946, 1, 'Warlock: Mystic\'s Sphere'),
   (0, 9, 16981, 1, 'Warlock: Owlbeard Bracers'),
@@ -702,8 +703,10 @@ INSERT INTO starting_info_spell (classmask, spell, note) VALUES
   (1024, 199, 'DRUID'),
   (1024, 198, 'DRUID'),
   (1024, 1180, 'DRUID'),
+  (1024, 783, 'DRUID'), -- travel form
   (1024, 227, 'DRUID'),
   (4, 75, 'HUNTER'),
+  (4, 5118, 'HUNTER'), -- cheetah aspect
   (4, 2973, 'HUNTER'),
   (4, 1494, 'HUNTER'),
   (4, 13163, 'HUNTER'),
@@ -803,8 +806,10 @@ INSERT INTO starting_info_spell (classmask, spell, note) VALUES
   (2, 465, 'PALADIN'),
   (2, 20271, 'PALADIN'),
   (2, 19740, 'PALADIN'),
-  (2, 642, 'PALADIN'),
+  (2, 498, 'PALADIN'),
+  -- (2, 642, 'PALADIN'), -- divine shield
   (2, 639, 'PALADIN'),
+  (2, 53407, 'PALADIN'), -- judgement of justice (custom)
   (2, 853, 'PALADIN'),
   (2, 1152, 'PALADIN'),
   (2, 1022, 'PALADIN'),
@@ -920,6 +925,7 @@ INSERT INTO starting_info_spell (classmask, spell, note) VALUES
   (8, 3127, 'ROGUE'),
   (64, 8017, 'SHAMAN'),
   (64, 403, 'SHAMAN'),
+  (64, 2645, 'SHAMAN'), -- ghost wolf
   (64, 331, 'SHAMAN'),
   (64, 8042, 'SHAMAN'),
   (64, 8071, 'SHAMAN'),
