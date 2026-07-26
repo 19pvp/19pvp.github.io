@@ -62,8 +62,12 @@ function WsgBalance.assign(groups, currentAlliance, currentHorde, lastFavoredTea
     currentHorde = currentHorde or 0
 
     local incomingPlayers = 0
+    local incomingAlliance = 0
     for _, group in ipairs(groups) do
         incomingPlayers = incomingPlayers + #group.players
+        for _, queuedPlayer in ipairs(group.players) do
+            if queuedPlayer.nativeTeam == 0 then incomingAlliance = incomingAlliance + 1 end
+        end
     end
     local totalPlayers = currentAlliance + currentHorde + incomingPlayers
 
@@ -157,7 +161,18 @@ function WsgBalance.assign(groups, currentAlliance, currentHorde, lastFavoredTea
         nextFavoredTeam = lastFavoredTeam
     end
 
-    return assignments, nextFavoredTeam
+    return assignments, nextFavoredTeam, {
+        currentAlliance = currentAlliance,
+        currentHorde = currentHorde,
+        incomingAlliance = incomingAlliance,
+        incomingHorde = incomingPlayers - incomingAlliance,
+        assignedAlliance = bestItem and bestItem.aInc or 0,
+        assignedHorde = incomingPlayers - (bestItem and bestItem.aInc or 0),
+        finalAlliance = newAlliance,
+        finalHorde = newHorde,
+        finalDifference = math.abs(newAlliance - newHorde),
+        score = bestItem and bestItem.state.score or nil,
+    }
 end
 
 WsgBalance.scoreLess = scoreLess

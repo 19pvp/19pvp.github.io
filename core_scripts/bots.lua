@@ -340,13 +340,27 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
                         local allianceCount = #roster[0].players
                         local hordeCount = #roster[1].players
                         local grouped = WsgBalance.groupQueuedPlayers(queueGroup)
-                        local assignments = WsgBalance.assign(grouped, allianceCount, hordeCount)
+                        local assignments, _, decision = WsgBalance.assign(grouped, allianceCount, hordeCount)
+
+                        print("[WSG Queue Debug] Late-queue team decision " .. inspect({
+                            instanceId = instanceId,
+                            current = { alliance = allianceCount, horde = hordeCount },
+                            queued = { alliance = decision.incomingAlliance, horde = decision.incomingHorde },
+                            assigned = { alliance = decision.assignedAlliance, horde = decision.assignedHorde },
+                            final = { alliance = decision.finalAlliance, horde = decision.finalHorde, difference = decision.finalDifference },
+                            score = decision.score,
+                        }))
 
                         for _, assignment in ipairs(assignments) do
                             local p = assignment.player
                             local teamId = assignment.team
                             local pGuid = p:GetGUIDLow()
-                            print("[WSG Queue] Inviting late-queueing player/group member to existing BG " .. inspect({ player = p:GetName(), instanceId = instanceId, targetTeam = teamId }))
+                            print("[WSG Queue] Inviting late-queueing player/group member to existing BG " .. inspect({
+                                player = p:GetName(),
+                                instanceId = instanceId,
+                                nativeTeam = p:GetTeam(),
+                                targetTeam = teamId,
+                            }))
                             if p:InviteToBattleground(bg, teamId) then
                                 pendingInvites[pGuid] = instanceId
                             end

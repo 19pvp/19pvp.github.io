@@ -171,6 +171,15 @@ assert(not (p1Team == p2Team and p2Team == p3Team), "Group of 3 joining 4A vs 5H
 
 print("  -> PASSED: Ongoing BG join balancing handles unbalance, equal teams, and group splitting.")
 
+-- 6e: 1A vs 0H, one Alliance-native player joins -> Assign to Horde (1A vs 1H)
+local lateQueueAssignments, _, lateQueueDecision = balance.assign(
+    balance.groupQueuedPlayers({ player("lateAlliance", 0) }),
+    1,
+    0
+)
+assert(#lateQueueAssignments == 1 and lateQueueAssignments[1].team == 1, "1A vs 0H late queue player must be assigned to Horde")
+assert(lateQueueDecision.finalAlliance == 1 and lateQueueDecision.finalHorde == 1, "Late queue assignment must produce a balanced 1A vs 1H roster")
+
 -- 7. Exposed Helper API Functions
 print("[Test 7] Exposed API Functions (groupCandidates, scoreLess, groupQueuedPlayers, assignOngoing)...")
 
@@ -489,4 +498,3 @@ assert(dupRemovalOrder[#dupRemovalOrder].class == 11, "Single Druid (11) is pres
 print("  -> PASSED: Bot removal order across diverse real player join scenarios verified.")
 
 print("\nwsg_balance_test: ok (All 17 test suites passed cleanly)")
-
