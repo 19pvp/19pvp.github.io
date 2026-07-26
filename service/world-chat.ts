@@ -457,10 +457,15 @@ username <new username> <new password>
   const fullMessage = [formattedMsg, ...attachement].filter((s) => s && s.trim()).join(' ').slice(0, 255)
   if (!fullMessage.length) return console.log('empty message, skipping.')
   console.log('[general]:', fullMessage)
-  await auth.sql`
+  try {
+  const result = await auth.sql`
     INSERT INTO discord_message (message, discord_id)
     VALUES (${fullMessage}, ${id})
   `
+  console.log('message inserted:', { result })
+} catch (err) {
+  console.log('failed to insert message:', err)
+}
 })
 /*
 const _guildMemberUpdateExample = {

@@ -108,9 +108,7 @@ function ReplaceDiscordMentions(account_id, login)
   return "|c9B59B600@"..login.."|r"
 end
 
-local isQuerying = false
 function DisplayNewMessages(result)
-  isQuerying = false
   if not result then return end
   repeat
     local message_id = result:GetUInt32(0)
@@ -133,9 +131,8 @@ local elapsed = 500
 ClearServerEvents(WORLD_EVENT_ON_UPDATE)
 RegisterServerEvent(WORLD_EVENT_ON_UPDATE, function (event, diff)
   elapsed = elapsed + diff
-  if elapsed < 500 or isQuerying then return end
+  if elapsed < 500 then return end
   elapsed = 0
-  isQuerying = true
   AuthDBQueryAsync(query_check_new_messages, DisplayNewMessages)
 end)
 
