@@ -109,4 +109,16 @@ custom_data = {
     [8] = { talents = "--3400003", glyphs = { 42741, 43359 } },
     [11] = { talents = "--230032", glyphs = { 40914, 43335 } },
   },
+  wsg_bot_roster = {
+    { name = "Monique", team = 0, classId = 5 },
+    { name = "Germaine", team = 0, classId = 8 },
+    { name = "Trarife", team = 0, classId = 1 },
+    { name = "Patrick", team = 0, classId = 4 },
+    { name = "Marcel", team = 0, classId = 11 },
+    { name = "Gerard", team = 1, classId = 5 },
+    { name = "Yvette", team = 1, classId = 8 },
+    { name = "Trerifa", team = 1, classId = 1 },
+    { name = "Martine", team = 1, classId = 4 },
+    { name = "Michel", team = 1, classId = 11 },
+  },
 }

@@ -2396,6 +2396,9 @@ const luaWsgBotStartupSpecs = Object.entries(wsgBotStartupSpecsByClass)
     `    [${classId}] = { talents = ${luaString(spec.talents)}, glyphs = ${luaArray(spec.glyphs, String)} },`
   )
   .join('\n')
+const luaWsgBotRoster = wsgBotRoster
+  .map((bot) => `    { name = ${luaString(bot.name)}, team = ${bot.team - 1}, classId = ${bot.classId} },`)
+  .join('\n')
 const luaQuestRewardSpells = quests
   .filter((quest) => quest.props.LearnSpell)
   .sort((a, b) => a.id - b.id)
@@ -2423,6 +2426,9 @@ ${luaQuestRewardSpells}
   },
   wsg_bot_specs = {
 ${luaWsgBotStartupSpecs}
+  },
+  wsg_bot_roster = {
+${luaWsgBotRoster}
   },
 }
 `

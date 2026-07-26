@@ -1,23 +1,13 @@
 print("[WSG Queue Debug] Loading bots.lua script...")
+require("custom-data")
 
 local WsgBalance = require("wsg_balance")
 
-local teamByRace = {
-    [1] = 0, [3] = 0, [4] = 0, [7] = 0, [11] = 0,
-    [2] = 1, [5] = 1, [6] = 1, [8] = 1, [10] = 1,
-}
 local fixedRoster = {}
 local fixedRosterByClass = { [0] = {}, [1] = {} }
-local query = CharDBQuery("SELECT r.name, c.race, c.class FROM 19pvp_playerbots.playerbots_fixed_roster r LEFT JOIN characters c ON c.name = r.name WHERE r.enabled = 1")
-if query then
-    repeat
-        local name = query:GetString(0)
-        local team = teamByRace[query:GetUInt8(1)]
-        local classId = query:GetUInt8(2)
-        local botInfo = { name = name, team = team, classId = classId }
-        fixedRoster[name] = botInfo
-        if team and classId > 0 then fixedRosterByClass[team][classId] = botInfo end
-    until not query:NextRow()
+for _, botInfo in ipairs(custom_data.wsg_bot_roster) do
+    fixedRoster[botInfo.name] = botInfo
+    fixedRosterByClass[botInfo.team][botInfo.classId] = botInfo
 end
 print("[Fixed Roster] Loaded enabled bots " .. inspect(fixedRoster))
 
