@@ -120,6 +120,7 @@ function DisplayNewMessages(result)
     
     -- Delete from DB first to prevent duplicate processing if Lua error occurs during broadcast
     AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
+    print("[Web Events] handling message: ("..msg..")")
     local player = account_id > 0 and GetActivePlayerForAccount(account_id) or nil
     local classColor = (player and classColors[player:GetClass()]) or "|c9B59B600" 
     local fullMsg = (login and (classColor.."@"..login.."|r ") or "")..msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions)

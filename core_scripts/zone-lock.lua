@@ -76,16 +76,25 @@ local function checkBotHoldingPen(player)
   return true
 end
 
+local dueling_players = {}
+
 local STORMSPIRE_MIN_Z = 250.0 -- Adjust threshold for upper platform vs lower ground
-local function updateSanctuaryState(player)
-  if not player then return end
+local function isSanctuaryZone(player)
+  if not player or player:InBattleground() then return false end
   local areaId = player:GetAreaId()
   local isInStormspire = areaId == AREA_STORMSPIRE and player:GetZ() >= STORMSPIRE_MIN_Z
-  if not player:InBattleground() and (isInStormspire or areaId == AREA_GM_ISLAND) then
+  return isInStormspire or areaId == AREA_GM_ISLAND
+end
+
+local function updateSanctuaryState(player)
+  if not player then return false end
+  local sanctuary = isSanctuaryZone(player)
+  if sanctuary and not dueling_players[player:GetGUIDLow()] then
     AddSanctuary(player)
   else
     RemoveSanctuary(player)
   end
+  return sanctuary
 end
 
 local function scheduleSanctuary(player)
@@ -193,6 +202,20 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_RESURRECT, function (event, player)
   if checkBotHoldingPen(player) then return end
   if isPlayerAllowed(player) then return end
   TeleportMainGraveyard(player)
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_DUEL_START, function (event, player1, player2)
+  if player1 then dueling_players[player1:GetGUIDLow()] = true end
+  if player2 then dueling_players[player2:GetGUIDLow()] = true end
+  if updateSanctuaryState(player1) and player1 then player1:RemoveArenaSpellCooldowns() end
+  if updateSanctuaryState(player2) and player2 then player2:RemoveArenaSpellCooldowns() end
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_DUEL_END, function (event, winner, loser, type)
+  if winner then dueling_players[winner:GetGUIDLow()] = nil end
+  if loser then dueling_players[loser:GetGUIDLow()] = nil end
+  if updateSanctuaryState(winner) and winner then winner:RemoveArenaSpellCooldowns() end
+  if updateSanctuaryState(loser) and loser then loser:RemoveArenaSpellCooldowns() end
 end)
 
 RegisterServerEvent(ELUNA_EVENT_ON_LUA_STATE_OPEN, function (event)

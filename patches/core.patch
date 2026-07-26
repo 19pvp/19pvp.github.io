@@ -606,7 +606,7 @@ index 2193daaab..9d120cb43 100644
      {
          ChatChannelsEntry const* channel = sChatChannelsStore.LookupEntry(channelId);
 diff --git a/src/server/game/Handlers/MiscHandler.cpp b/src/server/game/Handlers/MiscHandler.cpp
-index da9480a6b..c1cf2e4b8 100644
+index da9480a6b..2bef671a3 100644
 --- a/src/server/game/Handlers/MiscHandler.cpp
 +++ b/src/server/game/Handlers/MiscHandler.cpp
 @@ -403,6 +403,11 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recvData)
@@ -621,6 +621,15 @@ index da9480a6b..c1cf2e4b8 100644
          ++displaycount;
      }
  
+@@ -421,7 +426,7 @@ void WorldSession::HandleLogoutRequestOpcode(WorldPackets::Character::LogoutRequ
+         DoLootRelease(lguid);
+ 
+     bool instantLogout = (HasPermission(rbac::RBAC_PERM_INSTANT_LOGOUT)
+-                          || (GetPlayer()->HasPlayerFlag(PLAYER_FLAGS_RESTING) && !GetPlayer()->IsInCombat())) || GetPlayer()->IsInFlight();
++                          || ((GetPlayer()->HasPlayerFlag(PLAYER_FLAGS_RESTING) || GetPlayer()->IsInSanctuary()) && !GetPlayer()->IsInCombat())) || GetPlayer()->IsInFlight();
+ 
+     bool preventAfkSanctuaryLogout = sWorld->getIntConfig(CONFIG_AFK_PREVENT_LOGOUT) == 1
+                                      && GetPlayer()->isAFK() && sAreaTableStore.LookupEntry(GetPlayer()->GetAreaId())->IsSanctuary();
 diff --git a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
 index 9881a25f0..246cd3a8a 100644
 --- a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
