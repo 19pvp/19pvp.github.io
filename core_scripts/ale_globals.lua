@@ -1379,54 +1379,32 @@ SLOT_TABARD = 18
 SLOT_NONE = 19
 
 function inspect(value, depth, seen)
-  -- Default values for parameters
   depth = depth or 0
   seen = seen or {}
-  if depth > 10 then return "" end
-
-  -- Indentation for better readability
-  local indent = "" -- string.rep("  ", depth)
-
-  -- Check for circular references
-  if type(value) == "table" and seen[value] then
-    return indent .. "<self>"
+  if depth >= 3 then
+    if type(value) == "string" then return '"' .. value .. '"' end
+    if type(value) == "table" then return "{...}" end
+    return tostring(value)
   end
 
-  -- Mark the current table as seen
   if type(value) == "table" then
+    if seen[value] then return "<self>" end
     seen[value] = true
-  end
 
-  -- Determine the type of the value
-  local output = "" -- indent .. "(" .. type(value) .. ") "
-  if type(value) == "table" then
-    output = output .. "{ "
+    local output = "{ "
     local first = true
     for k, v in pairs(value) do
-      output = output .. (first and "" or ", ") .. tostring(k) .. ": " .. inspect(v, depth + 1, seen) 
+      output = output .. (first and "" or ", ") .. tostring(k) .. ": " .. inspect(v, depth + 1, seen)
       first = false
     end
-    output = output .. " }"
-    elseif type(value) == "userdata" then
-      output = output .. tostring(value) .. "{ "
-
-      -- Check fields of userdata
-      local mt = getmetatable(value)
-      local first = true
-      if mt then
-        output = output ..  (first and "" or ", ") .. "  __: " .. inspect(mt, depth + 1, seen)
-        first = false
-      end
-      output = output .. " }"
-  elseif type(value) == "function" then
-    output = output .. tostring(value)  -- Show the memory address
+    return output .. " }"
+  elseif type(value) == "userdata" or type(value) == "function" then
+    return tostring(value)
   elseif type(value) == "string" then
-    output = output .. '"' .. value .. '"'
+    return '"' .. value .. '"'
   else
-    output = output .. tostring(value)
+    return tostring(value)
   end
-
-  return output
 end
 
 function EncodeValue(value)

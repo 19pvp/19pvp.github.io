@@ -165,9 +165,9 @@ end, 1000, 0)
 
 local function CheckBGEmpty(player, mapId, instanceId)
     local instId = (instanceId and instanceId > 0) and instanceId or 0
-    local bg = (instId > 0 and GetBattleground(instId, bgTypeId)) or activeBGInstances[instId]
+    local bg = instId > 0 and GetBattleground(instId, bgTypeId) or nil
     if not bg then return false end
-    if instId > 0 then activeBGInstances[instId] = bg end
+    activeBGInstances[instId] = bg
 
     local departingName = player and player:GetName() or ""
     local map = GetMapById(mapId or 489, instId)
@@ -210,23 +210,47 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     print("[WSG Queue] Player queued " .. inspect({ player = player:GetName(), isBot = false }))
 
     -- Check if there is an active running BG instance to immediately invite into
-    for instanceId, bg in pairs(activeBGInstances) do
+    for instanceId, _ in pairs(activeBGInstances) do
+        local bg = GetBattleground(instanceId, bgTypeId)
         if bg then
-            local map = bg:GetMap() or GetMapById(489, instanceId)
+            activeBGInstances[instanceId] = bg
+            local map = GetMapById(489, instanceId) or bg:GetMap()
             if map then
                 local roster = WsgBalance.extractRoster(map)
                 if roster then
-                    local allianceTotal = #roster[0].players
-                    local hordeTotal = #roster[1].players
-                    local targetTeam = (allianceTotal <= hordeTotal) and 0 or 1
+                    local group = player:GetGroup()
+                    local queueGroup = {}
+                    if group then
+                        for _, member in ipairs(group:GetMembers()) do
+                            if member and not member:IsBot() and not pendingInvites[member:GetGUIDLow()] and not member:InBattleground() then
+                                table.insert(queueGroup, member)
+                            end
+                        end
+                    else
+                        table.insert(queueGroup, player)
+                    end
 
-                    print("[WSG Queue] Inviting late-queueing player to existing BG instance " .. inspect({ player = player:GetName(), instanceId = instanceId, targetTeam = targetTeam }))
-                    if player:InviteToBattleground(bg, targetTeam) then
-                        pendingInvites[guidLow] = instanceId
+                    if #queueGroup > 0 then
+                        local allianceCount = #roster[0].players
+                        local hordeCount = #roster[1].players
+                        local grouped = WsgBalance.groupQueuedPlayers(queueGroup)
+                        local assignments = WsgBalance.assign(grouped, allianceCount, hordeCount)
+
+                        for _, assignment in ipairs(assignments) do
+                            local p = assignment.player
+                            local teamId = assignment.team
+                            local pGuid = p:GetGUIDLow()
+                            print("[WSG Queue] Inviting late-queueing player/group member to existing BG " .. inspect({ player = p:GetName(), instanceId = instanceId, targetTeam = teamId }))
+                            if p:InviteToBattleground(bg, teamId) then
+                                pendingInvites[pGuid] = instanceId
+                            end
+                        end
                         break
                     end
                 end
             end
+        else
+            activeBGInstances[instanceId] = nil
         end
     end
 end)
@@ -331,9 +355,11 @@ end
 
 -- Periodic BG Balance Check (every 5 seconds)
 CreateLuaEvent(function()
-    for instanceId, bg in pairs(activeBGInstances) do
+    for instanceId, _ in pairs(activeBGInstances) do
+        local bg = GetBattleground(instanceId, bgTypeId)
         if bg then
-            local map = bg:GetMap() or GetMapById(489, instanceId)
+            activeBGInstances[instanceId] = bg
+            local map = GetMapById(489, instanceId) or bg:GetMap()
             if map then
                 local hasRealPlayers = false
                 for _, p in ipairs(map:GetPlayers()) do
@@ -348,6 +374,8 @@ CreateLuaEvent(function()
                     SyncBGPlayerData(map)
                 end
             end
+        else
+            activeBGInstances[instanceId] = nil
         end
     end
 end, 5000, 0)
@@ -379,7 +407,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
     local playerName = player and player:GetName() or "Unknown"
 
     local instId = (instanceId and instanceId > 0) and instanceId or 0
-    local realBg = (instId > 0 and GetBattleground(instId, bgTypeId)) or activeBGInstances[instId]
+    local realBg = instId > 0 and GetBattleground(instId, bgTypeId) or nil
     local map = GetMapById((mapId and mapId > 0) and mapId or 489, instId)
 
     print("[DEBUG ON_LEAVE_BG] Hook fired " .. inspect({ type = botText, player = playerName, mapId = mapId or 489, instanceId = instId }))
