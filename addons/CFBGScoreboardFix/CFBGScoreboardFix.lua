@@ -80,6 +80,69 @@ local function UpdateScoreboardHeaders()
     end
 end
 
+local function GetSelectedArenaTeamSize()
+    if not PVPTeamDetails or not PVPTeamDetails.team or not GetArenaTeam then
+        return nil
+    end
+
+    local _, teamSize = GetArenaTeam(PVPTeamDetails.team)
+    return teamSize
+end
+
+local function UpdateArenaTeamDetails()
+    local teamSize = GetSelectedArenaTeamSize()
+
+    -- These teams are individual teams, so there is nobody to add.
+    if PVPTeamDetailsAddTeamMember then
+        PVPTeamDetailsAddTeamMember:Hide()
+    end
+
+    if PVPTeamDetailsSize then
+        if teamSize == 5 then
+            PVPTeamDetailsSize:SetText("(Battleground)")
+            PVPTeamDetailsSize:Show()
+        else
+            PVPTeamDetailsSize:Show()
+        end
+    end
+
+    -- Some client UI versions include the team size in the name region.
+    -- if teamSize == 5 and PVPTeamDetailsName and PVPTeamDetailsName.GetText then
+    --     local teamName = PVPTeamDetailsName:GetText()
+    --     if teamName then
+    --         PVPTeamDetailsName:SetText(teamName:gsub("%(5v5%)", "(Battleground)"))
+    --     end
+    -- end
+end
+
+local function HideArenaTeamLeaveButton()
+    if PVPTeamDetails and PVPTeamDetails:IsShown() and DropDownList1Button4 then
+        DropDownList1Button4:Hide()
+    end
+end
+
+local arenaTeamUISetup = false
+
+local function SetupArenaTeamUI()
+    if arenaTeamUISetup then
+        return
+    end
+
+    arenaTeamUISetup = true
+
+    if PVPTeamDetails then
+        PVPTeamDetails:HookScript("OnShow", UpdateArenaTeamDetails)
+    end
+
+    if type(PVPTeamDetails_Update) == "function" then
+        hooksecurefunc("PVPTeamDetails_Update", UpdateArenaTeamDetails)
+    end
+
+    if DropDownList1Button4 then
+        DropDownList1Button4:HookScript("OnShow", HideArenaTeamLeaveButton)
+    end
+end
+
 -- Frame to manage initialization and event listening
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
@@ -89,6 +152,8 @@ frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
         -- DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Scoreboard Fix Loaded!|r")
+
+        SetupArenaTeamUI()
         
         -- Hook the scoreboard update securely
         if hooksecurecall then
@@ -110,6 +175,8 @@ frame:SetScript("OnEvent", function(self, event, ...)
         end
         
     elseif event == "PLAYER_ENTERING_WORLD" then
+        SetupArenaTeamUI()
+
         wipe(CFBG_ScoreboardBots)
         wipe(CFBG_HordePlayers)
         wipe(CFBG_AlliancePlayers)
