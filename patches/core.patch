@@ -844,3 +844,20 @@ index 9fd4ff356..077f8517d 100644
      bool IsCheckNormalMatch(BattlegroundQueue* queue, Battleground* bgTemplate, BattlegroundBracketId bracket_id, uint32 minPlayers, uint32 maxPlayers);
      bool CanSendMessageBGQueue(BattlegroundQueue* queue, Player* leader, Battleground* bg, PvPDifficultyEntry const* bracketEntry);
      bool OnBeforeSendJoinMessageArenaQueue(BattlegroundQueue* queue, Player* leader, GroupQueueInfo* ginfo, PvPDifficultyEntry const* bracketEntry, bool isRated);
+diff --git a/src/server/game/Spells/Spell.cpp b/src/server/game/Spells/Spell.cpp
+index 68f028a95..86c2886b4 100644
+--- a/src/server/game/Spells/Spell.cpp
++++ b/src/server/game/Spells/Spell.cpp
+@@ -6746,12 +6746,6 @@ SpellCastResult Spell::CheckCast(bool strict, uint32* /*param1*/, uint32* /*para
+                 break;
+         }
+ 
+-        // check if target already has the same type, but more powerful aura
+-        if (!nonAuraEffectMask && (approximateAuraEffectMask & (1 << i)) && !m_spellInfo->IsTargetingArea())
+-            if (Unit* target = m_targets.GetUnitTarget())
+-                if (!target->IsHighestExclusiveAuraEffect(m_spellInfo, AuraType(m_spellInfo->Effects[i].ApplyAuraName),
+-                    m_spellInfo->Effects[i].CalcValue(m_caster, &m_spellValue->EffectBasePoints[i]), approximateAuraEffectMask, false))
+-                    return SPELL_FAILED_AURA_BOUNCED;
+     }
+ 
+     // check trade slot case (last, for allow catch any another cast problems)
