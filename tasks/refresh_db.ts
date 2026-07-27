@@ -60,6 +60,7 @@ type CountedItem = {
 }
 
 type ItemProps = {
+  armor?: number
   cd?: number
   name?: string
   quality?: number
@@ -162,6 +163,7 @@ type VendorItemInfo = {
 
 type VendorItem = {
   category: VendorCategory
+  classes: PlayerClass[]
   currency: VendorCurrency
   glyphType?: VendorGlyphType
   inventoryType: number
@@ -522,6 +524,17 @@ const parseItemProps = (props: string | undefined, rowLabel: string): ItemProps 
       continue
     }
 
+    if (key === 'armor') {
+      const armor = Number(rawValue)
+      if (!Number.isInteger(armor) || armor < 0) {
+        questWarnings.push(`${rowLabel}: ignored armor, expected a non-negative integer`)
+        continue
+      }
+      result.armor = armor
+      hasProps = true
+      continue
+    }
+
     const statType = itemStatTypeByKey[key as keyof typeof itemStatTypeByKey]
     if (statType) {
       const value = Number(rawValue)
@@ -826,6 +839,20 @@ const parseVendorItems = (
       continue
     }
 
+    const classes: PlayerClass[] = currency === 'arena'
+      ? (row.CLASSES?.split(',').map((value) => value.trim()).filter(Boolean) ?? []).flatMap((className) => {
+        const normalized = normalizeClassName(className)
+        if (!Object.hasOwn(classMasks, normalized)) {
+          questWarnings.push(`${rowLabel}: ignored arena class ${JSON.stringify(className)}`)
+          return []
+        }
+        return [normalized as PlayerClass]
+      })
+      : []
+    if (currency === 'arena' && classes.length === 0) {
+      questWarnings.push(`${rowLabel}: arena vendor item missing CLASSES`)
+    }
+
     const npcSubname = vendorNpcSubname(currency, category, itemId)
     const npc = npcEntriesBySubname.get(npcSubname.toLowerCase())
     if (!npc) {
@@ -838,6 +865,7 @@ const parseVendorItems = (
     seen.add(key)
     items.push({
       category,
+      classes,
       currency,
       glyphType: itemInfo.glyphType,
       inventoryType: itemInfo.inventoryType,
@@ -1096,7 +1124,7 @@ type RandomEnchantOption = {
 }
 
 const luaString = (value: string) => `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`
-const luaArray = <T>(values: T[], formatter: (value: T) => string) => `{ ${values.map(formatter).join(', ')} }`
+const luaArray = <T>(values: readonly T[], formatter: (value: T) => string) => `{ ${values.map(formatter).join(', ')} }`
 const sqlString = (value: string) => `'${value.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`
 
 const normalizeMysqlIdentifiers = (sql: string) => sql.replace(/`([A-Za-z_][A-Za-z0-9_$]*)`/g, '$1')
@@ -1685,6 +1713,56 @@ WHERE LOWER(\`subname\`) LIKE '%merchant%'
   const goldVendorSellPriceCase = goldVendorPrices
     .map(([itemId, price]) => `  WHEN ${itemId} THEN ${Math.floor(price / 4)}`)
     .join('\n')
+  const arenaItemIds = [...new Set(
+    vendorItems
+      .filter((item) => item.currency === 'arena')
+      .map((item) => item.itemId),
+  )].sort((a, b) => a - b)
+  const arenaItemSql = arenaItemIds.length
+    ? `-- Normalize arena vendor items by removing random enchants, sockets, and faction-only flags.
+UPDATE \`item_template\`
+SET \`RandomProperty\` = 0,
+    \`RandomSuffix\` = 0,
+    \`socketColor_1\` = 0,
+    \`socketColor_2\` = 0,
+    \`socketColor_3\` = 0,
+    \`socketContent_1\` = 0,
+    \`socketContent_2\` = 0,
+    \`socketContent_3\` = 0,
+    \`socketBonus\` = 0,
+    \`FlagsExtra\` = \`FlagsExtra\` & 4294967292
+WHERE \`entry\` IN (${arenaItemIds.join(', ')});`
+    : '-- No arena vendor items.'
+  const arenaArmorSql = arenaItemIds.length
+    ? `-- Remove set bonuses and normalize arena armor for the level 19 bracket.
+UPDATE \`item_template\`
+SET \`ItemSet\` = 0,
+    \`subclass\` = CASE
+      WHEN \`Armor\` < 50 THEN 1
+      WHEN \`Armor\` < 100 THEN 2
+      ELSE 3
+    END
+WHERE \`entry\` IN (${arenaItemIds.join(', ')})
+  AND \`class\` = 4;`
+    : '-- No arena armor items.'
+  const arenaClassesByItemId = new Map<number, Set<PlayerClass>>()
+  for (const item of vendorItems) {
+    if (item.currency !== 'arena' || item.classes.length === 0) continue
+    const classes = arenaClassesByItemId.get(item.itemId) ?? new Set<PlayerClass>()
+    for (const playerClass of item.classes) classes.add(playerClass)
+    arenaClassesByItemId.set(item.itemId, classes)
+  }
+  const arenaClassRestrictionItemIds = [...arenaClassesByItemId.keys()].sort((a, b) => a - b)
+  const arenaClassRestrictionRows = arenaClassRestrictionItemIds
+    .map((itemId) => `  WHEN ${itemId} THEN ${allowableClass([...arenaClassesByItemId.get(itemId)!])}`)
+  const arenaClassRestrictionSql = arenaClassRestrictionItemIds.length
+    ? `-- Apply sheet-defined class restrictions to arena vendor items.
+UPDATE \`item_template\`
+SET \`AllowableClass\` = CASE \`entry\`
+${arenaClassRestrictionRows.join('\n')}
+END
+WHERE \`entry\` IN (${arenaClassRestrictionItemIds.join(', ')});`
+    : '-- No sheet-defined arena class restrictions.'
   const satchelClassReferenceItems = satchelItems.flatMap((item) =>
     item.playerClassIds.map((classId) => ({ classId, item, reference: satchelClassReference(classId) }))
   )
@@ -1812,6 +1890,12 @@ SET \`npcflag\` = (\`npcflag\` & ${vendorNpcFlagsWithoutTrainer}) | ${vendorNpcF
 WHERE \`entry\` IN (${vendorEntries.join(', ')});
 
 DELETE FROM \`npc_vendor\` WHERE \`entry\` IN (${vendorEntries.join(', ')});
+
+${arenaArmorSql}
+
+${arenaItemSql}
+
+${arenaClassRestrictionSql}
 
 ${
         goldVendorItemIds.length
@@ -1994,6 +2078,17 @@ WHERE c.\`name\` <> r.\`name\`;
 
 const itemUpdateSql = (itemId: number, props: ItemProps) => {
   const assignments: string[] = []
+  const clearItemSpellAssignments = () => {
+    for (let index = 1; index <= 5; index++) {
+      assignments.push(`\`spellid_${index}\` = 0`)
+      assignments.push(`\`spelltrigger_${index}\` = 0`)
+      assignments.push(`\`spellcharges_${index}\` = 0`)
+      assignments.push(`\`spellppmRate_${index}\` = 0`)
+      assignments.push(`\`spellcooldown_${index}\` = -1`)
+      assignments.push(`\`spellcategory_${index}\` = 0`)
+      assignments.push(`\`spellcategorycooldown_${index}\` = -1`)
+    }
+  }
 
   // 1. SIMPLE UPDATES (Assign if defined in sheet)
   assignments.push(`\`bonding\` = ${soulboundBonding}`)
@@ -2007,6 +2102,10 @@ const itemUpdateSql = (itemId: number, props: ItemProps) => {
     assignments.push(`\`Quality\` = ${props.quality}`)
   }
 
+  if (props.armor !== undefined) {
+    assignments.push(`\`Armor\` = ${props.armor}`)
+  }
+
   if (props.stats && props.stats.length > 0) {
     for (let index = 0; index < 10; index++) {
       const stat = props.stats[index]
@@ -2018,17 +2117,9 @@ const itemUpdateSql = (itemId: number, props: ItemProps) => {
     }
   }
 
-  if (props.use !== undefined) {
-    for (let index = 1; index <= 5; index++) {
-      assignments.push(`\`spellid_${index}\` = 0`)
-      assignments.push(`\`spelltrigger_${index}\` = 0`)
-      assignments.push(`\`spellcharges_${index}\` = 0`)
-      assignments.push(`\`spellppmRate_${index}\` = 0`)
-      assignments.push(`\`spellcooldown_${index}\` = -1`)
-      assignments.push(`\`spellcategory_${index}\` = 0`)
-      assignments.push(`\`spellcategorycooldown_${index}\` = -1`)
-    }
+  if (props.stats.length > 0 || props.use !== undefined) clearItemSpellAssignments()
 
+  if (props.use !== undefined) {
     assignments.push(`\`spellid_1\` = ${props.use}`)
     assignments.push('`spelltrigger_1` = 0')
     assignments.push(`\`spellcategory_1\` = ${cdCategories[props.use] || props.use}`)
@@ -2169,24 +2260,10 @@ SET \`AllowableClass\` = -1
 WHERE \`entry\` IN (SELECT \`entry\` FROM item_template_relaxed_class_entries);
 
 -- Remove item required levels.
-UPDATE item_template
-SET \`RequiredLevel\` = 0;
+UPDATE item_template SET \`RequiredLevel\` = 0 WHERE \`RequiredLevel\` > 0;
 
 DROP TEMPORARY TABLE item_template_relaxed_class_entries;
-
--- Treat unrestricted plate heirlooms as mail at level 19: warrior/paladin.
-UPDATE item_template
-SET \`AllowableClass\` = 3
-WHERE \`class\` = 4
-  AND \`subclass\` = 4
-  AND \`AllowableClass\` = -1;
-
--- Treat unrestricted mail heirlooms as leather at level 19.
-UPDATE item_template
-SET \`AllowableClass\` = 1103
-WHERE \`class\` = 4
-  AND \`subclass\` IN (2, 3)
-  AND \`AllowableClass\` = -1;
+UPDATE item_template SET \`RequiredLevel\` = 0 WHERE \`RequiredLevel\` <> 0;
 
 -- Restrict unrestricted weapons to classes that can learn each weapon type.
 ${weaponClassRestrictionSql()}
@@ -2195,8 +2272,7 @@ ${weaponClassRestrictionSql()}
 UPDATE item_template
 SET \`AllowableClass\` = ${allowableClass(['warrior', 'paladin', 'shaman'])}
 WHERE \`class\` = 4
-  AND \`subclass\` = 6
-  AND \`AllowableClass\` = -1;
+  AND \`subclass\` = 6;
 `
 }
 
