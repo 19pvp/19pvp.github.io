@@ -32,6 +32,21 @@ index f21841c0b..d81b35cd2 100644
                      continue;
  
                  DirectoryEntry const entry = { dirPath, AppliedFileEntry::StateConvert("MODULE") };
+diff --git a/src/server/game/Battlegrounds/ArenaTeam.cpp b/src/server/game/Battlegrounds/ArenaTeam.cpp
+index 8a0145246..a31277ec4 100644
+--- a/src/server/game/Battlegrounds/ArenaTeam.cpp
++++ b/src/server/game/Battlegrounds/ArenaTeam.cpp
+@@ -94,8 +94,8 @@ bool ArenaTeam::AddMember(ObjectGuid playerGuid)
+     std::string playerName;
+     uint8 playerClass;
+ 
+-    // Check if arena team is full (Can't have more than type * 2 players)
+-    if (GetMembersSize() >= GetType() * 2)
++    // Arena teams on this server are individual teams.
++    if (GetMembersSize() >= 1)
+         return false;
+ 
+     // xinef: Get player name and class from player storage or global data storage
 diff --git a/src/server/game/Battlegrounds/Battleground.cpp b/src/server/game/Battlegrounds/Battleground.cpp
 index b10feb7b8..c5a2c96ef 100644
 --- a/src/server/game/Battlegrounds/Battleground.cpp
@@ -535,6 +550,40 @@ index e6799fec5..392ce779a 100644
          // don't let join if someone from the group is already in that bg queue
          if (member->InBattlegroundQueueForBattlegroundQueueType(bgQueueTypeId))
          {
+diff --git a/src/server/game/Handlers/ArenaTeamHandler.cpp b/src/server/game/Handlers/ArenaTeamHandler.cpp
+index 65ad0e0c7..6137982cc 100644
+--- a/src/server/game/Handlers/ArenaTeamHandler.cpp
++++ b/src/server/game/Handlers/ArenaTeamHandler.cpp
+@@ -147,7 +147,7 @@ void WorldSession::HandleArenaTeamInviteOpcode(WorldPacket& recvData)
+         return;
+     }
+ 
+-    if (arenaTeam->GetMembersSize() >= arenaTeam->GetType() * 2)
++    if (arenaTeam->GetMembersSize() >= 1)
+     {
+         SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, arenaTeam->GetName(), "", ERR_ARENA_TEAM_TOO_MANY_MEMBERS_S);
+         return;
+@@ -249,8 +249,7 @@ void WorldSession::HandleArenaTeamLeaveOpcode(WorldPacket& recvData)
+     // If team consists only of the captain, disband the team
+     if (_player->GetGUID() == arenaTeam->GetCaptain())
+     {
+-        arenaTeam->Disband(this);
+-        delete arenaTeam;
++        SendArenaTeamCommandResult(ERR_ARENA_TEAM_QUIT_S, "", "", ERR_ARENA_TEAMS_LOCKED);
+         return;
+     }
+     else
+@@ -290,8 +289,8 @@ void WorldSession::HandleArenaTeamDisbandOpcode(WorldPacket& recvData)
+         if (arenaTeam->IsFighting())
+             return;
+ 
+-        arenaTeam->Disband(this);
+-        delete arenaTeam;
++        SendArenaTeamCommandResult(ERR_ARENA_TEAM_QUIT_S, "", "", ERR_ARENA_TEAMS_LOCKED);
++        return;
+     }
+ }
+ 
 diff --git a/src/server/game/Handlers/BattleGroundHandler.cpp b/src/server/game/Handlers/BattleGroundHandler.cpp
 index f9cbfac32..06dab1b38 100644
 --- a/src/server/game/Handlers/BattleGroundHandler.cpp
