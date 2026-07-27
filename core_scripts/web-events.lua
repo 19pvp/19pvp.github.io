@@ -16,6 +16,24 @@ local classColors = {
 
 local SATCHEL_ITEM_ID = 51999
 
+local arenaTeamDefinitions = {
+  { type = 2, suffix = " 2v2" },
+  { type = 3, suffix = " 3v3" },
+  { type = 5, suffix = " Battleground" },
+}
+
+local function ensureArenaTeams(player)
+  local playerName = player:GetName()
+  for _, definition in ipairs(arenaTeamDefinitions) do
+    -- if not player:IsInArenaTeam(definition.type) then
+      local arenaTeamId = player:CreateArenaTeam(definition.type, playerName .. definition.suffix)
+      if arenaTeamId == 0 then
+        print("[Web Events] Failed to create arena team " .. inspect({ player = playerName, type = definition.type }))
+      end
+    end
+  -- end
+end
+
 AuthDBQuery([[
 CREATE TABLE IF NOT EXISTS discord_account (
   discord_id    BIGINT UNSIGNED PRIMARY KEY,
@@ -27,6 +45,8 @@ CREATE TABLE IF NOT EXISTS discord_account (
 
 local discord_logins = {}
 RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function (event, player)
+  ensureArenaTeams(player)
+
   local account_id = player:GetAccountId()
   AuthDBQueryAsync(
     "SELECT discord_login FROM discord_account WHERE account_id="
