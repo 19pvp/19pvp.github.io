@@ -197,7 +197,23 @@ const vendorTrainerNpcFlags = 16 | 32 | 64
 const vendorNpcFlagsWithoutTrainer = 4294967295 - vendorTrainerNpcFlags
 const vendorNpcFlagsWithoutVendorOrTrainer = 4294967295 - (vendorNpcFlag | vendorTrainerNpcFlags)
 const consortiumFaction = 1731
-const satchelAlwaysDropItemIds = [5740, 6657]
+const satchelAlwaysDropItemIds = [
+  5740, // fireworks
+  6657, // deviate delicacy
+  6522, // deviate fish raw
+  8529, // noggfenger elixir
+  40195, // pygmy oil
+  18258, // ogre costume
+  1973, // orb of deception
+  33924, // Chocolate cake
+  44228, // baby spice
+  5462, // darol transformation rod
+  44719, // Frenzyheart
+  37254, // Simian Sphere
+  45854, // ritual of the new moon
+  32782, // Time lost figurine
+  35275, // orb-of-the-sindorei
+]
 const appliedItemSpells = [{ itemId: 19969, spellId: 23990 }] as const
 
 const itemQualityByName = {
@@ -843,7 +859,7 @@ const parseVendorItems = (
       ? (row.CLASSES?.split(',').map((value) => value.trim()).filter(Boolean) ?? []).flatMap((className) => {
         const normalized = normalizeClassName(className)
         if (!Object.hasOwn(classMasks, normalized)) {
-          questWarnings.push(`${rowLabel}: ignored arena class ${JSON.stringify(className)}`)
+          questWarnings.push(`${rowLabel}: ignored vendor class ${JSON.stringify(className)}`)
           return []
         }
         return [normalized as PlayerClass]
@@ -1588,7 +1604,7 @@ const costs = {
     '★★☆☆☆': 2431, //  250
     '★★★☆☆': 2432, //  400
     '★★★★☆': 2380, //  800
-    '★★★★★': 2342, // 1125
+    '★★★★★': 26, // 3k+
   },
   justice: { // bg token 29434
     '★☆☆☆☆': 1909, // 10
@@ -1718,6 +1734,13 @@ WHERE LOWER(\`subname\`) LIKE '%merchant%'
       .filter((item) => item.currency === 'arena')
       .map((item) => item.itemId),
   )].sort((a, b) => a - b)
+  const vendorItemIds = [...new Set(vendorItems.map((item) => item.itemId))].sort((a, b) => a - b)
+  const vendorItemFlagsSql = vendorItemIds.length
+    ? `-- Mark all generated vendor items as refundable through item purchase records.
+UPDATE \`item_template\`
+SET \`Flags\` = \`Flags\` | 4096
+WHERE \`entry\` IN (${vendorItemIds.join(', ')});`
+    : '-- No generated vendor item flags.'
   const arenaItemSql = arenaItemIds.length
     ? `-- Normalize arena vendor items by removing random enchants, sockets, and faction-only flags.
 UPDATE \`item_template\`
@@ -1770,6 +1793,44 @@ WHERE \`entry\` IN (${arenaClassRestrictionItemIds.join(', ')});`
     item,
     reference: satchelAlwaysDropReference,
   }))
+  const satchelAlwaysDropItemIds = [...new Set(satchelAlwaysDropItems.map((item) => item.itemId))].sort((a, b) => a - b)
+  const satchelAlwaysDropAssignments = [
+    '`class` = 0',
+    '`Quality` = 1',
+    '`Flags` = `Flags` & 4278189823',
+    '`FlagsExtra` = `FlagsExtra` & 4294967292',
+    '`BuyCount` = 1',
+    '`SellPrice` = 500',
+    '`AllowableClass` = -1',
+    '`AllowableRace` = -1',
+    '`RequiredReputationFaction` = 0',
+    '`RequiredReputationRank` = 0',
+    '`stackable` = 20',
+    '`bonding` = 0',
+    '`startquest` = 0',
+    '`BagFamily` = `BagFamily` & 4294950911',
+    '`RandomProperty` = 0',
+    '`RandomSuffix` = 0',
+    '`ScalingStatDistribution` = 0',
+    '`ScalingStatValue` = 0',
+    '`holy_res` = 0',
+    '`fire_res` = 0',
+    '`nature_res` = 0',
+    '`frost_res` = 0',
+    '`shadow_res` = 0',
+    '`arcane_res` = 0',
+    ...Array.from({ length: 10 }, (_, index) => [
+      `\`stat_type${index + 1}\` = 0`,
+      `\`stat_value${index + 1}\` = 0`,
+    ]).flat(),
+    ...Array.from({ length: 5 }, (_, index) => `\`spellcharges_${index + 1}\` = -1`),
+  ]
+  const satchelAlwaysDropSql = satchelAlwaysDropItemIds.length
+    ? `-- Normalize always-drop satchel items as unbound, universal consumables.
+UPDATE \`item_template\`
+SET ${satchelAlwaysDropAssignments.join(',\n    ')}
+WHERE \`entry\` IN (${satchelAlwaysDropItemIds.join(', ')});`
+    : '-- No always-drop satchel items.'
   const satchelClassReferenceIds = [...new Set(satchelClassReferenceItems.map((item) => item.reference))]
   const satchelReferenceIds = [
     ...new Set([
@@ -1893,6 +1954,8 @@ DELETE FROM \`npc_vendor\` WHERE \`entry\` IN (${vendorEntries.join(', ')});
 
 ${arenaArmorSql}
 
+${vendorItemFlagsSql}
+
 ${arenaItemSql}
 
 ${arenaClassRestrictionSql}
@@ -1914,6 +1977,8 @@ INSERT INTO \`npc_vendor\` (\`entry\`, \`slot\`, \`item\`, \`maxcount\`, \`incrt
 ${vendorItemRows.join(',\n')};`
       : '-- No generated vendor inventory.'
   }
+
+${satchelAlwaysDropSql}
 
 DELETE FROM \`item_loot_template\` WHERE \`Entry\` = ${satchelLootEntry};
 
@@ -2107,6 +2172,8 @@ const itemUpdateSql = (itemId: number, props: ItemProps) => {
   }
 
   if (props.stats && props.stats.length > 0) {
+    assignments.push('`RandomProperty` = 0')
+    assignments.push('`RandomSuffix` = 0')
     for (let index = 0; index < 10; index++) {
       const stat = props.stats[index]
       assignments.push(`\`stat_type${index + 1}\` = ${stat?.type ?? 0}`)
@@ -2255,9 +2322,7 @@ SET \`ItemLevel\` = 35
 WHERE \`RandomSuffix\` = 0;
 
 -- Remove class requirements from items that were above the bracket before level normalization.
-UPDATE item_template
-SET \`AllowableClass\` = -1
-WHERE \`entry\` IN (SELECT \`entry\` FROM item_template_relaxed_class_entries);
+-- UPDATE item_template SET \`AllowableClass\` = -1;
 
 -- Remove item required levels.
 UPDATE item_template SET \`RequiredLevel\` = 0 WHERE \`RequiredLevel\` > 0;
@@ -2294,7 +2359,21 @@ const isResistanceEnchant = (enchantId: number) => {
 }
 
 const scoreStats = (stats: { id: number; value: number }[]) => stats.reduce((total, stat) => total + stat.value, 0)
-const optionKey = (option: RandomEnchantOption) => option.stats.map((stat) => stat.id).join(':')
+const optionKey = (option: RandomEnchantOption) => option.name
+const propertyEnchantValue = (enchant: NonNullable<ReturnType<typeof dbc.enchant.get>>) => {
+  const value = Math.max(
+    enchant.EffectPointsMin_1,
+    enchant.EffectPointsMax_1,
+    enchant.EffectPointsMin_2,
+    enchant.EffectPointsMax_2,
+    enchant.EffectPointsMin_3,
+    enchant.EffectPointsMax_3,
+  )
+  if (value > 0) return value
+
+  // Some legacy spell-power enchants store their value only in the localized name.
+  return Number(enchant.Name_Lang_enUS.trim().match(/^\+(\d+)/)?.[1] || 0)
+}
 
 const suffixOptionsById = new Map<number, RandomEnchantOption>()
 const propertyOptionsById = new Map<number, RandomEnchantOption>()
@@ -2351,14 +2430,7 @@ for (const property of dbc.properties.values()) {
   const values = enchants.map((id) => {
     const enchant = dbc.enchant.get(id)
     if (!enchant) return 0
-    return Math.max(
-      enchant.EffectPointsMin_1,
-      enchant.EffectPointsMax_1,
-      enchant.EffectPointsMin_2,
-      enchant.EffectPointsMax_2,
-      enchant.EffectPointsMin_3,
-      enchant.EffectPointsMax_3,
-    )
+    return propertyEnchantValue(enchant)
   })
   const stats = enchantStats(enchants, values)
   if (stats.length === 0) continue
