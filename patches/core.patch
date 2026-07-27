@@ -585,7 +585,7 @@ index 65ad0e0c7..6137982cc 100644
  }
  
 diff --git a/src/server/game/Handlers/BattleGroundHandler.cpp b/src/server/game/Handlers/BattleGroundHandler.cpp
-index f9cbfac32..06dab1b38 100644
+index f9cbfac32..07fbd1d59 100644
 --- a/src/server/game/Handlers/BattleGroundHandler.cpp
 +++ b/src/server/game/Handlers/BattleGroundHandler.cpp
 @@ -177,12 +177,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
@@ -627,7 +627,19 @@ index f9cbfac32..06dab1b38 100644
                  _player->RemoveBattlegroundQueueId(playerBgQueueTypeId);
                  sBattlegroundMgr->GetBattlegroundQueue(playerBgQueueTypeId).RemovePlayer(_player->GetGUID(), true);
              }
-@@ -735,11 +729,10 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
+@@ -684,11 +678,6 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
+     if (_player->InBattleground())
+         return;
+ 
+-    // find creature by guid
+-    Creature* unit = GetPlayer()->GetMap()->GetCreature(guid);
+-    if (!unit || !unit->IsBattleMaster())
+-        return;
+-
+     // get arena type
+     uint8 arenatype = 0;
+     uint32 ateamId = 0;
+@@ -735,11 +724,10 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
          return;
  
      // must have free queue slot

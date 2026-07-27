@@ -143,6 +143,228 @@ local function SetupArenaTeamUI()
     end
 end
 
+local pvpQueueUISetup = false
+local pvpQueueArenaSlot = nil
+local function UpdatePVPQueueJoinButton() end
+local pvpQueueArenaDescription = "All games are rated and you gain Arena Points directly after every victory.\n\nYou also gain Badges of Heroism: 2 for a victory and 1 for a loss.\n\nSolo queue only."
+
+local function GetPVPBattlegroundFrame()
+    return PVPBattlegroundFrame or BattlefieldFrame
+end
+
+local function GetPVPBattlegroundButton(index)
+    return _G["BattlegroundType" .. index] or _G["BattlefieldZone" .. index]
+end
+
+local function SetPVPBattlegroundButtonText(button, text)
+    if button.title then
+        button.title:SetText(text)
+    else
+        button:SetText(text)
+    end
+end
+
+local function UpdatePVPQueueDescription()
+    if not pvpQueueArenaSlot then
+        return
+    end
+
+    local description = PVPBattlegroundFrameInfoScrollFrameChildFrameDescription or
+        BattlefieldFrameInfoScrollFrameChildFrameDescription
+    local scrollFrame = PVPBattlegroundFrameInfoScrollFrame or BattlefieldFrameInfoScrollFrame
+
+    if not description and scrollFrame then
+        local scrollChild = scrollFrame:GetScrollChild()
+        if scrollChild then
+            description = scrollChild.Description or scrollChild.description or scrollChild.CFBGArenaDescription
+            if not description then
+                description = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+                description:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, 0)
+                description:SetWidth(scrollFrame:GetWidth() - 20)
+                description:SetJustifyH("LEFT")
+                description:SetJustifyV("TOP")
+                scrollChild.CFBGArenaDescription = description
+            end
+        end
+    end
+
+    if description then
+        description:SetText(pvpQueueArenaDescription)
+    end
+end
+
+local function FindWarsongGulch()
+    if not GetNumBattlegroundTypes or not GetBattlegroundInfo then
+        return nil
+    end
+
+    for index = 1, GetNumBattlegroundTypes() do
+        local name, _, _, _, battlegroundId = GetBattlegroundInfo(index)
+        if battlegroundId == 2 or (name and string.find(string.lower(name), "warsong")) then
+            return index, name or "Warsong Gulch"
+        end
+    end
+end
+
+local function UpdatePVPQueueSelection()
+    local frame = GetPVPBattlegroundFrame()
+    if not frame then
+        return
+    end
+
+    for index = 1, 3 do
+        local button = GetPVPBattlegroundButton(index)
+        if button then
+            local selected = (index == 1 and not pvpQueueArenaSlot) or
+                (button.CFBGArenaSlot == pvpQueueArenaSlot)
+            if selected then
+                button:LockHighlight()
+            else
+                button:UnlockHighlight()
+            end
+        end
+    end
+end
+
+local function SelectPVPQueueOption(self)
+    local frame = GetPVPBattlegroundFrame()
+    if not frame then
+        return
+    end
+
+    pvpQueueArenaSlot = self.CFBGArenaSlot
+    if not pvpQueueArenaSlot then
+        frame.selectedBG = self.BGindex
+        if PVPBattleground_ResetInfo then
+            PVPBattleground_ResetInfo()
+        elseif BattlefieldFrame_ResetInfo then
+            BattlefieldFrame_ResetInfo()
+        end
+        if PVPBattleground_UpdateJoinButton then
+            PVPBattleground_UpdateJoinButton(self.BGindex)
+        end
+    end
+
+    UpdatePVPQueueSelection()
+    UpdatePVPQueueJoinButton()
+    UpdatePVPQueueDescription()
+end
+
+local function JoinNormalBattleground(self)
+    if JoinBattlefield then
+        local groupJoinButton = PVPBattlegroundFrameGroupJoinButton or BattlefieldFrameGroupJoinButton
+        JoinBattlefield(0, self == groupJoinButton)
+    elseif PVPBattlegroundFrameJoinButton_OnClick then
+        PVPBattlegroundFrameJoinButton_OnClick(self)
+    elseif BattlefieldFrameJoinButton_OnClick then
+        BattlefieldFrameJoinButton_OnClick(self)
+    end
+end
+
+UpdatePVPQueueJoinButton = function()
+    local frame = GetPVPBattlegroundFrame()
+    local joinButton = PVPBattlegroundFrameJoinButton or BattlefieldFrameJoinButton
+    local groupJoinButton = PVPBattlegroundFrameGroupJoinButton or BattlefieldFrameGroupJoinButton
+    if not frame or not joinButton then
+        return
+    end
+
+    if pvpQueueArenaSlot then
+        joinButton:SetScript("OnClick", function()
+            if JoinSkirmish then
+                JoinSkirmish(pvpQueueArenaSlot)
+                HideUIPanel(frame)
+            end
+        end)
+        joinButton:Enable()
+        if groupJoinButton then
+            groupJoinButton:Hide()
+        end
+    else
+        joinButton:SetScript("OnClick", JoinNormalBattleground)
+        if groupJoinButton then
+            groupJoinButton:SetScript("OnClick", JoinNormalBattleground)
+            groupJoinButton:Show()
+        end
+    end
+end
+
+local function ApplyPVPQueueLayout()
+    local frame = GetPVPBattlegroundFrame()
+    local wsgIndex, wsgName = FindWarsongGulch()
+    local button1 = GetPVPBattlegroundButton(1)
+    local button2 = GetPVPBattlegroundButton(2)
+    local button3 = GetPVPBattlegroundButton(3)
+    if not frame or not wsgIndex or not button1 or not button2 or not button3 then
+        return
+    end
+
+    if not pvpQueueArenaSlot then
+        frame.selectedBG = wsgIndex
+    end
+
+    button1.BGindex = wsgIndex
+    button1.CFBGArenaSlot = nil
+    button1.localizedName = wsgName
+    SetPVPBattlegroundButtonText(button1, wsgName)
+    button1:SetScript("OnClick", SelectPVPQueueOption)
+    button1:Enable()
+    button1:Show()
+
+    for index = 2, 3 do
+        local button = GetPVPBattlegroundButton(index)
+        button.BGindex = nil
+        button.CFBGArenaSlot = index - 1
+        button.localizedName = index == 2 and "2v2" or "3v3"
+        SetPVPBattlegroundButtonText(button, button.localizedName)
+        button:SetScript("OnClick", SelectPVPQueueOption)
+        button:Enable()
+        button:Show()
+    end
+
+    for index = 4, 5 do
+        local button = GetPVPBattlegroundButton(index)
+        if button then
+            button:Hide()
+        end
+    end
+
+    local scrollFrame = PVPBattlegroundFrameTypeScrollFrame or BattlefieldFrameTypeScrollFrame
+    if scrollFrame then
+        scrollFrame:Hide()
+    end
+
+    UpdatePVPQueueSelection()
+    UpdatePVPQueueJoinButton()
+    UpdatePVPQueueDescription()
+end
+
+local function SetupPVPQueueUI()
+    if pvpQueueUISetup then
+        return
+    end
+
+    local frame = GetPVPBattlegroundFrame()
+    if not frame then
+        return
+    end
+
+    pvpQueueUISetup = true
+    frame:HookScript("OnShow", ApplyPVPQueueLayout)
+
+    if type(PVPBattleground_UpdateBattlegrounds) == "function" then
+        hooksecurefunc("PVPBattleground_UpdateBattlegrounds", ApplyPVPQueueLayout)
+    end
+    if type(PVPBattleground_UpdateJoinButton) == "function" then
+        hooksecurefunc("PVPBattleground_UpdateJoinButton", UpdatePVPQueueJoinButton)
+    end
+    if type(BattlefieldFrame_UpdateGroupAvailable) == "function" then
+        hooksecurefunc("BattlefieldFrame_UpdateGroupAvailable", UpdatePVPQueueJoinButton)
+    end
+
+    ApplyPVPQueueLayout()
+end
+
 -- Frame to manage initialization and event listening
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
@@ -154,6 +376,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
         -- DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Scoreboard Fix Loaded!|r")
 
         SetupArenaTeamUI()
+        SetupPVPQueueUI()
         
         -- Hook the scoreboard update securely
         if hooksecurecall then
@@ -176,6 +399,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
         
     elseif event == "PLAYER_ENTERING_WORLD" then
         SetupArenaTeamUI()
+        SetupPVPQueueUI()
 
         wipe(CFBG_ScoreboardBots)
         wipe(CFBG_HordePlayers)
