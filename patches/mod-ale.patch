@@ -274,7 +274,7 @@ index a21640d..de4bd8b 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..2afd1c6 100644
+index c0acc01..194ebed 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -107,6 +107,8 @@ luaL_Reg GlobalMethods[] =
@@ -338,7 +338,16 @@ index c0acc01..2afd1c6 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -1380,6 +1399,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -625,6 +644,8 @@ ALERegister<Player> PlayerMethods[] =
+     { "GetBankItem", &LuaPlayer::GetBankItem },
+     { "GetCreationTime", &LuaPlayer::GetCreationTime },
+     { "SetCanFly", &LuaPlayer::SetCanFly },
++    { "CreateArenaTeam", &LuaPlayer::CreateArenaTeam },
++    { "SetArenaTeamRating", &LuaPlayer::SetArenaTeamRating },
+ 
+     // Boolean
+     { "HasTankSpec", &LuaPlayer::HasTankSpec },
+@@ -1380,6 +1401,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -943,16 +952,21 @@ index cebb7bc..f836296 100644
      static int DBQueryAsync(lua_State* L, DatabaseWorkerPool<T>& db)
      {
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..8eff018 100644
+index c39801f..ec312d3 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
-@@ -10,6 +10,15 @@
+@@ -7,9 +7,20 @@
+ #ifndef PLAYERMETHODS_H
+ #define PLAYERMETHODS_H
+ 
++#include <limits>
  #include "Chat.h"
  #include "GameTime.h"
  #include "GossipDef.h"
 +#include "PlayerbotAI.h"
 +#include "PlayerbotMgr.h"
 +#include "BattlegroundMgr.h"
++#include "ArenaTeamMgr.h"
 +#include "RandomPlayerbotMgr.h"
 +
 +#if __has_include("CFBG.h")
@@ -962,7 +976,103 @@ index c39801f..8eff018 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -1556,6 +1565,33 @@ namespace LuaPlayer
+@@ -478,6 +489,95 @@ namespace LuaPlayer
+         return 1;
+     }
+ 
++    /**
++     * Creates and assigns a new arena team to the [Player].
++     *
++     * @param uint32 type : arena team type (2, 3, or 5)
++     * @param string name : arena team name
++     * @param uint32 backgroundColor = 0
++     * @param uint8 emblemStyle = 0
++     * @param uint32 emblemColor = 0
++     * @param uint8 borderStyle = 0
++     * @param uint32 borderColor = 0
++     * @return uint32 arenaTeamId : created team ID, or 0 on failure
++     */
++    int CreateArenaTeam(lua_State* L, Player* player)
++    {
++        uint32 type = ALE::CHECKVAL<uint32>(L, 2);
++        std::string name = ALE::CHECKVAL<std::string>(L, 3);
++        uint32 backgroundColor = ALE::CHECKVAL<uint32>(L, 4, 0);
++        uint8 emblemStyle = ALE::CHECKVAL<uint8>(L, 5, 0);
++        uint32 emblemColor = ALE::CHECKVAL<uint32>(L, 6, 0);
++        uint8 borderStyle = ALE::CHECKVAL<uint8>(L, 7, 0);
++        uint32 borderColor = ALE::CHECKVAL<uint32>(L, 8, 0);
++
++        uint8 slot = ArenaTeam::GetSlotByType(type);
++        if (slot >= 3 || player->GetArenaTeamId(slot) ||
++            sArenaTeamMgr->GetArenaTeamByName(name) || !ObjectMgr::IsValidCharterName(name))
++        {
++            ALE::Push(L, uint32(0));
++            return 1;
++        }
++
++        ArenaTeam* arenaTeam = new ArenaTeam;
++        if (!arenaTeam->Create(player->GetGUID(), type, name, backgroundColor, emblemStyle, emblemColor, borderStyle, borderColor) ||
++            !arenaTeam->IsMember(player->GetGUID()))
++        {
++            if (arenaTeam->GetId())
++                arenaTeam->Disband();
++            delete arenaTeam;
++            ALE::Push(L, uint32(0));
++            return 1;
++        }
++
++        sArenaTeamMgr->AddArenaTeam(arenaTeam);
++        ALE::Push(L, arenaTeam->GetId());
++        return 1;
++    }
++
++    /**
++     * Sets the arena team's rating and the [Player]'s personal rating.
++     *
++     * @param uint32 type : arena team type (2, 3, or 5)
++     * @param uint32 teamRating : new team rating, from 0 to 65535
++     * @param uint32 personalRating = teamRating : new personal rating, from 0 to 65535
++     * @return bool success
++     */
++    int SetArenaTeamRating(lua_State* L, Player* player)
++    {
++        uint32 type = ALE::CHECKVAL<uint32>(L, 2);
++        uint32 teamRating = ALE::CHECKVAL<uint32>(L, 3);
++        uint32 personalRating = ALE::CHECKVAL<uint32>(L, 4, teamRating);
++        uint8 slot = ArenaTeam::GetSlotByType(type);
++
++        if (slot >= 3 || teamRating > std::numeric_limits<uint16>::max() ||
++            personalRating > std::numeric_limits<uint16>::max())
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        ArenaTeam* arenaTeam = sArenaTeamMgr->GetArenaTeamById(player->GetArenaTeamId(slot));
++        ArenaTeamMember* member = arenaTeam ? arenaTeam->GetMember(player->GetGUID()) : nullptr;
++        if (!arenaTeam || arenaTeam->GetType() != type || !member)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        ArenaTeamStats stats = arenaTeam->GetStats();
++        stats.Rating = teamRating;
++        arenaTeam->SetArenaTeamStats(stats);
++        member->PersonalRating = personalRating;
++        player->SetArenaTeamInfoField(slot, ARENA_TEAM_PERSONAL_RATING, personalRating);
++
++        arenaTeam->SaveToDB(true);
++        arenaTeam->NotifyStatsChanged();
++
++        ALE::Push(L, true);
++        return 1;
++    }
++
+     /**
+      * Returns `true` if the [Player] is immune to everything.
+      *
+@@ -1556,6 +1656,33 @@ namespace LuaPlayer
          ALE::Push(L, player->GetTeamId());
          return 1;
      }
@@ -996,7 +1106,7 @@ index c39801f..8eff018 100644
      
      /**
       * Returns amount of the specified [Item] the [Player] has.
-@@ -5149,7 +5185,7 @@ namespace LuaPlayer
+@@ -5149,7 +5276,7 @@ namespace LuaPlayer
      #endif
          return 1;
      }
@@ -1005,7 +1115,7 @@ index c39801f..8eff018 100644
      /**
       * Returns the [Player]s spent talent points in each talent tree for the active spec
       *
-@@ -5175,6 +5211,368 @@ namespace LuaPlayer
+@@ -5175,6 +5302,368 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
