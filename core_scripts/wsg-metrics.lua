@@ -331,16 +331,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, s
     local mechanicMask = spellInfo and spellInfo:GetAllEffectsMechanicMask()
     local mechanicMaskValue = mechanicMaskToNumber(mechanicMask)
 
-    print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_SPELL_CAST " .. inspect({
-        player = player:GetName(),
-        spellId = spellId,
-        target = targetPlayer and targetPlayer:GetName() or nil,
-        mechanicMask = mechanicMaskValue,
-        mechanics = getMechanicNames(mechanicMaskValue),
-        skipCheck = skipCheck,
-        recognizedDispel = DISPEL_PROTECTIVE_SPELLS[spellId] or false,
-    }))
-
     if DISPEL_PROTECTIVE_SPELLS[spellId] then
         if targetPlayer then
             local stats = GetStats(player)
@@ -397,11 +387,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
                 flagCarryStartTimes[guid] = GetCurrTime()
             end
         end
-        print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_AURA_APPLY " .. inspect({
-            player = player:GetName(),
-            spellId = spellId,
-            flag = WSG_FLAG_AURAS[spellId],
-        }))
         return
     end
 
@@ -420,16 +405,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
     local ccType = getCCType(spellId)
     local absorbEffectIndex = getAbsorbEffectIndex(spellId)
     local absorbAmount = absorbEffectIndex and aura:GetEffectAmount(absorbEffectIndex)
-    print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_AURA_APPLY " .. inspect({
-        player = player:GetName(),
-        spellId = spellId,
-        caster = casterPlayer and casterPlayer:GetName() or nil,
-        hasCaster = caster ~= nil,
-        ccType = ccType,
-        absorbEffectIndex = absorbEffectIndex,
-        absorbAmount = absorbAmount,
-    }))
-
     if ccType then
         -- Reapplying an existing aura refreshes it and fires OnAuraApply again
         -- without an intervening OnAuraRemove. Keep the original start time.
@@ -545,13 +520,6 @@ end)
 RegisterPlayerEvent(PLAYER_EVENT_ON_DAMAGE, function(event, player, target, damage)
     if not player:InBattleground() or not isMatchStarted(player) then return end
     local targetPlayer = target and target:ToPlayer()
-    if not player:IsBot() then
-        print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_DAMAGE " .. inspect({
-            player = player:GetName(),
-            target = targetPlayer and targetPlayer:GetName() or nil,
-            damage = damage,
-        }))
-    end
     if not targetPlayer then return end
 
     -- Track damage taken by the victim (only if target is not a bot)
