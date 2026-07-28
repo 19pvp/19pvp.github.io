@@ -33,7 +33,6 @@ local function InitializeBot(bot)
     if spec.glyphs and #spec.glyphs > 0 then
         bot:Command("glyph equip " .. table.concat(spec.glyphs, " "))
     end
-    print("[Bot Specs] Applied startup spec " .. inspect({ bot = bot:GetName(), talents = spec.talents, glyphs = spec.glyphs }))
 end
 
 for _, botInfo in pairs(fixedRoster) do

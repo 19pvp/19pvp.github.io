@@ -26,10 +26,7 @@ local function ensureArenaTeams(player)
   local playerName = player:GetName()
   for _, definition in ipairs(arenaTeamDefinitions) do
     -- if not player:IsInArenaTeam(definition.type) then
-      local arenaTeamId = player:CreateArenaTeam(definition.type, playerName .. definition.suffix)
-      if arenaTeamId == 0 then
-        print("[Web Events] Failed to create arena team " .. inspect({ player = playerName, type = definition.type }))
-      end
+      player:CreateArenaTeam(definition.type, playerName .. definition.suffix)
     end
   -- end
 end
@@ -45,6 +42,7 @@ CREATE TABLE IF NOT EXISTS discord_account (
 
 local discord_logins = {}
 RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function (event, player)
+  if player:IsBot() then return end
   ensureArenaTeams(player)
 
   local account_id = player:GetAccountId()
@@ -72,6 +70,7 @@ function getDiscordName(account_id)
 end
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_CHANNEL_CHAT, function(event, player, msg, Type, lang, channel)
+  if player:IsBot() then return end
   if channel == 1 then
     -- Send message to players of both factions in the channel
     SendWebEvent('GENERAL_CHANNEL_MESSAGE', player, {
@@ -205,6 +204,7 @@ end
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, function (event, player, command, chatHandler)
   if player == nil then return end
+  if player:IsBot() then return end
   if not player:IsGM() then return end
 
   if isCommandBlacklisted(command) then
@@ -215,6 +215,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, function (event, player, command, c
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_KILL_PLAYER, function (event, killer, killed)
+  if killer:IsBot() then return end
   if killed:IsBot() then return end
   if killer:GetAccountId() == killed:GetAccountId() then return end
   if killer:InBattleground() or killer:InArena() then return end
