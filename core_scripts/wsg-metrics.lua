@@ -110,7 +110,7 @@ local function GetStats(player, instanceId)
             flagCaptures = 0,
             flagReturns = 0,
             deserted = false,
-            joinTime = GetCurrTime(),
+            _updateTime = GetCurrTime(),
             timePlayed = 0,
         }
     end
@@ -123,6 +123,12 @@ local function snapshotPlayerScore(player, instanceId)
 
     local stats = GetStats(player, instanceId)
     if not stats then return end
+
+    local now = GetCurrTime()
+    if stats._updateTime then
+        stats.timePlayed = stats.timePlayed + (now - stats._updateTime)
+    end
+    stats._updateTime = now
 
     local bg = GetBattleground(instanceId, WSG_BG_TYPE_ID)
     if not bg then return end
@@ -322,13 +328,17 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
     local stats = GetStats(player, instanceId)
     if not stats then return end
     -- Record play time up to the point they left
-    stats.timePlayed = GetCurrTime() - stats.joinTime
+    local now = GetCurrTime()
+    local matchStart = matchStartTimes[instanceId] or stats._updateTime or now
+    if stats._updateTime then
+        stats.timePlayed = stats.timePlayed + (now - stats._updateTime)
+        stats._updateTime = nil
+    end
     if not bg then return end
     local status = bg:GetStatus()
     if status >= 4 then return end -- STATUS_WAIT_LEAVE is 4
     -- Store the exact second of the match when they deserted
-    local matchStart = matchStartTimes[instanceId] or stats.joinTime
-    stats.deserted = math.floor((GetCurrTime() - matchStart) / 1000)
+    stats.deserted = math.floor((now - matchStart) / 1000)
 end)
 
 -- Hook: Send aggregated stats as web event at the end of the BG match
@@ -342,14 +352,12 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
         stats.hardCCDuration = math.floor(stats.hardCCDuration / 1000)
         stats.softCCDuration = math.floor(stats.softCCDuration / 1000)
 
-        -- If they stayed until the end of the match, compute their final timePlayed
-        if stats.timePlayed == 0 then
-            stats.timePlayed = GetCurrTime() - stats.joinTime
-        end
+        -- Active players are updated by the 500 ms snapshot loop; leavers are
+        -- finalized by PLAYER_EVENT_ON_LEAVE_BG.
         stats.timePlayed = math.floor(stats.timePlayed / 1000)
 
         -- Clean up internal helper fields before sending
-        stats.joinTime = nil
+        stats._updateTime = nil
 
     end
 
