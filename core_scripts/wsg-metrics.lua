@@ -13,6 +13,7 @@ local flagCarryStartTimes = {}
 local matchStartTimes = {}
 local WSG_MAP_ID = 489
 local WSG_BG_TYPE_ID = 2
+local PREPARATION_AURA = 44521
 local HORDE_FLAG = 23333
 local ALLIANCE_FLAG = 23335
 local WSG_FLAG_AURAS = {
@@ -22,6 +23,10 @@ local WSG_FLAG_AURAS = {
 
 local function isFlagCarrier(player)
     return player:HasAura(HORDE_FLAG) or player:HasAura(ALLIANCE_FLAG)
+end
+
+local function isMatchStarted(player)
+    return not player:HasAura(PREPARATION_AURA)
 end
 
 -- 1. Dispel / Protective Spells definition (filtered to level 19 starting spells)
@@ -187,6 +192,7 @@ end
 -- Helper to get/initialize stats for a player, partitioned by instanceId
 local function GetStats(player, instanceId)
     if player:IsBot() then return nil end
+    if not isMatchStarted(player) then return nil end
 
     if not instanceId or instanceId == 0 then
         instanceId = player:GetBattlegroundId()
@@ -238,6 +244,15 @@ end
 local function snapshotPlayerScore(player, instanceId)
     if player:IsBot() then return end
 
+    if not isMatchStarted(player) then
+        local guid = tostring(player:GetGUID())
+        local stats = instanceId and matchStats[instanceId] and matchStats[instanceId][guid]
+        if stats then
+            stats._updateTime = GetCurrTime()
+        end
+        return
+    end
+
     local stats = GetStats(player, instanceId)
     if not stats then return end
 
@@ -278,34 +293,33 @@ end, 500, 0)
 -- Hook: Spell casting (for dispels / protective spells)
 RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, skipCheck)
     if player:IsBot() then return end
+    if not player:InBattleground() or not isMatchStarted(player) then return end
 
-    if player:InBattleground() then
-        local spellId = spell:GetEntry()
-        local target = spell:GetTarget()
-        local targetPlayer = target and target:ToPlayer()
-        local spellInfo = GetSpellInfo(spellId)
-        local mechanicMask = spellInfo and spellInfo:GetAllEffectsMechanicMask()
-        local mechanicMaskValue = mechanicMaskToNumber(mechanicMask)
+    local spellId = spell:GetEntry()
+    local target = spell:GetTarget()
+    local targetPlayer = target and target:ToPlayer()
+    local spellInfo = GetSpellInfo(spellId)
+    local mechanicMask = spellInfo and spellInfo:GetAllEffectsMechanicMask()
+    local mechanicMaskValue = mechanicMaskToNumber(mechanicMask)
 
-        print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_SPELL_CAST " .. inspect({
-            player = player:GetName(),
-            spellId = spellId,
-            target = targetPlayer and targetPlayer:GetName() or nil,
-            mechanicMask = mechanicMaskValue,
-            mechanics = getMechanicNames(mechanicMaskValue),
-            skipCheck = skipCheck,
-            recognizedDispel = DISPEL_PROTECTIVE_SPELLS[spellId] or false,
-        }))
+    print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_SPELL_CAST " .. inspect({
+        player = player:GetName(),
+        spellId = spellId,
+        target = targetPlayer and targetPlayer:GetName() or nil,
+        mechanicMask = mechanicMaskValue,
+        mechanics = getMechanicNames(mechanicMaskValue),
+        skipCheck = skipCheck,
+        recognizedDispel = DISPEL_PROTECTIVE_SPELLS[spellId] or false,
+    }))
 
-        if DISPEL_PROTECTIVE_SPELLS[spellId] then
-            if targetPlayer then
-                local stats = GetStats(player)
-                if stats then
-                    if player:GetTeam() == targetPlayer:GetTeam() then
-                        stats.dispelsDefensive = stats.dispelsDefensive + 1
-                    else
-                        stats.dispelsOffensive = stats.dispelsOffensive + 1
-                    end
+    if DISPEL_PROTECTIVE_SPELLS[spellId] then
+        if targetPlayer then
+            local stats = GetStats(player)
+            if stats then
+                if player:GetTeam() == targetPlayer:GetTeam() then
+                    stats.dispelsDefensive = stats.dispelsDefensive + 1
+                else
+                    stats.dispelsOffensive = stats.dispelsOffensive + 1
                 end
             end
         end
@@ -314,7 +328,7 @@ end)
 
 -- Hook: Aura application (for CC duration start, flag carrying, and shield absorbs)
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
-    if not player:InBattleground() then return end
+    if not player:InBattleground() or not isMatchStarted(player) then return end
     local spellId = aura:GetAuraId()
     if not spellId then return end
     if WSG_FLAG_AURAS[spellId] then
@@ -385,6 +399,8 @@ end)
 
 -- Hook: Aura removal (for calculating CC duration and flag carrying elapsed time)
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, remove_mode)
+    if not player:InBattleground() or not isMatchStarted(player) then return end
+
     local auraKey = tostring(aura)
     local entry = activeCCs[auraKey]
     local now = GetCurrTime()
@@ -447,7 +463,7 @@ end)
 -- Hook: Healing on friendly flag carriers
 RegisterPlayerEvent(PLAYER_EVENT_ON_HEAL, function(event, player, target, heal)
     if player:IsBot() then return end
-    if not player:InBattleground() then return end
+    if not player:InBattleground() or not isMatchStarted(player) then return end
     local targetPlayer = target and target:ToPlayer()
     print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_HEAL " .. inspect({
         player = player:GetName(),
@@ -465,7 +481,7 @@ end)
 
 -- Hook: Damage dealt & damage taken tracking
 RegisterPlayerEvent(PLAYER_EVENT_ON_DAMAGE, function(event, player, target, damage)
-    if not player:InBattleground() then return end
+    if not player:InBattleground() or not isMatchStarted(player) then return end
     local targetPlayer = target and target:ToPlayer()
     if not player:IsBot() then
         print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_DAMAGE " .. inspect({
@@ -496,6 +512,7 @@ end)
 -- Hook: Track player desertion and total play time when leaving
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
     if player:IsBot() then return end
+    if not isMatchStarted(player) then return end
 
     local stats = GetStats(player, instanceId)
     if not stats then return end
