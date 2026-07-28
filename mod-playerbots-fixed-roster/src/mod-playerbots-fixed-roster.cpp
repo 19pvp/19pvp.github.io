@@ -269,7 +269,6 @@ public:
         if (!result)
             return;
 
-        uint32 granted = 0;
         do
         {
             Field* fields = result->Fetch();
@@ -285,12 +284,9 @@ public:
                 continue;
 
             uint32 const missing = item.amount - current;
-            if (player->StoreNewItemInBestSlots(item.item, missing))
-                granted += missing;
+            player->StoreNewItemInBestSlots(item.item, missing);
         } while (result->NextRow());
 
-        if (granted)
-            LOG_INFO("playerbots", "[WsgFixedBots] Granted {} configured item(s) to {}.", granted, player->GetName());
     }
 
     void GrantConfiguredItemsToOnlineBots()
