@@ -649,13 +649,19 @@ end)
 
 RegisterServerEvent(ADDON_EVENT_ON_MESSAGE, function(event, sender, type, prefix, msg, target)
     if prefix == "PVP19_INIT" then
+        print("[PVP19 DEBUG] received " .. tostring(prefix) .. " / " .. tostring(msg))
+    end
+
+    if prefix == "PVP19_INIT" then
         if not sender then
             return false
         end
 
         local addonVersion = string.match(msg or "", "^VERSION:([%d%.]+)$")
         local response = addonVersion == PVP19_ADDON_VERSION and "SUPPORTED:" or "UPDATE_REQUIRED:"
-        sender:SendAddonMessage("PVP19_INIT", response .. PVP19_SERVER_ID .. ":" .. PVP19_ADDON_VERSION, 7, sender)
+        local responseMessage = response .. PVP19_SERVER_ID .. ":" .. PVP19_ADDON_VERSION
+        print("[PVP19 DEBUG] sending PVP19_INIT / " .. responseMessage .. " to " .. sender:GetName())
+        sender:SendAddonMessage("PVP19_INIT", responseMessage, 7, sender)
         return false -- Suppress message forwarding
     elseif prefix == "PVP19_QUEUE" then
         local arenaSlot = tonumber(msg)
