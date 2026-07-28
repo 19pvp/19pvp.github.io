@@ -52,7 +52,10 @@ local SHIELD_SPELLS = {
 -- a bit mask, so every rank and every player spell is handled automatically.
 local MECHANIC_CHARM = 1
 local MECHANIC_DISORIENTED = 2
+local MECHANIC_DISARM = 3
+local MECHANIC_DISTRACT = 4
 local MECHANIC_FEAR = 5
+local MECHANIC_GRIP = 6
 local MECHANIC_SILENCE = 9
 local MECHANIC_SLEEP = 10
 local MECHANIC_STUN = 12
@@ -66,7 +69,52 @@ local MECHANIC_SAPPED = 30
 local MECHANIC_ROOT = 7
 local MECHANIC_SLOW_ATTACK = 8
 local MECHANIC_SNARE = 11
+local MECHANIC_BLEED = 15
+local MECHANIC_BANDAGE = 16
+local MECHANIC_SHIELD = 19
+local MECHANIC_MOUNT = 21
+local MECHANIC_INFECTED = 22
+local MECHANIC_TURN = 23
+local MECHANIC_INVULNERABILITY = 25
+local MECHANIC_INTERRUPT = 26
 local MECHANIC_DAZE = 27
+local MECHANIC_DISCOVERY = 28
+local MECHANIC_IMMUNE_SHIELD = 29
+local MECHANIC_ENRAGED = 31
+
+local MECHANIC_NAMES = {
+    [MECHANIC_CHARM] = "CHARM",
+    [MECHANIC_DISORIENTED] = "DISORIENTED",
+    [MECHANIC_DISARM] = "DISARM",
+    [MECHANIC_DISTRACT] = "DISTRACT",
+    [MECHANIC_FEAR] = "FEAR",
+    [MECHANIC_GRIP] = "GRIP",
+    [MECHANIC_ROOT] = "ROOT",
+    [MECHANIC_SLOW_ATTACK] = "SLOW_ATTACK",
+    [MECHANIC_SILENCE] = "SILENCE",
+    [MECHANIC_SLEEP] = "SLEEP",
+    [MECHANIC_SNARE] = "SNARE",
+    [MECHANIC_STUN] = "STUN",
+    [MECHANIC_FREEZE] = "FREEZE",
+    [MECHANIC_KNOCKOUT] = "KNOCKOUT",
+    [MECHANIC_BLEED] = "BLEED",
+    [MECHANIC_BANDAGE] = "BANDAGE",
+    [MECHANIC_POLYMORPH] = "POLYMORPH",
+    [MECHANIC_BANISH] = "BANISH",
+    [MECHANIC_SHIELD] = "SHIELD",
+    [MECHANIC_SHACKLE] = "SHACKLE",
+    [MECHANIC_MOUNT] = "MOUNT",
+    [MECHANIC_INFECTED] = "INFECTED",
+    [MECHANIC_TURN] = "TURN",
+    [MECHANIC_HORROR] = "HORROR",
+    [MECHANIC_INVULNERABILITY] = "INVULNERABILITY",
+    [MECHANIC_INTERRUPT] = "INTERRUPT",
+    [MECHANIC_DAZE] = "DAZE",
+    [MECHANIC_DISCOVERY] = "DISCOVERY",
+    [MECHANIC_IMMUNE_SHIELD] = "IMMUNE_SHIELD",
+    [MECHANIC_SAPPED] = "SAPPED",
+    [MECHANIC_ENRAGED] = "ENRAGED",
+}
 
 local HARD_CC_MECHANICS = {
     [MECHANIC_CHARM] = true,
@@ -100,6 +148,16 @@ end
 local function hasMechanic(mechanicMask, mechanic)
     local numericMask = mechanicMaskToNumber(mechanicMask)
     return numericMask and math.floor(numericMask / (2 ^ mechanic)) % 2 == 1
+end
+
+local function getMechanicNames(mechanicMask)
+    local mechanics = {}
+    for mechanic, name in pairs(MECHANIC_NAMES) do
+        if hasMechanic(mechanicMask, mechanic) then
+            table.insert(mechanics, name)
+        end
+    end
+    return mechanics
 end
 
 local function getCCType(spellId)
@@ -216,11 +274,16 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, s
         local spellId = spell:GetEntry()
         local target = spell:GetTarget()
         local targetPlayer = target and target:ToPlayer()
+        local spellInfo = GetSpellInfo(spellId)
+        local mechanicMask = spellInfo and spellInfo:GetAllEffectsMechanicMask()
+        local mechanicMaskValue = mechanicMaskToNumber(mechanicMask)
 
         print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_SPELL_CAST " .. inspect({
             player = player:GetName(),
             spellId = spellId,
             target = targetPlayer and targetPlayer:GetName() or nil,
+            mechanicMask = mechanicMaskValue,
+            mechanics = getMechanicNames(mechanicMaskValue),
             skipCheck = skipCheck,
             recognizedDispel = DISPEL_PROTECTIVE_SPELLS[spellId] or false,
         }))
