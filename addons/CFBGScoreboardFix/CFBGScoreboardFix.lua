@@ -156,6 +156,122 @@ local function GetPVPBattlegroundButton(index)
     return _G["BattlegroundType" .. index] or _G["BattlefieldZone" .. index]
 end
 
+local pvpQueueStatuses = {}
+local pvpQueueRequestedArenaSlots = {}
+local pvpQueueStatusIcons = {}
+
+local function EnsurePVPQueueStatusIcon(row)
+    if not row then
+        return nil
+    end
+
+    if pvpQueueStatusIcons[row] then
+        return pvpQueueStatusIcons[row]
+    end
+
+    local icon = CreateFrame("Button", nil, row)
+    pvpQueueStatusIcons[row] = icon
+    icon:SetSize(15, 15)
+    icon:SetPoint("LEFT", row, "LEFT", 0, 0)
+    icon:SetFrameLevel(row:GetFrameLevel() + 5)
+
+    local texture = icon:CreateTexture(nil, "ARTWORK")
+    texture:SetAllPoints(icon)
+    texture:SetTexCoord(0, 1, 0, 1)
+    icon.texture = texture
+
+    icon:SetScript("OnEnter", function(self)
+        if not self.CFBGQueueTooltip or not GameTooltip then
+            return
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(self.CFBGQueueTooltip)
+        GameTooltip:Show()
+    end)
+    icon:SetScript("OnLeave", function()
+        if GameTooltip then
+            GameTooltip:Hide()
+        end
+    end)
+    icon:SetScript("OnClick", function(self, mouseButton)
+        local parent = self:GetParent()
+        local onClick = parent and parent:GetScript("OnClick")
+        if onClick then
+            onClick(parent, mouseButton)
+        end
+    end)
+
+    return icon
+end
+
+local function SetPVPQueueStatus(status, arenaSlot)
+    if arenaSlot == nil then
+        for slot = 0, 1 do
+            SetPVPQueueStatus(nil, slot)
+        end
+        return
+    end
+
+    pvpQueueStatuses[arenaSlot] = status
+    if status ~= "queued" and status ~= "confirm" then
+        local row = GetPVPBattlegroundButton(arenaSlot + 2)
+        local icon = row and pvpQueueStatusIcons[row]
+        if icon then
+            icon:Hide()
+        end
+        return
+    end
+
+    local rowIndex = arenaSlot + 2
+    local row = GetPVPBattlegroundButton(rowIndex)
+    local icon = EnsurePVPQueueStatusIcon(row)
+    if not icon then
+        return
+    end
+
+    if status == "confirm" then
+        icon.texture:ClearAllPoints()
+        icon.texture:SetSize(24, 24)
+        icon.texture:SetPoint("CENTER", icon, "CENTER", 4, 0)
+        icon.texture:SetTexture("Interface\\CharacterFrame\\UI-StateIcon")
+        icon.texture:SetTexCoord(0.5, 1, 0, 0.5)
+        icon.CFBGQueueTooltip = "Ready to Enter"
+    else
+        icon.texture:ClearAllPoints()
+        icon.texture:SetSize(18, 18)
+        icon.texture:SetPoint("CENTER", icon, "CENTER")
+        icon.texture:SetTexture("Interface\\PVPFrame\\PVP-ArenaPoints-Icon")
+        icon.texture:SetTexCoord(0, 1, 0, 1)
+        icon.CFBGQueueTooltip = "In Queue"
+    end
+
+    icon:Show()
+end
+
+local function RefreshPVPQueueStatus()
+    if type(GetBattlefieldStatus) ~= "function" then
+        return
+    end
+
+    local foundSlots = {}
+    local maxQueues = MAX_BATTLEFIELD_QUEUES or 3
+    for index = 1, maxQueues do
+        local ok, status, _, _, _, _, teamSize = pcall(GetBattlefieldStatus, index)
+        if ok and (status == "queued" or status == "confirm") then
+            if teamSize == 2 or teamSize == 3 then
+                SetPVPQueueStatus(status, teamSize - 2)
+                foundSlots[teamSize - 2] = true
+            end
+        end
+    end
+
+    for slot = 0, 1 do
+        if not foundSlots[slot] then
+            SetPVPQueueStatus(nil, slot)
+        end
+    end
+end
+
 local function SetPVPBattlegroundButtonText(button, text)
     if button.title then
         button.title:SetText(text)
@@ -271,10 +387,25 @@ UpdatePVPQueueJoinButton = function()
 
     if pvpQueueArenaSlot then
         joinButton:SetScript("OnClick", function()
-            if JoinSkirmish then
-                JoinSkirmish(pvpQueueArenaSlot)
-                HideUIPanel(frame)
+            local ok
+            if type(JoinSkirmish) == "function" then
+                ok = pcall(JoinSkirmish, pvpQueueArenaSlot)
+            elseif type(SendAddonMessage) == "function" then
+                local playerName = UnitName and UnitName("player")
+                if not playerName then
+                    return
+                end
+                ok = pcall(SendAddonMessage, "CFBG_QUEUE", tostring(pvpQueueArenaSlot), "WHISPER", playerName)
+            else
+                return
             end
+
+            if not ok then
+                return
+            end
+
+            pvpQueueRequestedArenaSlots[pvpQueueArenaSlot] = true
+            SetPVPQueueStatus("queued", pvpQueueArenaSlot)
         end)
         joinButton:Enable()
         if groupJoinButton then
@@ -314,7 +445,8 @@ local function ApplyPVPQueueLayout()
     for index = 2, 3 do
         local button = GetPVPBattlegroundButton(index)
         button.BGindex = nil
-        button.CFBGArenaSlot = index - 1
+        -- Core arena slots are zero-based: 0 = 2v2, 1 = 3v3.
+        button.CFBGArenaSlot = index - 2
         button.localizedName = index == 2 and "2v2" or "3v3"
         SetPVPBattlegroundButtonText(button, button.localizedName)
         button:SetScript("OnClick", SelectPVPQueueOption)
@@ -337,6 +469,7 @@ local function ApplyPVPQueueLayout()
     UpdatePVPQueueSelection()
     UpdatePVPQueueJoinButton()
     UpdatePVPQueueDescription()
+    RefreshPVPQueueStatus()
 end
 
 local function SetupPVPQueueUI()
@@ -369,14 +502,14 @@ end
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:RegisterEvent("UPDATE_BATTLEFIELD_STATUS")
 frame:RegisterEvent("CHAT_MSG_ADDON")
 
 frame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
-        -- DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Scoreboard Fix Loaded!|r")
-
         SetupArenaTeamUI()
         SetupPVPQueueUI()
+        RefreshPVPQueueStatus()
         
         -- Hook the scoreboard update securely
         if hooksecurecall then
@@ -392,7 +525,6 @@ frame:SetScript("OnEvent", function(self, event, ...)
         -- Hook the scoreboard opening to automatically request a data sync from the server
         if WorldStateScoreFrame then
             WorldStateScoreFrame:HookScript("OnShow", function()
-                -- DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Sending sync request to server...|r")
                 SendAddonMessage("CFBG_SYNC", "REQ", "BATTLEGROUND")
             end)
         end
@@ -400,6 +532,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
     elseif event == "PLAYER_ENTERING_WORLD" then
         SetupArenaTeamUI()
         SetupPVPQueueUI()
+        RefreshPVPQueueStatus()
 
         wipe(CFBG_ScoreboardBots)
         wipe(CFBG_HordePlayers)
@@ -407,9 +540,17 @@ frame:SetScript("OnEvent", function(self, event, ...)
         
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, message = ...
-        if prefix == "CFBG_SYNC" then
-            -- DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[CFBG Addon] Received sync payload:|r " .. tostring(message))
-            
+        if prefix == "CFBG_QUEUE" then
+            local requestedSlot = string.match(message or "", "^REQUESTED:(%d+)$")
+            if requestedSlot then
+                local arenaSlot = tonumber(requestedSlot)
+                pvpQueueRequestedArenaSlots[arenaSlot] = true
+                SetPVPQueueStatus("queued", arenaSlot)
+            elseif string.match(message or "", "^ERROR") then
+                wipe(pvpQueueRequestedArenaSlots)
+                SetPVPQueueStatus(nil)
+            end
+        elseif prefix == "CFBG_SYNC" then
             -- Split payload: "bot1,bot2;hordeplayer1,hordeplayer2;allianceplayer1,allianceplayer2"
             local botsSection, hordeSection, allianceSection = string.match(message, "^([^;]*);?([^;]*);?(.*)$")
             
@@ -438,5 +579,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
                 WorldStateScoreFrame_Update()
             end
         end
+    elseif event == "UPDATE_BATTLEFIELD_STATUS" then
+        RefreshPVPQueueStatus()
     end
 end)
