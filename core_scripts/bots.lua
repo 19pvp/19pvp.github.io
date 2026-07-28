@@ -646,7 +646,25 @@ RegisterBGEvent(BG_EVENT_ON_START, function(event, bg, bgTypeIdVal, instanceId)
 end)
 
 RegisterServerEvent(ADDON_EVENT_ON_MESSAGE, function(event, sender, type, prefix, msg, target)
-    if prefix == "CFBG_SYNC" then
+    if prefix == "CFBG_QUEUE" then
+        local arenaSlot = tonumber(msg)
+        if not arenaSlot or arenaSlot < 0 or arenaSlot > 1 or arenaSlot ~= math.floor(arenaSlot) then
+            sender:SendAddonMessage("CFBG_QUEUE", "ERROR: invalid arena slot", 7, sender)
+            return false
+        end
+
+        local ok, queued = pcall(sender.JoinArenaQueue, sender, arenaSlot, false, false)
+        if not ok then
+            print("[CFBG Queue] Arena queue request failed " .. inspect({ player = sender:GetName(), error = queued }))
+            sender:SendAddonMessage("CFBG_QUEUE", "ERROR: server queue call failed", 7, sender)
+        elseif queued then
+            print("[CFBG Queue] Arena queue request sent " .. inspect({ player = sender:GetName(), arenaSlot = arenaSlot }))
+            sender:SendAddonMessage("CFBG_QUEUE", "REQUESTED:" .. tostring(arenaSlot), 7, sender)
+        else
+            sender:SendAddonMessage("CFBG_QUEUE", "ERROR: server rejected request", 7, sender)
+        end
+        return false -- Suppress message forwarding
+    elseif prefix == "CFBG_SYNC" then
         local map = sender:GetMap()
         if map then
             SyncBGPlayerData(map)
