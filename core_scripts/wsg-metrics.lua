@@ -417,43 +417,38 @@ end)
 -- Hook: Healing on friendly flag carriers
 RegisterPlayerEvent(PLAYER_EVENT_ON_HEAL, function(event, player, target, heal)
     if player:IsBot() then return end
-
-    if player:InBattleground() and target:ToPlayer() then
-        local targetPlayer = target:ToPlayer()
-        if player:GetGUID() ~= targetPlayer:GetGUID() then
-            local stats = GetStats(player)
-            if stats then
-                -- If friendly target has either flag, track it as healing on friendly flag carrier
-                if isFlagCarrier(targetPlayer) then
-                    stats.healsOnFC = stats.healsOnFC + heal
-                end
-            end
-        end
+    if not player:InBattleground() then return end
+    local targetPlayer = target and target:ToPlayer()
+    if not targetPlayer then return end
+    if player:GetGUID() == targetPlayer:GetGUID() then return end
+    local stats = GetStats(player)
+    if not stats then return end
+    -- If friendly target has either flag, track it as healing on friendly flag carrier
+    if isFlagCarrier(targetPlayer) then
+        stats.healsOnFC = stats.healsOnFC + heal
     end
 end)
 
 -- Hook: Damage dealt & damage taken tracking
 RegisterPlayerEvent(PLAYER_EVENT_ON_DAMAGE, function(event, player, target, damage)
-    if player:InBattleground() and target:ToPlayer() then
-        local targetPlayer = target:ToPlayer()
+    if not player:InBattleground() then return end
+    local targetPlayer = target and target:ToPlayer()
+    if not targetPlayer then return end
 
-        -- Track damage taken by the victim (only if target is not a bot)
+    -- Track damage taken by the victim (only if target is not a bot)
         if not targetPlayer:IsBot() then
             local victimStats = GetStats(targetPlayer)
             if victimStats then
                 victimStats.damageTaken = victimStats.damageTaken + damage
             end
-        end
+    end
 
-        -- Track damage done specifically to EFC by the attacker (only if attacker is not a bot)
-        if not player:IsBot() then
-            if isFlagCarrier(targetPlayer) then
-                local stats = GetStats(player)
-                if stats then
-                    stats.damageOnEFC = stats.damageOnEFC + damage
-                end
-            end
-        end
+    -- Track damage done specifically to EFC by the attacker (only if attacker is not a bot)
+    if player:IsBot() then return end
+    local stats = GetStats(player)
+    if not stats then return end
+    if isFlagCarrier(targetPlayer) then
+        stats.damageOnEFC = stats.damageOnEFC + damage
     end
 end)
 
