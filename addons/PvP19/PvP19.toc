@@ -1,7 +1,7 @@
 ## Interface: 30300
-## Title: CFBG Scoreboard Fix
-## Notes: Fixes player faction icons and team representation on the Battleground scoreboard for cross-faction BGs.
+## Title: PvP19
+## Notes: Battleground and arena improvements for PvP19.
 ## Author: Antigravity
-## Version: 1.0
+## Version: 1.1
 
-CFBGScoreboardFix.lua
+PvP19.lua

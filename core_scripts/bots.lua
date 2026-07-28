@@ -49,6 +49,8 @@ local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
 local pendingInvites = {}
 local activeBGInstances = {}
+local PVP19_SERVER_ID = "19PVP"
+local PVP19_ADDON_VERSION = "1.1"
 
 local restoredInstances = {}
 for _, player in ipairs(GetPlayersInWorld()) do
@@ -422,7 +424,7 @@ local function SyncBGPlayerData(map)
         if p:GetBgTeamId() == 1 then table.insert(hordePlayers, name) else table.insert(alliancePlayers, name) end
     end
     local payload = table.concat(bots, ",") .. ";" .. table.concat(hordePlayers, ",") .. ";" .. table.concat(alliancePlayers, ",")
-    for _, p in ipairs(realPlayers) do p:SendAddonMessage("CFBG_SYNC", payload, 7, p) end
+    for _, p in ipairs(realPlayers) do p:SendAddonMessage("PVP19_SYNC", payload, 7, p) end
 end
 
 local function BalanceBGBots(map, bg, triggerEvent, playerName)
@@ -646,25 +648,34 @@ RegisterBGEvent(BG_EVENT_ON_START, function(event, bg, bgTypeIdVal, instanceId)
 end)
 
 RegisterServerEvent(ADDON_EVENT_ON_MESSAGE, function(event, sender, type, prefix, msg, target)
-    if prefix == "CFBG_QUEUE" then
+    if prefix == "PVP19_INIT" then
+        if not sender then
+            return false
+        end
+
+        local addonVersion = string.match(msg or "", "^VERSION:([%d%.]+)$")
+        local response = addonVersion == PVP19_ADDON_VERSION and "SUPPORTED:" or "UPDATE_REQUIRED:"
+        sender:SendAddonMessage("PVP19_INIT", response .. PVP19_SERVER_ID .. ":" .. PVP19_ADDON_VERSION, 7, sender)
+        return false -- Suppress message forwarding
+    elseif prefix == "PVP19_QUEUE" then
         local arenaSlot = tonumber(msg)
         if not arenaSlot or arenaSlot < 0 or arenaSlot > 1 or arenaSlot ~= math.floor(arenaSlot) then
-            sender:SendAddonMessage("CFBG_QUEUE", "ERROR: invalid arena slot", 7, sender)
+            sender:SendAddonMessage("PVP19_QUEUE", "ERROR: invalid arena slot", 7, sender)
             return false
         end
 
         local ok, queued = pcall(sender.JoinArenaQueue, sender, arenaSlot, false, false)
         if not ok then
-            print("[CFBG Queue] Arena queue request failed " .. inspect({ player = sender:GetName(), error = queued }))
-            sender:SendAddonMessage("CFBG_QUEUE", "ERROR: server queue call failed", 7, sender)
+            print("[PVP19 Queue] Arena queue request failed " .. inspect({ player = sender:GetName(), error = queued }))
+            sender:SendAddonMessage("PVP19_QUEUE", "ERROR: server queue call failed", 7, sender)
         elseif queued then
-            print("[CFBG Queue] Arena queue request sent " .. inspect({ player = sender:GetName(), arenaSlot = arenaSlot }))
-            sender:SendAddonMessage("CFBG_QUEUE", "REQUESTED:" .. tostring(arenaSlot), 7, sender)
+            print("[PVP19 Queue] Arena queue request sent " .. inspect({ player = sender:GetName(), arenaSlot = arenaSlot }))
+            sender:SendAddonMessage("PVP19_QUEUE", "REQUESTED:" .. tostring(arenaSlot), 7, sender)
         else
-            sender:SendAddonMessage("CFBG_QUEUE", "ERROR: server rejected request", 7, sender)
+            sender:SendAddonMessage("PVP19_QUEUE", "ERROR: server rejected request", 7, sender)
         end
         return false -- Suppress message forwarding
-    elseif prefix == "CFBG_SYNC" then
+    elseif prefix == "PVP19_SYNC" then
         local map = sender:GetMap()
         if map then
             SyncBGPlayerData(map)
