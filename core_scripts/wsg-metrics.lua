@@ -347,6 +347,15 @@ end)
 
 -- Hook: Interrupt attempts resolved by the core
 RegisterPlayerEvent(PLAYER_EVENT_ON_INTERRUPT_CAST, function(event, interrupter, target, targetWasCasting, successful)
+    if not interrupter:IsBot() and not target:IsBot() then
+        print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_INTERRUPT_CAST " .. inspect({
+            interrupter = interrupter:GetName(),
+            target = target:GetName(),
+            targetWasCasting = targetWasCasting,
+            successful = successful,
+        }))
+    end
+
     if not interrupter:InBattleground() or not target:InBattleground() then return end
     if interrupter:GetMapId() ~= WSG_MAP_ID or target:GetMapId() ~= WSG_MAP_ID then return end
     if not isMatchStarted(interrupter) or not isMatchStarted(target) then return end
