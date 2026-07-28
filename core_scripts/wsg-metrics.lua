@@ -203,7 +203,6 @@ local function GetStats(player, instanceId)
             hardCCDuration = 0,
             softCCCount = 0,
             softCCDuration = 0,
-            healsDone = 0,
             absorbsDone = 0,
             healsOnFC = 0,
             flagCarryTime = 0,
@@ -401,7 +400,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
     end
 end)
 
--- Hook: Heals done to other players (including heals on friendly flag carrier)
+-- Hook: Healing on friendly flag carriers
 RegisterPlayerEvent(PLAYER_EVENT_ON_HEAL, function(event, player, target, heal)
     if player:IsBot() then return end
 
@@ -410,8 +409,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_HEAL, function(event, player, target, heal)
         if player:GetGUID() ~= targetPlayer:GetGUID() then
             local stats = GetStats(player)
             if stats then
-                stats.healsDone = stats.healsDone + heal
-
                 -- If friendly target has either flag, track it as healing on friendly flag carrier
                 if isFlagCarrier(targetPlayer) then
                     stats.healsOnFC = stats.healsOnFC + heal
