@@ -343,31 +343,33 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
     }))
 
     if ccType then
-        -- ensure we can't re-apply and wrongly reset startTime here
-        activeCCs[tostring(aura)] = {
-            caster = tostring(casterPlayer:GetGUID()),
-            type = ccType,
-            startTime = GetCurrTime(),
-        }
+        -- Reapplying an existing aura refreshes it and fires OnAuraApply again
+        -- without an intervening OnAuraRemove. Keep the original start time.
+        local auraKey = tostring(aura)
+        if not activeCCs[auraKey] then
+            activeCCs[auraKey] = {
+                caster = tostring(casterPlayer:GetGUID()),
+                type = ccType,
+                startTime = GetCurrTime(),
+            }
+        end
     end
 
     -- Shield absorbs estimation
     if shieldAmount then
         local instanceId = casterPlayer:GetBattlegroundId()
 
-        if player:GetGUID() ~= casterPlayer:GetGUID() then
-            -- Attributed to the caster
-            local stats = GetStats(casterPlayer, instanceId)
-            if stats then
-                stats.absorbsDone = stats.absorbsDone + shieldAmount
-            end
+        -- Attributed to the caster
+        local stats = GetStats(casterPlayer, instanceId)
+        if stats then
+            stats.absorbsDone = stats.absorbsDone + shieldAmount
+        end
 
-            -- Attributed to the target/victim
-            if not player:IsBot() then
-                local targetStats = GetStats(player, instanceId)
-                if targetStats then
-                    targetStats.damageTaken = targetStats.damageTaken + shieldAmount
-                end
+        -- Attributed to the target/victim
+        if not player:IsBot() then
+            local targetStats = GetStats(player, instanceId)
+            if targetStats then
+                targetStats.damageTaken = targetStats.damageTaken + shieldAmount
             end
         end
     end
@@ -377,8 +379,9 @@ end)
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, remove_mode)
     local auraKey = tostring(aura)
     local entry = activeCCs[auraKey]
+    local now = GetCurrTime()
     if entry then
-        local duration = GetCurrTime() - entry.startTime
+        local duration = now - entry.startTime
         if duration > 0 then
             local instanceId = player:GetBattlegroundId()
             local stats = instanceId and matchStats[instanceId] and matchStats[instanceId][entry.caster]
@@ -396,20 +399,18 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
     end
 
     local spellId = aura:GetAuraId()
-    if spellId then
-        if WSG_FLAG_AURAS[spellId] then
-            local guid = tostring(player:GetGUID())
-            local startTime = flagCarryStartTimes[guid]
-            if startTime then
-                local elapsed = GetCurrTime() - startTime
-                if elapsed > 0 and not player:IsBot() then
-                    local stats = GetStats(player)
-                    if stats then
-                        stats.flagCarryTime = stats.flagCarryTime + elapsed
-                    end
+    if spellId and WSG_FLAG_AURAS[spellId] then
+        local guid = tostring(player:GetGUID())
+        local startTime = flagCarryStartTimes[guid]
+        if startTime then
+            local elapsed = now - startTime
+            if elapsed > 0 and not player:IsBot() then
+                local stats = GetStats(player)
+                if stats then
+                    stats.flagCarryTime = stats.flagCarryTime + elapsed
                 end
-                flagCarryStartTimes[guid] = nil
             end
+            flagCarryStartTimes[guid] = nil
         end
     end
 end)
