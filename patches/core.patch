@@ -912,3 +912,20 @@ index 68f028a95..86c2886b4 100644
      }
  
      // check trade slot case (last, for allow catch any another cast problems)
+diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
+index 0f71208b0..0d00a18eb 100644
+--- a/src/server/game/Spells/SpellInfoCorrections.cpp
++++ b/src/server/game/Spells/SpellInfoCorrections.cpp
+@@ -40,6 +40,12 @@ void SpellMgr::LoadSpellInfoCorrections()
+ {
+     uint32 oldMSTime = getMSTime();
+ 
++    // Thunder Clap must not trigger weapon enchants.
++    ApplySpellFix({ 6343, 8198, 8204, 8205, 11580, 11581, 25264, 47501, 47502 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->AttributesEx4 |= SPELL_ATTR4_SUPPRESS_WEAPON_PROCS;
++    });
++
+     ApplySpellFix({
+         467,    // Thorns (Rank 1)
+         782,    // Thorns (Rank 2)
