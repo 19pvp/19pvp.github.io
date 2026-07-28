@@ -278,7 +278,7 @@ index 32e9bec91..3dc8b3e0d 100644
      void SendToOne(WorldPacket* data, ObjectGuid who);
      void SendToAllWatching(WorldPacket* data);
 diff --git a/src/server/game/Entities/Player/Player.cpp b/src/server/game/Entities/Player/Player.cpp
-index f2b3207c7..b8680782f 100644
+index f2b3207c7..8ba25670e 100644
 --- a/src/server/game/Entities/Player/Player.cpp
 +++ b/src/server/game/Entities/Player/Player.cpp
 @@ -3547,7 +3547,7 @@ void Player::RemoveCategoryCooldown(uint32 cat)
@@ -334,6 +334,20 @@ index f2b3207c7..b8680782f 100644
      }
      else if (GetPositionZ() < GetMap()->GetMinHeight(GetPositionX(), GetPositionY()))
          TeleportTo(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, GetOrientation());
+@@ -10186,7 +10212,12 @@ void Player::LeaveAllArenaTeams(ObjectGuid guid)
+         {
+             ArenaTeam* arenaTeam = sArenaTeamMgr->GetArenaTeamById(arenaTeamId);
+             if (arenaTeam)
+-                arenaTeam->DelMember(guid, true);
++            {
++                if (arenaTeam->GetCaptain() == guid)
++                    arenaTeam->Disband();
++                else
++                    arenaTeam->DelMember(guid, true);
++            }
+         }
+     } while (result->NextRow());
+ }
 diff --git a/src/server/game/Entities/Player/PlayerUpdates.cpp b/src/server/game/Entities/Player/PlayerUpdates.cpp
 index 35ac03d79..21aa05f3c 100644
 --- a/src/server/game/Entities/Player/PlayerUpdates.cpp
@@ -585,7 +599,7 @@ index 65ad0e0c7..6137982cc 100644
  }
  
 diff --git a/src/server/game/Handlers/BattleGroundHandler.cpp b/src/server/game/Handlers/BattleGroundHandler.cpp
-index f9cbfac32..07fbd1d59 100644
+index f9cbfac32..81413cc68 100644
 --- a/src/server/game/Handlers/BattleGroundHandler.cpp
 +++ b/src/server/game/Handlers/BattleGroundHandler.cpp
 @@ -177,12 +177,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
@@ -627,6 +641,24 @@ index f9cbfac32..07fbd1d59 100644
                  _player->RemoveBattlegroundQueueId(playerBgQueueTypeId);
                  sBattlegroundMgr->GetBattlegroundQueue(playerBgQueueTypeId).RemovePlayer(_player->GetGUID(), true);
              }
+@@ -667,8 +661,6 @@ void WorldSession::HandleBattlefieldStatusOpcode(WorldPacket& /*recvData*/)
+ 
+ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
+ {
+-    LOG_DEBUG("network", "WORLD: CMSG_BATTLEMASTER_JOIN_ARENA");
+-
+     ObjectGuid guid; // arena Battlemaster guid
+     uint8 arenaslot; // 2v2, 3v3 or 5v5
+     uint8 asGroup;   // asGroup
+@@ -676,6 +668,8 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
+ 
+     recvData >> guid >> arenaslot >> asGroup >> isRated;
+ 
++    LOG_DEBUG("network", "WORLD: CMSG_BATTLEMASTER_JOIN_ARENA guid={} arenaslot={} asGroup={} isRated={}", guid.ToString(), arenaslot, asGroup, isRated);
++
+     // can't queue for rated without a group
+     if (isRated && !asGroup)
+         return;
 @@ -684,11 +678,6 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
      if (_player->InBattleground())
          return;
@@ -686,6 +718,25 @@ index 2193daaab..9d120cb43 100644
      if (channelId)
      {
          ChatChannelsEntry const* channel = sChatChannelsStore.LookupEntry(channelId);
+diff --git a/src/server/game/Handlers/CharacterHandler.cpp b/src/server/game/Handlers/CharacterHandler.cpp
+index 719bb4be1..ef7c05a87 100644
+--- a/src/server/game/Handlers/CharacterHandler.cpp
++++ b/src/server/game/Handlers/CharacterHandler.cpp
+@@ -635,14 +635,6 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recvData)
+         return;
+     }
+ 
+-    // is arena team captain
+-    if (sArenaTeamMgr->GetArenaTeamByCaptain(guid))
+-    {
+-        sScriptMgr->OnPlayerFailedDelete(guid, initAccountId);
+-        SendCharDelete(CHAR_DELETE_FAILED_ARENA_CAPTAIN);
+-        return;
+-    }
+-
+     if (CharacterCacheEntry const* playerData = sCharacterCache->GetCharacterCacheByGuid(guid))
+     {
+         accountId = playerData->AccountId;
 diff --git a/src/server/game/Handlers/MiscHandler.cpp b/src/server/game/Handlers/MiscHandler.cpp
 index da9480a6b..2bef671a3 100644
 --- a/src/server/game/Handlers/MiscHandler.cpp
