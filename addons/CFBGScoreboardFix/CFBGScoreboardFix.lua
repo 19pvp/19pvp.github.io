@@ -232,14 +232,14 @@ local function SetPVPQueueStatus(status, arenaSlot)
     if status == "confirm" then
         icon.texture:ClearAllPoints()
         icon.texture:SetSize(24, 24)
-        icon.texture:SetPoint("CENTER", icon, "CENTER", 4, 0)
+        icon.texture:SetPoint("CENTER", icon, "CENTER", 2, 0)
         icon.texture:SetTexture("Interface\\CharacterFrame\\UI-StateIcon")
         icon.texture:SetTexCoord(0.5, 1, 0, 0.5)
         icon.CFBGQueueTooltip = "Ready to Enter"
     else
         icon.texture:ClearAllPoints()
         icon.texture:SetSize(18, 18)
-        icon.texture:SetPoint("CENTER", icon, "CENTER")
+        icon.texture:SetPoint("CENTER", icon, "CENTER", 2, 0)
         icon.texture:SetTexture("Interface\\PVPFrame\\PVP-ArenaPoints-Icon")
         icon.texture:SetTexCoord(0, 1, 0, 1)
         icon.CFBGQueueTooltip = "In Queue"
