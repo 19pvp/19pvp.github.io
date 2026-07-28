@@ -611,13 +611,12 @@ frame:SetScript("OnEvent", function(self, event, ...)
         wipe(PVP19_AlliancePlayers)
         
     elseif event == "CHAT_MSG_ADDON" then
-        local prefix, message, channel = ...
+        local prefix, message = ...
         if prefix == PVP19_INIT_PREFIX then
-            if channel ~= "WHISPER" then
-                return
-            end
-
-            local status, serverId, serverVersion = string.match(message or "", "^(SUPPORTED|UPDATE_REQUIRED):([^:]+):([^:]+)$")
+            -- ALE may report a self-whisper response as WHISPER_INFORM or a numeric channel.
+            local handshakeMessage = string.gsub(message or "", "[%c%s]+$", "")
+            -- Lua patterns do not support regex alternation with '|'.
+            local status, serverId, serverVersion = string.match(handshakeMessage, "^([^:]+):([^:]+):([^:]+)$")
             if serverId ~= PVP19_SERVER_ID then
                 return
             end

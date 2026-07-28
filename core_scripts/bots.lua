@@ -181,7 +181,6 @@ CreateLuaEvent(function()
                         local teamId = pending.teamId
                         info.pending = nil
                         if AddBotToBattleground(bot, bg, teamId) then
-                            print("[WSG] Added logged-in bot to team " .. inspect({ bot = botName, team = teamNames[teamId] or teamId }))
                         end
                     elseif not bot and now - pending.lastAttemptAt >= 5000 then
                         local accepted = LoginFixedRosterBot(botName)
@@ -520,14 +519,11 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
     local playerGuidLow = player:GetGUIDLow()
 
     pendingInvites[playerGuidLow] = nil
-    print("[DEBUG ON_ENTER_BG] Hook fired " .. inspect({ player = playerName, isBot = isBot, mapId = mapId, instanceId = instanceId }))
-
     if isBot then return end
 
     CreateLuaEvent(function()
         local bg = GetBattleground(instanceId, bgTypeId)
         local map = GetMapById(mapId or 489, instanceId)
-        print("[DEBUG ON_ENTER_BG] Delayed check " .. inspect({ player = playerName, mapFound = (map ~= nil), bgFound = (bg ~= nil) }))
         if map and bg then
             BalanceBGBots(map, bg, "join", playerName)
             SyncBGPlayerData(map)
@@ -649,10 +645,6 @@ end)
 
 RegisterServerEvent(ADDON_EVENT_ON_MESSAGE, function(event, sender, type, prefix, msg, target)
     if prefix == "PVP19_INIT" then
-        print("[PVP19 DEBUG] received " .. tostring(prefix) .. " / " .. tostring(msg))
-    end
-
-    if prefix == "PVP19_INIT" then
         if not sender then
             return false
         end
@@ -660,7 +652,6 @@ RegisterServerEvent(ADDON_EVENT_ON_MESSAGE, function(event, sender, type, prefix
         local addonVersion = string.match(msg or "", "^VERSION:([%d%.]+)$")
         local response = addonVersion == PVP19_ADDON_VERSION and "SUPPORTED:" or "UPDATE_REQUIRED:"
         local responseMessage = response .. PVP19_SERVER_ID .. ":" .. PVP19_ADDON_VERSION
-        print("[PVP19 DEBUG] sending PVP19_INIT / " .. responseMessage .. " to " .. sender:GetName())
         sender:SendAddonMessage("PVP19_INIT", responseMessage, 7, sender)
         return false -- Suppress message forwarding
     elseif prefix == "PVP19_QUEUE" then
