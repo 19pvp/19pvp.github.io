@@ -315,10 +315,20 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         end
 
         local caster = aura:GetCaster()
+        local casterPlayer = caster and caster:ToPlayer()
+        local ccType = getCCType(spellId)
+        local shieldAmount = SHIELD_SPELLS[spellId]
+        print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_AURA_APPLY " .. inspect({
+            player = player:GetName(),
+            spellId = spellId,
+            caster = casterPlayer and casterPlayer:GetName() or nil,
+            hasCaster = caster ~= nil,
+            ccType = ccType,
+            shieldAmount = shieldAmount,
+        }))
         if not caster then return end
 
         -- Resolve owner if the caster is a pet/totem/summon
-        local casterPlayer = nil
         if caster:ToPlayer() then
             casterPlayer = caster:ToPlayer()
         elseif caster:GetOwner() and caster:GetOwner():ToPlayer() then
@@ -326,7 +336,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         end
         if not casterPlayer or casterPlayer:IsBot() then return end
 
-        local ccType = getCCType(spellId)
         if ccType then
             activeCCs[tostring(aura)] = {
                 caster = tostring(casterPlayer:GetGUID()),
@@ -336,7 +345,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         end
 
         -- Shield absorbs estimation
-        local shieldAmount = SHIELD_SPELLS[spellId]
         if shieldAmount then
             local instanceId = casterPlayer:GetBattlegroundId()
 
