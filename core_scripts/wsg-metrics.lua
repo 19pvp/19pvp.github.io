@@ -211,31 +211,58 @@ local function GetStats(player, instanceId)
     local guid = tostring(player:GetGUID())
     if not matchStats[instanceId][guid] then
         matchStats[instanceId][guid] = {
+            -- Display identity used by the payload and debug command.
             name = player:GetName(),
             playerGuid = guid,
+            -- Dispelled enemy buffs or friendly debuffs.
             dispelsOffensive = 0,
+            -- Dispelled friendly buffs or debuffs.
             dispelsDefensive = 0,
+            -- Interruptible player casts successfully stopped by this player.
             successfulInterrupts = 0,
+            -- Interrupt attempts received while this player was not casting.
             fakeCastInterrupts = 0,
+            -- Number of hard crowd-control effects applied by this player.
             hardCCCount = 0,
+            -- Total duration in milliseconds of hard crowd control applied.
             hardCCDuration = 0,
+            -- Number of soft crowd-control effects applied by this player.
             softCCCount = 0,
+            -- Total duration in milliseconds of soft crowd control applied.
             softCCDuration = 0,
+            -- Amount of damage absorbed by this player's shields.
             absorbsDone = 0,
+            -- Effective healing done to friendly flag carriers.
             healsOnFC = 0,
+            -- Total time spent carrying a Warsong flag, in milliseconds.
             flagCarryTime = 0,
+            -- Number of successful flag pickups by this player.
+            attemptsOnFlag = 0,
+            -- Damage dealt to enemy flag carriers.
             damageOnEFC = 0,
+            -- Damage received by this player, including absorbed damage.
             damageTaken = 0,
+            -- Native battleground killing-blow score.
             killingBlows = 0,
+            -- Native battleground death score.
             deaths = 0,
+            -- Native battleground honorable-kill score.
             honorableKills = 0,
+            -- Native battleground bonus-honor score.
             bonusHonor = 0,
+            -- Native battleground damage score.
             damageDone = 0,
+            -- Native battleground effective-healing score.
             healingDone = 0,
+            -- Native battleground flag-capture score.
             flagCaptures = 0,
+            -- Native battleground flag-return score.
             flagReturns = 0,
+            -- Whether the player left before the battleground ended.
             deserted = false,
+            -- Internal millisecond cursor for incremental play-time updates.
             _updateTime = GetCurrTime(),
+            -- Total active time in the battleground, in milliseconds.
             timePlayed = 0,
         }
     end
@@ -361,7 +388,14 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
     if not spellId then return end
     if WSG_FLAG_AURAS[spellId] then
         if not player:IsBot() then
-            flagCarryStartTimes[tostring(player:GetGUID())] = GetCurrTime()
+            local guid = tostring(player:GetGUID())
+            if not flagCarryStartTimes[guid] then
+                local stats = GetStats(player)
+                if stats then
+                    stats.attemptsOnFlag = stats.attemptsOnFlag + 1
+                end
+                flagCarryStartTimes[guid] = GetCurrTime()
+            end
         end
         print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_AURA_APPLY " .. inspect({
             player = player:GetName(),
