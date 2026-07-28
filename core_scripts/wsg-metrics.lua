@@ -5,6 +5,8 @@ print("[WSG Metrics] Loading wsg-metrics.lua script...")
 local matchStats = {}
 -- aura pointer string -> { caster = guidString, type = "HARD"|"SOFT", startTime = ms }
 local activeCCs = {}
+-- aura pointer string -> { caster = guidString, instanceId, effectIndex, initialAmount }
+local activeAbsorbs = {}
 -- playerGuidString -> flagCarryStartTime
 local flagCarryStartTimes = {}
 -- instanceId -> matchStartTime
@@ -40,12 +42,8 @@ local DISPEL_PROTECTIVE_SPELLS = {
     [8946] = true,  -- Cure Poison
 }
 
--- 2. Shield / Absorb Spells definition (filtered to level 19 starting spells)
-local SHIELD_SPELLS = {
-    [17] = 150,     -- Power Word: Shield (Rank 1)
-    [592] = 220,    -- Power Word: Shield (Rank 2)
-    [600] = 300,    -- Power Word: Shield (Rank 3)
-}
+-- 2. Damage-absorb aura effect type
+local SPELL_AURA_SCHOOL_ABSORB = 69
 
 -- 3. Crowd control mechanics
 -- These values are the core Mechanics enum values. SpellInfo exposes them as
@@ -158,6 +156,18 @@ local function getMechanicNames(mechanicMask)
         end
     end
     return mechanics
+end
+
+local function getAbsorbEffectIndex(spellId)
+    local spellInfo = GetSpellInfo(spellId)
+    if not spellInfo then return nil end
+
+    for effectIndex = 0, 2 do
+        if spellInfo:GetEffectApplyAuraName(effectIndex) == SPELL_AURA_SCHOOL_ABSORB then
+            return effectIndex
+        end
+    end
+    return nil
 end
 
 local function getCCType(spellId)
@@ -332,14 +342,16 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
     end
     if not casterPlayer or casterPlayer:IsBot() then return end
     local ccType = getCCType(spellId)
-    local shieldAmount = SHIELD_SPELLS[spellId]
+    local absorbEffectIndex = getAbsorbEffectIndex(spellId)
+    local absorbAmount = absorbEffectIndex and aura:GetEffectAmount(absorbEffectIndex)
     print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_AURA_APPLY " .. inspect({
         player = player:GetName(),
         spellId = spellId,
         caster = casterPlayer and casterPlayer:GetName() or nil,
         hasCaster = caster ~= nil,
         ccType = ccType,
-        shieldAmount = shieldAmount,
+        absorbEffectIndex = absorbEffectIndex,
+        absorbAmount = absorbAmount,
     }))
 
     if ccType then
@@ -355,22 +367,18 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         end
     end
 
-    -- Shield absorbs estimation
-    if shieldAmount then
+    -- Track the full absorb amount; credit only the consumed amount on remove.
+    if absorbEffectIndex and absorbAmount and absorbAmount > 0 then
         local instanceId = casterPlayer:GetBattlegroundId()
 
-        -- Attributed to the caster
-        local stats = GetStats(casterPlayer, instanceId)
-        if stats then
-            stats.absorbsDone = stats.absorbsDone + shieldAmount
-        end
-
-        -- Attributed to the target/victim
-        if not player:IsBot() then
-            local targetStats = GetStats(player, instanceId)
-            if targetStats then
-                targetStats.damageTaken = targetStats.damageTaken + shieldAmount
-            end
+        local auraKey = tostring(aura)
+        if not activeAbsorbs[auraKey] then
+            activeAbsorbs[auraKey] = {
+                caster = tostring(casterPlayer:GetGUID()),
+                instanceId = instanceId,
+                effectIndex = absorbEffectIndex,
+                initialAmount = absorbAmount,
+            }
         end
     end
 end)
@@ -396,6 +404,27 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
             end
         end
         activeCCs[auraKey] = nil
+    end
+
+    local absorbEntry = activeAbsorbs[auraKey]
+    if absorbEntry then
+        local remainingAmount = aura:GetEffectAmount(absorbEntry.effectIndex)
+        local absorbedAmount = math.max(absorbEntry.initialAmount - remainingAmount, 0)
+        if absorbedAmount > 0 then
+            local stats = matchStats[absorbEntry.instanceId]
+                and matchStats[absorbEntry.instanceId][absorbEntry.caster]
+            if stats then
+                stats.absorbsDone = stats.absorbsDone + absorbedAmount
+            end
+
+            if not player:IsBot() then
+                local targetStats = GetStats(player, absorbEntry.instanceId)
+                if targetStats then
+                    targetStats.damageTaken = targetStats.damageTaken + absorbedAmount
+                end
+            end
+        end
+        activeAbsorbs[auraKey] = nil
     end
 
     local spellId = aura:GetAuraId()

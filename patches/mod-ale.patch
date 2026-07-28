@@ -274,7 +274,7 @@ index a21640d..de4bd8b 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..194ebed 100644
+index c0acc01..c008574 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -107,6 +107,8 @@ luaL_Reg GlobalMethods[] =
@@ -322,7 +322,7 @@ index c0acc01..194ebed 100644
      { "GetItemCount", &LuaPlayer::GetItemCount },
      { "GetGroup", &LuaPlayer::GetGroup },
      { "GetGuild", &LuaPlayer::GetGuild },
-@@ -566,6 +576,15 @@ ALERegister<Player> PlayerMethods[] =
+@@ -566,6 +576,16 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
@@ -330,6 +330,7 @@ index c0acc01..194ebed 100644
 +    { "SetBotStrategy", &LuaPlayer::SetBotStrategy },
 +    { "HasBotStrategy", &LuaPlayer::HasBotStrategy },
 +    { "JoinBattlegroundQueue", &LuaPlayer::JoinBattlegroundQueue },
++    { "JoinArenaQueue", &LuaPlayer::JoinArenaQueue },
 +    { "InviteToBattleground", &LuaPlayer::InviteToBattleground },
 +    { "AddToBattleground", &LuaPlayer::AddToBattleground },
 +    { "RemoveFromBattlegroundQueue", &LuaPlayer::RemoveFromBattlegroundQueue },
@@ -338,7 +339,7 @@ index c0acc01..194ebed 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -625,6 +644,8 @@ ALERegister<Player> PlayerMethods[] =
+@@ -625,6 +645,8 @@ ALERegister<Player> PlayerMethods[] =
      { "GetBankItem", &LuaPlayer::GetBankItem },
      { "GetCreationTime", &LuaPlayer::GetCreationTime },
      { "SetCanFly", &LuaPlayer::SetCanFly },
@@ -347,7 +348,15 @@ index c0acc01..194ebed 100644
  
      // Boolean
      { "HasTankSpec", &LuaPlayer::HasTankSpec },
-@@ -1380,6 +1401,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1088,6 +1110,7 @@ ALERegister<Aura> AuraMethods[] =
+     { "GetMaxDuration", &LuaAura::GetMaxDuration },
+     { "GetAuraId", &LuaAura::GetAuraId },
+     { "GetStackAmount", &LuaAura::GetStackAmount },
++    { "GetEffectAmount", &LuaAura::GetEffectAmount },
+     { "GetOwner", &LuaAura::GetOwner },
+ 
+     // Setters
+@@ -1380,6 +1403,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -358,6 +367,14 @@ index c0acc01..194ebed 100644
  
      { NULL, NULL }
  };
+@@ -1481,6 +1508,7 @@ ALERegister<SpellInfo> SpellInfoMethods[] =
+     { "GetEffectMechanicMask", &LuaSpellInfo::GetEffectMechanicMask },
+     { "GetSpellMechanicMaskByEffectMask", &LuaSpellInfo::GetSpellMechanicMaskByEffectMask },
+     { "GetEffectMechanic", &LuaSpellInfo::GetEffectMechanic },
++    { "GetEffectApplyAuraName", &LuaSpellInfo::GetEffectApplyAuraName },
+     { "GetDispelMask", &LuaSpellInfo::GetDispelMask },
+     { "GetExplicitTargetMask", &LuaSpellInfo::GetExplicitTargetMask },
+     { "GetAuraState", &LuaSpellInfo::GetAuraState },
 diff --git a/src/LuaEngine/hooks/BattleGroundHooks.cpp b/src/LuaEngine/hooks/BattleGroundHooks.cpp
 index ec70cf5..390424d 100644
 --- a/src/LuaEngine/hooks/BattleGroundHooks.cpp
@@ -541,6 +558,46 @@ index 7649274..24e5f17 100644
  void ALE::OnLogout(Player* pPlayer)
  {
      START_HOOK(PLAYER_EVENT_ON_LOGOUT);
+diff --git a/src/LuaEngine/methods/AuraMethods.h b/src/LuaEngine/methods/AuraMethods.h
+index 3f63743..8db7423 100644
+--- a/src/LuaEngine/methods/AuraMethods.h
++++ b/src/LuaEngine/methods/AuraMethods.h
+@@ -7,6 +7,8 @@
+ #ifndef AURAMETHODS_H
+ #define AURAMETHODS_H
+ 
++#include "SpellAuraEffects.h"
++
+ /***
+  * The persistent effect of a [Spell] that remains on a [Unit] after the [Spell]
+  *   has been cast.
+@@ -103,6 +105,26 @@ namespace LuaAura
+         return 1;
+     }
+ 
++    /**
++     * Returns the current amount of an aura effect, including effects that are
++     * being removed and are no longer enabled.
++     *
++     * @param uint8 effect_index
++     * @return int32 amount
++     */
++    int GetEffectAmount(lua_State* L, Aura* aura)
++    {
++        uint8 effectIndex = ALE::CHECKVAL<uint8>(L, 2);
++        if (effectIndex >= MAX_SPELL_EFFECTS || !aura->HasEffect(effectIndex))
++        {
++            ALE::Push(L, 0);
++            return 1;
++        }
++
++        ALE::Push(L, aura->GetEffect(effectIndex)->GetForcedAmount());
++        return 1;
++    }
++
+     /**
+      * Returns the [Unit] that the [Aura] has been applied to.
+      *
 diff --git a/src/LuaEngine/methods/BattleGroundMethods.h b/src/LuaEngine/methods/BattleGroundMethods.h
 index 70e97bb..e32c8b1 100644
 --- a/src/LuaEngine/methods/BattleGroundMethods.h
@@ -952,7 +1009,7 @@ index cebb7bc..f836296 100644
      static int DBQueryAsync(lua_State* L, DatabaseWorkerPool<T>& db)
      {
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..ec312d3 100644
+index c39801f..40b9249 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -7,9 +7,20 @@
@@ -1115,7 +1172,7 @@ index c39801f..ec312d3 100644
      /**
       * Returns the [Player]s spent talent points in each talent tree for the active spec
       *
-@@ -5175,6 +5302,368 @@ namespace LuaPlayer
+@@ -5175,6 +5302,399 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
@@ -1246,6 +1303,37 @@ index c39801f..ec312d3 100644
 +        packet << uint32(bgTypeId);
 +        packet << uint32(0); // instanceId (0 for any)
 +        packet << uint8(joinAsGroup ? 1 : 0);
++
++        player->GetSession()->QueuePacket(new WorldPacket(packet));
++        ALE::Push(L, true);
++        return 1;
++    }
++
++    /**
++     * Queues the player for a solo skirmish arena.
++     *
++     * @param uint32 arenaSlot (0 = 2v2, 1 = 3v3, 2 = 5v5)
++     * @param bool joinAsGroup (default is false)
++     * @param bool isRated (default is false)
++     * @return bool request queued for processing
++     */
++    int JoinArenaQueue(lua_State* L, Player* player)
++    {
++        uint32 arenaSlot = ALE::CHECKVAL<uint32>(L, 2);
++        bool joinAsGroup = ALE::CHECKVAL<bool>(L, 3, false);
++        bool isRated = ALE::CHECKVAL<bool>(L, 4, false);
++
++        if (!player || arenaSlot > 2)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        WorldPacket packet(CMSG_BATTLEMASTER_JOIN_ARENA, 20);
++        packet << player->GetGUID();
++        packet << uint8(arenaSlot);
++        packet << uint8(joinAsGroup ? 1 : 0);
++        packet << uint8(isRated ? 1 : 0);
 +
 +        player->GetSession()->QueuePacket(new WorldPacket(packet));
 +        ALE::Push(L, true);
@@ -1485,6 +1573,36 @@ index c39801f..ec312d3 100644
  };
  #endif
 -
+diff --git a/src/LuaEngine/methods/SpellInfoMethods.h b/src/LuaEngine/methods/SpellInfoMethods.h
+index 3b69015..98cbb75 100644
+--- a/src/LuaEngine/methods/SpellInfoMethods.h
++++ b/src/LuaEngine/methods/SpellInfoMethods.h
+@@ -871,6 +871,25 @@ namespace LuaSpellInfo
+         ALE::Push(L, spell_info->GetEffectMechanic(static_cast<SpellEffIndex>(effIndex)));
+         return 1;
+     }
++
++    /**
++     * Returns the aura type applied by a specific [SpellInfo] effect.
++     *
++     * @param uint8 effIndex
++     * @return uint32 auraType
++     */
++    int GetEffectApplyAuraName(lua_State* L, SpellInfo* spell_info)
++    {
++        uint8 effIndex = ALE::CHECKVAL<uint8>(L, 2);
++        if (effIndex >= MAX_SPELL_EFFECTS)
++        {
++            ALE::Push(L, uint32(0));
++            return 1;
++        }
++
++        ALE::Push(L, uint32(spell_info->Effects[effIndex].ApplyAuraName));
++        return 1;
++    }
+     
+     /**
+      * Returns the dispel mask for the [SpellInfo].
 diff --git a/src/LuaEngine/methods/UnitMethods.h b/src/LuaEngine/methods/UnitMethods.h
 index 1ded5af..2e65eaa 100644
 --- a/src/LuaEngine/methods/UnitMethods.h
