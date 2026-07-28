@@ -207,10 +207,19 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, s
 
     if player:InBattleground() then
         local spellId = spell:GetEntry()
+        local target = spell:GetTarget()
+        local targetPlayer = target and target:ToPlayer()
+
+        print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_SPELL_CAST " .. inspect({
+            player = player:GetName(),
+            spellId = spellId,
+            target = targetPlayer and targetPlayer:GetName() or nil,
+            skipCheck = skipCheck,
+            recognizedDispel = DISPEL_PROTECTIVE_SPELLS[spellId] or false,
+        }))
+
         if DISPEL_PROTECTIVE_SPELLS[spellId] then
-            local target = spell:GetTarget()
-            if target and target:ToPlayer() then
-                local targetPlayer = target:ToPlayer()
+            if targetPlayer then
                 local stats = GetStats(player)
                 if stats then
                     if player:GetTeam() == targetPlayer:GetTeam() then
