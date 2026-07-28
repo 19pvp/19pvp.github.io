@@ -91,15 +91,22 @@ local SOFT_CC_MECHANICS = {
     [MECHANIC_DAZE] = true,
 }
 
+local function mechanicMaskToNumber(mechanicMask)
+    if not mechanicMask then return nil end
+    if type(mechanicMask) == "number" then return mechanicMask end
+    return tonumber(tostring(mechanicMask))
+end
+
 local function hasMechanic(mechanicMask, mechanic)
-    return mechanicMask and math.floor(mechanicMask / (2 ^ mechanic)) % 2 == 1
+    local numericMask = mechanicMaskToNumber(mechanicMask)
+    return numericMask and math.floor(numericMask / (2 ^ mechanic)) % 2 == 1
 end
 
 local function getCCType(spellId)
     local spellInfo = GetSpellInfo(spellId)
     if not spellInfo then return nil end
 
-    local mechanicMask = spellInfo:GetAllEffectsMechanicMask()
+    local mechanicMask = mechanicMaskToNumber(spellInfo:GetAllEffectsMechanicMask())
     for mechanic in pairs(HARD_CC_MECHANICS) do
         if hasMechanic(mechanicMask, mechanic) then return "HARD" end
     end
