@@ -32,6 +32,38 @@ index f21841c0b..d81b35cd2 100644
                      continue;
  
                  DirectoryEntry const entry = { dirPath, AppliedFileEntry::StateConvert("MODULE") };
+diff --git a/src/server/game/AI/CoreAI/PetAI.cpp b/src/server/game/AI/CoreAI/PetAI.cpp
+index 14bd1d530..bd9aeefb6 100644
+--- a/src/server/game/AI/CoreAI/PetAI.cpp
++++ b/src/server/game/AI/CoreAI/PetAI.cpp
+@@ -595,6 +595,27 @@ void PetAI::HandleReturnMovement()
+ 
+ void PetAI::SpellHit(Unit* caster, SpellInfo const* spellInfo)
+ {
++    Pet* pet = me->ToPet();
++    Unit* owner = pet ? pet->GetOwner() : nullptr;
++
++    // Treat taunts on hunter and warlock pets like an owner attack command.
++    // The normal follow command clears these flags, allowing the owner to recall the pet and cancel it.
++    if (pet && owner && owner->IsPlayer() &&
++        (pet->getPetType() == HUNTER_PET || (pet->getPetType() == SUMMON_PET && owner->IsClass(CLASS_WARLOCK, CLASS_CONTEXT_PET))) &&
++        (spellInfo->HasAura(SPELL_AURA_MOD_TAUNT) || spellInfo->HasEffect(SPELL_EFFECT_ATTACK_ME)) &&
++        me->CanCreatureAttack(caster))
++    {
++        me->GetCharmInfo()->SetForcedSpell(0);
++        me->GetCharmInfo()->SetForcedTargetGUID();
++        me->GetCharmInfo()->SetIsCommandAttack(true);
++        me->GetCharmInfo()->SetIsAtStay(false);
++        me->GetCharmInfo()->SetIsFollowing(false);
++        me->GetCharmInfo()->SetIsCommandFollow(false);
++        me->GetCharmInfo()->SetIsReturning(false);
++        DoAttack(caster, true);
++        return;
++    }
++
+     // Xinef: taunt behavior code
+     if (spellInfo->HasAura(SPELL_AURA_MOD_TAUNT) && !me->HasReactState(REACT_PASSIVE))
+     {
 diff --git a/src/server/game/Battlegrounds/ArenaTeam.cpp b/src/server/game/Battlegrounds/ArenaTeam.cpp
 index 8a0145246..a31277ec4 100644
 --- a/src/server/game/Battlegrounds/ArenaTeam.cpp
