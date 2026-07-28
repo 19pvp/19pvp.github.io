@@ -304,63 +304,69 @@ end)
 
 -- Hook: Aura application (for CC duration start, flag carrying, and shield absorbs)
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
-    if player:InBattleground() then
-        local spellId = aura:GetAuraId()
-        if not spellId then return end
-
-        -- Flag auras can have no caster, so track them before resolving the
-        -- caster used by CC and shield attribution.
-        if WSG_FLAG_AURAS[spellId] and not player:IsBot() then
+    if not player:InBattleground() then return end
+    local spellId = aura:GetAuraId()
+    if not spellId then return end
+    if WSG_FLAG_AURAS[spellId] then
+        if not player:IsBot() then
             flagCarryStartTimes[tostring(player:GetGUID())] = GetCurrTime()
         end
-
-        local caster = aura:GetCaster()
-        local casterPlayer = caster and caster:ToPlayer()
-        local ccType = getCCType(spellId)
-        local shieldAmount = SHIELD_SPELLS[spellId]
         print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_AURA_APPLY " .. inspect({
             player = player:GetName(),
             spellId = spellId,
-            caster = casterPlayer and casterPlayer:GetName() or nil,
-            hasCaster = caster ~= nil,
-            ccType = ccType,
-            shieldAmount = shieldAmount,
+            flag = WSG_FLAG_AURAS[spellId],
         }))
-        if not caster then return end
+        return
+    end
 
-        -- Resolve owner if the caster is a pet/totem/summon
-        if caster:ToPlayer() then
-            casterPlayer = caster:ToPlayer()
-        elseif caster:GetOwner() and caster:GetOwner():ToPlayer() then
-            casterPlayer = caster:GetOwner():ToPlayer()
-        end
-        if not casterPlayer or casterPlayer:IsBot() then return end
+    local caster = aura:GetCaster()
+    local casterPlayer = caster and caster:ToPlayer()
+    if not caster then return end
 
-        if ccType then
-            activeCCs[tostring(aura)] = {
-                caster = tostring(casterPlayer:GetGUID()),
-                type = ccType,
-                startTime = GetCurrTime(),
-            }
-        end
+    -- Resolve owner if the caster is a pet/totem/summon
+    if caster:ToPlayer() then
+        casterPlayer = caster:ToPlayer()
+    else
+        local owner = caster:GetOwner()
+        if owner then casterPlayer = owner:ToPlayer() end
+    end
+    if not casterPlayer or casterPlayer:IsBot() then return end
+    local ccType = getCCType(spellId)
+    local shieldAmount = SHIELD_SPELLS[spellId]
+    print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_AURA_APPLY " .. inspect({
+        player = player:GetName(),
+        spellId = spellId,
+        caster = casterPlayer and casterPlayer:GetName() or nil,
+        hasCaster = caster ~= nil,
+        ccType = ccType,
+        shieldAmount = shieldAmount,
+    }))
 
-        -- Shield absorbs estimation
-        if shieldAmount then
-            local instanceId = casterPlayer:GetBattlegroundId()
+    if ccType then
+        -- ensure we can't re-apply and wrongly reset startTime here
+        activeCCs[tostring(aura)] = {
+            caster = tostring(casterPlayer:GetGUID()),
+            type = ccType,
+            startTime = GetCurrTime(),
+        }
+    end
 
-            if player:GetGUID() ~= casterPlayer:GetGUID() then
-                -- Attributed to the caster
-                local stats = GetStats(casterPlayer, instanceId)
-                if stats then
-                    stats.absorbsDone = stats.absorbsDone + shieldAmount
-                end
+    -- Shield absorbs estimation
+    if shieldAmount then
+        local instanceId = casterPlayer:GetBattlegroundId()
 
-                -- Attributed to the target/victim
-                if not player:IsBot() then
-                    local targetStats = GetStats(player, instanceId)
-                    if targetStats then
-                        targetStats.damageTaken = targetStats.damageTaken + shieldAmount
-                    end
+        if player:GetGUID() ~= casterPlayer:GetGUID() then
+            -- Attributed to the caster
+            local stats = GetStats(casterPlayer, instanceId)
+            if stats then
+                stats.absorbsDone = stats.absorbsDone + shieldAmount
+            end
+
+            -- Attributed to the target/victim
+            if not player:IsBot() then
+                local targetStats = GetStats(player, instanceId)
+                if targetStats then
+                    targetStats.damageTaken = targetStats.damageTaken + shieldAmount
                 end
             end
         end
