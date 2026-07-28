@@ -3,7 +3,7 @@ print("[WSG Metrics] Loading wsg-metrics.lua script...")
 -- Global storage for active match statistics partitioned by instanceId
 -- instanceId -> (playerGuidString -> statsTable)
 local matchStats = {}
--- auraObject -> { caster = guidString, type = "HARD"|"SOFT", startTime = ms }
+-- aura pointer string -> { caster = guidString, type = "HARD"|"SOFT", startTime = ms }
 local activeCCs = {}
 -- playerGuidString -> flagCarryStartTime
 local flagCarryStartTimes = {}
@@ -11,6 +11,16 @@ local flagCarryStartTimes = {}
 local matchStartTimes = {}
 local WSG_MAP_ID = 489
 local WSG_BG_TYPE_ID = 2
+local HORDE_FLAG = 23333
+local ALLIANCE_FLAG = 23335
+local WSG_FLAG_AURAS = {
+    [HORDE_FLAG] = "HORDE",
+    [ALLIANCE_FLAG] = "ALLIANCE",
+}
+
+local function isFlagCarrier(player)
+    return player:HasAura(HORDE_FLAG) or player:HasAura(ALLIANCE_FLAG)
+end
 
 -- 1. Dispel / Protective Spells definition (filtered to level 19 starting spells)
 local DISPEL_PROTECTIVE_SPELLS = {
@@ -37,34 +47,67 @@ local SHIELD_SPELLS = {
     [600] = 300,    -- Power Word: Shield (Rank 3)
 }
 
--- 3. Crowd Control Spell IDs definition (filtered to level 19 starting spells & ranks)
-local CC_SPELLS = {
-    -- Hard CC (Loss of Control)
-    [118] = "HARD",    -- Polymorph
-    [5782] = "HARD",   -- Fear
-    [8122] = "HARD",   -- Psychic Scream
-    [853] = "HARD",    -- Hammer of Justice (Rank 1)
-    [10308] = "HARD",  -- Hammer of Justice (Rank 2)
-    [1776] = "HARD",   -- Gouge
-    [6770] = "HARD",   -- Sap (Rank 1)
-    [2070] = "HARD",   -- Sap (Rank 2)
-    [5211] = "HARD",   -- Bash
-    [2637] = "HARD",   -- Hibernate
-    [1513] = "HARD",   -- Scare Beast
-    [100] = "HARD",    -- Charge Stun
+-- 3. Crowd control mechanics
+-- These values are the core Mechanics enum values. SpellInfo exposes them as
+-- a bit mask, so every rank and every player spell is handled automatically.
+local MECHANIC_CHARM = 1
+local MECHANIC_DISORIENTED = 2
+local MECHANIC_FEAR = 5
+local MECHANIC_SILENCE = 9
+local MECHANIC_SLEEP = 10
+local MECHANIC_STUN = 12
+local MECHANIC_FREEZE = 13
+local MECHANIC_KNOCKOUT = 14
+local MECHANIC_POLYMORPH = 17
+local MECHANIC_BANISH = 18
+local MECHANIC_SHACKLE = 20
+local MECHANIC_HORROR = 24
+local MECHANIC_SAPPED = 30
+local MECHANIC_ROOT = 7
+local MECHANIC_SLOW_ATTACK = 8
+local MECHANIC_SNARE = 11
+local MECHANIC_DAZE = 27
 
-    -- Soft CC (Snare & Roots)
-    [339] = "SOFT",    -- Entangling Roots
-    [122] = "SOFT",    -- Frost Nova (Rank 1)
-    [865] = "SOFT",    -- Frost Nova (Rank 2)
-    [116] = "SOFT",    -- Frostbolt (Rank 1 slow)
-    [20572] = "SOFT",  -- Frostbolt (Rank 2 slow)
-    [20573] = "SOFT",  -- Frostbolt (Rank 3 slow)
-    [1715] = "SOFT",   -- Hamstring (Rank 1)
-    [7373] = "SOFT",   -- Hamstring (Rank 2)
-    [5116] = "SOFT",   -- Concussive Shot
-    [36006] = "SOFT",  -- Earthbind Totem Slow
+local HARD_CC_MECHANICS = {
+    [MECHANIC_CHARM] = true,
+    [MECHANIC_DISORIENTED] = true,
+    [MECHANIC_FEAR] = true,
+    [MECHANIC_SILENCE] = true,
+    [MECHANIC_SLEEP] = true,
+    [MECHANIC_STUN] = true,
+    [MECHANIC_FREEZE] = true,
+    [MECHANIC_KNOCKOUT] = true,
+    [MECHANIC_POLYMORPH] = true,
+    [MECHANIC_BANISH] = true,
+    [MECHANIC_SHACKLE] = true,
+    [MECHANIC_HORROR] = true,
+    [MECHANIC_SAPPED] = true,
 }
+
+local SOFT_CC_MECHANICS = {
+    [MECHANIC_ROOT] = true,
+    [MECHANIC_SLOW_ATTACK] = true,
+    [MECHANIC_SNARE] = true,
+    [MECHANIC_DAZE] = true,
+}
+
+local function hasMechanic(mechanicMask, mechanic)
+    return mechanicMask and math.floor(mechanicMask / (2 ^ mechanic)) % 2 == 1
+end
+
+local function getCCType(spellId)
+    local spellInfo = GetSpellInfo(spellId)
+    if not spellInfo then return nil end
+
+    local mechanicMask = spellInfo:GetAllEffectsMechanicMask()
+    for mechanic in pairs(HARD_CC_MECHANICS) do
+        if hasMechanic(mechanicMask, mechanic) then return "HARD" end
+    end
+    for mechanic in pairs(SOFT_CC_MECHANICS) do
+        if hasMechanic(mechanicMask, mechanic) then return "SOFT" end
+    end
+    return nil
+end
 
 -- Helper to get/initialize stats for a player, partitioned by instanceId
 local function GetStats(player, instanceId)
@@ -184,6 +227,15 @@ end)
 -- Hook: Aura application (for CC duration start, flag carrying, and shield absorbs)
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
     if player:InBattleground() then
+        local spellId = aura:GetAuraId()
+        if not spellId then return end
+
+        -- Flag auras can have no caster, so track them before resolving the
+        -- caster used by CC and shield attribution.
+        if WSG_FLAG_AURAS[spellId] and not player:IsBot() then
+            flagCarryStartTimes[tostring(player:GetGUID())] = GetCurrTime()
+        end
+
         local caster = aura:GetCaster()
         if not caster then return end
 
@@ -196,39 +248,32 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         end
         if not casterPlayer or casterPlayer:IsBot() then return end
 
-        local spellId = aura:GetAuraId()
-        if not spellId then return end
-        local ccType = CC_SPELLS[spellId]
+        local ccType = getCCType(spellId)
         if ccType then
-            activeCCs[aura] = {
+            activeCCs[tostring(aura)] = {
                 caster = tostring(casterPlayer:GetGUID()),
                 type = ccType,
                 startTime = GetCurrTime(),
             }
         end
 
-        -- Flag carrying time tracking (only for real players)
-        if (spellId == 23381 or spellId == 23382) and not player:IsBot() then
-            flagCarryStartTimes[tostring(player:GetGUID())] = GetCurrTime()
-        end
-
         -- Shield absorbs estimation
-        local shield = SHIELD_SPELLS[spellId]
-        if shield then
+        local shieldAmount = SHIELD_SPELLS[spellId]
+        if shieldAmount then
             local instanceId = casterPlayer:GetBattlegroundId()
 
-            if shield.allowSelf or player:GetGUID() ~= casterPlayer:GetGUID() then
+            if player:GetGUID() ~= casterPlayer:GetGUID() then
                 -- Attributed to the caster
                 local stats = GetStats(casterPlayer, instanceId)
                 if stats then
-                    stats.absorbsDone = stats.absorbsDone + shield.amount
+                    stats.absorbsDone = stats.absorbsDone + shieldAmount
                 end
 
                 -- Attributed to the target/victim
                 if not player:IsBot() then
                     local targetStats = GetStats(player, instanceId)
                     if targetStats then
-                        targetStats.damageTaken = targetStats.damageTaken + shield.amount
+                        targetStats.damageTaken = targetStats.damageTaken + shieldAmount
                     end
                 end
             end
@@ -238,7 +283,8 @@ end)
 
 -- Hook: Aura removal (for calculating CC duration and flag carrying elapsed time)
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, remove_mode)
-    local entry = activeCCs[aura]
+    local auraKey = tostring(aura)
+    local entry = activeCCs[auraKey]
     if entry then
         local duration = GetCurrTime() - entry.startTime
         if duration > 0 then
@@ -254,12 +300,12 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
                 end
             end
         end
-        activeCCs[aura] = nil
+        activeCCs[auraKey] = nil
     end
 
     local spellId = aura:GetAuraId()
     if spellId then
-        if spellId == 23381 or spellId == 23382 then
+        if WSG_FLAG_AURAS[spellId] then
             local guid = tostring(player:GetGUID())
             local startTime = flagCarryStartTimes[guid]
             if startTime then
@@ -288,7 +334,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_HEAL, function(event, player, target, heal)
                 stats.healsDone = stats.healsDone + heal
 
                 -- If friendly target has either flag, track it as healing on friendly flag carrier
-                if targetPlayer:HasAura(23381) or targetPlayer:HasAura(23382) then
+                if isFlagCarrier(targetPlayer) then
                     stats.healsOnFC = stats.healsOnFC + heal
                 end
             end
@@ -311,7 +357,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_DAMAGE, function(event, player, target, dama
 
         -- Track damage done specifically to EFC by the attacker (only if attacker is not a bot)
         if not player:IsBot() then
-            if targetPlayer:HasAura(23381) or targetPlayer:HasAura(23382) then
+            if isFlagCarrier(targetPlayer) then
                 local stats = GetStats(player)
                 if stats then
                     stats.damageOnEFC = stats.damageOnEFC + damage
