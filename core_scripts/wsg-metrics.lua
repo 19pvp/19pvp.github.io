@@ -364,3 +364,51 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
     matchStats[instanceId] = nil
     matchStartTimes[instanceId] = nil
 end)
+
+-- DEBUG
+RegisterPlayerEvent(PLAYER_EVENT_ON_CHAT, function(event, player, msg, Type, lang)
+    if not msg or msg:sub(1, 8):lower() ~= "?metrics" then
+        return
+    end
+
+    local suffix = msg:sub(9)
+    if suffix ~= "" and not suffix:match("^%s") then
+        return
+    end
+
+    local query = suffix:match("^%s*(.-)%s*$")
+    if not player:InBattleground() or player:GetMapId() ~= WSG_MAP_ID then
+        return
+    end
+
+    local instanceId = player:GetBattlegroundId()
+    local currentMatchStats = instanceId and matchStats[instanceId]
+    if not currentMatchStats then
+        player:SendBroadcastMessage("[WSG Metrics] No metrics available for this match yet.")
+        return false
+    end
+
+    local metricKey = query ~= "" and query or nil
+    local found = false
+    for _, stats in pairs(currentMatchStats) do
+        -- GetStats already excludes bots; keep the output limited to real players.
+        local value = metricKey and stats[metricKey] or stats
+        local hasValue = not metricKey or (value ~= nil and value ~= false and value ~= 0 and value ~= "")
+        if hasValue then
+            found = true
+            if metricKey then
+                player:SendBroadcastMessage("[WSG Metrics] " .. stats.name .. " -> " .. metricKey .. " = " .. inspect(value))
+            else
+                player:SendBroadcastMessage("[WSG Metrics] " .. stats.name .. " -> " .. inspect(stats))
+            end
+        end
+    end
+
+    if metricKey and not found then
+        player:SendBroadcastMessage("[WSG Metrics] No players accumulated this metric yet.")
+    elseif not metricKey and not found then
+        player:SendBroadcastMessage("[WSG Metrics] No players are tracked in this match yet.")
+    end
+
+    return false
+end)
