@@ -419,8 +419,12 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_HEAL, function(event, player, target, heal)
     if player:IsBot() then return end
     if not player:InBattleground() then return end
     local targetPlayer = target and target:ToPlayer()
+    print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_HEAL " .. inspect({
+        player = player:GetName(),
+        target = targetPlayer and targetPlayer:GetName() or nil,
+        heal = heal,
+    }))
     if not targetPlayer then return end
-    if player:GetGUID() == targetPlayer:GetGUID() then return end
     local stats = GetStats(player)
     if not stats then return end
     -- If friendly target has either flag, track it as healing on friendly flag carrier
@@ -433,14 +437,21 @@ end)
 RegisterPlayerEvent(PLAYER_EVENT_ON_DAMAGE, function(event, player, target, damage)
     if not player:InBattleground() then return end
     local targetPlayer = target and target:ToPlayer()
+    if not player:IsBot() then
+        print("[WSG Metrics][DEBUG] PLAYER_EVENT_ON_DAMAGE " .. inspect({
+            player = player:GetName(),
+            target = targetPlayer and targetPlayer:GetName() or nil,
+            damage = damage,
+        }))
+    end
     if not targetPlayer then return end
 
     -- Track damage taken by the victim (only if target is not a bot)
-        if not targetPlayer:IsBot() then
-            local victimStats = GetStats(targetPlayer)
-            if victimStats then
-                victimStats.damageTaken = victimStats.damageTaken + damage
-            end
+    if not targetPlayer:IsBot() then
+        local victimStats = GetStats(targetPlayer)
+        if victimStats then
+            victimStats.damageTaken = victimStats.damageTaken + damage
+        end
     end
 
     -- Track damage done specifically to EFC by the attacker (only if attacker is not a bot)
