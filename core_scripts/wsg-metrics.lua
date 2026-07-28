@@ -215,6 +215,8 @@ local function GetStats(player, instanceId)
             playerGuid = guid,
             dispelsOffensive = 0,
             dispelsDefensive = 0,
+            successfulInterrupts = 0,
+            fakeCastInterrupts = 0,
             hardCCCount = 0,
             hardCCDuration = 0,
             softCCCount = 0,
@@ -322,6 +324,32 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, s
                     stats.dispelsOffensive = stats.dispelsOffensive + 1
                 end
             end
+        end
+    end
+end)
+
+-- Hook: Interrupt attempts resolved by the core
+RegisterPlayerEvent(PLAYER_EVENT_ON_INTERRUPT_CAST, function(event, interrupter, target, targetWasCasting, successful)
+    if not interrupter:InBattleground() or not target:InBattleground() then return end
+    if interrupter:GetMapId() ~= WSG_MAP_ID or target:GetMapId() ~= WSG_MAP_ID then return end
+    if not isMatchStarted(interrupter) or not isMatchStarted(target) then return end
+
+    local instanceId = interrupter:GetBattlegroundId()
+    if not instanceId or instanceId == 0 or target:GetBattlegroundId() ~= instanceId then return end
+
+    -- A successful interrupt is credited to the player who interrupted.
+    if successful and not interrupter:IsBot() then
+        local stats = GetStats(interrupter, instanceId)
+        if stats then
+            stats.successfulInterrupts = stats.successfulInterrupts + 1
+        end
+    end
+
+    -- A fake interrupt is credited to the player who was targeted while idle.
+    if not targetWasCasting and not target:IsBot() then
+        local targetStats = GetStats(target, instanceId)
+        if targetStats then
+            targetStats.fakeCastInterrupts = targetStats.fakeCastInterrupts + 1
         end
     end
 end)

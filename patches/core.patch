@@ -801,10 +801,22 @@ index 108f3cf7f..21a2bd6fc 100644
  
      [[nodiscard]] virtual bool CanSendMessageBGQueue(BattlegroundQueue* /*queue*/, Player* /*leader*/, Battleground* /*bg*/, PvPDifficultyEntry const* /*bracketEntry*/) { return true; }
 diff --git a/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp b/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
-index 5ee4be5e1..b0557a412 100644
+index 5ee4be5e1..804024579 100644
 --- a/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
 +++ b/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
-@@ -353,6 +353,11 @@ void ScriptMgr::OnPlayerJoinBG(Player* player)
+@@ -197,6 +197,11 @@ void ScriptMgr::OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck)
+     CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_SPELL_CAST, script->OnPlayerSpellCast(player, spell, skipCheck));
+ }
+ 
++void ScriptMgr::OnPlayerInterruptCast(Player* interrupter, Player* target, bool targetWasCasting, bool successful)
++{
++    CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_INTERRUPT_CAST, script->OnPlayerInterruptCast(interrupter, target, targetWasCasting, successful));
++}
++
+ void ScriptMgr::OnPlayerBeforeUpdate(Player* player, uint32 p_time)
+ {
+     CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_BEFORE_UPDATE, script->OnPlayerBeforeUpdate(player, p_time));
+@@ -353,6 +358,11 @@ void ScriptMgr::OnPlayerJoinBG(Player* player)
      CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PLAYER_JOIN_BG, script->OnPlayerJoinBG(player));
  }
  
@@ -816,7 +828,7 @@ index 5ee4be5e1..b0557a412 100644
  void ScriptMgr::OnPlayerJoinArena(Player* player)
  {
      CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PLAYER_JOIN_ARENA, script->OnPlayerJoinArena(player));
-@@ -955,6 +960,11 @@ void ScriptMgr::OnPlayerBeforeGetLevelForXPGain(Player const* player, uint8& lev
+@@ -955,6 +965,11 @@ void ScriptMgr::OnPlayerBeforeGetLevelForXPGain(Player const* player, uint8& lev
      level = std::clamp(level, uint8(1), uint8(sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL)));
  }
  
@@ -829,10 +841,18 @@ index 5ee4be5e1..b0557a412 100644
      : ScriptObject(name, PLAYERHOOK_END)
  {
 diff --git a/src/server/game/Scripting/ScriptDefines/PlayerScript.h b/src/server/game/Scripting/ScriptDefines/PlayerScript.h
-index b718b81c5..fc7753e76 100644
+index b718b81c5..dfa4a7c5f 100644
 --- a/src/server/game/Scripting/ScriptDefines/PlayerScript.h
 +++ b/src/server/game/Scripting/ScriptDefines/PlayerScript.h
-@@ -98,6 +98,7 @@ enum PlayerHook
+@@ -67,6 +67,7 @@ enum PlayerHook
+     PLAYERHOOK_ON_EMOTE,
+     PLAYERHOOK_ON_TEXT_EMOTE,
+     PLAYERHOOK_ON_SPELL_CAST,
++    PLAYERHOOK_ON_INTERRUPT_CAST,
+     PLAYERHOOK_ON_LOAD_FROM_DB,
+     PLAYERHOOK_ON_LOGIN,
+     PLAYERHOOK_ON_BEFORE_LOGOUT,
+@@ -98,6 +99,7 @@ enum PlayerHook
      PLAYERHOOK_ON_EQUIP,
      PLAYERHOOK_ON_UNEQUIP_ITEM,
      PLAYERHOOK_ON_PLAYER_JOIN_BG,
@@ -840,7 +860,7 @@ index b718b81c5..fc7753e76 100644
      PLAYERHOOK_ON_PLAYER_JOIN_ARENA,
      PLAYERHOOK_GET_CUSTOM_GET_ARENA_TEAM_ID,
      PLAYERHOOK_GET_CUSTOM_ARENA_PERSONAL_RATING,
-@@ -220,6 +221,7 @@ enum PlayerHook
+@@ -220,6 +222,7 @@ enum PlayerHook
      PLAYERHOOK_ON_GET_REPUTATION_PRICE_DISCOUNT,
      PLAYERHOOK_ON_LEARN_TAXI_NODE,
      PLAYERHOOK_ON_BEFORE_GET_LEVEL_FOR_XP_GAIN,
@@ -848,7 +868,17 @@ index b718b81c5..fc7753e76 100644
      PLAYERHOOK_END
  };
  
-@@ -419,6 +421,9 @@ public:
+@@ -326,6 +329,9 @@ public:
+     // Called in Spell::Cast.
+     virtual void OnPlayerSpellCast(Player* /*player*/, Spell* /*spell*/, bool /*skipCheck*/) { }
+ 
++    // Called when a spell with SPELL_EFFECT_INTERRUPT_CAST hits a player.
++    virtual void OnPlayerInterruptCast(Player* /*interrupter*/, Player* /*target*/, bool /*targetWasCasting*/, bool /*successful*/) { }
++
+     // Called during data loading
+     virtual void OnPlayerLoadFromDB(Player* /*player*/) { };
+ 
+@@ -419,6 +425,9 @@ public:
      // After player enters queue for BG
      virtual void OnPlayerJoinBG(Player* /*player*/) { }
  
@@ -858,7 +888,7 @@ index b718b81c5..fc7753e76 100644
      // After player enters queue for Arena
      virtual void OnPlayerJoinArena(Player* /*player*/) { }
  
-@@ -856,6 +861,8 @@ public:
+@@ -856,6 +865,8 @@ public:
       * @param level The level that should be used for XP gain calculations
       */
      virtual void OnPlayerBeforeGetLevelForXPGain(Player const* /*player*/, uint8& /*level*/) {}
@@ -868,10 +898,18 @@ index b718b81c5..fc7753e76 100644
  
  #endif
 diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
-index 9fd4ff356..077f8517d 100644
+index 9fd4ff356..fdf736aee 100644
 --- a/src/server/game/Scripting/ScriptMgr.h
 +++ b/src/server/game/Scripting/ScriptMgr.h
-@@ -376,6 +376,7 @@ public: /* PlayerScript */
+@@ -346,6 +346,7 @@ public: /* PlayerScript */
+     void OnPlayerEmote(Player* player, uint32 emote);
+     void OnPlayerTextEmote(Player* player, uint32 textEmote, uint32 emoteNum, ObjectGuid guid);
+     void OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck);
++    void OnPlayerInterruptCast(Player* interrupter, Player* target, bool targetWasCasting, bool successful);
+     void OnPlayerLogin(Player* player);
+     void OnPlayerLoadFromDB(Player* player);
+     void OnPlayerBeforeLogout(Player* player);
+@@ -376,6 +377,7 @@ public: /* PlayerScript */
      void OnPlayerEquip(Player* player, Item* it, uint8 bag, uint8 slot, bool update);
      void OnPlayerUnequip(Player* player, Item* it);
      void OnPlayerJoinBG(Player* player);
@@ -879,7 +917,7 @@ index 9fd4ff356..077f8517d 100644
      void OnPlayerJoinArena(Player* player);
      void OnPlayerGetMaxPersonalArenaRatingRequirement(Player const* player, uint32 minSlot, uint32& maxArenaRating) const;
      void OnPlayerLootItem(Player* player, Item* item, uint32 count, ObjectGuid lootguid);
-@@ -426,6 +427,7 @@ public: /* PlayerScript */
+@@ -426,6 +428,7 @@ public: /* PlayerScript */
      void OnPlayerUpdateCraftingSkill(Player* player, SkillLineAbilityEntry const* skill, uint32 currentLevel, uint32& gain);
      bool OnPlayerUpdateFishingSkill(Player* player, int32 skill, int32 zone_skill, int32 chance, int32 roll);
      bool OnPlayerCanAreaExploreAndOutdoor(Player* player);
@@ -887,7 +925,7 @@ index 9fd4ff356..077f8517d 100644
      void OnPlayerVictimRewardBefore(Player* player, Player* victim, uint32& killer_title, int32& victim_rank);
      void OnPlayerVictimRewardAfter(Player* player, Player* victim, uint32& killer_title, int32& victim_rank, float& honor_f);
      void OnPlayerCustomScalingStatValueBefore(Player* player, ItemTemplate const* proto, uint8 slot, bool apply, uint32& CustomScalingStatValue);
-@@ -625,6 +627,7 @@ public: /* BGScript */
+@@ -625,6 +628,7 @@ public: /* BGScript */
      void OnAddGroup(BattlegroundQueue* queue, GroupQueueInfo* ginfo, uint32& index, Player* leader, Group* group, BattlegroundTypeId bgTypeId, PvPDifficultyEntry const* bracketEntry,
          uint8 arenaType, bool isRated, bool isPremade, uint32 arenaRating, uint32 matchmakerRating, uint32 arenaTeamId, uint32 opponentsArenaTeamId);
      bool CanFillPlayersToBG(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id);
@@ -912,6 +950,42 @@ index 68f028a95..86c2886b4 100644
      }
  
      // check trade slot case (last, for allow catch any another cast problems)
+diff --git a/src/server/game/Spells/SpellEffects.cpp b/src/server/game/Spells/SpellEffects.cpp
+index a30b6c16a..c2a068ad6 100644
+--- a/src/server/game/Spells/SpellEffects.cpp
++++ b/src/server/game/Spells/SpellEffects.cpp
+@@ -3742,6 +3742,9 @@ void Spell::EffectInterruptCast(SpellEffIndex effIndex)
+     if (!unitTarget || !unitTarget->IsAlive())
+         return;
+ 
++    bool targetWasCasting = unitTarget->HasUnitState(UNIT_STATE_CASTING);
++    bool successful = false;
++
+     /// @todo: not all spells that used this effect apply cooldown at school spells
+     // also exist case: apply cooldown to interrupted cast only and to all spells
+     // there is no CURRENT_AUTOREPEAT_SPELL spells that can be interrupted
+@@ -3757,6 +3760,7 @@ void Spell::EffectInterruptCast(SpellEffIndex effIndex)
+                     && ((i == CURRENT_GENERIC_SPELL && curSpellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_INTERRUPT)
+                         || (i == CURRENT_CHANNELED_SPELL && curSpellInfo->ChannelInterruptFlags & CHANNEL_INTERRUPT_FLAG_INTERRUPT)))
+             {
++                bool interruptable = spell->IsInterruptable();
+                 if (m_originalCaster)
+                 {
+                     int32 duration = m_originalCaster->ModSpellDuration(m_spellInfo, unitTarget, m_originalCaster->CalcSpellDuration(m_spellInfo), false, 1 << effIndex);
+@@ -3764,9 +3768,13 @@ void Spell::EffectInterruptCast(SpellEffIndex effIndex)
+                 }
+                 ExecuteLogEffectInterruptCast(effIndex, unitTarget, curSpellInfo->Id);
+                 unitTarget->InterruptSpell(CurrentSpellTypes(i), false);
++                successful = successful || interruptable;
+             }
+         }
+     }
++
++    if (m_caster->IsPlayer() && unitTarget->IsPlayer())
++        sScriptMgr->OnPlayerInterruptCast(m_caster->ToPlayer(), unitTarget->ToPlayer(), targetWasCasting, successful);
+ }
+ 
+ void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
 index 0f71208b0..0d00a18eb 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
