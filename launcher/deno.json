@@ -1,12 +1,12 @@
 {
   "tasks": {
-    "dev": "deno run --watch --unstable-raw-imports -A main.ts",
-    "compile:linux": "deno compile --target x86_64-unknown-linux-gnu --unstable-raw-imports -A -o 19pvp-launcher-linux main.ts",
-    "compile:win": "deno compile --target x86_64-pc-windows-msvc --self-extracting --unstable-raw-imports -A -o 19pvp-launcher-win.exe main.ts",
+    "dev": "deno run --watch --location=http://19pvp-launcher.local --unstable-raw-imports -A main.ts",
+    "compile:linux": "deno compile --target x86_64-unknown-linux-gnu --location=http://19pvp-launcher.local --unstable-raw-imports -A -o 19pvp-launcher-linux main.ts",
+    "compile:win": "deno compile --target x86_64-pc-windows-msvc --self-extracting --location=http://19pvp-launcher.local --unstable-raw-imports -A -o 19pvp-launcher-win.exe main.ts && deno run --allow-read --allow-write tasks/windows_gui.ts 19pvp-launcher-win.exe",
     "compile": {
       "dependencies": ["compile:linux", "compile:win"]
     },
-    "test": "deno test -A --unstable-raw-imports"
+    "test": "DENO_DIR=/tmp/19pvp-launcher-deno-cache deno test --location=http://19pvp-launcher.local -A --unstable-raw-imports"
   },
   "nodeModulesDir": "none",
   "fmt": {
