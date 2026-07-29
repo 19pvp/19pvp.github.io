@@ -15,6 +15,9 @@ Build a single executable with:
 deno task compile
 ```
 
+The Windows build creates a compressed self-extracting executable. It requires `7z` on the build machine; the Windows
+SFX module is kept in `tools/7zS.sfx`.
+
 The launcher chooses an available localhost port and opens the log page in the system browser.
 
 ## Plan
