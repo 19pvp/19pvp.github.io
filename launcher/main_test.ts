@@ -1,6 +1,6 @@
 import { assertEquals, assertStringIncludes } from '@std/assert'
 import { join } from '@std/path'
-import { handler, isRealmlistFile, savedDownloadPath, torrentDownloadPath } from './main.ts'
+import { handler, isRealmlistFile, torrentDownloadPath } from './main.ts'
 
 Deno.test('serves the launcher page', async () => {
   const response = await handler(new Request('http://localhost/'))
@@ -77,11 +77,6 @@ Deno.test('normalizes selected client directory to torrent parent', () => {
     torrentDownloadPath('/tmp/World of Warcraft 3.3.5a/World of Warcraft 3.3.5a'),
     '/tmp',
   )
-})
-
-Deno.test('migrates the old tmp default path', () => {
-  const path = savedDownloadPath('/tmp/19pvp-launcher/World of Warcraft 3.3.5a')
-  assertEquals(path, Deno.cwd())
 })
 
 Deno.test('finds realmlist files', () => {

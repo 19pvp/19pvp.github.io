@@ -1,9 +1,10 @@
 import { brotliCompressSync } from 'node:zlib'
 import { copy } from '@std/fs/copy'
 import { basename, dirname, join } from '@std/path'
-import { loadStormLib } from 'stormlib'
+import { loadStormLib, type StormArchiveModule } from 'stormlib'
 import WebTorrent from 'webtorrent'
 import pageBytes from './page.html' with { type: 'bytes' }
+import { generatePatch, parseDBCEditPayload } from './patch.ts'
 import { type ScannedFile, startScan } from './scan.ts'
 import torrent from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
@@ -76,6 +77,7 @@ const scanAbort = new AbortController()
 let webseedUrl = ''
 let realmlist = ''
 let verificationHash = ''
+let stormLib: StormArchiveModule | null = null
 
 function log(message: string): void {
   const entry = { timestamp: new Date().toISOString(), message }
@@ -332,6 +334,25 @@ async function installAddon(): Promise<void> {
     log(`companion addon installation failed: ${errorMessage(error)}`)
     throw error
   }
+}
+
+async function fetchPatchEdits() {
+  const response = await fetch(`${SERVICE_ORIGIN}/launcher/patch`)
+  if (!response.ok) throw new Error(`patch definition download failed: ${response.status}`)
+  return parseDBCEditPayload(await response.json())
+}
+
+async function generateClientPatch(): Promise<string> {
+  if (!stormLib) throw new Error('StormLib is not initialized')
+  const root = clientPath()
+  if (!root) throw new Error('client path is missing')
+  const edits = await fetchPatchEdits()
+  if (edits.length === 0) throw new Error('patch definition contains no DBC edits')
+  const outputPath = join(root, 'Data', 'patch-S.mpq')
+  log(`generating client patch from ${edits.length} DBC edit(s)`)
+  await generatePatch(stormLib, root, edits, outputPath)
+  log(`client patch generated: ${outputPath}`)
+  return outputPath
 }
 
 async function pickDownloadPath(): Promise<string | null> {
@@ -708,6 +729,23 @@ export async function handler(request: Request): Promise<Response> {
     return Response.json({ ok: true })
   }
 
+  if (path === '/patch') {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
+    }
+    const origin = request.headers.get('origin')
+    if (origin && origin !== new URL(request.url).origin) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    try {
+      const path = await generateClientPatch()
+      return Response.json({ path })
+    } catch (error) {
+      log(`client patch generation failed: ${errorMessage(error)}`)
+      return Response.json({ error: errorMessage(error) }, { status: 500 })
+    }
+  }
+
   if (path === '/download-path') {
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 })
@@ -778,7 +816,7 @@ export async function handler(request: Request): Promise<Response> {
 
 if (import.meta.main) {
   logStep('loading embedded StormLib WASM')
-  await loadStormLib()
+  stormLib = await loadStormLib()
   logStep('embedded StormLib WASM ready')
   await loadLauncherConfig()
   started = true
