@@ -632,7 +632,10 @@ export default {
       if (url.pathname === '/api/account') {
         const session = await getSession(req)
         if (!session) {
-          return json({ error: 'Unauthorized' }, { status: 401, headers: { 'access-control-allow-origin': env.PUBLIC_BASE_URL, 'access-control-allow-credentials': 'true' } })
+          return json({ error: 'Unauthorized' }, {
+            status: 401,
+            headers: { 'access-control-allow-origin': env.PUBLIC_BASE_URL, 'access-control-allow-credentials': 'true' },
+          })
         }
 
         const corsHeaders = {
@@ -659,10 +662,19 @@ export default {
             }
             const discordUser = session.user as { username?: string }
             const discordUsername = discordUser?.username || 'Unknown'
-            const res = await setOrCreateAccount(session.discordId, discordUsername, username, password, session.gmLevel)
+            const res = await setOrCreateAccount(
+              session.discordId,
+              discordUsername,
+              username,
+              password,
+              session.gmLevel,
+            )
             if (!res.success) {
               const outputObj = res.output as { message?: string } | undefined
-              return json({ error: outputObj?.message || 'Failed to update account.' }, { status: 400, headers: corsHeaders })
+              return json({ error: outputObj?.message || 'Failed to update account.' }, {
+                status: 400,
+                headers: corsHeaders,
+              })
             }
             return json(res, { headers: corsHeaders })
           } catch (err) {
@@ -684,11 +696,13 @@ export default {
           const dirParam = url.searchParams.get('dir') === 'asc' ? 'ASC' : 'DESC'
           const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0)
           const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit')) || 50))
-          const col = ['id','type','at','end'].includes(sortParam) ? sortParam : 'id'
+          const col = ['id', 'type', 'at', 'end'].includes(sortParam) ? sortParam : 'id'
 
           const typeFilter = type ? `AND type = ${JSON.stringify(type)}` : ''
           const searchFilter = search
-            ? `AND (type LIKE ${JSON.stringify('%'+search+'%')} OR JSON_UNQUOTE(data) LIKE ${JSON.stringify('%'+search+'%')})`
+            ? `AND (type LIKE ${JSON.stringify('%' + search + '%')} OR JSON_UNQUOTE(data) LIKE ${
+              JSON.stringify('%' + search + '%')
+            })`
             : ''
 
           const events = await auth.raw.sql`
