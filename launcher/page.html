@@ -141,12 +141,6 @@
       const text = label + path
       downloadPath.textContent = text
       savedPath.textContent = 'Files saved in: ' + path
-      localStorage.setItem('lastClientPath', path)
-    }
-    const lastClientPath = localStorage.getItem('lastClientPath')
-    if (lastClientPath) {
-      downloadPath.textContent = 'Last known files path: ' + lastClientPath
-      savedPath.textContent = 'Files saved in: ' + lastClientPath
     }
     let lastMovingAt = Date.now()
     let lastDownloaded = '0 B'

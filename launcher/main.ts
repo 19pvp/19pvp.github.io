@@ -6,7 +6,12 @@ import pageBytes from './page.html' with { type: 'bytes' }
 import torrent from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
 const CLIENT_DIRECTORY_NAME = 'World of Warcraft 3.3.5a'
-const DOWNLOAD_DIRECTORY = `${Deno.env.get('TEMP') ?? Deno.env.get('TMPDIR') ?? '/tmp'}/19pvp-launcher`
+const OLD_DOWNLOAD_DIRECTORY = `${Deno.env.get('TEMP') ?? Deno.env.get('TMPDIR') ?? '/tmp'}/19pvp-launcher`
+const DOWNLOAD_DIRECTORY = join(
+  Deno.env.get(Deno.build.os === 'windows' ? 'USERPROFILE' : 'HOME') ?? Deno.cwd(),
+  'Downloads',
+  '19pvp-wow-client',
+)
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
 const WEBSEED_URL = 'https://dl.devazuka.com/wow/'
 const LOG_UPLOAD_ORIGIN = Deno.env.get('LAUNCHER_LOG_ORIGIN') ?? ''
@@ -22,6 +27,7 @@ const WEBTORRENT_OPTIONS = {
 }
 const LOG_LIMIT = 500
 const STATUS_INTERVAL_MS = 1000
+const SAVED_DOWNLOAD_PATH_KEY = 'downloadPath'
 const encoder = new TextEncoder()
 const page = new TextDecoder().decode(pageBytes)
 const startupTime = performance.now()
@@ -102,6 +108,11 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+function isCrossDeviceRename(error: unknown): boolean {
+  const message = errorMessage(error)
+  return message.includes('Invalid cross-device link') || message.includes('EXDEV') || message.includes('os error 18')
+}
+
 function exists(path: string): Promise<boolean> {
   return Deno.stat(path).then(() => true, (error) => {
     if (error instanceof Deno.errors.NotFound) return false
@@ -113,19 +124,38 @@ function clientPath(): string | null {
   return downloadPath ? join(downloadPath, CLIENT_DIRECTORY_NAME) : null
 }
 
-async function copyExistingClientFiles(fromDownloadPath: string | null, toDownloadPath: string): Promise<void> {
-  if (!fromDownloadPath || fromDownloadPath === toDownloadPath) return
-  const from = join(fromDownloadPath, CLIENT_DIRECTORY_NAME)
-  const to = join(toDownloadPath, CLIENT_DIRECTORY_NAME)
-  if (from === to) return
-  if (!await exists(from)) {
-    log(`no existing client files to copy from: ${from}`)
+export function torrentDownloadPath(path: string): string {
+  path = path.trim()
+  while (basename(path) === CLIENT_DIRECTORY_NAME) path = dirname(path)
+  return path
+}
+
+export function savedDownloadPath(path: string | null): string {
+  const normalized = path ? torrentDownloadPath(path) : DOWNLOAD_DIRECTORY
+  return normalized === OLD_DOWNLOAD_DIRECTORY ? DOWNLOAD_DIRECTORY : normalized
+}
+
+async function recoverClientFiles(sourcePath: string | null, targetDownloadPath: string): Promise<void> {
+  if (!sourcePath) return
+  const source = join(torrentDownloadPath(sourcePath), CLIENT_DIRECTORY_NAME)
+  const target = join(targetDownloadPath, CLIENT_DIRECTORY_NAME)
+  if (source === target) return
+  if (!await exists(source)) {
+    log(`no client files to recover from: ${source}`)
     return
   }
-  log(`copying existing client files from: ${from}`)
-  log(`copying existing client files to: ${to}`)
-  await copy(from, to, { overwrite: true })
-  log('existing client files copied')
+  log(`recovering client files from: ${source}`)
+  log(`recovering client files to: ${target}`)
+  try {
+    await Deno.rename(source, target)
+    log('client files moved')
+  } catch (error) {
+    if (!isCrossDeviceRename(error)) throw error
+    log('rename crossed devices; copying client files instead')
+    await copy(source, target, { overwrite: true })
+    await Deno.remove(source, { recursive: true })
+    log('client files copied and old files removed')
+  }
 }
 
 async function pickDownloadPath(): Promise<string | null> {
@@ -248,11 +278,9 @@ async function stop(): Promise<void> {
 }
 
 async function changeDownloadPath(path: string): Promise<boolean> {
-  path = path.trim()
+  path = torrentDownloadPath(path)
   if (!path) throw new Error('missing download path')
   if (path.includes('\0') || path.includes('\n')) throw new Error('invalid download path')
-  // NOTE: WebTorrent wants the parent directory. Users pick the actual client directory.
-  if (basename(path) === CLIENT_DIRECTORY_NAME) path = dirname(path)
   if (path === downloadPath) return false
   const previousDownloadPath = downloadPath
   if (changingPath) throw new Error('download path is already changing')
@@ -271,8 +299,9 @@ async function changeDownloadPath(path: string): Promise<boolean> {
     }
 
     await Deno.mkdir(path, { recursive: true })
-    await copyExistingClientFiles(previousDownloadPath, path)
+    await recoverClientFiles(previousDownloadPath, path)
     downloadPath = path
+    localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
     log(`download directory: ${downloadPath}`)
     if (started && !stopped) startTorrent()
     return true
@@ -312,8 +341,12 @@ function startTorrent(): void {
         `metadata received: ${activeTorrent!.name} (${formatBytes(activeTorrent!.length)})`,
       )
       const clientRoot = join(downloadPath!, activeTorrent!.name)
+      const nestedClientRoot = join(clientRoot, CLIENT_DIRECTORY_NAME)
       log(`client files root: ${clientRoot}`)
       exists(clientRoot).then((found) => log(`client files root existed at startup: ${found ? 'yes' : 'no'}`))
+      exists(nestedClientRoot).then((found) => {
+        if (found) log(`warning: nested client directory found: ${nestedClientRoot}`)
+      })
       log(`first torrent file: ${activeTorrent!.files[0]?.path ?? 'none'}`)
       logStep('checking existing data')
     },
@@ -466,7 +499,12 @@ export async function handler(request: Request): Promise<Response> {
 if (import.meta.main) {
   started = true
   logStep('launcher started')
-  downloadPath = DOWNLOAD_DIRECTORY
+  const rawSavedDownloadPath = localStorage.getItem(SAVED_DOWNLOAD_PATH_KEY)
+  downloadPath = savedDownloadPath(rawSavedDownloadPath)
+  if (rawSavedDownloadPath && downloadPath !== rawSavedDownloadPath) {
+    log(`saved download directory normalized: ${rawSavedDownloadPath} -> ${downloadPath}`)
+  }
+  localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
   log(
     `download directory existed before startup: ${await exists(downloadPath) ? 'yes' : 'no'}`,
   )

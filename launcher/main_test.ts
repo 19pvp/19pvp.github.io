@@ -1,6 +1,6 @@
 import { assertEquals, assertStringIncludes } from '@std/assert'
 import { join } from '@std/path'
-import { handler } from './main.ts'
+import { handler, savedDownloadPath, torrentDownloadPath } from './main.ts'
 
 Deno.test('serves the launcher page', async () => {
   const response = await handler(new Request('http://localhost/'))
@@ -13,6 +13,7 @@ Deno.test('serves the launcher page', async () => {
 })
 
 Deno.test('changes the download path', async () => {
+  localStorage.removeItem('downloadPath')
   const path = await Deno.makeTempDir()
   const response = await handler(
     new Request('http://localhost/download-path', {
@@ -25,6 +26,7 @@ Deno.test('changes the download path', async () => {
   assertEquals(status.downloadPath, path)
   assertEquals(status.clientPath, `${path}/World of Warcraft 3.3.5a`)
   assertEquals(status.changed, true)
+  assertEquals(localStorage.getItem('downloadPath'), path)
 
   const samePath = await handler(
     new Request('http://localhost/download-path', {
@@ -52,6 +54,24 @@ Deno.test('changes the download path', async () => {
     await Deno.readTextFile(join(nextPath, 'World of Warcraft 3.3.5a', 'realmlist.wtf')),
     'set realmlist logon.19pvp.com',
   )
+  assertEquals(await Deno.stat(oldClientPath).then(() => true, () => false), false)
+})
+
+Deno.test('normalizes selected client directory to torrent parent', () => {
+  assertEquals(
+    torrentDownloadPath('/tmp/World of Warcraft 3.3.5a'),
+    '/tmp',
+  )
+  assertEquals(
+    torrentDownloadPath('/tmp/World of Warcraft 3.3.5a/World of Warcraft 3.3.5a'),
+    '/tmp',
+  )
+})
+
+Deno.test('migrates the old tmp default path', () => {
+  const path = savedDownloadPath('/tmp/19pvp-launcher/World of Warcraft 3.3.5a')
+  assertStringIncludes(path, 'Downloads')
+  assertStringIncludes(path, '19pvp-wow-client')
 })
 
 Deno.test('serves status and an SSE stream', async () => {
