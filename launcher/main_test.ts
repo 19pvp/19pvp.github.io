@@ -1,4 +1,5 @@
 import { assertEquals, assertStringIncludes } from '@std/assert'
+import { join } from '@std/path'
 import { handler } from './main.ts'
 
 Deno.test('serves the launcher page', async () => {
@@ -33,6 +34,24 @@ Deno.test('changes the download path', async () => {
   )
   assertEquals(samePath.status, 200)
   assertEquals((await samePath.json()).changed, false)
+
+  const oldClientPath = join(path, 'World of Warcraft 3.3.5a')
+  await Deno.mkdir(oldClientPath, { recursive: true })
+  await Deno.writeTextFile(join(oldClientPath, 'realmlist.wtf'), 'set realmlist logon.19pvp.com')
+
+  const nextPath = await Deno.makeTempDir()
+  const moved = await handler(
+    new Request('http://localhost/download-path', {
+      method: 'POST',
+      body: join(nextPath, 'World of Warcraft 3.3.5a'),
+    }),
+  )
+  assertEquals(moved.status, 200)
+  assertEquals((await moved.json()).changed, true)
+  assertEquals(
+    await Deno.readTextFile(join(nextPath, 'World of Warcraft 3.3.5a', 'realmlist.wtf')),
+    'set realmlist logon.19pvp.com',
+  )
 })
 
 Deno.test('serves status and an SSE stream', async () => {

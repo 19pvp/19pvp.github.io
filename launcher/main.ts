@@ -1,4 +1,5 @@
 import { brotliCompressSync } from 'node:zlib'
+import { copy } from '@std/fs/copy'
 import { basename, dirname, join } from '@std/path'
 import WebTorrent from 'webtorrent'
 import pageBytes from './page.html' with { type: 'bytes' }
@@ -110,6 +111,21 @@ function exists(path: string): Promise<boolean> {
 
 function clientPath(): string | null {
   return downloadPath ? join(downloadPath, CLIENT_DIRECTORY_NAME) : null
+}
+
+async function copyExistingClientFiles(fromDownloadPath: string | null, toDownloadPath: string): Promise<void> {
+  if (!fromDownloadPath || fromDownloadPath === toDownloadPath) return
+  const from = join(fromDownloadPath, CLIENT_DIRECTORY_NAME)
+  const to = join(toDownloadPath, CLIENT_DIRECTORY_NAME)
+  if (from === to) return
+  if (!await exists(from)) {
+    log(`no existing client files to copy from: ${from}`)
+    return
+  }
+  log(`copying existing client files from: ${from}`)
+  log(`copying existing client files to: ${to}`)
+  await copy(from, to, { overwrite: true })
+  log('existing client files copied')
 }
 
 async function pickDownloadPath(): Promise<string | null> {
@@ -238,6 +254,7 @@ async function changeDownloadPath(path: string): Promise<boolean> {
   // NOTE: WebTorrent wants the parent directory. Users pick the actual client directory.
   if (basename(path) === CLIENT_DIRECTORY_NAME) path = dirname(path)
   if (path === downloadPath) return false
+  const previousDownloadPath = downloadPath
   if (changingPath) throw new Error('download path is already changing')
   changingPath = true
   try {
@@ -254,6 +271,7 @@ async function changeDownloadPath(path: string): Promise<boolean> {
     }
 
     await Deno.mkdir(path, { recursive: true })
+    await copyExistingClientFiles(previousDownloadPath, path)
     downloadPath = path
     log(`download directory: ${downloadPath}`)
     if (started && !stopped) startTorrent()
