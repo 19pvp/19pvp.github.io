@@ -1,7 +1,7 @@
 ## Interface: 30300
-## Title: PvP19
-## Notes: Battleground and arena improvements for PvP19.
-## Author: Antigravity
+## Title: 19 PvP
+## Notes: Battleground and arena improvements for 19 PvP.
+## Author: Clement
 ## Version: 1.1
 
 PvP19.lua
