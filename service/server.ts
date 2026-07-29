@@ -13,6 +13,7 @@ import adminHTML from '../web/admin.html' with { type: 'bytes' }
 import eventsHTML from '../web/events.html' with { type: 'bytes' }
 import pvp19Lua from '../addons/PvP19/PvP19.lua' with { type: 'bytes' }
 import pvp19Toc from '../addons/PvP19/PvP19.toc' with { type: 'text' }
+import launcherPatch from '../launcher/patch.json' with { type: 'json' }
 
 void import('./world-chat.ts').catch((err) => {
   console.error('Discord bridge failed to start', err)
@@ -632,6 +633,10 @@ export default {
           realmlist: launcherRealmlist,
           'verification-hash': env.LAUNCHER_VERIFICATION_HASH,
         })
+      }
+      if (url.pathname === '/launcher/patch') {
+        if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
+        return json(launcherPatch)
       }
 
       const launcherLog = await handleLauncherLog(req, url, {

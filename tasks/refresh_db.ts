@@ -1,6 +1,7 @@
 import config from '../config.json' with { type: 'json' }
-import { openDBC } from '../dbc.ts'
+import { getDBCSchema, openDBC } from '../dbc.ts'
 import { charactersDbName, playerbotsDbName, worldDbName, worldserver } from '../service/db.ts'
+import { buildScrollPatch } from './scroll_patch.ts'
 
 const _config = config
 const worldDb = worldDbName
@@ -158,6 +159,7 @@ type VendorItemInfo = {
   inventoryType: number
   itemId: number
   name: string
+  spellIds: number[]
   subclassId: number
 }
 
@@ -1128,6 +1130,9 @@ const itemInfoById = new Map(
       inventoryType: Number(row.inventoryType),
       itemId: Number(row.item),
       name: row.name,
+      spellIds: [row.spellId1, row.spellId2, row.spellId3, row.spellId4, row.spellId5].map(Number).filter((id) =>
+        id > 0
+      ),
       subclassId: Number(row.subclassId),
       glyphType: glyphTypeForItem(
         Number(row.classId),
@@ -2541,6 +2546,26 @@ const satchelAlwaysDropItems = satchelAlwaysDropItemIds.flatMap((itemId) => {
   return [{ itemId, name: item.name }]
 })
 const vendorItems = parseVendorItems(gsheetData.ITEM, itemInfoById)
+const scrollPatch = buildScrollPatch(
+  gsheetData.ITEM
+    .filter((row) => vendorCurrencyFromSource(row.SOURCE) && /^scroll of enchant/i.test(row.NAME?.trim() ?? ''))
+    .flatMap((row) => {
+      const itemId = Number(row.ID)
+      if (!Number.isInteger(itemId) || itemId <= 0) return []
+      return [{ itemId, spellIds: itemInfoById.get(itemId)?.spellIds ?? [] }]
+    }),
+  dbc.spell,
+  getDBCSchema('Spell'),
+)
+await Deno.writeTextFile(
+  'launcher/patch.json',
+  JSON.stringify(scrollPatch.edit ? [scrollPatch.edit] : [], null, 2) + '\n',
+)
+console.log(
+  `wrote ${scrollPatch.edit?.rows.length ?? 0} scroll spell DBC edits; ` +
+    `${scrollPatch.missingSpellIds.length} spell IDs were missing from Spell.dbc and ` +
+    `${scrollPatch.unchangedSpellIds.length} had no lower item-level requirement`,
+)
 const wsgBotRoster = parseWsgBotRoster()
 const wsgBotItems = parseWsgBotItems([], wsgBotRoster, starterItems, botStarterItems)
 const wsgBotStartupSpecsByClass = {
