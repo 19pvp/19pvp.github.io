@@ -11,6 +11,8 @@ import { handleLauncherLog } from './launcher_logs.ts'
 import indexHTML from '../web/index.html' with { type: 'bytes' }
 import adminHTML from '../web/admin.html' with { type: 'bytes' }
 import eventsHTML from '../web/events.html' with { type: 'bytes' }
+import pvp19Lua from '../addons/PvP19/PvP19.lua' with { type: 'bytes' }
+import pvp19Toc from '../addons/PvP19/PvP19.toc' with { type: 'text' }
 
 void import('./world-chat.ts').catch((err) => {
   console.error('Discord bridge failed to start', err)
@@ -23,6 +25,8 @@ void applyPatches()
 const serviceJournalQuery = `_PID=${Deno.pid}`
 const worldserverServiceName = env.WORLDSERVER_SERVICE_NAME
 const worldserverJournalPath = `journalctl -u ${worldserverServiceName}`
+const pvp19AddonVersion = pvp19Toc.match(/^## Version:\s*(.+)$/m)?.[1]?.trim()
+if (!pvp19AddonVersion) throw new Error('missing PvP19 addon version in toc')
 
 const systemctl = (...args: string[]) => runCommand('systemctl', args)
 
@@ -608,6 +612,15 @@ export default {
       }
       if (url.pathname === '/events') {
         return new Response(eventsHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+      }
+      if (url.pathname === '/launcher/addons/PvP19.lua') {
+        return new Response(pvp19Lua, {
+          headers: {
+            'cache-control': 'public, max-age=60',
+            'content-type': 'text/x-lua; charset=utf-8',
+            'x-addon-version': pvp19AddonVersion,
+          },
+        })
       }
 
       const launcherLog = await handleLauncherLog(req, url, {

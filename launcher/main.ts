@@ -16,6 +16,7 @@ const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
 const WEBSEED_URL = 'https://dl.devazuka.com/wow/'
 const REALMLIST = Deno.env.get('LAUNCHER_REALMLIST') ?? 'logon.19pvp.com'
 const LOG_UPLOAD_ORIGIN = Deno.env.get('LAUNCHER_LOG_ORIGIN') ?? ''
+const SERVICE_ORIGIN = Deno.env.get('LAUNCHER_SERVICE_ORIGIN') ?? LOG_UPLOAD_ORIGIN
 const LOG_UPLOAD_SECRET = Deno.env.get('LAUNCHER_LOG_SECRET') ?? ''
 const LOG_UPLOAD_MAX_BYTES = 1024 * 1024
 const TRACKER_RETRY_MS = 30_000
@@ -156,6 +157,16 @@ export function savedDownloadPath(path: string | null): string {
   return normalized === OLD_DOWNLOAD_DIRECTORY ? DOWNLOAD_DIRECTORY : normalized
 }
 
+export const addonToc(version: string): string => `
+## Interface: 30300
+## Title: 19 PvP
+## Notes: Companion Add On for 19PvP Server.
+## Author: Clement
+## Version: ${version}
+
+PvP19.lua
+`
+
 async function recoverClientFiles(sourcePath: string | null, targetDownloadPath: string): Promise<void> {
   if (!sourcePath) return
   const source = join(torrentDownloadPath(sourcePath), CLIENT_DIRECTORY_NAME)
@@ -191,6 +202,24 @@ async function patchRealmlist(): Promise<void> {
     await Deno.writeTextFile(path, `set realmlist ${REALMLIST}\r\n`)
     log(`realmlist patched: ${path}`)
   }
+}
+
+async function installAddon(): Promise<void> {
+  const root = clientPath()
+  if (!root) return
+  if (!SERVICE_ORIGIN) {
+    log('warning: missing LAUNCHER_SERVICE_ORIGIN; addon not installed')
+    return
+  }
+  const response = await fetch(`${SERVICE_ORIGIN}/launcher/addons/PvP19.lua`)
+  if (!response.ok) throw new Error(`addon download failed: ${response.status}`)
+  const version = response.headers.get('x-addon-version')
+  if (!version) throw new Error('addon download missing x-addon-version header')
+  const addonPath = join(root, 'Interface', 'AddOns', 'PvP19')
+  await Deno.mkdir(addonPath, { recursive: true })
+  await Deno.writeFile(join(addonPath, 'PvP19.lua'), new Uint8Array(await response.arrayBuffer()))
+  await Deno.writeTextFile(join(addonPath, 'PvP19.toc'), addonToc(version))
+  log(`addon installed: PvP19 ${version}`)
 }
 
 async function pickDownloadPath(): Promise<string | null> {
@@ -397,9 +426,12 @@ function startTorrent(): void {
   )
   activeTorrent.on('done', () => {
     logStatus()
-    patchRealmlist().then(
+    Promise.all([patchRealmlist(), installAddon()]).then(
       () => log('completed'),
-      (error) => log(`realmlist patch failed: ${errorMessage(error)}`),
+      (error) => {
+        log(`setup after download failed: ${errorMessage(error)}`)
+        log('completed')
+      },
     )
   })
   activeTorrent.on(
