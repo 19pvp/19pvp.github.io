@@ -380,6 +380,7 @@ async function generateClientPatch(): Promise<string> {
         }
       }
       worker.onerror = (event) => {
+        event.preventDefault()
         worker.terminate()
         reject(new Error(event.message))
       }
@@ -702,7 +703,7 @@ async function recheckFiles(): Promise<void> {
 }
 
 function recover(error: unknown): void {
-  if (stopped || recovering || changingPath || recoveringFiles) return
+  if (stopped || torrentStopped || recovering || changingPath || recoveringFiles) return
   recovering = true
   log(`recovering torrent: ${errorMessage(error)}`)
   if (statusTimer !== null) clearInterval(statusTimer)
