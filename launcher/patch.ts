@@ -1,6 +1,7 @@
 import { dirname, join } from '@std/path'
 import { type DBCFieldType, type DBCSchema, decodeDBC, encodeDBC, mergeDBCRows } from './dbc.ts'
 import type { StormArchiveModule } from 'stormlib'
+import dbcSources from './dbc-sources.json' with { type: 'json' }
 
 export type DBCEdit = {
   filename: string
@@ -14,6 +15,7 @@ const sourceArchives = [
   'patch-enUS.MPQ',
   'locale-enUS.MPQ',
 ]
+const sourceMap = dbcSources as Record<string, string>
 const fieldTypes = new Set<DBCFieldType>(['byte', 'float', 'int', 'string', 'uint'])
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -58,10 +60,15 @@ async function readOriginalDBC(
   filename: string,
 ): Promise<Uint8Array> {
   let lastError: unknown
-  for (const archiveName of sourceArchives) {
+  const hintedSource = sourceMap[filename] ?? sourceMap[filename.toLowerCase()]
+  const sourcePaths = hintedSource
+    ? [hintedSource, ...sourceArchives.map((archiveName) => join('Data', 'enUS', archiveName))]
+    : sourceArchives.map((archiveName) => join('Data', 'enUS', archiveName))
+  const uniqueSourcePaths = [...new Set(sourcePaths)]
+  for (const sourcePath of uniqueSourcePaths) {
     let archive
     try {
-      archive = await storm.open(join(clientRoot, 'Data', 'enUS', archiveName))
+      archive = await storm.open(join(clientRoot, sourcePath))
       const file = archive.getFile(`DBFilesClient\\${filename}`)
       const bytes = new Uint8Array(file.size)
       if (file.read(bytes) !== bytes.byteLength) throw new Error(`could not read ${filename}`)
