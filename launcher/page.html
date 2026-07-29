@@ -197,8 +197,9 @@
       if (logView.textContent === 'Connecting to launcher…') {
         logView.textContent = ''
       }
+      const shouldScroll = logView.scrollTop + logView.clientHeight >= logView.scrollHeight - 8
       logView.textContent += '[' + entry.timestamp + '] ' + entry.message + '\n'
-      logView.scrollTop = logView.scrollHeight
+      if (shouldScroll) logView.scrollTop = logView.scrollHeight
       updateStatus(entry.message)
     }
     document.querySelector('#choose-directory').onclick = async () => {
@@ -265,6 +266,9 @@
       window.close()
       closeMessage.textContent = ' You can close this tab.'
     }
+    window.addEventListener('pagehide', () => {
+      if (!serviceStopped) navigator.sendBeacon('/shutdown')
+    })
     fetch('/api')
       .then((response) => response.json())
       .then((status) => {

@@ -28,6 +28,7 @@ const WEBTORRENT_OPTIONS = {
 const LOG_LIMIT = 500
 const STATUS_INTERVAL_MS = 1000
 const SAVED_DOWNLOAD_PATH_KEY = 'downloadPath'
+const SAVED_LAUNCHER_URL_KEY = 'launcherUrl'
 const encoder = new TextEncoder()
 const page = new TextDecoder().decode(pageBytes)
 const startupTime = performance.now()
@@ -67,6 +68,7 @@ let recovering = false
 let started = false
 let stopped = false
 let changingPath = false
+let shutdownLauncher: (() => void) | null = null
 
 function log(message: string): void {
   const entry = { timestamp: new Date().toISOString(), message }
@@ -111,6 +113,20 @@ function errorMessage(error: unknown): string {
 function isCrossDeviceRename(error: unknown): boolean {
   const message = errorMessage(error)
   return message.includes('Invalid cross-device link') || message.includes('EXDEV') || message.includes('os error 18')
+}
+
+async function stopPreviousLauncher(): Promise<void> {
+  const url = localStorage.getItem(SAVED_LAUNCHER_URL_KEY)
+  if (!url) return
+  try {
+    await fetch(`${url}/shutdown`, {
+      method: 'POST',
+      signal: AbortSignal.timeout(500),
+    })
+    log(`previous launcher stopped: ${url}`)
+  } catch {
+    log(`no previous launcher running at: ${url}`)
+  }
 }
 
 function exists(path: string): Promise<boolean> {
@@ -430,6 +446,19 @@ export async function handler(request: Request): Promise<Response> {
     return await shareLogs()
   }
 
+  if (path === '/shutdown') {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
+    }
+    const origin = request.headers.get('origin')
+    if (origin && origin !== new URL(request.url).origin) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    log('shutdown requested')
+    queueMicrotask(() => shutdownLauncher?.())
+    return Response.json({ ok: true })
+  }
+
   if (path === '/download-path') {
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 })
@@ -499,6 +528,7 @@ export async function handler(request: Request): Promise<Response> {
 if (import.meta.main) {
   started = true
   logStep('launcher started')
+  await stopPreviousLauncher()
   const rawSavedDownloadPath = localStorage.getItem(SAVED_DOWNLOAD_PATH_KEY)
   downloadPath = savedDownloadPath(rawSavedDownloadPath)
   if (rawSavedDownloadPath && downloadPath !== rawSavedDownloadPath) {
@@ -528,6 +558,15 @@ if (import.meta.main) {
   startTorrent()
 
   const abort = new AbortController()
+  let stopping: Promise<void> | null = null
+  const shutdown = () => {
+    stopping ??= (async () => {
+      abort.abort()
+      await stop()
+    })()
+    return stopping
+  }
+  shutdownLauncher = shutdown
   logStep('starting local HTTP server')
   const server = Deno.serve({
     hostname: '127.0.0.1',
@@ -535,6 +574,7 @@ if (import.meta.main) {
     signal: abort.signal,
   }, handler)
   const url = `http://127.0.0.1:${server.addr.port}`
+  localStorage.setItem(SAVED_LAUNCHER_URL_KEY, url)
   logStep(`local HTTP server listening: ${url}`)
   const open = Deno.build.os === 'windows'
     ? new Deno.Command('cmd', { args: ['/c', 'start', '', url] })
@@ -544,14 +584,6 @@ if (import.meta.main) {
   logStep('opening browser')
   open.spawn()
   log(`opening ${url}`)
-  let stopping: Promise<void> | null = null
-  const shutdown = () => {
-    stopping ??= (async () => {
-      abort.abort()
-      await stop()
-    })()
-    return stopping
-  }
   Deno.addSignalListener('SIGINT', shutdown)
   Deno.addSignalListener('SIGTERM', shutdown)
   await server.finished

@@ -10,6 +10,14 @@ Deno.test('serves the launcher page', async () => {
   assertStringIncludes(body, 'id="choose-directory"')
   assertStringIncludes(body, 'id="log-details"')
   assertStringIncludes(body, 'id="close-page"')
+  assertStringIncludes(body, '/shutdown')
+})
+
+Deno.test('accepts shutdown requests', async () => {
+  const response = await handler(
+    new Request('http://localhost/shutdown', { method: 'POST' }),
+  )
+  assertEquals(response.status, 200)
 })
 
 Deno.test('changes the download path', async () => {
