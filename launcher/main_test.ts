@@ -7,8 +7,8 @@ Deno.test('serves the launcher page', async () => {
   const body = await response.text()
   assertStringIncludes(body, '19PvP Launcher')
   assertStringIncludes(body, 'webkitdirectory')
-  assertStringIncludes(body, '<details>')
-  assertEquals(body.includes('<button'), false)
+  assertStringIncludes(body, 'id="log-details"')
+  assertStringIncludes(body, 'id="close-page"')
 })
 
 Deno.test('serves status and an SSE stream', async () => {

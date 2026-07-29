@@ -53,6 +53,7 @@ let client: Client | null = null
 let activeTorrent: Torrent | null = null
 let downloadPath: string | null = null
 let statusTimer: ReturnType<typeof setInterval> | null = null
+let torrentReady = false
 let recovering = false
 let started = false
 let stopped = false
@@ -161,10 +162,15 @@ function formatLogs(entries: LogEntry[]): string {
 function logStatus(): void {
   if (!activeTorrent) return
   const remaining = Math.max(0, activeTorrent.length - activeTorrent.downloaded)
-  const eta = activeTorrent.downloadSpeed > 0 ? formatDuration(remaining / activeTorrent.downloadSpeed) : 'unknown'
+  const progress = (Math.max(0, Math.min(1, activeTorrent.progress)) * 100).toFixed(1)
+  const eta = torrentReady && activeTorrent.downloadSpeed > 0
+    ? formatDuration(remaining / activeTorrent.downloadSpeed)
+    : torrentReady
+    ? 'unknown'
+    : `checking local files ${progress}%`
   log(
     `status: peers=${activeTorrent.numPeers} speed=${formatBytes(activeTorrent.downloadSpeed)}/s ` +
-      `progress=${(Math.max(0, Math.min(1, activeTorrent.progress)) * 100).toFixed(1)}% ` +
+      `progress=${progress}% ` +
       `downloaded=${formatBytes(activeTorrent.downloaded)}/${formatBytes(activeTorrent.length)} ` +
       `eta=${eta}`,
   )
@@ -189,6 +195,7 @@ async function stop(): Promise<void> {
 function startTorrent(): void {
   if (!downloadPath) throw new Error('missing download path')
   if (statusTimer !== null) clearInterval(statusTimer)
+  torrentReady = false
 
   logStep('creating WebTorrent client')
   client = new WebTorrent(WEBTORRENT_OPTIONS) as unknown as Client
@@ -223,6 +230,7 @@ function startTorrent(): void {
     },
   )
   activeTorrent.on('ready', () => {
+    torrentReady = true
     logStep('existing data check finished')
     log('torrent ready; existing data checked')
   })

@@ -56,16 +56,26 @@
     }
     #help {
       margin-top: 12px;
-      color: #fbbf24;
+      color: #d1d5db;
       font-family: system-ui, sans-serif;
     }
-    #help a,
-    #log-share a {
-      color: #fde68a;
-    }
-    #log-share {
+    #stopped {
       margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #4b5563;
+      background: #111827;
+      color: #d1d5db;
       font-family: system-ui, sans-serif;
+    }
+    #saved-path {
+      margin: 8px 0;
+      color: #9ca3af;
+    }
+    button {
+      margin-left: 12px;
+    }
+    #help a {
+      color: #fde68a;
     }
     details {
       margin-top: 24px;
@@ -95,12 +105,15 @@
         <div
           id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
         <div id="help"
-          hidden>Looks like the download is stuck. <a id="share-logs" href="#">Share this info link to get help</a><span id="share-result"></span></div>
+          hidden>Need help? Create a report link and send it to support. <a id="share-logs" href="#">Create report link</a><span id="share-result"></span></div>
+        <div id="stopped" hidden>
+          <div id="stopped-message">Launcher service stopped.</div>
+          <div id="saved-path">Files saved in: unknown</div>
+          <button id="close-page" type="button">Close page</button><span id="close-message"></span>
+        </div>
       </section>
-      <details>
+      <details id="log-details">
         <summary>Logs</summary>
-        <div
-          id="log-share"><a id="share-logs-from-details" href="#">Share this info link to get help</a><span id="share-result-from-details"></span></div>
         <pre id="logs" role="log">Connecting to launcher…</pre>
       </details>
     </main>
@@ -114,17 +127,38 @@
     const peers = document.querySelector('#peers')
     const downloadPath = document.querySelector('#download-path')
     const help = document.querySelector('#help')
+    const logDetails = document.querySelector('#log-details')
     const shareLogs = document.querySelector('#share-logs')
-    const shareLogsFromDetails = document.querySelector('#share-logs-from-details')
     const shareResult = document.querySelector('#share-result')
-    const shareResultFromDetails = document.querySelector(
-      '#share-result-from-details',
-    )
+    const stopped = document.querySelector('#stopped')
+    const stoppedMessage = document.querySelector('#stopped-message')
+    const savedPath = document.querySelector('#saved-path')
+    const closePage = document.querySelector('#close-page')
+    const closeMessage = document.querySelector('#close-message')
+    const rememberPath = (label, path) => {
+      const text = label + path
+      downloadPath.textContent = text
+      savedPath.textContent = 'Files saved in: ' + path
+      localStorage.setItem('lastClientPath', path)
+    }
+    const lastClientPath = localStorage.getItem('lastClientPath')
+    if (lastClientPath) {
+      downloadPath.textContent = 'Last known files path: ' + lastClientPath
+      savedPath.textContent = 'Files saved in: ' + lastClientPath
+    }
     let lastMovingAt = Date.now()
     let lastDownloaded = '0 B'
+    let isComplete = false
+    let reportVisible = false
+    let serviceStopped = false
+    const updateHelpVisibility = () => {
+      help.hidden = !(reportVisible || serviceStopped || logDetails.open)
+    }
     const updateStatus = (message) => {
-      if (message === 'completed') state.textContent = 'Completed'
-      else if (message.includes('error:')) state.textContent = 'Error'
+      if (message === 'completed') {
+        state.textContent = 'Completed'
+        isComplete = true
+      } else if (message.includes('error:')) state.textContent = 'Error'
       else if (message === 'torrent loaded') state.textContent = 'Loading torrent'
       else if (message.startsWith('metadata received:')) {
         state.textContent = 'Checking existing data'
@@ -132,11 +166,15 @@
         state.textContent = 'Downloading'
       } else if (message === 'launcher stopped') state.textContent = 'Stopped'
       else if (message.startsWith('download directory:')) {
-        downloadPath.textContent = 'Download directory: ' +
-          message.slice('download directory:'.length).trim()
+        rememberPath(
+          'Download directory: ',
+          message.slice('download directory:'.length).trim(),
+        )
       } else if (message.startsWith('client files root:')) {
-        downloadPath.textContent = 'Client files root: ' +
-          message.slice('client files root:'.length).trim()
+        rememberPath(
+          'Client files root: ',
+          message.slice('client files root:'.length).trim(),
+        )
       }
       const match = message.match(
         /^status: peers=(\d+) speed=(.+?)\/s progress=([\d.]+)% downloaded=(.+?)\/(.+?) eta=(.+)$/,
@@ -144,16 +182,22 @@
       if (!match) return
       peers.textContent = match[1] + ' peers'
       speed.textContent = match[2] + '/s'
-      eta.textContent = 'Left: ' + match[6]
+      eta.textContent = match[6].startsWith('checking local files ')
+        ? 'Checking local files: ' + match[6].slice('checking local files '.length)
+        : 'Left: ' + match[6]
       downloaded.textContent = match[4] + ' / ' + match[5]
       progress.value = Number(match[3]) / 100
+      isComplete = Number(match[3]) >= 100
       if (match[2] !== '0 B' || match[4] !== lastDownloaded) {
         lastMovingAt = Date.now()
-        help.hidden = true
+        reportVisible = false
+        updateHelpVisibility()
       }
       lastDownloaded = match[4]
     }
     const append = (entry) => {
+      if (logView.dataset.lastMessage === entry.message) return
+      logView.dataset.lastMessage = entry.message
       if (logView.textContent === 'Connecting to launcher…') {
         logView.textContent = ''
       }
@@ -170,14 +214,25 @@
     }
     const stream = new EventSource('/events')
     stream.onmessage = (event) => append(JSON.parse(event.data))
-    stream.onerror = () =>
+    stream.onerror = () => {
+      if (serviceStopped) return
+      state.textContent = 'Launcher service stopped'
+      stoppedMessage.textContent = isComplete
+        ? 'Launcher service stopped. The download is complete.'
+        : 'Launcher service stopped. The download is partial. Restart the launcher to safely resume.'
+      stopped.hidden = false
+      serviceStopped = true
+      updateHelpVisibility()
       append({
         timestamp: new Date().toISOString(),
-        message: 'event stream disconnected',
+        message: 'launcher service stopped',
       })
+    }
     setInterval(() => {
+      if (serviceStopped) return
       if (state.textContent !== 'Completed' && Date.now() - lastMovingAt > 30000) {
-        help.hidden = false
+        reportVisible = true
+        updateHelpVisibility()
       }
     }, 1000)
     const uploadLogs = async (event, result) => {
@@ -197,12 +252,16 @@
       result.append(link)
     }
     shareLogs.onclick = (event) => uploadLogs(event, shareResult)
-    shareLogsFromDetails.onclick = (event) => uploadLogs(event, shareResultFromDetails)
+    logDetails.ontoggle = updateHelpVisibility
+    closePage.onclick = () => {
+      window.close()
+      closeMessage.textContent = ' You can close this tab.'
+    }
     fetch('/api')
       .then((response) => response.json())
       .then((status) => {
         if (status.downloadPath) {
-          downloadPath.textContent = 'Download directory: ' + status.downloadPath
+          rememberPath('Download directory: ', status.downloadPath)
         }
       })
     </script>
