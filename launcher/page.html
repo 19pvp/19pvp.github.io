@@ -28,7 +28,7 @@
       margin: 24px 0 4px;
       font-family: system-ui, sans-serif;
     }
-    #directory-name {
+    #directory-message {
       color: #9ca3af;
       font-size: 13px;
     }
@@ -95,9 +95,10 @@
   <body>
     <main>
       <h1>19PvP Launcher</h1>
-      <label>Source directory <input id="directory" type="file" webkitdirectory directory multiple></label>
-      <div
-        id="directory-name">No directory selected. The launcher still downloads to its managed directory.</div>
+      <div>
+        <button id="choose-directory" type="button">Choose download folder</button>
+        <span id="directory-message">No folder selected.</span>
+      </div>
       <div id="download-path">Download directory: loading…</div>
       <section id="status" aria-live="polite">
         <div id="state">Starting</div>
@@ -126,6 +127,7 @@
     const eta = document.querySelector('#eta')
     const peers = document.querySelector('#peers')
     const downloadPath = document.querySelector('#download-path')
+    const directoryMessage = document.querySelector('#directory-message')
     const help = document.querySelector('#help')
     const logDetails = document.querySelector('#log-details')
     const shareLogs = document.querySelector('#share-logs')
@@ -205,12 +207,24 @@
       logView.scrollTop = logView.scrollHeight
       updateStatus(entry.message)
     }
-    document.querySelector('#directory').onchange = (event) => {
-      const file = event.target.files[0]
-      document.querySelector('#directory-name').textContent = file
-        ? file.webkitRelativePath.split('/')[0] + ' selected (' +
-          event.target.files.length + ' files)'
-        : 'No directory selected. The launcher still downloads to its managed directory.'
+    document.querySelector('#choose-directory').onclick = async () => {
+      directoryMessage.textContent = 'Opening folder picker…'
+      const response = await fetch('/pick-directory', { method: 'POST' })
+      const data = await response.json()
+      if (!response.ok) {
+        directoryMessage.textContent = 'Could not use this folder: ' + (data.error || response.status)
+        return
+      }
+      if (data.canceled) {
+        directoryMessage.textContent = 'No folder selected. Nothing changed.'
+        return
+      }
+      if (data.changed === false) {
+        directoryMessage.textContent = 'This is already the download folder.'
+        return
+      }
+      rememberPath('Download directory: ', data.clientPath || data.downloadPath)
+      directoryMessage.textContent = 'Folder changed. Existing files are being checked.'
     }
     const stream = new EventSource('/events')
     stream.onmessage = (event) => append(JSON.parse(event.data))
@@ -261,7 +275,7 @@
       .then((response) => response.json())
       .then((status) => {
         if (status.downloadPath) {
-          rememberPath('Download directory: ', status.downloadPath)
+          rememberPath('Download directory: ', status.clientPath || status.downloadPath)
         }
       })
     </script>

@@ -1,8 +1,10 @@
 import { brotliCompressSync } from 'node:zlib'
+import { basename, dirname, join } from '@std/path'
 import WebTorrent from 'webtorrent'
 import pageBytes from './page.html' with { type: 'bytes' }
 import torrent from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
+const CLIENT_DIRECTORY_NAME = 'World of Warcraft 3.3.5a'
 const DOWNLOAD_DIRECTORY = `${Deno.env.get('TEMP') ?? Deno.env.get('TMPDIR') ?? '/tmp'}/19pvp-launcher`
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
 const WEBSEED_URL = 'https://dl.devazuka.com/wow/'
@@ -57,6 +59,7 @@ let torrentReady = false
 let recovering = false
 let started = false
 let stopped = false
+let changingPath = false
 
 function log(message: string): void {
   const entry = { timestamp: new Date().toISOString(), message }
@@ -103,6 +106,42 @@ function exists(path: string): Promise<boolean> {
     if (error instanceof Deno.errors.NotFound) return false
     throw error
   })
+}
+
+function clientPath(): string | null {
+  return downloadPath ? join(downloadPath, CLIENT_DIRECTORY_NAME) : null
+}
+
+async function pickDownloadPath(): Promise<string | null> {
+  const output = await (async () => {
+    if (Deno.build.os === 'windows') {
+      return await new Deno.Command('powershell', {
+        args: [
+          '-NoProfile',
+          '-STA',
+          '-Command',
+          'Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.FolderBrowserDialog; if ($d.ShowDialog() -eq "OK") { [Console]::Write($d.SelectedPath) }',
+        ],
+      }).output()
+    }
+    if (Deno.build.os === 'darwin') {
+      return await new Deno.Command('osascript', {
+        args: ['-e', 'POSIX path of (choose folder with prompt "Choose download folder")'],
+      }).output()
+    }
+    try {
+      return await new Deno.Command('zenity', {
+        args: ['--file-selection', '--directory', '--title=Choose download folder'],
+      }).output()
+    } catch (error) {
+      if (!(error instanceof Deno.errors.NotFound)) throw error
+      return await new Deno.Command('kdialog', {
+        args: ['--getexistingdirectory'],
+      }).output()
+    }
+  })()
+  if (!output.success) return null
+  return new TextDecoder().decode(output.stdout).trim() || null
 }
 
 async function shareLogs(): Promise<Response> {
@@ -192,6 +231,38 @@ async function stop(): Promise<void> {
   log('launcher stopped')
 }
 
+async function changeDownloadPath(path: string): Promise<boolean> {
+  path = path.trim()
+  if (!path) throw new Error('missing download path')
+  if (path.includes('\0') || path.includes('\n')) throw new Error('invalid download path')
+  // NOTE: WebTorrent wants the parent directory. Users pick the actual client directory.
+  if (basename(path) === CLIENT_DIRECTORY_NAME) path = dirname(path)
+  if (path === downloadPath) return false
+  if (changingPath) throw new Error('download path is already changing')
+  changingPath = true
+  try {
+    log(`changing download directory to: ${path}`)
+    if (statusTimer !== null) clearInterval(statusTimer)
+    statusTimer = null
+    activeTorrent = null
+
+    const currentClient = client
+    client = null
+    if (currentClient) {
+      log('stopping torrent for directory change')
+      await new Promise<void>((resolve) => currentClient.destroy(resolve))
+    }
+
+    await Deno.mkdir(path, { recursive: true })
+    downloadPath = path
+    log(`download directory: ${downloadPath}`)
+    if (started && !stopped) startTorrent()
+    return true
+  } finally {
+    changingPath = false
+  }
+}
+
 function startTorrent(): void {
   if (!downloadPath) throw new Error('missing download path')
   if (statusTimer !== null) clearInterval(statusTimer)
@@ -222,7 +293,7 @@ function startTorrent(): void {
       log(
         `metadata received: ${activeTorrent!.name} (${formatBytes(activeTorrent!.length)})`,
       )
-      const clientRoot = `${downloadPath}/${activeTorrent!.name}`
+      const clientRoot = join(downloadPath!, activeTorrent!.name)
       log(`client files root: ${clientRoot}`)
       exists(clientRoot).then((found) => log(`client files root existed at startup: ${found ? 'yes' : 'no'}`))
       log(`first torrent file: ${activeTorrent!.files[0]?.path ?? 'none'}`)
@@ -257,7 +328,7 @@ function startTorrent(): void {
 }
 
 function recover(error: unknown): void {
-  if (stopped || recovering) return
+  if (stopped || recovering || changingPath) return
   recovering = true
   log(`recovering torrent: ${errorMessage(error)}`)
   if (statusTimer !== null) clearInterval(statusTimer)
@@ -289,6 +360,7 @@ export async function handler(request: Request): Promise<Response> {
   if (path === '/api') {
     return Response.json({
       downloadPath,
+      clientPath: clientPath(),
       done: activeTorrent?.done ?? false,
       downloaded: activeTorrent?.downloaded ?? 0,
       downloadSpeed: activeTorrent?.downloadSpeed ?? 0,
@@ -305,6 +377,42 @@ export async function handler(request: Request): Promise<Response> {
       return new Response('Method not allowed', { status: 405 })
     }
     return await shareLogs()
+  }
+
+  if (path === '/download-path') {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
+    }
+    const origin = request.headers.get('origin')
+    if (origin && origin !== new URL(request.url).origin) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    try {
+      const changed = await changeDownloadPath(await request.text())
+      return Response.json({ changed, downloadPath, clientPath: clientPath() })
+    } catch (error) {
+      return Response.json({ error: errorMessage(error) }, { status: 400 })
+    }
+  }
+
+  if (path === '/pick-directory') {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
+    }
+    const origin = request.headers.get('origin')
+    if (origin && origin !== new URL(request.url).origin) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    try {
+      const selectedPath = await pickDownloadPath()
+      if (!selectedPath) {
+        return Response.json({ canceled: true, changed: false, downloadPath, clientPath: clientPath() })
+      }
+      const changed = await changeDownloadPath(selectedPath)
+      return Response.json({ canceled: false, changed, downloadPath, clientPath: clientPath() })
+    } catch (error) {
+      return Response.json({ error: errorMessage(error) }, { status: 500 })
+    }
   }
 
   if (path === '/events') {
