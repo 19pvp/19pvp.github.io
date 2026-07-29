@@ -147,6 +147,11 @@ export class StormArchiveModule {
     maxFileCount = 127,
   ): StormArchive {
     this.ensureDirectory()
+    try {
+      this.#module.FS.unlink('/stormlib/archive.mpq')
+    } catch {
+      // The virtual archive does not exist on the first creation.
+    }
     const handle = this.#createArchive(
       '/stormlib/archive.mpq',
       flags,

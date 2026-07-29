@@ -1,0 +1,116 @@
+import { dirname, join } from '@std/path'
+import { type DBCFieldType, type DBCSchema, decodeDBC, encodeDBC, mergeDBCRows } from './dbc.ts'
+import type { StormArchiveModule } from 'stormlib'
+
+export type DBCEdit = {
+  filename: string
+  schema: DBCSchema
+  rows: readonly Record<string, unknown>[]
+}
+
+const sourceArchives = [
+  'patch-enUS-3.MPQ',
+  'patch-enUS-2.MPQ',
+  'patch-enUS.MPQ',
+  'locale-enUS.MPQ',
+]
+const fieldTypes = new Set<DBCFieldType>(['byte', 'float', 'int', 'string', 'uint'])
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+export function parseDBCEditPayload(payload: unknown): DBCEdit[] {
+  const items = Array.isArray(payload)
+    ? payload
+    : isRecord(payload) && Array.isArray(payload.patches)
+    ? payload.patches
+    : isRecord(payload) && 'filename' in payload && 'schema' in payload && 'rows' in payload
+    ? [payload]
+    : null
+  if (!items) throw new Error('patch response must be an array of DBC edits')
+
+  return items.map((item, index) => {
+    if (!isRecord(item) || typeof item.filename !== 'string' || !/^\w[\w.-]*\.dbc$/i.test(item.filename)) {
+      throw new Error(`invalid DBC edit filename at index ${index}`)
+    }
+    if (!isRecord(item.schema) || !Array.isArray(item.rows)) {
+      throw new Error(`invalid DBC edit at index ${index}`)
+    }
+    const schema: DBCSchema = {}
+    for (const [name, type] of Object.entries(item.schema)) {
+      if (typeof type !== 'string' || !fieldTypes.has(type as DBCFieldType)) {
+        throw new Error(`invalid DBC field type for ${item.filename}: ${name}`)
+      }
+      schema[name] = type as DBCFieldType
+    }
+    const rows = item.rows.map((row, rowIndex) => {
+      if (!isRecord(row)) throw new Error(`invalid DBC row ${rowIndex} in ${item.filename}`)
+      return row
+    })
+    if (Object.keys(schema).length === 0) throw new Error(`empty DBC schema: ${item.filename}`)
+    return { filename: item.filename, schema, rows }
+  })
+}
+
+async function readOriginalDBC(
+  storm: StormArchiveModule,
+  clientRoot: string,
+  filename: string,
+): Promise<Uint8Array> {
+  let lastError: unknown
+  for (const archiveName of sourceArchives) {
+    let archive
+    try {
+      archive = await storm.open(join(clientRoot, 'Data', 'enUS', archiveName))
+      const file = archive.getFile(`DBFilesClient\\${filename}`)
+      const bytes = new Uint8Array(file.size)
+      if (file.read(bytes) !== bytes.byteLength) throw new Error(`could not read ${filename}`)
+      return bytes
+    } catch (error) {
+      lastError = error
+    } finally {
+      await archive?.close()
+    }
+  }
+  throw new Deno.errors.NotFound(`could not find DBFilesClient\\${filename}`, { cause: lastError })
+}
+
+export async function generatePatch(
+  storm: StormArchiveModule,
+  clientRoot: string,
+  edits: readonly DBCEdit[],
+  outputPath: string,
+): Promise<void> {
+  const files: { name: string; bytes: Uint8Array }[] = []
+  for (const edit of edits) {
+    const original = await readOriginalDBC(storm, clientRoot, edit.filename)
+    const originalRows = decodeDBC(original, edit.schema)
+    const rows = mergeDBCRows(edit.schema, originalRows, edit.rows)
+    files.push({
+      name: `DBFilesClient\\${edit.filename}`,
+      bytes: encodeDBC(edit.schema, rows),
+    })
+  }
+
+  const archive = storm.createArchive()
+  let closed = false
+  try {
+    for (const file of files) {
+      archive.addFile(file.bytes, file.name)
+    }
+    const bytes = archive.close()
+    closed = true
+    if (!bytes) throw new Error('StormLib did not return the generated patch')
+    await Deno.mkdir(dirname(outputPath), { recursive: true })
+    await Deno.writeFile(outputPath, bytes)
+  } catch (error) {
+    if (!closed) {
+      try {
+        archive.close()
+      } catch {
+        // Preserve the original generation error.
+      }
+    }
+    throw error
+  }
+}

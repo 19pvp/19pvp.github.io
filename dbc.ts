@@ -1,8 +1,8 @@
 const MAGIC_NUMBER = 1128416343 // 'WDBC'
 const HEADER_SIZE = 20
 
-type DBCFieldType = 'byte' | 'float' | 'int' | 'string' | 'uint'
-type DBCSchema = Record<string, DBCFieldType>
+export type DBCFieldType = 'byte' | 'float' | 'int' | 'string' | 'uint'
+export type DBCSchema = Record<string, DBCFieldType>
 
 const dbcSchema = {
   Achievement: {
@@ -2716,3 +2716,5 @@ export const openDBC = <T extends DBCName>(name: T) => {
   cache.set(name, byIds as DBCRows<DBCName>)
   return byIds
 }
+
+export const getDBCSchema = <T extends DBCName>(name: T): DBCSchema => ({ ...dbcSchema[name] })
