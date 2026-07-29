@@ -14,6 +14,7 @@ const DOWNLOAD_DIRECTORY = join(
 )
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
 const WEBSEED_URL = 'https://dl.devazuka.com/wow/'
+const REALMLIST = Deno.env.get('LAUNCHER_REALMLIST') ?? 'logon.19pvp.com'
 const LOG_UPLOAD_ORIGIN = Deno.env.get('LAUNCHER_LOG_ORIGIN') ?? ''
 const LOG_UPLOAD_SECRET = Deno.env.get('LAUNCHER_LOG_SECRET') ?? ''
 const LOG_UPLOAD_MAX_BYTES = 1024 * 1024
@@ -40,7 +41,7 @@ type Torrent = {
   done: boolean
   downloaded: number
   downloadSpeed: number
-  files: { path: string }[]
+  files: { path: string; name: string }[]
   infoHash: string
   length: number
   name: string
@@ -140,6 +141,10 @@ function clientPath(): string | null {
   return downloadPath ? join(downloadPath, CLIENT_DIRECTORY_NAME) : null
 }
 
+export function isRealmlistFile(file: { name: string }): boolean {
+  return file.name.toLowerCase() === 'realmlist.wtf'
+}
+
 export function torrentDownloadPath(path: string): string {
   path = path.trim()
   while (basename(path) === CLIENT_DIRECTORY_NAME) path = dirname(path)
@@ -171,6 +176,20 @@ async function recoverClientFiles(sourcePath: string | null, targetDownloadPath:
     await copy(source, target, { overwrite: true })
     await Deno.remove(source, { recursive: true })
     log('client files copied and old files removed')
+  }
+}
+
+async function patchRealmlist(): Promise<void> {
+  if (!activeTorrent || !downloadPath) return
+  const files = activeTorrent.files.filter(isRealmlistFile)
+  if (files.length === 0) {
+    log('warning: no realmlist.wtf file found')
+    return
+  }
+  for (const file of files) {
+    const path = join(downloadPath, file.path)
+    await Deno.writeTextFile(path, `set realmlist ${REALMLIST}\r\n`)
+    log(`realmlist patched: ${path}`)
   }
 }
 
@@ -378,7 +397,10 @@ function startTorrent(): void {
   )
   activeTorrent.on('done', () => {
     logStatus()
-    log('completed')
+    patchRealmlist().then(
+      () => log('completed'),
+      (error) => log(`realmlist patch failed: ${errorMessage(error)}`),
+    )
   })
   activeTorrent.on(
     'warning',

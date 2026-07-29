@@ -1,6 +1,6 @@
 import { assertEquals, assertStringIncludes } from '@std/assert'
 import { join } from '@std/path'
-import { handler, savedDownloadPath, torrentDownloadPath } from './main.ts'
+import { handler, isRealmlistFile, savedDownloadPath, torrentDownloadPath } from './main.ts'
 
 Deno.test('serves the launcher page', async () => {
   const response = await handler(new Request('http://localhost/'))
@@ -80,6 +80,11 @@ Deno.test('migrates the old tmp default path', () => {
   const path = savedDownloadPath('/tmp/19pvp-launcher/World of Warcraft 3.3.5a')
   assertStringIncludes(path, 'Downloads')
   assertStringIncludes(path, '19pvp-wow-client')
+})
+
+Deno.test('finds realmlist files', () => {
+  assertEquals(isRealmlistFile({ name: 'realmlist.wtf' }), true)
+  assertEquals(isRealmlistFile({ name: 'README.txt' }), false)
 })
 
 Deno.test('serves status and an SSE stream', async () => {
