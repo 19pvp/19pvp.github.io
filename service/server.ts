@@ -27,6 +27,9 @@ const worldserverServiceName = env.WORLDSERVER_SERVICE_NAME
 const worldserverJournalPath = `journalctl -u ${worldserverServiceName}`
 const pvp19AddonVersion = pvp19Toc.match(/^## Version:\s*(.+)$/m)?.[1]?.trim()
 if (!pvp19AddonVersion) throw new Error('missing PvP19 addon version in toc')
+const [realm] = await auth.sql`SELECT address FROM realmlist WHERE id = ${env.WORLD_ID}`
+const launcherRealmlist = String(realm?.address ?? '')
+if (!launcherRealmlist) throw new Error(`realm not found: ${env.WORLD_ID}`)
 
 const systemctl = (...args: string[]) => runCommand('systemctl', args)
 
@@ -622,10 +625,18 @@ export default {
           },
         })
       }
+      if (url.pathname === '/launcher/config') {
+        if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
+        return json({
+          webseedUrl: env.LAUNCHER_WEBSEED_URL,
+          realmlist: launcherRealmlist,
+          'verification-hash': env.LAUNCHER_VERIFICATION_HASH,
+        })
+      }
 
       const launcherLog = await handleLauncherLog(req, url, {
         dir: env.LAUNCHER_LOG_DIR,
-        secret: env.LAUNCHER_LOG_SECRET,
+        secret: env.LAUNCHER_VERIFICATION_HASH,
       })
       if (launcherLog) return launcherLog
 

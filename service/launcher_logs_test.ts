@@ -16,7 +16,7 @@ Deno.test('stores and serves compressed launcher logs by sha1', async () => {
       method: 'POST',
       headers: {
         'content-encoding': 'br',
-        'x-launcher-log-secret': 'secret',
+        'x-verification-hash': 'secret',
       },
       body,
     }),

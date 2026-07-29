@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>19PvP Launcher</title>
+    <link rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>">
     <style>
     :root {
       color-scheme: dark;
@@ -98,6 +100,14 @@
       color: #9ca3af;
       font-family: system-ui, sans-serif;
     }
+    .step-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .step-state {
+      align-self: flex-start;
+      white-space: nowrap;
+    }
     .step[data-state="active"] {
       border-color: #facc15;
       background: #422006;
@@ -135,6 +145,10 @@
       color: #9ca3af;
     }
     button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       padding: 8px 12px;
       border: 1px solid #4b5563;
       border-radius: 6px;
@@ -166,7 +180,7 @@
       height: 50vh;
       margin-top: 12px;
       overflow: auto;
-      padding: 16px;
+      padding: 8px;
       border: 1px solid #374151;
       border-radius: 8px;
       background: #030712;
@@ -193,12 +207,16 @@
       <section id="status" aria-live="polite">
         <div
           id="state">Starting<span id="scan-spinner" hidden title="Looking for an existing game" aria-label="Looking for an existing game">⟳</span></div>
-        <progress id="progress" max="1" value="0"></progress>
-        <div
-          id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
         <div id="steps" aria-label="Setup progress">
-          <div class="step" data-step="download"
-            data-state="active"><span class="step-title">💾 DOWNLOAD</span><span class="step-state">Starting</span></div>
+          <div class="step" data-step="download" data-state="active">
+            <div class="step-main">
+              <div class="step-title">💾 DOWNLOAD</div>
+              <progress id="progress" max="1" value="0"></progress>
+              <div
+                id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
+            </div>
+            <span class="step-state">Starting</span>
+          </div>
           <div class="step" data-step="scan"
             data-state="pending"><span class="step-title">🔎 FIND EXISTING CLIENT</span><span class="step-state">Waiting</span></div>
           <div class="step" data-step="realmlist"
@@ -206,17 +224,17 @@
           <div class="step" data-step="addon"
             data-state="pending"><span class="step-title">📦 INSTALL THE COMPANION ADDON</span><span class="step-state">Waiting</span></div>
         </div>
-        <div id="help"
-          hidden>Need help? Create a report link and send it to support. <a id="share-logs" href="#">Create report link</a><span id="share-result"></span></div>
         <div id="stopped" hidden>
           <div id="stopped-message">Launcher service stopped.</div>
           <div id="saved-path">Files saved in: unknown</div>
-          <button id="close-page" type="button">Close page</button><span id="close-message"></span>
+          <button id="close-page" type="button">× Close page</button><span id="close-message"></span>
         </div>
       </section>
       <details id="log-details">
         <summary>Logs</summary>
         <pre id="logs" role="log">Connecting to launcher…</pre>
+        <div
+          id="help">Need help? Create a report link and send it to support. <a id="share-logs" href="#">Create report link</a><span id="share-result"></span></div>
       </details>
     </main>
     <script>
@@ -224,6 +242,7 @@
     const state = document.querySelector('#state')
     const scanSpinner = document.querySelector('#scan-spinner')
     const progress = document.querySelector('#progress')
+    const stats = document.querySelector('#stats')
     const downloaded = document.querySelector('#downloaded')
     const speed = document.querySelector('#speed')
     const eta = document.querySelector('#eta')
@@ -233,7 +252,6 @@
     )
     const downloadPath = document.querySelector('#download-path')
     const directoryMessage = document.querySelector('#directory-message')
-    const help = document.querySelector('#help')
     const logDetails = document.querySelector('#log-details')
     const shareLogs = document.querySelector('#share-logs')
     const shareResult = document.querySelector('#share-result')
@@ -250,11 +268,7 @@
     let lastMovingAt = Date.now()
     let lastDownloaded = '0 B'
     let isComplete = false
-    let reportVisible = false
     let serviceStopped = false
-    const updateHelpVisibility = () => {
-      help.hidden = !(reportVisible || serviceStopped || logDetails.open)
-    }
     const updateScanSpinner = (message) => {
       if (message === 'scan started') scanSpinner.hidden = false
       else if (message.startsWith('scan complete:') || message.startsWith('scan failed:')) scanSpinner.hidden = true
@@ -265,11 +279,17 @@
         steps[name].dataset.state = state
         steps[name].querySelector('.step-state').textContent = text
       }
-      if (message === 'torrent loaded') set('download', 'active', 'Downloading')
-      else if (message.startsWith('metadata received:')) set('download', 'active', 'Checking files')
+      if (message === 'torrent loaded') {
+        progress.hidden = false
+        stats.hidden = false
+        set('download', 'active', 'Downloading')
+      } else if (message.startsWith('metadata received:')) set('download', 'active', 'Checking files')
       else if (message === 'torrent ready; existing data checked') set('download', 'active', 'Downloading')
-      else if (message === 'download completed') set('download', 'done', 'Complete')
-      else if (message === 'scan started') set('scan', 'active', 'Searching')
+      else if (message === 'download completed') {
+        set('download', 'done', 'Complete')
+        progress.hidden = true
+        stats.hidden = true
+      } else if (message === 'scan started') set('scan', 'active', 'Searching')
       else if (message === 'scan complete: existing client found') set('scan', 'done', 'Found')
       else if (message === 'scan complete: no existing client found') {
         set('scan', 'done', 'Scan over, no existing client found')
@@ -284,11 +304,16 @@
     const updateStatus = (message) => {
       updateScanSpinner(message)
       updateSteps(message)
+      const failure = message.includes('error:') || message.includes(' failed:')
       if (message === 'completed') {
         state.textContent = 'Completed'
         isComplete = true
-      } else if (message.includes('error:') || message.startsWith('setup after download failed:')) {
+      } else if (message === 'completed with errors') {
         state.textContent = 'Setup failed'
+        logDetails.open = true
+      } else if (failure) {
+        state.textContent = 'Setup failed'
+        logDetails.open = true
       } else if (message === 'torrent loaded') state.textContent = 'Loading torrent'
       else if (message.startsWith('metadata received:')) state.textContent = 'Checking existing data'
       else if (message === 'torrent ready; existing data checked') state.textContent = 'Downloading'
@@ -318,8 +343,6 @@
       isComplete = Number(match[3]) >= 100
       if (match[2] !== '0 B' || match[4] !== lastDownloaded) {
         lastMovingAt = Date.now()
-        reportVisible = false
-        updateHelpVisibility()
       }
       lastDownloaded = match[4]
     }
@@ -363,7 +386,7 @@
         : 'Launcher service stopped. The download is partial. Restart the launcher to safely resume.'
       stopped.hidden = false
       serviceStopped = true
-      updateHelpVisibility()
+      logDetails.open = true
       append({
         timestamp: new Date().toISOString(),
         message: 'launcher service stopped',
@@ -372,8 +395,7 @@
     setInterval(() => {
       if (serviceStopped) return
       if (state.textContent !== 'Completed' && Date.now() - lastMovingAt > 30000) {
-        reportVisible = true
-        updateHelpVisibility()
+        logDetails.open = true
       }
     }, 1000)
     const uploadLogs = async (event, result) => {
@@ -393,7 +415,6 @@
       result.append(link)
     }
     shareLogs.onclick = (event) => uploadLogs(event, shareResult)
-    logDetails.ontoggle = updateHelpVisibility
     closePage.onclick = () => {
       window.close()
       closeMessage.textContent = ' You can close this tab.'

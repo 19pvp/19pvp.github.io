@@ -29,7 +29,7 @@ export const handleLauncherLog = async (
 const save = async (req: Request, sha1: string, url: URL, options: Options) => {
   if (
     !options.secret ||
-    req.headers.get('x-launcher-log-secret') !== options.secret
+    req.headers.get('x-verification-hash') !== options.secret
   ) {
     return json({ error: 'Forbidden' }, { status: 403 })
   }

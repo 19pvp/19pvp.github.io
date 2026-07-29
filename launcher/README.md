@@ -1,8 +1,7 @@
 # 19PvP Launcher
 
-Torrent-first launcher for the fixed `World of Warcraft 3.3.5a.torrent`.
-The launcher runs a local HTTP page, opens it in the system browser, and keeps
-partial downloads in a stable temporary directory so they can be resumed.
+Torrent-first launcher for the fixed `World of Warcraft 3.3.5a.torrent`. The launcher runs a local HTTP page, opens it
+in the system browser, and keeps partial downloads in a stable temporary directory so they can be resumed.
 
 Run the launcher from this directory with:
 
@@ -16,8 +15,7 @@ Build a single executable with:
 deno task compile
 ```
 
-The launcher chooses an available localhost port and opens the log page in the
-system browser.
+The launcher chooses an available localhost port and opens the log page in the system browser.
 
 ## Plan
 
@@ -66,8 +64,11 @@ Acceptance: interrupted downloads do not start from zero.
 - Test with P2P peers unavailable.
 - Verify the final torrent content hash.
 
-The webseed is configured as `https://dl.devazuka.com/wow/`. The current host
-still needs to serve byte-identical torrent files for the piece checks to pass.
+The launcher uses `https://19pvp.devazuka.com` by default. Set `LAUNCHER_SERVICE_ORIGIN` to override it. At startup it
+gets the webseed URL, realmlist, and log verification value from `GET /launcher/config`. The same origin serves the
+addon and receives logs.
+
+The current host still needs to serve byte-identical torrent files for the piece checks to pass.
 
 Acceptance: the torrent completes through HTTP when peers are unavailable.
 
@@ -80,9 +81,8 @@ Acceptance: the torrent completes through HTTP when peers are unavailable.
 - Show the selected path and disk-space errors.
 - Keep resume data associated with that destination.
 
-Note: a browser directory input cannot expose the absolute path to the Deno
-process. It can enumerate files, but a real destination picker requires a
-native picker, typed path, or an explicit file-copy flow.
+Note: a browser directory input cannot expose the absolute path to the Deno process. It can enumerate files, but a real
+destination picker requires a native picker, typed path, or an explicit file-copy flow.
 
 Acceptance: users can select a destination, restart the launcher, and resume.
 
@@ -109,8 +109,7 @@ When discovery finds a valid source during download:
 5. Recheck existing pieces.
 6. Resume downloading only what remains.
 
-Acceptance: discovery can reduce an active download and the UI shows pause,
-copy, recheck, and resumed-download phases.
+Acceptance: discovery can reduce an active download and the UI shows pause, copy, recheck, and resumed-download phases.
 
 ### Later platform work
 

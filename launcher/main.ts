@@ -14,11 +14,7 @@ const DOWNLOAD_DIRECTORY = join(
   '19pvp-wow-client',
 )
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
-const WEBSEED_URL = 'https://dl.devazuka.com/wow/'
-const REALMLIST = Deno.env.get('LAUNCHER_REALMLIST') ?? 'logon.19pvp.com'
-const LOG_UPLOAD_ORIGIN = Deno.env.get('LAUNCHER_LOG_ORIGIN') ?? ''
-const SERVICE_ORIGIN = Deno.env.get('LAUNCHER_SERVICE_ORIGIN') ?? LOG_UPLOAD_ORIGIN
-const LOG_UPLOAD_SECRET = Deno.env.get('LAUNCHER_LOG_SECRET') ?? ''
+const SERVICE_ORIGIN = Deno.env.get('LAUNCHER_SERVICE_ORIGIN') ?? 'https://19pvp.devazuka.com'
 const LOG_UPLOAD_MAX_BYTES = 1024 * 1024
 const TRACKER_RETRY_MS = 30_000
 const RECOVERY_RESTART_MS = 2_000
@@ -76,6 +72,9 @@ let changingPath = false
 let recoveringFiles = false
 let shutdownLauncher: (() => void) | null = null
 const scanAbort = new AbortController()
+let webseedUrl = ''
+let realmlist = ''
+let verificationHash = ''
 
 function log(message: string): void {
   const entry = { timestamp: new Date().toISOString(), message }
@@ -119,6 +118,23 @@ function formatDuration(seconds: number): string {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+async function loadLauncherConfig(): Promise<void> {
+  if (!SERVICE_ORIGIN) throw new Error('missing LAUNCHER_SERVICE_ORIGIN')
+  const response = await fetch(`${SERVICE_ORIGIN}/launcher/config`)
+  if (!response.ok) throw new Error(`launcher config download failed: ${response.status}`)
+  const config = await response.json() as Record<string, unknown>
+  if (
+    typeof config.webseedUrl !== 'string' || !config.webseedUrl ||
+    typeof config.realmlist !== 'string' || !config.realmlist ||
+    typeof config['verification-hash'] !== 'string' || !config['verification-hash']
+  ) {
+    throw new Error('launcher config is invalid')
+  }
+  webseedUrl = config.webseedUrl
+  realmlist = config.realmlist
+  verificationHash = config['verification-hash']
 }
 
 function isCrossDeviceRename(error: unknown): boolean {
@@ -250,7 +266,7 @@ async function patchRealmlist(): Promise<void> {
   try {
     for (const file of files) {
       const path = join(downloadPath, file.path)
-      await Deno.writeTextFile(path, `set realmlist ${REALMLIST}\r\n`)
+      await Deno.writeTextFile(path, `set realmlist ${realmlist}\r\n`)
       log(`realmlist patched: ${path}`)
     }
   } catch (error) {
@@ -268,7 +284,7 @@ async function installAddon(): Promise<void> {
     throw error
   }
   if (!SERVICE_ORIGIN) {
-    const error = new Error('missing LAUNCHER_SERVICE_ORIGIN')
+    const error = new Error('missing launcher service URL')
     log(`companion addon installation failed: ${error.message}`)
     throw error
   }
@@ -322,8 +338,8 @@ async function pickDownloadPath(): Promise<string | null> {
 }
 
 async function shareLogs(): Promise<Response> {
-  if (!LOG_UPLOAD_ORIGIN || !LOG_UPLOAD_SECRET) {
-    const error = 'Missing LAUNCHER_LOG_ORIGIN or LAUNCHER_LOG_SECRET.'
+  if (!SERVICE_ORIGIN || !verificationHash) {
+    const error = 'Missing launcher service URL or verification hash.'
     log(`log upload failed: ${error}`)
     return Response.json(
       { error },
@@ -349,12 +365,12 @@ async function shareLogs(): Promise<Response> {
 
   const sha1 = new Uint8Array(await crypto.subtle.digest('SHA-1', compressed))
     .toHex()
-  const response = await fetch(`${LOG_UPLOAD_ORIGIN}/launcher/logs/${sha1}`, {
+  const response = await fetch(`${SERVICE_ORIGIN}/launcher/logs/${sha1}`, {
     method: 'POST',
     headers: {
       'content-encoding': 'br',
       'content-type': 'text/plain; charset=utf-8',
-      'x-launcher-log-secret': LOG_UPLOAD_SECRET,
+      'x-verification-hash': verificationHash,
     },
     body: compressed,
   })
@@ -369,7 +385,7 @@ async function shareLogs(): Promise<Response> {
   return Response.json({
     bytes: compressed.byteLength,
     entries: tail.length,
-    url: `${LOG_UPLOAD_ORIGIN}/launcher/logs/${sha1}`,
+    url: `${SERVICE_ORIGIN}/launcher/logs/${sha1}`,
   })
 }
 
@@ -476,7 +492,7 @@ function startTorrent(): void {
   activeTorrent = client.add(torrent, {
     path: downloadPath,
     announce: [TRACKER_URL],
-    urlList: [WEBSEED_URL],
+    urlList: [webseedUrl],
   })
   logStep('torrent add returned')
   activeTorrent.on(
@@ -531,7 +547,7 @@ function startTorrent(): void {
       },
       async (error) => {
         log(`setup after download failed: ${errorMessage(error)}`)
-        log('completed')
+        log('completed with errors')
         await stopTorrent()
       },
     )
@@ -689,8 +705,9 @@ export async function handler(request: Request): Promise<Response> {
 }
 
 if (import.meta.main) {
+  await loadLauncherConfig()
   started = true
-  logStep('launcher started')
+  logStep('launcher started; configuration received')
   await stopPreviousLauncher()
   const rawSavedDownloadPath = localStorage.getItem(SAVED_DOWNLOAD_PATH_KEY)
   downloadPath = savedDownloadPath(rawSavedDownloadPath)
