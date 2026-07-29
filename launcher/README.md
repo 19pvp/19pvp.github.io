@@ -1,7 +1,7 @@
 # 19PvP Launcher
 
 Torrent-first launcher for the fixed `World of Warcraft 3.3.5a.torrent`. The launcher runs a local HTTP page, opens it
-in the system browser, and keeps partial downloads in a stable temporary directory so they can be resumed.
+in the system browser, and keeps partial downloads in the selected directory so they can be resumed.
 
 Run the launcher from this directory with:
 
@@ -15,6 +15,17 @@ Build a single executable with:
 deno task compile
 ```
 
+Generate the client patch after the client is available with:
+
+```sh
+curl -X POST http://127.0.0.1:<launcher-port>/patch
+```
+
+The launcher requests `GET /launcher/patch` from the configured service. The response may be one edit, an array of
+edits, or `{ "patches": [...] }`. Each edit has `filename`, `schema`, and `rows`; each row is a sparse object such as
+`{ "ID": 123, "RequiredLevel": 19 }`. Missing or `null` row fields preserve the value from the original DBC, and edits
+are matched by the first schema field (normally `ID`). The generated archive is written to `Data/patch-S.mpq`.
+
 The Windows build creates a compressed self-extracting executable. It requires `7z` on the build machine; the Windows
 SFX module is kept in `tools/7zS.sfx`.
 
@@ -26,7 +37,7 @@ The launcher chooses an available localhost port and opens the log page in the s
 
 - Embed the fixed torrent as bytes.
 - Download with the vendored WebTorrent implementation.
-- Use a stable temporary directory and reuse verified partial files.
+- Use the selected directory and reuse verified partial files.
 - Show status, progress, speed, downloaded bytes, peer count, and expandable logs.
 - Retry failed tracker and DHT discovery after 30 seconds.
 - Keep WebTorrent client and torrent errors visible in the logs.

@@ -224,6 +224,8 @@
             data-state="pending"><span class="step-title">📝 CONFIGURE REALMLIST</span><span class="step-state">Waiting</span></div>
           <div class="step" data-step="addon"
             data-state="pending"><span class="step-title">📦 INSTALL THE COMPANION ADDON</span><span class="step-state">Waiting</span></div>
+          <div class="step" data-step="patch"
+            data-state="pending"><span class="step-title">🧩 GENERATE CLIENT PATCH</span><span class="step-state">Waiting</span></div>
         </div>
         <div id="stopped" hidden>
           <div id="stopped-message">Launcher service stopped.</div>
@@ -296,7 +298,9 @@
       } else if (message === 'full file recheck requested') {
         recheck.hidden = true
       } else if (message === 'scan started') set('scan', 'active', 'Searching')
-      else if (message === 'scan complete: existing client found') set('scan', 'done', 'Found')
+      else if (message === 'scan skipped: managed client files are already complete') {
+        set('scan', 'done', 'Already available')
+      } else if (message === 'scan complete: existing client found') set('scan', 'done', 'Found')
       else if (message === 'scan complete: no existing client found') {
         set('scan', 'done', 'Scan over, no existing client found')
       } else if (message.startsWith('scan failed:')) set('scan', 'done', 'Could not check')
@@ -306,6 +310,9 @@
       else if (message === 'installing companion addon') set('addon', 'active', 'Installing')
       else if (message.startsWith('companion addon installed successfully:')) set('addon', 'done', 'Installed successfully')
       else if (message.startsWith('companion addon installation failed:')) set('addon', 'failed', 'Failed')
+      else if (message === 'generating client patch') set('patch', 'active', 'Generating')
+      else if (message.startsWith('client patch generated:')) set('patch', 'done', 'Generated successfully')
+      else if (message.startsWith('client patch generation failed:')) set('patch', 'failed', 'Failed')
     }
     const updateStatus = (message) => {
       updateScanSpinner(message)

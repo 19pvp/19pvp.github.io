@@ -1,4 +1,4 @@
-import { join, normalize } from '@std/path'
+import { basename, join, normalize } from '@std/path'
 
 const CLIENT_DIRECTORY_NAME = 'World of Warcraft 3.3.5a'
 const SCAN_PARALLELISM = 4
@@ -96,30 +96,24 @@ export async function findMatchingTorrentFiles(
 ): Promise<ScannedFile[]> {
   const matches: ScannedFile[] = []
   for (const file of files) {
+    if (!file.path.toLowerCase().endsWith('.mpq')) continue
     const sourcePath = torrentPath(source, file.path)
     try {
       const stat = await Deno.stat(sourcePath)
-      if (!stat.isFile) {
-        report(`scan file rejected: ${sourcePath}; not a regular file`)
-      } else if (stat.size !== file.length) {
-        report(`scan file rejected: ${sourcePath}; size=${stat.size}, expected=${file.length}`)
-      } else {
+      if (stat.isFile && stat.size === file.length) {
         report(`scan file accepted: ${sourcePath}; size=${stat.size}`)
         matches.push({ ...file, sourcePath })
       }
-    } catch {
-      report(`scan file rejected: ${sourcePath}; missing or inaccessible`)
-    }
+    } catch { /* Missing or inaccessible files do not match. */ }
   }
 
-  const anchors = ['Wow.exe', 'Data/enUS/patch-enUS-3.MPQ']
+  const anchors = ['Data/enUS/patch-enUS-3.MPQ']
   if (
     !anchors.every((anchor) => {
       const expected = files.find((file) => relativeClientPath(file.path).toLowerCase() === anchor.toLowerCase())
       return expected && matches.some((file) => file.path === expected.path)
     })
   ) {
-    report(`scan candidate rejected: ${source}; required anchor files are missing or have the wrong size`)
     return []
   }
   return matches
@@ -145,12 +139,14 @@ export function startScan(
       if (signal.aborted) return
       log(`scan root: ${root}`)
       let candidate: { path: string; files: ScannedFile[] } | null = null
+      let foundStarted = false
 
       const scanDirectory = async (path: string): Promise<void> => {
         if (signal.aborted || candidate) return
         const normalizedPath = normalize(path)
         if (visited.has(normalizedPath)) return
         visited.add(normalizedPath)
+        if (samePath(path, ignoredPath)) return
         if (visited.size <= 20) log(`scan directory: ${path}`)
         if (visited.size >= lastProgress + SCAN_PROGRESS_INTERVAL) {
           lastProgress = visited.size
@@ -160,6 +156,17 @@ export function startScan(
         const children: string[] = []
         try {
           using _ = await getSlot()
+          if (signal.aborted || candidate) return
+          if (basename(path).toLowerCase() === CLIENT_DIRECTORY_NAME.toLowerCase()) {
+            const matches = await findMatchingTorrentFiles(path, files, log)
+            if (matches.length) {
+              candidate = { path, files: matches }
+              foundStarted = true
+              await found(path, matches)
+              log('scan complete: existing client found')
+              return
+            }
+          }
           let entries
           try {
             entries = Deno.readDir(path)
@@ -173,27 +180,7 @@ export function startScan(
               if (!EXCLUDED_DIRECTORIES.has(entry.name.toLowerCase())) children.push(next)
               continue
             }
-            if (!entry.isFile) {
-              log(`scan file rejected: ${next}; not a regular file`)
-              continue
-            }
-            if (entry.name.toLowerCase() !== 'wow.exe') {
-              log(`scan file rejected: ${next}; filename is not Wow.exe`)
-              continue
-            }
-            if (samePath(path, ignoredPath)) {
-              log(`scan skipped managed client directory: ${path}`)
-              continue
-            }
-            log(`scan candidate: ${path}`)
-            const matches = await findMatchingTorrentFiles(path, files, log)
-            if (!matches.length) {
-              log(`scan candidate rejected: ${path}; matching files=0/${files.length}`)
-              continue
-            }
-            candidate = { path, files: matches }
-            log(`scan candidate valid: ${path}; matching files=${matches.length}/${files.length}`)
-            break
+            if (!entry.isFile || !entry.name.toLowerCase().endsWith('.mpq')) continue
           }
         } catch {
           // A directory can disappear or become inaccessible while scanning.
@@ -204,7 +191,7 @@ export function startScan(
       await scanDirectory(root)
       log(`scan root complete: ${root}; directories=${visited.size}`)
       const result = candidate as { path: string; files: ScannedFile[] } | null
-      if (result) {
+      if (result && !foundStarted) {
         await found(result.path, result.files)
         log('scan complete: existing client found')
         return

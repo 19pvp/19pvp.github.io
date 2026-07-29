@@ -12,6 +12,7 @@ Deno.test('serves the launcher page', async () => {
   assertStringIncludes(body, 'id="close-page"')
   assertStringIncludes(body, 'CONFIGURE REALMLIST')
   assertStringIncludes(body, 'INSTALL THE COMPANION ADDON')
+  assertStringIncludes(body, 'GENERATE CLIENT PATCH')
   assertStringIncludes(body, 'FIND EXISTING CLIENT')
   assertStringIncludes(body, '/shutdown')
 })

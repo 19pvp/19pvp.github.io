@@ -4,9 +4,10 @@ import { basename, dirname, join } from '@std/path'
 import { loadStormLib, type StormArchiveModule } from 'stormlib'
 import WebTorrent from 'webtorrent'
 import pageBytes from './page.html' with { type: 'bytes' }
+import parseTorrent from './vendor/parse-torrent/index.js'
 import { generatePatch, parseDBCEditPayload } from './patch.ts'
 import { type ScannedFile, startScan } from './scan.ts'
-import torrent from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
+import torrentBytes from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
 const CLIENT_DIRECTORY_NAME = 'World of Warcraft 3.3.5a'
 const DOWNLOAD_DIRECTORY = Deno.cwd()
@@ -47,6 +48,9 @@ type Torrent = {
   numPeers: number
   progress: number
 }
+
+const torrentMetadata = await parseTorrent(torrentBytes)
+const torrentFiles = torrentMetadata.files as Torrent['files']
 
 type Client = {
   on(event: string, listener: (...args: unknown[]) => void): void
@@ -145,8 +149,8 @@ function isCrossDeviceRename(error: unknown): boolean {
   return message.includes('Invalid cross-device link') || message.includes('EXDEV') || message.includes('os error 18')
 }
 
-async function stopPreviousLauncher(): Promise<void> {
-  const url = localStorage.getItem(SAVED_LAUNCHER_URL_KEY)
+async function stopPreviousLauncher(previousUrl = localStorage.getItem(SAVED_LAUNCHER_URL_KEY)): Promise<void> {
+  const url = previousUrl
   if (!url) return
   try {
     await fetch(`${url}/shutdown`, {
@@ -170,33 +174,43 @@ function clientPath(): string | null {
   return downloadPath ? join(downloadPath, CLIENT_DIRECTORY_NAME) : null
 }
 
-function quickCheckFiles(torrent: Torrent): boolean {
+function quickCheckFiles(path: string, files: Torrent['files']): boolean {
+  const mpqFiles = files.filter((file) => file.name.toLowerCase().endsWith('.mpq'))
   let present = 0
-  for (const file of torrent.files) {
-    const path = join(downloadPath!, file.path)
+  for (const file of mpqFiles) {
+    const filePath = join(path, file.path)
     try {
-      const stat = Deno.statSync(path)
+      const stat = Deno.statSync(filePath)
       if (!stat.isFile) {
-        log(`quick file check rejected: ${path}; not a regular file`)
-      } else if (isRealmlistFile(file)) {
-        const content = new TextDecoder().decode(Deno.readFileSync(path)).trim().toLowerCase()
-        if (content === `set realmlist ${realmlist}`.toLowerCase()) {
-          present++
-          log(`quick file check accepted: ${path}; configured realmlist`)
-        } else {
-          log(`quick file check rejected: ${path}; configured realmlist not found`)
-        }
+        log(`quick file check rejected: ${filePath}; not a regular file`)
       } else if (stat.size === file.length) {
         present++
       } else {
-        log(`quick file check rejected: ${path}; size=${stat.size}, expected=${file.length}`)
+        log(`quick file check rejected: ${filePath}; size=${stat.size}, expected=${file.length}`)
       }
     } catch {
-      log(`quick file check rejected: ${path}; missing or inaccessible`)
+      log(`quick file check rejected: ${filePath}; missing or inaccessible`)
     }
   }
-  log(`quick file check: ${present}/${torrent.files.length} files have the right size`)
-  return present === torrent.files.length
+  log(`quick file check: ${present}/${mpqFiles.length} MPQ files have the right size`)
+  return present === mpqFiles.length
+}
+
+function findCompleteDownloadPath(): string | null {
+  const paths = [downloadPath, DOWNLOAD_DIRECTORY].filter(
+    (path, index, all): path is string => !!path && all.findIndex((candidate) => candidate === path) === index,
+  )
+  for (const path of paths) {
+    const root = join(path, CLIENT_DIRECTORY_NAME)
+    try {
+      if (!Deno.statSync(root).isDirectory) continue
+    } catch {
+      continue
+    }
+    log(`checking existing client: ${root}`)
+    if (quickCheckFiles(path, torrentFiles)) return path
+  }
+  return null
 }
 
 export function isRealmlistFile(file: { name: string }): boolean {
@@ -286,9 +300,9 @@ async function importDiscoveredFiles(source: string, files: ScannedFile[]): Prom
 }
 
 async function patchRealmlist(): Promise<void> {
-  if (!activeTorrent || !downloadPath) return
+  if (!downloadPath) return
   log('configuring realmlist')
-  const files = activeTorrent.files.filter(isRealmlistFile)
+  const files = (activeTorrent?.files ?? torrentFiles).filter(isRealmlistFile)
   if (files.length === 0) {
     const error = new Error('no realmlist.wtf file found')
     log(`realmlist configuration failed: ${error.message}`)
@@ -342,17 +356,45 @@ async function fetchPatchEdits() {
   return parseDBCEditPayload(await response.json())
 }
 
+async function ensureStormLib(): Promise<StormArchiveModule> {
+  if (stormLib) return stormLib
+  logStep('loading embedded StormLib WASM')
+  stormLib = await loadStormLib()
+  logStep('embedded StormLib WASM ready')
+  return stormLib
+}
+
 async function generateClientPatch(): Promise<string> {
-  if (!stormLib) throw new Error('StormLib is not initialized')
-  const root = clientPath()
-  if (!root) throw new Error('client path is missing')
-  const edits = await fetchPatchEdits()
-  if (edits.length === 0) throw new Error('patch definition contains no DBC edits')
-  const outputPath = join(root, 'Data', 'patch-S.mpq')
-  log(`generating client patch from ${edits.length} DBC edit(s)`)
-  await generatePatch(stormLib, root, edits, outputPath)
-  log(`client patch generated: ${outputPath}`)
-  return outputPath
+  try {
+    log('generating client patch')
+    const storm = await ensureStormLib()
+    const root = clientPath()
+    if (!root) throw new Error('client path is missing')
+    const edits = await fetchPatchEdits()
+    log(`patch definition downloaded: ${edits.length} DBC edit(s)`)
+    if (edits.length === 0) throw new Error('patch definition contains no DBC edits')
+    const outputPath = join(root, 'Data', 'patch-S.mpq')
+    log(`generating client patch from ${edits.length} DBC edit(s)`)
+    await generatePatch(storm, root, edits, outputPath)
+    log(`client patch generated: ${outputPath}`)
+    return outputPath
+  } catch (error) {
+    log(`client patch generation failed: ${errorMessage(error)}`)
+    throw error
+  }
+}
+
+async function finishSetup(): Promise<void> {
+  try {
+    await patchRealmlist()
+    await installAddon()
+    await generateClientPatch()
+    log('completed')
+  } catch (error) {
+    log(`setup after download failed: ${errorMessage(error)}`)
+    log('completed with errors')
+  }
+  await stopTorrent()
 }
 
 async function pickDownloadPath(): Promise<string | null> {
@@ -535,6 +577,33 @@ function startTorrent(forceFullCheck = false): void {
   torrentReady = false
   quickCheckPassed = false
   webSeedFinalizationStarted = false
+
+  log('loading embedded torrent')
+  const completeDownloadPath = !forceFullCheck ? findCompleteDownloadPath() : null
+  if (completeDownloadPath) {
+    downloadPath = completeDownloadPath
+    localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
+    quickCheckPassed = true
+    torrentReady = true
+    torrentStopped = true
+    log(`torrent info hash: ${torrentMetadata.infoHash}`)
+    log(`metadata received: ${torrentMetadata.name} (${formatBytes(torrentMetadata.length)})`)
+    log('quick file check passed; full check skipped')
+    log('quick file check passed; torrent not needed')
+    log(`client files root: ${join(downloadPath, torrentMetadata.name)}`)
+    log('scan skipped: managed client files are already complete')
+    log('download completed')
+    void finishSetup()
+    return
+  }
+
+  startScan(
+    torrentFiles.map(({ path, length }) => ({ path, length })),
+    clientPath()!,
+    log,
+    importDiscoveredFiles,
+    scanAbort.signal,
+  )
   torrentStopped = false
 
   logStep('creating WebTorrent client')
@@ -544,9 +613,8 @@ function startTorrent(forceFullCheck = false): void {
     log(`client error: ${errorMessage(error)}`)
     recover(error)
   })
-  log('loading embedded torrent')
   logStep('adding torrent to client')
-  activeTorrent = client.add(torrent, {
+  activeTorrent = client.add(torrentBytes, {
     path: downloadPath,
     announce: [TRACKER_URL],
     urlList: [webseedUrl],
@@ -562,12 +630,12 @@ function startTorrent(forceFullCheck = false): void {
       log(
         `metadata received: ${activeTorrent!.name} (${formatBytes(activeTorrent!.length)})`,
       )
-      if (!forceFullCheck && quickCheckFiles(activeTorrent!)) {
+      if (!forceFullCheck && quickCheckFiles(downloadPath!, activeTorrent!.files)) {
         quickCheckPassed = true
         activeTorrent!.skipVerify = true
         log('quick file check passed; full check skipped')
       } else if (forceFullCheck) {
-        if (quickCheckFiles(activeTorrent!)) {
+        if (quickCheckFiles(downloadPath!, activeTorrent!.files)) {
           activeTorrent!.skipPieces = [0]
           log('full file recheck requested; piece 0 skipped because its files are present')
         } else {
@@ -582,14 +650,6 @@ function startTorrent(forceFullCheck = false): void {
         if (found) log(`warning: nested client directory found: ${nestedClientRoot}`)
       })
       log(`first torrent file: ${activeTorrent!.files[0]?.path ?? 'none'}`)
-      logStep('checking existing data')
-      startScan(
-        activeTorrent!.files.map(({ path, length }) => ({ path, length })),
-        clientPath()!,
-        log,
-        importDiscoveredFiles,
-        scanAbort.signal,
-      )
     },
   )
   activeTorrent.on('ready', () => {
@@ -609,17 +669,7 @@ function startTorrent(forceFullCheck = false): void {
   activeTorrent.on('done', () => {
     log('download completed')
     logStatus()
-    Promise.all([patchRealmlist(), installAddon()]).then(
-      async () => {
-        log('completed')
-        await stopTorrent()
-      },
-      async (error) => {
-        log(`setup after download failed: ${errorMessage(error)}`)
-        log('completed with errors')
-        await stopTorrent()
-      },
-    )
+    void finishSetup()
   })
   activeTorrent.on(
     'warning',
@@ -741,7 +791,6 @@ export async function handler(request: Request): Promise<Response> {
       const path = await generateClientPatch()
       return Response.json({ path })
     } catch (error) {
-      log(`client patch generation failed: ${errorMessage(error)}`)
       return Response.json({ error: errorMessage(error) }, { status: 500 })
     }
   }
@@ -815,45 +864,6 @@ export async function handler(request: Request): Promise<Response> {
 }
 
 if (import.meta.main) {
-  logStep('loading embedded StormLib WASM')
-  stormLib = await loadStormLib()
-  logStep('embedded StormLib WASM ready')
-  await loadLauncherConfig()
-  started = true
-  logStep('launcher started; configuration received')
-  await stopPreviousLauncher()
-  const rawSavedDownloadPath = localStorage.getItem(SAVED_DOWNLOAD_PATH_KEY)
-  if (rawSavedDownloadPath) {
-    downloadPath = savedDownloadPath(rawSavedDownloadPath)
-    if (downloadPath !== rawSavedDownloadPath) {
-      log(`saved download directory normalized: ${rawSavedDownloadPath} -> ${downloadPath}`)
-    }
-    localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
-  } else {
-    downloadPath = DOWNLOAD_DIRECTORY
-  }
-  log(
-    `download directory existed before startup: ${await exists(downloadPath) ? 'yes' : 'no'}`,
-  )
-  logStep('creating download directory')
-  await Deno.mkdir(downloadPath, { recursive: true })
-  log(`download directory: ${downloadPath}`)
-  logStep('download directory ready')
-
-  logStep('installing recovery handlers')
-  globalThis.addEventListener('error', (event) => {
-    log(`uncaught error: ${event.message}`)
-    event.preventDefault()
-    recover(event.error ?? event.message)
-  })
-  globalThis.addEventListener('unhandledrejection', (event) => {
-    log(`unhandled rejection: ${errorMessage(event.reason)}`)
-    event.preventDefault()
-    recover(event.reason)
-  })
-  logStep('recovery handlers installed')
-  startTorrent()
-
   const abort = new AbortController()
   let stopping: Promise<void> | null = null
   const shutdown = () => {
@@ -864,6 +874,8 @@ if (import.meta.main) {
     return stopping
   }
   shutdownLauncher = shutdown
+
+  const previousLauncherUrl = localStorage.getItem(SAVED_LAUNCHER_URL_KEY)
   logStep('starting local HTTP server')
   const server = Deno.serve({
     hostname: '127.0.0.1',
@@ -883,6 +895,50 @@ if (import.meta.main) {
   log(`opening ${url}`)
   Deno.addSignalListener('SIGINT', shutdown)
   Deno.addSignalListener('SIGTERM', shutdown)
+
+  void (async () => {
+    try {
+      await loadLauncherConfig()
+      started = true
+      logStep('launcher started; configuration received')
+      await stopPreviousLauncher(previousLauncherUrl)
+      const rawSavedDownloadPath = localStorage.getItem(SAVED_DOWNLOAD_PATH_KEY)
+      if (rawSavedDownloadPath) {
+        downloadPath = savedDownloadPath(rawSavedDownloadPath)
+        if (downloadPath !== rawSavedDownloadPath) {
+          log(`saved download directory normalized: ${rawSavedDownloadPath} -> ${downloadPath}`)
+        }
+        localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
+      } else {
+        downloadPath = DOWNLOAD_DIRECTORY
+      }
+      log(
+        `download directory existed before startup: ${await exists(downloadPath) ? 'yes' : 'no'}`,
+      )
+      logStep('creating download directory')
+      await Deno.mkdir(downloadPath, { recursive: true })
+      log(`download directory: ${downloadPath}`)
+      logStep('download directory ready')
+
+      logStep('installing recovery handlers')
+      globalThis.addEventListener('error', (event) => {
+        log(`uncaught error: ${event.message}`)
+        event.preventDefault()
+        recover(event.error ?? event.message)
+      })
+      globalThis.addEventListener('unhandledrejection', (event) => {
+        log(`unhandled rejection: ${errorMessage(event.reason)}`)
+        event.preventDefault()
+        recover(event.reason)
+      })
+      logStep('recovery handlers installed')
+      if (stopped) return
+      startTorrent()
+    } catch (error) {
+      log(`launcher startup failed: ${errorMessage(error)}`)
+    }
+  })()
+
   await server.finished
   await shutdown()
 }
