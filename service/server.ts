@@ -2,15 +2,15 @@ import { TextLineStream } from '@std/streams'
 import { cors, json, runCommand, sse } from './utils.ts'
 import { watch } from '../tasks/config.ts'
 import { ac } from './soap.ts'
-import { checkAuth, handleAuth, getSession } from './auth.ts'
+import { checkAuth, getSession, handleAuth } from './auth.ts'
 import { getAccountDetails, setOrCreateAccount } from './account.ts'
 import { auth } from './db.ts'
 import { env } from './env.ts'
+import { handleLauncherLog } from './launcher_logs.ts'
 
-// TODO: switch to { type: 'bytes' } once supported
-import indexHTML from '../web/index.html' with { type: 'text' }
-import adminHTML from '../web/admin.html' with { type: 'text' }
-import eventsHTML from '../web/events.html' with { type: 'text' }
+import indexHTML from '../web/index.html' with { type: 'bytes' }
+import adminHTML from '../web/admin.html' with { type: 'bytes' }
+import eventsHTML from '../web/events.html' with { type: 'bytes' }
 
 void import('./world-chat.ts').catch((err) => {
   console.error('Discord bridge failed to start', err)
@@ -610,6 +610,12 @@ export default {
         return new Response(eventsHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
 
+      const launcherLog = await handleLauncherLog(req, url, {
+        dir: env.LAUNCHER_LOG_DIR,
+        secret: env.LAUNCHER_LOG_SECRET,
+      })
+      if (launcherLog) return launcherLog
+
       if (url.pathname === '/api/account') {
         const session = await getSession(req)
         if (!session) {
@@ -627,7 +633,7 @@ export default {
             authenticated: true,
             user: session.user,
             gmLevel: session.gmLevel,
-            ...details
+            ...details,
           }, { headers: corsHeaders })
         }
 

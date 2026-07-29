@@ -2,7 +2,7 @@ import { assertEquals, assertStringIncludes } from '@std/assert'
 import { handler } from './main.ts'
 
 Deno.test('serves the launcher page', async () => {
-  const response = handler(new Request('http://localhost/'))
+  const response = await handler(new Request('http://localhost/'))
   assertEquals(response.status, 200)
   const body = await response.text()
   assertStringIncludes(body, '19PvP Launcher')
@@ -12,10 +12,11 @@ Deno.test('serves the launcher page', async () => {
 })
 
 Deno.test('serves status and an SSE stream', async () => {
-  const status = await handler(new Request('http://localhost/api')).json()
+  const status = await (await handler(new Request('http://localhost/api')))
+    .json()
   assertEquals(status.started, false)
 
-  const response = handler(new Request('http://localhost/events'))
+  const response = await handler(new Request('http://localhost/events'))
   assertEquals(
     response.headers.get('content-type'),
     'text/event-stream; charset=utf-8',

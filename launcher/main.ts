@@ -1,12 +1,14 @@
+import { brotliCompressSync } from 'node:zlib'
 import WebTorrent from 'webtorrent'
 import pageBytes from './page.html' with { type: 'bytes' }
 import torrent from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
-const DOWNLOAD_DIRECTORY = `${
-  Deno.env.get('TEMP') ?? Deno.env.get('TMPDIR') ?? '/tmp'
-}/19pvp-launcher`
+const DOWNLOAD_DIRECTORY = `${Deno.env.get('TEMP') ?? Deno.env.get('TMPDIR') ?? '/tmp'}/19pvp-launcher`
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
 const WEBSEED_URL = 'https://dl.devazuka.com/wow/'
+const LOG_UPLOAD_ORIGIN = Deno.env.get('LAUNCHER_LOG_ORIGIN') ?? ''
+const LOG_UPLOAD_SECRET = Deno.env.get('LAUNCHER_LOG_SECRET') ?? ''
+const LOG_UPLOAD_MAX_BYTES = 1024 * 1024
 const TRACKER_RETRY_MS = 30_000
 const RECOVERY_RESTART_MS = 2_000
 const WEBTORRENT_OPTIONS = {
@@ -92,18 +94,66 @@ function exists(path: string): Promise<boolean> {
   })
 }
 
+async function shareLogs(): Promise<Response> {
+  if (!LOG_UPLOAD_ORIGIN || !LOG_UPLOAD_SECRET) {
+    return Response.json(
+      { error: 'Missing LAUNCHER_LOG_ORIGIN or LAUNCHER_LOG_SECRET.' },
+      { status: 500 },
+    )
+  }
+
+  let tail = logs
+  let compressed = Uint8Array.from(
+    brotliCompressSync(encoder.encode(formatLogs(tail))),
+  )
+  while (compressed.byteLength > LOG_UPLOAD_MAX_BYTES && tail.length > 1) {
+    tail = tail.slice(Math.max(1, Math.floor(tail.length / 4)))
+    compressed = Uint8Array.from(
+      brotliCompressSync(encoder.encode(formatLogs(tail))),
+    )
+  }
+  if (compressed.byteLength > LOG_UPLOAD_MAX_BYTES) {
+    return Response.json({ error: 'Logs are too large to upload.' }, {
+      status: 413,
+    })
+  }
+
+  const sha1 = new Uint8Array(await crypto.subtle.digest('SHA-1', compressed))
+    .toHex()
+  const response = await fetch(`${LOG_UPLOAD_ORIGIN}/launcher/logs/${sha1}`, {
+    method: 'POST',
+    headers: {
+      'content-encoding': 'br',
+      'content-type': 'text/plain; charset=utf-8',
+      'x-launcher-log-secret': LOG_UPLOAD_SECRET,
+    },
+    body: compressed,
+  })
+  if (!response.ok) {
+    return Response.json({ error: await response.text() }, {
+      status: response.status,
+    })
+  }
+
+  return Response.json({
+    bytes: compressed.byteLength,
+    entries: tail.length,
+    url: `${LOG_UPLOAD_ORIGIN}/launcher/logs/${sha1}`,
+  })
+}
+
+function formatLogs(entries: LogEntry[]): string {
+  return entries.map((entry) => `[${entry.timestamp}] ${entry.message}`).join(
+    '\n',
+  ) + '\n'
+}
+
 function logStatus(): void {
   if (!activeTorrent) return
   log(
-    `status: peers=${activeTorrent.numPeers} speed=${
-      formatBytes(activeTorrent.downloadSpeed)
-    }/s ` +
-      `progress=${
-        (Math.max(0, Math.min(1, activeTorrent.progress)) * 100).toFixed(1)
-      }% ` +
-      `downloaded=${formatBytes(activeTorrent.downloaded)}/${
-        formatBytes(activeTorrent.length)
-      }`,
+    `status: peers=${activeTorrent.numPeers} speed=${formatBytes(activeTorrent.downloadSpeed)}/s ` +
+      `progress=${(Math.max(0, Math.min(1, activeTorrent.progress)) * 100).toFixed(1)}% ` +
+      `downloaded=${formatBytes(activeTorrent.downloaded)}/${formatBytes(activeTorrent.length)}`,
   )
 }
 
@@ -150,15 +200,11 @@ function startTorrent(): void {
     'metadata',
     () => {
       log(
-        `metadata received: ${activeTorrent!.name} (${
-          formatBytes(activeTorrent!.length)
-        })`,
+        `metadata received: ${activeTorrent!.name} (${formatBytes(activeTorrent!.length)})`,
       )
       const clientRoot = `${downloadPath}/${activeTorrent!.name}`
       log(`client files root: ${clientRoot}`)
-      exists(clientRoot).then((found) =>
-        log(`client files root existed at startup: ${found ? 'yes' : 'no'}`)
-      )
+      exists(clientRoot).then((found) => log(`client files root existed at startup: ${found ? 'yes' : 'no'}`))
       log(`first torrent file: ${activeTorrent!.files[0]?.path ?? 'none'}`)
       logStep('checking existing data')
     },
@@ -210,7 +256,7 @@ function recover(error: unknown): void {
   currentClient?.destroy(restart)
 }
 
-export function handler(request: Request): Response {
+export async function handler(request: Request): Promise<Response> {
   const path = new URL(request.url).pathname
 
   if (path === '/') {
@@ -233,10 +279,16 @@ export function handler(request: Request): Response {
     })
   }
 
+  if (path === '/share-logs') {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
+    }
+    return await shareLogs()
+  }
+
   if (path === '/events') {
     // NOTE: this launcher has one browser client; a second stream replaces the first.
-    let streamController: ReadableStreamDefaultController<Uint8Array> | null =
-      null
+    let streamController: ReadableStreamDefaultController<Uint8Array> | null = null
     const stream = new ReadableStream({
       start(controller) {
         streamController = controller
@@ -269,9 +321,7 @@ if (import.meta.main) {
   logStep('launcher started')
   downloadPath = DOWNLOAD_DIRECTORY
   log(
-    `download directory existed before startup: ${
-      await exists(downloadPath) ? 'yes' : 'no'
-    }`,
+    `download directory existed before startup: ${await exists(downloadPath) ? 'yes' : 'no'}`,
   )
   logStep('creating download directory')
   await Deno.mkdir(downloadPath, { recursive: true })

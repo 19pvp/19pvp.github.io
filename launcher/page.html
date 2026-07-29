@@ -1,41 +1,110 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>19PvP Launcher</title>
-  <style>
-    :root { color-scheme: dark; font: 15px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
-    body { margin: 0; padding: 24px; background: #111827; color: #d1d5db; }
-    main { max-width: 1000px; margin: auto; }
-    h1 { color: #f9fafb; font: 600 20px/1.2 system-ui, sans-serif; }
-    label { display: block; margin: 24px 0 4px; font-family: system-ui, sans-serif; }
-    #directory-name { color: #9ca3af; font-size: 13px; }
-    #status { margin: 24px 0; padding: 16px; border: 1px solid #374151; border-radius: 8px; background: #1f2937; }
-    #state { color: #f9fafb; font: 600 18px system-ui, sans-serif; }
-    progress { display: block; width: 100%; margin: 12px 0; }
-    #stats { display: flex; flex-wrap: wrap; gap: 16px; color: #9ca3af; }
-    details { margin-top: 24px; }
-    #logs { height: 50vh; margin-top: 12px; overflow: auto; padding: 16px; border: 1px solid #374151; border-radius: 8px; background: #030712; white-space: pre-wrap; }
-  </style>
-</head>
-<body>
-  <main>
-    <h1>19PvP Launcher</h1>
-    <label>Source directory <input id="directory" type="file" webkitdirectory directory multiple></label>
-    <div id="directory-name">No directory selected. The launcher still downloads to its managed directory.</div>
-    <div id="download-path">Download directory: loading…</div>
-    <section id="status" aria-live="polite">
-      <div id="state">Starting</div>
-      <progress id="progress" max="1" value="0"></progress>
-      <div id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="peers">0 peers</span></div>
-    </section>
-    <details>
-      <summary>Logs</summary>
-      <pre id="logs" role="log">Connecting to launcher…</pre>
-    </details>
-  </main>
-  <script>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>19PvP Launcher</title>
+    <style>
+    :root {
+      color-scheme: dark;
+      font: 15px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #111827;
+      color: #d1d5db;
+    }
+    main {
+      max-width: 1000px;
+      margin: auto;
+    }
+    h1 {
+      color: #f9fafb;
+      font: 600 20px/1.2 system-ui, sans-serif;
+    }
+    label {
+      display: block;
+      margin: 24px 0 4px;
+      font-family: system-ui, sans-serif;
+    }
+    #directory-name {
+      color: #9ca3af;
+      font-size: 13px;
+    }
+    #status {
+      margin: 24px 0;
+      padding: 16px;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      background: #1f2937;
+    }
+    #state {
+      color: #f9fafb;
+      font: 600 18px system-ui, sans-serif;
+    }
+    progress {
+      display: block;
+      width: 100%;
+      margin: 12px 0;
+    }
+    #stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      color: #9ca3af;
+    }
+    #help {
+      margin-top: 12px;
+      color: #fbbf24;
+      font-family: system-ui, sans-serif;
+    }
+    #help a,
+    #log-share a {
+      color: #fde68a;
+    }
+    #log-share {
+      margin-top: 12px;
+      font-family: system-ui, sans-serif;
+    }
+    details {
+      margin-top: 24px;
+    }
+    #logs {
+      height: 50vh;
+      margin-top: 12px;
+      overflow: auto;
+      padding: 16px;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      background: #030712;
+      white-space: pre-wrap;
+    }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>19PvP Launcher</h1>
+      <label>Source directory <input id="directory" type="file" webkitdirectory directory multiple></label>
+      <div
+        id="directory-name">No directory selected. The launcher still downloads to its managed directory.</div>
+      <div id="download-path">Download directory: loading…</div>
+      <section id="status" aria-live="polite">
+        <div id="state">Starting</div>
+        <progress id="progress" max="1" value="0"></progress>
+        <div
+          id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="peers">0 peers</span></div>
+        <div id="help"
+          hidden>Looks like the download is stuck. <a id="share-logs" href="#">Share this info link to get help</a><span id="share-result"></span></div>
+      </section>
+      <details>
+        <summary>Logs</summary>
+        <div
+          id="log-share"><a id="share-logs-from-details" href="#">Share this info link to get help</a><span id="share-result-from-details"></span></div>
+        <pre id="logs" role="log">Connecting to launcher…</pre>
+      </details>
+    </main>
+    <script>
     const logView = document.querySelector('#logs')
     const state = document.querySelector('#state')
     const progress = document.querySelector('#progress')
@@ -43,24 +112,49 @@
     const speed = document.querySelector('#speed')
     const peers = document.querySelector('#peers')
     const downloadPath = document.querySelector('#download-path')
+    const help = document.querySelector('#help')
+    const shareLogs = document.querySelector('#share-logs')
+    const shareLogsFromDetails = document.querySelector('#share-logs-from-details')
+    const shareResult = document.querySelector('#share-result')
+    const shareResultFromDetails = document.querySelector(
+      '#share-result-from-details',
+    )
+    let lastMovingAt = Date.now()
+    let lastDownloaded = '0 B'
     const updateStatus = (message) => {
       if (message === 'completed') state.textContent = 'Completed'
       else if (message.includes('error:')) state.textContent = 'Error'
       else if (message === 'torrent loaded') state.textContent = 'Loading torrent'
-      else if (message.startsWith('metadata received:')) state.textContent = 'Checking existing data'
-      else if (message === 'torrent ready; existing data checked') state.textContent = 'Downloading'
-      else if (message === 'launcher stopped') state.textContent = 'Stopped'
-      else if (message.startsWith('download directory:')) downloadPath.textContent = 'Download directory: ' + message.slice('download directory:'.length).trim()
-      else if (message.startsWith('client files root:')) downloadPath.textContent = 'Client files root: ' + message.slice('client files root:'.length).trim()
-      const match = message.match(/^status: peers=(\d+) speed=(.+?)\/s progress=([\d.]+)% downloaded=(.+?)\/(.+)$/)
+      else if (message.startsWith('metadata received:')) {
+        state.textContent = 'Checking existing data'
+      } else if (message === 'torrent ready; existing data checked') {
+        state.textContent = 'Downloading'
+      } else if (message === 'launcher stopped') state.textContent = 'Stopped'
+      else if (message.startsWith('download directory:')) {
+        downloadPath.textContent = 'Download directory: ' +
+          message.slice('download directory:'.length).trim()
+      } else if (message.startsWith('client files root:')) {
+        downloadPath.textContent = 'Client files root: ' +
+          message.slice('client files root:'.length).trim()
+      }
+      const match = message.match(
+        /^status: peers=(\d+) speed=(.+?)\/s progress=([\d.]+)% downloaded=(.+?)\/(.+)$/,
+      )
       if (!match) return
       peers.textContent = match[1] + ' peers'
       speed.textContent = match[2] + '/s'
       downloaded.textContent = match[4] + ' / ' + match[5]
       progress.value = Number(match[3]) / 100
+      if (match[2] !== '0 B' || match[4] !== lastDownloaded) {
+        lastMovingAt = Date.now()
+        help.hidden = true
+      }
+      lastDownloaded = match[4]
     }
     const append = (entry) => {
-      if (logView.textContent === 'Connecting to launcher…') logView.textContent = ''
+      if (logView.textContent === 'Connecting to launcher…') {
+        logView.textContent = ''
+      }
       logView.textContent += '[' + entry.timestamp + '] ' + entry.message + '\n'
       logView.scrollTop = logView.scrollHeight
       updateStatus(entry.message)
@@ -68,17 +162,47 @@
     document.querySelector('#directory').onchange = (event) => {
       const file = event.target.files[0]
       document.querySelector('#directory-name').textContent = file
-        ? file.webkitRelativePath.split('/')[0] + ' selected (' + event.target.files.length + ' files)'
+        ? file.webkitRelativePath.split('/')[0] + ' selected (' +
+          event.target.files.length + ' files)'
         : 'No directory selected. The launcher still downloads to its managed directory.'
     }
     const stream = new EventSource('/events')
     stream.onmessage = (event) => append(JSON.parse(event.data))
-    stream.onerror = () => append({ timestamp: new Date().toISOString(), message: 'event stream disconnected' })
+    stream.onerror = () =>
+      append({
+        timestamp: new Date().toISOString(),
+        message: 'event stream disconnected',
+      })
+    setInterval(() => {
+      if (state.textContent !== 'Completed' && Date.now() - lastMovingAt > 30000) {
+        help.hidden = false
+      }
+    }, 1000)
+    const uploadLogs = async (event, result) => {
+      event.preventDefault()
+      result.textContent = ' uploading…'
+      const response = await fetch('/share-logs', { method: 'POST' })
+      const data = await response.json()
+      if (!response.ok) {
+        result.textContent = ' failed: ' + (data.error || response.status)
+        return
+      }
+      result.textContent = ' '
+      const link = document.createElement('a')
+      link.href = data.url
+      link.target = '_blank'
+      link.textContent = data.url
+      result.append(link)
+    }
+    shareLogs.onclick = (event) => uploadLogs(event, shareResult)
+    shareLogsFromDetails.onclick = (event) => uploadLogs(event, shareResultFromDetails)
     fetch('/api')
       .then((response) => response.json())
       .then((status) => {
-        if (status.downloadPath) downloadPath.textContent = 'Download directory: ' + status.downloadPath
+        if (status.downloadPath) {
+          downloadPath.textContent = 'Download directory: ' + status.downloadPath
+        }
       })
-  </script>
-</body>
+    </script>
+  </body>
 </html>

@@ -50,6 +50,12 @@ export const env = {
   GEMINI_TOKEN: get('GEMINI_TOKEN'),
   CORE_PATH: get('CORE_PATH', false, `/root/services/${projectName}/core`),
   WORLDSERVER_SERVICE_NAME: get('WORLDSERVER_SERVICE_NAME', false, `${projectName}-worldserver`),
+  LAUNCHER_LOG_DIR: get(
+    'LAUNCHER_LOG_DIR',
+    false,
+    `/root/services/${projectName}/launcher-logs`,
+  ),
+  LAUNCHER_LOG_SECRET: get('LAUNCHER_LOG_SECRET'),
 
   // Worldserver SOAP access
   PASSWORD: get('PASSWORD'),
