@@ -13,7 +13,13 @@ worker.onmessage = async (event) => {
       edits: DBCEdit[]
       outputPath: string
     }
-    await generatePatch(await loadStormLib(), root, edits, outputPath)
+    worker.postMessage({ message: 'loading StormLib', type: 'log' })
+    const started = performance.now()
+    const storm = await loadStormLib()
+    worker.postMessage({ message: `StormLib ready in ${Math.round(performance.now() - started)}ms`, type: 'log' })
+    await generatePatch(storm, root, edits, outputPath, (message) => {
+      worker.postMessage({ message, type: 'log' })
+    })
     worker.postMessage({ ok: true })
   } catch (error) {
     worker.postMessage({

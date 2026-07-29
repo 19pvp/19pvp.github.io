@@ -58,6 +58,7 @@ async function readOriginalDBC(
   storm: StormArchiveModule,
   clientRoot: string,
   filename: string,
+  report: (message: string) => void,
 ): Promise<Uint8Array> {
   let lastError: unknown
   const hintedSource = sourceMap[filename] ?? sourceMap[filename.toLowerCase()]
@@ -66,15 +67,18 @@ async function readOriginalDBC(
     : sourceArchives.map((archiveName) => join('Data', 'enUS', archiveName))
   const uniqueSourcePaths = [...new Set(sourcePaths)]
   for (const sourcePath of uniqueSourcePaths) {
+    const started = performance.now()
     let archive
     try {
       archive = await storm.open(join(clientRoot, sourcePath))
       const file = archive.getFile(`DBFilesClient\\${filename}`)
       const bytes = new Uint8Array(file.size)
       if (file.read(bytes) !== bytes.byteLength) throw new Error(`could not read ${filename}`)
+      report(`loaded ${sourcePath} for ${filename} in ${Math.round(performance.now() - started)}ms`)
       return bytes
     } catch (error) {
       lastError = error
+      report(`could not load ${filename} from ${sourcePath} in ${Math.round(performance.now() - started)}ms`)
     } finally {
       await archive?.close()
     }
@@ -87,10 +91,12 @@ export async function generatePatch(
   clientRoot: string,
   edits: readonly DBCEdit[],
   outputPath: string,
+  report: (message: string) => void = () => {},
 ): Promise<void> {
   const files: { name: string; bytes: Uint8Array }[] = []
   for (const edit of edits) {
-    const original = await readOriginalDBC(storm, clientRoot, edit.filename)
+    report(`editing ${edit.filename}; ${edit.rows.length} row(s)`)
+    const original = await readOriginalDBC(storm, clientRoot, edit.filename, report)
     const originalRows = decodeDBC(original, edit.schema)
     const rows = mergeDBCRows(edit.schema, originalRows, edit.rows)
     files.push({
@@ -99,6 +105,7 @@ export async function generatePatch(
     })
   }
 
+  const archiveStarted = performance.now()
   const archive = storm.createArchive()
   let closed = false
   try {
@@ -108,8 +115,11 @@ export async function generatePatch(
     const bytes = archive.close()
     closed = true
     if (!bytes) throw new Error('StormLib did not return the generated patch')
+    report(`patch archive created in ${Math.round(performance.now() - archiveStarted)}ms`)
+    const writeStarted = performance.now()
     await Deno.mkdir(dirname(outputPath), { recursive: true })
     await Deno.writeFile(outputPath, bytes)
+    report(`patch file written in ${Math.round(performance.now() - writeStarted)}ms`)
   } catch (error) {
     if (!closed) {
       try {

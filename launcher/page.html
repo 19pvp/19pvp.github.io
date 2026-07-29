@@ -17,6 +17,9 @@
       background: #111827;
       color: #d1d5db;
     }
+    [hidden] {
+      display: none !important;
+    }
     main {
       max-width: 1000px;
       margin: auto;
@@ -201,6 +204,7 @@
       <h1>19PvP Launcher</h1>
       <div id="directory-controls">
         <button id="choose-directory" type="button">Choose download folder</button>
+        <button id="recheck" type="button" hidden>Check files again</button>
         <span id="directory-message">No folder selected.</span>
       </div>
       <div id="download-path">Download directory: loading…</div>
@@ -211,10 +215,9 @@
           <div class="step" data-step="download" data-state="active">
             <div class="step-main">
               <div class="step-title">💾 DOWNLOAD</div>
-              <progress id="progress" max="1" value="0"></progress>
+              <progress id="progress" max="1" value="0" hidden></progress>
               <div
-                id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
-              <button id="recheck" type="button" hidden>Check files again</button>
+                id="stats" hidden><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
             </div>
             <span class="step-state">Starting</span>
           </div>
@@ -273,6 +276,11 @@
     let lastDownloaded = '0 B'
     let isComplete = false
     let serviceStopped = false
+    let torrentStarted = false
+    const hideTorrentStats = () => {
+      progress.hidden = true
+      stats.hidden = true
+    }
     const updateScanSpinner = (message) => {
       if (message === 'scan started') scanSpinner.hidden = false
       else if (message.startsWith('scan complete:') || message.startsWith('scan failed:')) scanSpinner.hidden = true
@@ -321,16 +329,26 @@
       if (message === 'completed') {
         state.textContent = 'Completed'
         isComplete = true
+        hideTorrentStats()
       } else if (message === 'completed with errors') {
         state.textContent = 'Setup failed'
         logDetails.open = true
       } else if (failure) {
         state.textContent = 'Setup failed'
         logDetails.open = true
-      } else if (message === 'torrent loaded') state.textContent = 'Loading torrent'
+      } else if (message === 'torrent loaded') {
+        torrentStarted = true
+        progress.hidden = false
+        stats.hidden = false
+        state.textContent = 'Loading torrent'
+      }
       else if (message.startsWith('metadata received:')) state.textContent = 'Checking existing data'
       else if (message === 'torrent ready; existing data checked') state.textContent = 'Downloading'
       else if (message === 'launcher stopped') state.textContent = 'Stopped'
+      if (message === 'download completed' || message === 'quick file check passed; torrent not needed') {
+        torrentStarted = false
+        hideTorrentStats()
+      }
       else if (message.startsWith('download directory:')) {
         rememberPath(
           'Download directory: ',
@@ -345,7 +363,7 @@
       const match = message.match(
         /^status: peers=(\d+) speed=(.+?)\/s progress=([\d.]+)% downloaded=(.+?)\/(.+?) eta=(.+)$/,
       )
-      if (!match) return
+      if (!match || !torrentStarted) return
       peers.textContent = match[1] + ' peers'
       speed.textContent = match[2] + '/s'
       eta.textContent = match[6].startsWith('checking local files ')

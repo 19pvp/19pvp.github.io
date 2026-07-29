@@ -368,6 +368,10 @@ async function generateClientPatch(): Promise<string> {
     const worker = new Worker(new URL('./patch_worker.ts', import.meta.url), { type: 'module' })
     await new Promise<void>((resolve, reject) => {
       worker.onmessage = (event) => {
+        if (event.data.type === 'log') {
+          log(`patch: ${event.data.message}`)
+          return
+        }
         worker.terminate()
         if (event.data.ok) {
           resolve()
