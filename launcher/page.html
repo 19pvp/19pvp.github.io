@@ -160,6 +160,14 @@
         state.textContent = 'Checking existing data'
       } else if (message === 'torrent ready; existing data checked') {
         state.textContent = 'Downloading'
+      } else if (message === 'scan started' || message.startsWith('scan root:')) {
+        state.textContent = 'Looking for an existing game'
+      } else if (message.startsWith('scan candidate')) {
+        state.textContent = 'Checking an existing game'
+      } else if (message.startsWith('existing client found:') || message.startsWith('copying ')) {
+        state.textContent = 'Using existing game files'
+      } else if (message.startsWith('restarting torrent to recheck')) {
+        state.textContent = 'Checking copied files'
       } else if (message === 'launcher stopped') state.textContent = 'Stopped'
       else if (message.startsWith('download directory:')) {
         rememberPath(

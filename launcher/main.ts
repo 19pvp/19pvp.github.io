@@ -3,6 +3,7 @@ import { copy } from '@std/fs/copy'
 import { basename, dirname, join } from '@std/path'
 import WebTorrent from 'webtorrent'
 import pageBytes from './page.html' with { type: 'bytes' }
+import { type ScannedFile, startScan } from './scan.ts'
 import torrent from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
 const CLIENT_DIRECTORY_NAME = 'World of Warcraft 3.3.5a'
@@ -39,10 +40,11 @@ type LogEntry = { timestamp: string; message: string }
 
 type Torrent = {
   on(event: string, listener: (...args: unknown[]) => void): void
+  pause(): void
   done: boolean
   downloaded: number
   downloadSpeed: number
-  files: { path: string; name: string }[]
+  files: { path: string; name: string; length: number }[]
   infoHash: string
   length: number
   name: string
@@ -70,7 +72,9 @@ let recovering = false
 let started = false
 let stopped = false
 let changingPath = false
+let recoveringFiles = false
 let shutdownLauncher: (() => void) | null = null
+const scanAbort = new AbortController()
 
 function log(message: string): void {
   const entry = { timestamp: new Date().toISOString(), message }
@@ -157,7 +161,7 @@ export function savedDownloadPath(path: string | null): string {
   return normalized === OLD_DOWNLOAD_DIRECTORY ? DOWNLOAD_DIRECTORY : normalized
 }
 
-export const addonToc(version: string): string => `
+export const addonToc = (version: string): string => `
 ## Interface: 30300
 ## Title: 19 PvP
 ## Notes: Companion Add On for 19PvP Server.
@@ -187,6 +191,45 @@ async function recoverClientFiles(sourcePath: string | null, targetDownloadPath:
     await copy(source, target, { overwrite: true })
     await Deno.remove(source, { recursive: true })
     log('client files copied and old files removed')
+  }
+}
+
+async function importDiscoveredFiles(source: string, files: ScannedFile[]): Promise<void> {
+  if (stopped || changingPath || recoveringFiles || source === clientPath()) return
+  if (activeTorrent?.done) {
+    log('existing client found after download completed; keeping downloaded client')
+    return
+  }
+  recoveringFiles = true
+  try {
+    log(`existing client found: ${source}`)
+    log('pausing torrent for existing client recovery')
+    activeTorrent?.pause?.()
+    if (statusTimer !== null) clearInterval(statusTimer)
+    statusTimer = null
+    const currentClient = client
+    client = null
+    activeTorrent = null
+    if (currentClient) {
+      await new Promise<void>((resolve) => currentClient.destroy(resolve))
+    }
+
+    log(`copying ${files.length} verified files from existing client`)
+    for (const file of files) {
+      const target = join(downloadPath!, file.path)
+      await Deno.mkdir(dirname(target), { recursive: true })
+      await Deno.copyFile(file.sourcePath, target)
+    }
+    log(`copied ${files.length} existing files`)
+    if (!stopped && !changingPath) {
+      log('restarting torrent to recheck copied files')
+      startTorrent()
+    }
+  } catch (error) {
+    log(`existing client recovery failed: ${errorMessage(error)}`)
+    if (!stopped && !changingPath) startTorrent()
+  } finally {
+    recoveringFiles = false
   }
 }
 
@@ -328,6 +371,7 @@ function logStatus(): void {
 async function stop(): Promise<void> {
   if (stopped) return
   stopped = true
+  scanAbort.abort()
   if (statusTimer !== null) clearInterval(statusTimer)
   statusTimer = null
   if (activeTorrent) log('stopping torrent')
@@ -413,6 +457,13 @@ function startTorrent(): void {
       })
       log(`first torrent file: ${activeTorrent!.files[0]?.path ?? 'none'}`)
       logStep('checking existing data')
+      startScan(
+        activeTorrent!.files.map(({ path, length }) => ({ path, length })),
+        clientPath()!,
+        log,
+        importDiscoveredFiles,
+        scanAbort.signal,
+      )
     },
   )
   activeTorrent.on('ready', () => {
@@ -449,7 +500,7 @@ function startTorrent(): void {
 }
 
 function recover(error: unknown): void {
-  if (stopped || recovering || changingPath) return
+  if (stopped || recovering || changingPath || recoveringFiles) return
   recovering = true
   log(`recovering torrent: ${errorMessage(error)}`)
   if (statusTimer !== null) clearInterval(statusTimer)
