@@ -1,12 +1,23 @@
 import WebTorrent from 'webtorrent'
+import pageBytes from './page.html' with { type: 'bytes' }
 import torrent from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
-const DOWNLOAD_DIRECTORY_PREFIX = '19pvp-launcher-'
+const DOWNLOAD_DIRECTORY = `${
+  Deno.env.get('TEMP') ?? Deno.env.get('TMPDIR') ?? '/tmp'
+}/19pvp-launcher`
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
-const WEBTORRENT_OPTIONS = { natPmp: false, natUpnp: false, utp: false }
+const WEBSEED_URL = 'https://dl.devazuka.com/wow/'
+const TRACKER_RETRY_MS = 30_000
+const WEBTORRENT_OPTIONS = {
+  natPmp: false,
+  natUpnp: false,
+  tracker: { intervalMs: TRACKER_RETRY_MS },
+  utp: false,
+}
 const LOG_LIMIT = 500
 const STATUS_INTERVAL_MS = 1000
 const encoder = new TextEncoder()
+const page = new TextDecoder().decode(pageBytes)
 
 type LogEntry = { timestamp: string; message: string }
 
@@ -26,7 +37,7 @@ type Client = {
   on(event: string, listener: (...args: unknown[]) => void): void
   add(
     torrent: Uint8Array,
-    options: { path: string; announce: string[] },
+    options: { path: string; announce: string[]; urlList: string[] },
   ): Torrent
   destroy(callback: () => void): void
 }
@@ -93,39 +104,6 @@ async function stop(): Promise<void> {
   log('launcher stopped')
 }
 
-const page = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>19PvP Launcher</title>
-  <style>
-    :root { color-scheme: dark; font: 15px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
-    body { margin: 0; padding: 24px; background: #111827; color: #d1d5db; }
-    main { max-width: 1000px; margin: auto; }
-    h1 { color: #f9fafb; font: 600 20px/1.2 system-ui, sans-serif; }
-    #logs { height: 70vh; margin: 0; overflow: auto; padding: 16px; border: 1px solid #374151; border-radius: 8px; background: #030712; white-space: pre-wrap; }
-  </style>
-</head>
-<body>
-  <main>
-    <h1>19PvP Launcher · Phase 1</h1>
-    <pre id="logs" role="log" aria-live="polite">Connecting to launcher…</pre>
-  </main>
-  <script>
-    const logView = document.querySelector('#logs')
-    const append = (entry) => {
-      if (logView.textContent === 'Connecting to launcher…') logView.textContent = ''
-      logView.textContent += '[' + entry.timestamp + '] ' + entry.message + '\\n'
-      logView.scrollTop = logView.scrollHeight
-    }
-    const stream = new EventSource('/events')
-    stream.onmessage = (event) => append(JSON.parse(event.data))
-    stream.onerror = () => append({ timestamp: new Date().toISOString(), message: 'event stream disconnected' })
-  </script>
-</body>
-</html>`
-
 export function handler(request: Request): Response {
   const path = new URL(request.url).pathname
 
@@ -182,7 +160,8 @@ export function handler(request: Request): Response {
 
 if (import.meta.main) {
   started = true
-  downloadPath = await Deno.makeTempDir({ prefix: DOWNLOAD_DIRECTORY_PREFIX })
+  downloadPath = DOWNLOAD_DIRECTORY
+  await Deno.mkdir(downloadPath, { recursive: true })
   log(`download directory: ${downloadPath}`)
 
   client = new WebTorrent(WEBTORRENT_OPTIONS) as unknown as Client
@@ -191,6 +170,7 @@ if (import.meta.main) {
   activeTorrent = client.add(torrent, {
     path: downloadPath,
     announce: [TRACKER_URL],
+    urlList: [WEBSEED_URL],
   })
   activeTorrent.on(
     'infoHash',
@@ -226,7 +206,19 @@ if (import.meta.main) {
   log('torrent loaded')
 
   const abort = new AbortController()
-  const server = Deno.serve({ signal: abort.signal }, handler)
+  const server = Deno.serve({
+    hostname: '127.0.0.1',
+    port: 0,
+    signal: abort.signal,
+  }, handler)
+  const url = `http://127.0.0.1:${server.addr.port}`
+  const open = Deno.build.os === 'windows'
+    ? new Deno.Command('cmd', { args: ['/c', 'start', '', url] })
+    : new Deno.Command(Deno.build.os === 'darwin' ? 'open' : 'xdg-open', {
+      args: [url],
+    })
+  open.spawn()
+  log(`opening ${url}`)
   let stopping: Promise<void> | null = null
   const shutdown = () => {
     stopping ??= (async () => {

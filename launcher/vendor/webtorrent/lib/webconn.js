@@ -103,14 +103,20 @@ export default class WebConn extends Wire {
 
       requests = requestedFiles.map(requestedFile => {
         const fileEnd = requestedFile.offset + requestedFile.length - 1
+        // This launcher serves the torrent contents directly under WEBSEED_URL.
+        const relativePath = requestedFile.path
+          .split(/[\\/]/)
+          .slice(1)
+          .map(encodeURIComponent)
+          .join('/')
         const url = this.url +
           (this.url[this.url.length - 1] === '/' ? '' : '/') +
-          requestedFile.path.replace(this._torrent.path, '')
+          relativePath
         return {
           url,
           fileOffsetInRange: Math.max(requestedFile.offset - rangeStart, 0),
           start: Math.max(rangeStart - requestedFile.offset, 0),
-          end: Math.min(fileEnd, rangeEnd - requestedFile.offset)
+          end: Math.min(fileEnd, rangeEnd) - requestedFile.offset
         }
       })
     }
@@ -133,6 +139,13 @@ export default class WebConn extends Wire {
         })
         if (!res.ok) throw new Error(`Unexpected HTTP status code ${res.status}`)
         const data = new Uint8Array(await res.arrayBuffer())
+        const requestedLength = end - start + 1
+        if (data.length !== requestedLength) {
+          if (data.length < end + 1) {
+            throw new Error(`Unexpected response length ${data.length}`)
+          }
+          return data.slice(start, end + 1)
+        }
 
         debug('Got data of length %d', data.length)
 

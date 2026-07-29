@@ -1,11 +1,13 @@
 import { assertEquals, assertStringIncludes } from '@std/assert'
 import { handler } from './main.ts'
 
-Deno.test('serves the log-only page', async () => {
+Deno.test('serves the launcher page', async () => {
   const response = handler(new Request('http://localhost/'))
   assertEquals(response.status, 200)
   const body = await response.text()
-  assertStringIncludes(body, '19PvP Launcher · Phase 1')
+  assertStringIncludes(body, '19PvP Launcher')
+  assertStringIncludes(body, 'webkitdirectory')
+  assertStringIncludes(body, '<details>')
   assertEquals(body.includes('<button'), false)
 })
 

@@ -1701,7 +1701,9 @@ export default class Torrent extends EventEmitter {
       return index => {
         if (!tries || self.bitfield.get(index)) return true
 
-        let missing = self.pieces[index].missing
+        const piece = self.pieces[index]
+        if (!piece) return true
+        let missing = piece.missing
 
         for (; ptr < self.wires.length; ptr++) {
           const otherWire = self.wires[ptr]

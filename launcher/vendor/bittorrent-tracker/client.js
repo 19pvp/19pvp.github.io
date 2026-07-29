@@ -53,6 +53,7 @@ class Client extends EventEmitter {
     this.destroyed = false
 
     this._port = opts.port
+    this._intervalMs = opts.intervalMs
     this._getAnnounceOpts = opts.getAnnounceOpts
     this._rtcConfig = opts.rtcConfig
     this._userAgent = opts.userAgent
@@ -138,7 +139,7 @@ class Client extends EventEmitter {
 
     // start announcing on intervals
     this._trackers.forEach(tracker => {
-      tracker.setInterval()
+      tracker.setInterval(this._intervalMs)
     })
   }
 
