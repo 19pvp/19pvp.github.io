@@ -93,7 +93,7 @@
         <div id="state">Starting</div>
         <progress id="progress" max="1" value="0"></progress>
         <div
-          id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="peers">0 peers</span></div>
+          id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
         <div id="help"
           hidden>Looks like the download is stuck. <a id="share-logs" href="#">Share this info link to get help</a><span id="share-result"></span></div>
       </section>
@@ -110,6 +110,7 @@
     const progress = document.querySelector('#progress')
     const downloaded = document.querySelector('#downloaded')
     const speed = document.querySelector('#speed')
+    const eta = document.querySelector('#eta')
     const peers = document.querySelector('#peers')
     const downloadPath = document.querySelector('#download-path')
     const help = document.querySelector('#help')
@@ -138,11 +139,12 @@
           message.slice('client files root:'.length).trim()
       }
       const match = message.match(
-        /^status: peers=(\d+) speed=(.+?)\/s progress=([\d.]+)% downloaded=(.+?)\/(.+)$/,
+        /^status: peers=(\d+) speed=(.+?)\/s progress=([\d.]+)% downloaded=(.+?)\/(.+?) eta=(.+)$/,
       )
       if (!match) return
       peers.textContent = match[1] + ' peers'
       speed.textContent = match[2] + '/s'
+      eta.textContent = 'Left: ' + match[6]
       downloaded.textContent = match[4] + ' / ' + match[5]
       progress.value = Number(match[3]) / 100
       if (match[2] !== '0 B' || match[4] !== lastDownloaded) {

@@ -83,6 +83,16 @@ function formatBytes(value: number): string {
   return `${(value / 1024 ** unit).toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`
 }
 
+function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return 'unknown'
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+  if (hours) return `${hours}h ${minutes}m`
+  if (minutes) return `${minutes}m ${secs}s`
+  return `${secs}s`
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -150,10 +160,13 @@ function formatLogs(entries: LogEntry[]): string {
 
 function logStatus(): void {
   if (!activeTorrent) return
+  const remaining = Math.max(0, activeTorrent.length - activeTorrent.downloaded)
+  const eta = activeTorrent.downloadSpeed > 0 ? formatDuration(remaining / activeTorrent.downloadSpeed) : 'unknown'
   log(
     `status: peers=${activeTorrent.numPeers} speed=${formatBytes(activeTorrent.downloadSpeed)}/s ` +
       `progress=${(Math.max(0, Math.min(1, activeTorrent.progress)) * 100).toFixed(1)}% ` +
-      `downloaded=${formatBytes(activeTorrent.downloaded)}/${formatBytes(activeTorrent.length)}`,
+      `downloaded=${formatBytes(activeTorrent.downloaded)}/${formatBytes(activeTorrent.length)} ` +
+      `eta=${eta}`,
   )
 }
 
