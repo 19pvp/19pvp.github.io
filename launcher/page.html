@@ -24,6 +24,7 @@
     <h1>19PvP Launcher</h1>
     <label>Source directory <input id="directory" type="file" webkitdirectory directory multiple></label>
     <div id="directory-name">No directory selected. The launcher still downloads to its managed directory.</div>
+    <div id="download-path">Download directory: loading…</div>
     <section id="status" aria-live="polite">
       <div id="state">Starting</div>
       <progress id="progress" max="1" value="0"></progress>
@@ -41,6 +42,7 @@
     const downloaded = document.querySelector('#downloaded')
     const speed = document.querySelector('#speed')
     const peers = document.querySelector('#peers')
+    const downloadPath = document.querySelector('#download-path')
     const updateStatus = (message) => {
       if (message === 'completed') state.textContent = 'Completed'
       else if (message.includes('error:')) state.textContent = 'Error'
@@ -48,6 +50,8 @@
       else if (message.startsWith('metadata received:')) state.textContent = 'Checking existing data'
       else if (message === 'torrent ready; existing data checked') state.textContent = 'Downloading'
       else if (message === 'launcher stopped') state.textContent = 'Stopped'
+      else if (message.startsWith('download directory:')) downloadPath.textContent = 'Download directory: ' + message.slice('download directory:'.length).trim()
+      else if (message.startsWith('client files root:')) downloadPath.textContent = 'Client files root: ' + message.slice('client files root:'.length).trim()
       const match = message.match(/^status: peers=(\d+) speed=(.+?)\/s progress=([\d.]+)% downloaded=(.+?)\/(.+)$/)
       if (!match) return
       peers.textContent = match[1] + ' peers'
@@ -70,6 +74,11 @@
     const stream = new EventSource('/events')
     stream.onmessage = (event) => append(JSON.parse(event.data))
     stream.onerror = () => append({ timestamp: new Date().toISOString(), message: 'event stream disconnected' })
+    fetch('/api')
+      .then((response) => response.json())
+      .then((status) => {
+        if (status.downloadPath) downloadPath.textContent = 'Download directory: ' + status.downloadPath
+      })
   </script>
 </body>
 </html>

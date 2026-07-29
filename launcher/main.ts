@@ -8,6 +8,7 @@ const DOWNLOAD_DIRECTORY = `${
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
 const WEBSEED_URL = 'https://dl.devazuka.com/wow/'
 const TRACKER_RETRY_MS = 30_000
+const RECOVERY_RESTART_MS = 2_000
 const WEBTORRENT_OPTIONS = {
   natPmp: false,
   natUpnp: false,
@@ -18,6 +19,7 @@ const LOG_LIMIT = 500
 const STATUS_INTERVAL_MS = 1000
 const encoder = new TextEncoder()
 const page = new TextDecoder().decode(pageBytes)
+const startupTime = performance.now()
 
 type LogEntry = { timestamp: string; message: string }
 
@@ -26,6 +28,7 @@ type Torrent = {
   done: boolean
   downloaded: number
   downloadSpeed: number
+  files: { path: string }[]
   infoHash: string
   length: number
   name: string
@@ -48,15 +51,24 @@ let client: Client | null = null
 let activeTorrent: Torrent | null = null
 let downloadPath: string | null = null
 let statusTimer: ReturnType<typeof setInterval> | null = null
+let recovering = false
 let started = false
 let stopped = false
 
 function log(message: string): void {
   const entry = { timestamp: new Date().toISOString(), message }
+  console.log(`[${entry.timestamp}] ${entry.message}`)
   logs.push(entry)
   if (logs.length > LOG_LIMIT) logs.shift()
-  // TODO: a closed browser stream can make enqueue fail; handle reconnects later.
-  events?.enqueue(encoder.encode(`data: ${JSON.stringify(entry)}\n\n`))
+  try {
+    events?.enqueue(encoder.encode(`data: ${JSON.stringify(entry)}\n\n`))
+  } catch {
+    events = null
+  }
+}
+
+function logStep(message: string): void {
+  log(`startup +${Math.round(performance.now() - startupTime)}ms: ${message}`)
 }
 
 function formatBytes(value: number): string {
@@ -71,6 +83,13 @@ function formatBytes(value: number): string {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+function exists(path: string): Promise<boolean> {
+  return Deno.stat(path).then(() => true, (error) => {
+    if (error instanceof Deno.errors.NotFound) return false
+    throw error
+  })
 }
 
 function logStatus(): void {
@@ -102,6 +121,93 @@ async function stop(): Promise<void> {
     await new Promise<void>((resolve) => currentClient.destroy(resolve))
   }
   log('launcher stopped')
+}
+
+function startTorrent(): void {
+  if (!downloadPath) throw new Error('missing download path')
+  if (statusTimer !== null) clearInterval(statusTimer)
+
+  logStep('creating WebTorrent client')
+  client = new WebTorrent(WEBTORRENT_OPTIONS) as unknown as Client
+  logStep('WebTorrent client created')
+  client.on('error', (error) => {
+    log(`client error: ${errorMessage(error)}`)
+    recover(error)
+  })
+  log('loading embedded torrent')
+  logStep('adding torrent to client')
+  activeTorrent = client.add(torrent, {
+    path: downloadPath,
+    announce: [TRACKER_URL],
+    urlList: [WEBSEED_URL],
+  })
+  logStep('torrent add returned')
+  activeTorrent.on(
+    'infoHash',
+    (infoHash) => log(`torrent info hash: ${infoHash}`),
+  )
+  activeTorrent.on(
+    'metadata',
+    () => {
+      log(
+        `metadata received: ${activeTorrent!.name} (${
+          formatBytes(activeTorrent!.length)
+        })`,
+      )
+      const clientRoot = `${downloadPath}/${activeTorrent!.name}`
+      log(`client files root: ${clientRoot}`)
+      exists(clientRoot).then((found) =>
+        log(`client files root existed at startup: ${found ? 'yes' : 'no'}`)
+      )
+      log(`first torrent file: ${activeTorrent!.files[0]?.path ?? 'none'}`)
+      logStep('checking existing data')
+    },
+  )
+  activeTorrent.on('ready', () => {
+    logStep('existing data check finished')
+    log('torrent ready; existing data checked')
+  })
+  activeTorrent.on(
+    'wire',
+    () => log(`peer connected: ${activeTorrent!.numPeers} peer(s)`),
+  )
+  activeTorrent.on('done', () => {
+    logStatus()
+    log('completed')
+  })
+  activeTorrent.on(
+    'warning',
+    (warning) => log(`warning: ${errorMessage(warning)}`),
+  )
+  activeTorrent.on('error', (error) => {
+    log(`torrent error: ${errorMessage(error)}`)
+    recover(error)
+  })
+  logStep('torrent listeners attached')
+  statusTimer = setInterval(logStatus, STATUS_INTERVAL_MS)
+  logStep('status timer started')
+  log('torrent loaded')
+}
+
+function recover(error: unknown): void {
+  if (stopped || recovering) return
+  recovering = true
+  log(`recovering torrent: ${errorMessage(error)}`)
+  if (statusTimer !== null) clearInterval(statusTimer)
+  statusTimer = null
+  activeTorrent = null
+
+  const currentClient = client
+  client = null
+  let restarted = false
+  const restart = () => {
+    if (stopped || restarted) return
+    restarted = true
+    recovering = false
+    startTorrent()
+  }
+  setTimeout(restart, RECOVERY_RESTART_MS)
+  currentClient?.destroy(restart)
 }
 
 export function handler(request: Request): Response {
@@ -160,63 +266,47 @@ export function handler(request: Request): Response {
 
 if (import.meta.main) {
   started = true
+  logStep('launcher started')
   downloadPath = DOWNLOAD_DIRECTORY
+  log(
+    `download directory existed before startup: ${
+      await exists(downloadPath) ? 'yes' : 'no'
+    }`,
+  )
+  logStep('creating download directory')
   await Deno.mkdir(downloadPath, { recursive: true })
   log(`download directory: ${downloadPath}`)
+  logStep('download directory ready')
 
-  client = new WebTorrent(WEBTORRENT_OPTIONS) as unknown as Client
-  client.on('error', (error) => log(`client error: ${errorMessage(error)}`))
-  log('loading embedded torrent')
-  activeTorrent = client.add(torrent, {
-    path: downloadPath,
-    announce: [TRACKER_URL],
-    urlList: [WEBSEED_URL],
+  logStep('installing recovery handlers')
+  globalThis.addEventListener('error', (event) => {
+    log(`uncaught error: ${event.message}`)
+    event.preventDefault()
+    recover(event.error ?? event.message)
   })
-  activeTorrent.on(
-    'infoHash',
-    (infoHash) => log(`torrent info hash: ${infoHash}`),
-  )
-  activeTorrent.on(
-    'metadata',
-    () =>
-      log(
-        `metadata received: ${activeTorrent!.name} (${
-          formatBytes(activeTorrent!.length)
-        })`,
-      ),
-  )
-  activeTorrent.on('ready', () => log('torrent ready; existing data checked'))
-  activeTorrent.on(
-    'wire',
-    () => log(`peer connected: ${activeTorrent!.numPeers} peer(s)`),
-  )
-  activeTorrent.on('done', () => {
-    logStatus()
-    log('completed')
+  globalThis.addEventListener('unhandledrejection', (event) => {
+    log(`unhandled rejection: ${errorMessage(event.reason)}`)
+    event.preventDefault()
+    recover(event.reason)
   })
-  activeTorrent.on(
-    'warning',
-    (warning) => log(`warning: ${errorMessage(warning)}`),
-  )
-  activeTorrent.on(
-    'error',
-    (error) => log(`torrent error: ${errorMessage(error)}`),
-  )
-  statusTimer = setInterval(logStatus, STATUS_INTERVAL_MS)
-  log('torrent loaded')
+  logStep('recovery handlers installed')
+  startTorrent()
 
   const abort = new AbortController()
+  logStep('starting local HTTP server')
   const server = Deno.serve({
     hostname: '127.0.0.1',
     port: 0,
     signal: abort.signal,
   }, handler)
   const url = `http://127.0.0.1:${server.addr.port}`
+  logStep(`local HTTP server listening: ${url}`)
   const open = Deno.build.os === 'windows'
     ? new Deno.Command('cmd', { args: ['/c', 'start', '', url] })
     : new Deno.Command(Deno.build.os === 'darwin' ? 'open' : 'xdg-open', {
       args: [url],
     })
+  logStep('opening browser')
   open.spawn()
   log(`opening ${url}`)
   let stopping: Promise<void> | null = null
