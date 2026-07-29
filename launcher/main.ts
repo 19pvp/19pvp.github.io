@@ -36,6 +36,8 @@ type Torrent = {
   on(event: string, listener: (...args: unknown[]) => void): void
   pause(): void
   preferWebSeed(): void
+  skipVerify: boolean
+  skipPieces: number[]
   done: boolean
   downloaded: number
   downloadSpeed: number
@@ -70,6 +72,7 @@ let stopped = false
 let torrentStopped = true
 let changingPath = false
 let recoveringFiles = false
+let quickCheckPassed = false
 let shutdownLauncher: (() => void) | null = null
 const scanAbort = new AbortController()
 let webseedUrl = ''
@@ -485,10 +488,11 @@ async function changeDownloadPath(path: string): Promise<boolean> {
   }
 }
 
-function startTorrent(): void {
+function startTorrent(forceFullCheck = false): void {
   if (!downloadPath) throw new Error('missing download path')
   if (statusTimer !== null) clearInterval(statusTimer)
   torrentReady = false
+  quickCheckPassed = false
   webSeedFinalizationStarted = false
   torrentStopped = false
 
@@ -517,6 +521,18 @@ function startTorrent(): void {
       log(
         `metadata received: ${activeTorrent!.name} (${formatBytes(activeTorrent!.length)})`,
       )
+      if (!forceFullCheck && quickCheckFiles(activeTorrent!)) {
+        quickCheckPassed = true
+        activeTorrent!.skipVerify = true
+        log('quick file check passed; full check skipped')
+      } else if (forceFullCheck) {
+        if (quickCheckFiles(activeTorrent!)) {
+          activeTorrent!.skipPieces = [0]
+          log('full file recheck requested; piece 0 skipped because its files are present')
+        } else {
+          log('full file recheck requested')
+        }
+      }
       const clientRoot = join(downloadPath!, activeTorrent!.name)
       const nestedClientRoot = join(clientRoot, CLIENT_DIRECTORY_NAME)
       log(`client files root: ${clientRoot}`)

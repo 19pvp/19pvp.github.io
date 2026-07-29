@@ -17,7 +17,7 @@ import MemoryChunkStore from 'npm:memory-chunk-store'
 import joinIterator from 'npm:join-async-iterator'
 import parallel from 'npm:run-parallel'
 import parallelLimit from 'npm:run-parallel-limit'
-import parseTorrent, { toMagnetURI, toTorrentFile, remote } from '../../parse-torrent/index.js'
+import parseTorrent, { remote, toMagnetURI, toTorrentFile } from '../../parse-torrent/index.js'
 import Piece from 'npm:torrent-piece'
 import once from 'npm:once'
 import queueMicrotask from 'npm:queue-microtask'
@@ -91,7 +91,8 @@ const FILESYSTEM_CONCURRENCY = process.browser ? cpus().length : 2
 const RECONNECT_WAIT = [1_000, 5_000, 15_000]
 
 // if nodejs or browser that supports FSA
-const SUPPORTS_FSA = globalThis.navigator?.storage?.getDirectory && globalThis.FileSystemFileHandle?.prototype?.createWritable
+const SUPPORTS_FSA = globalThis.navigator?.storage?.getDirectory &&
+  globalThis.FileSystemFileHandle?.prototype?.createWritable
 const FALLBACK_STORE = !process.browser || SUPPORTS_FSA
   ? FSChunkStore // Node or browser with FSA
   : MemoryChunkStore
@@ -103,7 +104,8 @@ try {
   TMP = path.join(typeof os.tmpdir === 'function' ? os.tmpdir() : '/', 'webtorrent')
 }
 
-const IDLE_CALLBACK = typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function' && window.requestIdleCallback
+const IDLE_CALLBACK = typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function' &&
+  window.requestIdleCallback
 
 export default class Torrent extends EventEmitter {
   /**
@@ -112,7 +114,7 @@ export default class Torrent extends EventEmitter {
    * @param {import('../index.js').default} client
    * @param {TorrentOpts} opts
    */
-  constructor (torrentId, client, opts) {
+  constructor(torrentId, client, opts) {
     super()
 
     this._debugId = 'unknown infohash'
@@ -125,6 +127,7 @@ export default class Torrent extends EventEmitter {
     this.addUID = opts.addUID || false
     this.rootDir = opts.rootDir || null
     this.skipVerify = !!opts.skipVerify
+    this.skipPieces = opts.skipPieces || []
     this._startupBitfield = opts.bitfield
     this._store = opts.store || FALLBACK_STORE
     this._preloadedStore = opts.preloadedStore || null
@@ -143,9 +146,7 @@ export default class Torrent extends EventEmitter {
 
     this.maxWebConns = opts.maxWebConns || 4
 
-    this._rechokeNumSlots = (opts.uploads === false || opts.uploads === 0)
-      ? 0
-      : (+opts.uploads || 10)
+    this._rechokeNumSlots = (opts.uploads === false || opts.uploads === 0) ? 0 : (+opts.uploads || 10)
     this._rechokeOptimisticWire = null
     this._rechokeOptimisticTime = 0
     this._rechokeIntervalId = null
@@ -206,17 +207,17 @@ export default class Torrent extends EventEmitter {
     this._debug('new torrent')
   }
 
-  get _peersLength () {
+  get _peersLength() {
     return this._peers?.size ?? 0
   }
 
-  get timeRemaining () {
+  get timeRemaining() {
     if (this.done) return 0
     if (this.downloadSpeed === 0) return Infinity
     return ((this.length - this.downloaded) / this.downloadSpeed) * 1000
   }
 
-  get downloaded () {
+  get downloaded() {
     if (!this.bitfield) return 0
     let downloaded = 0
     for (let index = 0, len = this.pieces.length; index < len; ++index) {
@@ -224,7 +225,7 @@ export default class Torrent extends EventEmitter {
         downloaded += (index === len - 1) ? this.lastPieceLength : this.pieceLength
       } else { // "in progress" data
         const piece = this.pieces[index]
-        downloaded += (piece.length - piece.missing)
+        downloaded += piece.length - piece.missing
       }
     }
     return downloaded
@@ -242,22 +243,32 @@ export default class Torrent extends EventEmitter {
   //   }
   // })
 
-  get downloadSpeed () { return this._downloadSpeed() }
+  get downloadSpeed() {
+    return this._downloadSpeed()
+  }
 
-  get uploadSpeed () { return this._uploadSpeed() }
+  get uploadSpeed() {
+    return this._uploadSpeed()
+  }
 
-  get progress () { return this.length ? this.downloaded / this.length : 0 }
+  get progress() {
+    return this.length ? this.downloaded / this.length : 0
+  }
 
-  get ratio () { return this.uploaded / (this.received || this.length) }
+  get ratio() {
+    return this.uploaded / (this.received || this.length)
+  }
 
-  get numPeers () { return this.wires.length }
+  get numPeers() {
+    return this.wires.length
+  }
 
-  get torrentFileBlob () {
+  get torrentFileBlob() {
     if (!this.torrentFile) return null
     return new Blob([this.torrentFile], { type: 'application/x-bittorrent' })
   }
 
-  get _numQueued () {
+  get _numQueued() {
     return this._queue.length + (this._peersLength - this._numConns)
   }
 
@@ -270,11 +281,13 @@ export default class Torrent extends EventEmitter {
    * @returns {Promise<void>}
    * @private
    */
-  async _onTorrentId (torrentId) {
+  async _onTorrentId(torrentId) {
     if (this.destroyed) return
 
     let parsedTorrent
-    try { parsedTorrent = await parseTorrent(torrentId) } catch (err) {}
+    try {
+      parsedTorrent = await parseTorrent(torrentId)
+    } catch (err) {}
     if (parsedTorrent) {
       // Attempt to set infoHash property synchronously
       this.infoHash = parsedTorrent.infoHash
@@ -294,7 +307,7 @@ export default class Torrent extends EventEmitter {
     }
   }
 
-  _onParsedTorrent (parsedTorrent) {
+  _onParsedTorrent(parsedTorrent) {
     if (this.destroyed) return
 
     this._processParsedTorrent(parsedTorrent)
@@ -326,7 +339,7 @@ export default class Torrent extends EventEmitter {
     }
   }
 
-  _processParsedTorrent (parsedTorrent) {
+  _processParsedTorrent(parsedTorrent) {
     this._debugId = parsedTorrent.infoHash?.substring(0, 7)
 
     if (typeof this.private !== 'undefined') {
@@ -364,7 +377,7 @@ export default class Torrent extends EventEmitter {
     this.torrentFile = toTorrentFile(parsedTorrent)
   }
 
-  _onListening () {
+  _onListening() {
     if (this.destroyed) return
 
     if (this.info) {
@@ -377,7 +390,7 @@ export default class Torrent extends EventEmitter {
     }
   }
 
-  _startDiscovery () {
+  _startDiscovery() {
     if (this.discovery || this.destroyed) return
 
     let trackerOpts = this.client.tracker
@@ -389,7 +402,7 @@ export default class Torrent extends EventEmitter {
           const opts = {
             uploaded: this.uploaded,
             downloaded: this.downloaded,
-            left: Math.max(this.length - this.downloaded, 0)
+            left: Math.max(this.length - this.downloaded, 0),
           }
           if (this.client.tracker.getAnnounceOpts) {
             Object.assign(opts, this.client.tracker.getAnnounceOpts())
@@ -399,13 +412,13 @@ export default class Torrent extends EventEmitter {
             Object.assign(opts, this._getAnnounceOpts())
           }
           return opts
-        }
+        },
       })
     }
 
     // add BEP09 peer-address
     if (this.peerAddresses) {
-      this.peerAddresses.forEach(peer => this.addPeer(peer, Peer.SOURCE_MANUAL))
+      this.peerAddresses.forEach((peer) => this.addPeer(peer, Peer.SOURCE_MANUAL))
     }
 
     // begin discovering peers via DHT and trackers
@@ -417,7 +430,7 @@ export default class Torrent extends EventEmitter {
       tracker: trackerOpts,
       port: this.client.torrentPort,
       userAgent: this.client.userAgent,
-      lsd: this.client.lsd
+      lsd: this.client.lsd,
     })
 
     this.discovery.on('error', (err) => {
@@ -452,20 +465,20 @@ export default class Torrent extends EventEmitter {
       const counters = {
         [Peer.SOURCE_TRACKER]: {
           enabled: !!this.client.tracker,
-          numPeers: 0
+          numPeers: 0,
         },
         [Peer.SOURCE_DHT]: {
           enabled: !!this.client.dht,
-          numPeers: 0
+          numPeers: 0,
         },
         [Peer.SOURCE_LSD]: {
           enabled: !!this.client.lsd,
-          numPeers: 0
+          numPeers: 0,
         },
         [Peer.SOURCE_UT_PEX]: {
-          enabled: (this.client.utPex && typeof utPex === 'function'),
-          numPeers: 0
-        }
+          enabled: this.client.utPex && typeof utPex === 'function',
+          numPeers: 0,
+        },
       }
       for (const peer of this._peers.values()) {
         const counter = counters[peer.source]
@@ -479,7 +492,7 @@ export default class Torrent extends EventEmitter {
     if (this._noPeersIntervalId.unref) this._noPeersIntervalId.unref()
   }
 
-  _getMetadataFromServer () {
+  _getMetadataFromServer() {
     // to allow function hoisting
     const self = this
 
@@ -489,12 +502,12 @@ export default class Torrent extends EventEmitter {
 
     const signal = self._xsRequestsController.signal
 
-    const tasks = urls.map(url => cb => {
+    const tasks = urls.map((url) => (cb) => {
       getMetadataFromURL(url, cb)
     })
     parallel(tasks)
 
-    async function getMetadataFromURL (url, cb) {
+    async function getMetadataFromURL(url, cb) {
       if (url.indexOf('http://') !== 0 && url.indexOf('https://') !== 0) {
         self.emit('warning', new Error(`skipping non-http xs param: ${url}`))
         return cb(null)
@@ -503,9 +516,9 @@ export default class Torrent extends EventEmitter {
       const opts = {
         method: 'GET',
         headers: {
-          'user-agent': self.client.userAgent
+          'user-agent': self.client.userAgent,
         },
-        signal
+        signal,
       }
       let res
       try {
@@ -552,7 +565,7 @@ export default class Torrent extends EventEmitter {
   /**
    * Called when the full torrent metadata is received.
    */
-  async _onMetadata (metadata) {
+  async _onMetadata(metadata) {
     if (this.metadata || this.destroyed) return
     this._debug('got metadata')
 
@@ -576,14 +589,14 @@ export default class Torrent extends EventEmitter {
 
     // add web seed urls (BEP19)
     if (this.client.enableWebSeeds) {
-      this.urlList.forEach(url => {
+      this.urlList.forEach((url) => {
         this.addWebSeed(url)
       })
     }
 
     this._rarityMap = new RarityMap(this)
 
-    this.files = this.files.map(file => new File(this, file))
+    this.files = this.files.map((file) => new File(this, file))
 
     let rawStore = this._preloadedStore
     if (!rawStore) {
@@ -596,19 +609,19 @@ export default class Torrent extends EventEmitter {
         name: this.name + ' - ' + this.infoHash.slice(0, 8),
         addUID: this.addUID,
         rootDir: this.rootDir,
-        max: this._storeCacheSlots
+        max: this._storeCacheSlots,
       })
     }
 
     // don't use the cache if the store is already in memory
     if (this._storeCacheSlots > 0 && !(rawStore instanceof MemoryChunkStore)) {
       rawStore = new CacheChunkStore(rawStore, {
-        max: this._storeCacheSlots
+        max: this._storeCacheSlots,
       })
     }
 
     this.store = new ImmediateChunkStore(
-      rawStore
+      rawStore,
     )
 
     // Select only specified files (BEP53) http://www.bittorrent.org/beps/bep_0053.html
@@ -630,7 +643,8 @@ export default class Torrent extends EventEmitter {
     // - It exists
     // - It's the correct size ( rounded to the first byte )
     // - It will not be rewritten by _markAllVerified
-    this._hasStartupBitfield = this._startupBitfield && this._startupBitfield.length === Math.ceil(this.pieces.length / 8) && !this.skipVerify
+    this._hasStartupBitfield = this._startupBitfield &&
+      this._startupBitfield.length === Math.ceil(this.pieces.length / 8) && !this.skipVerify
 
     this.bitfield = new BitField(this._hasStartupBitfield ? new Uint8Array(this._startupBitfield) : this.pieces.length)
     this._reservations = this._hasStartupBitfield
@@ -641,9 +655,7 @@ export default class Torrent extends EventEmitter {
       if (this._hasStartupBitfield && this.bitfield.get(i)) {
         return null
       }
-      const pieceLength = (i === this.pieces.length - 1)
-        ? this.lastPieceLength
-        : this.pieceLength
+      const pieceLength = (i === this.pieces.length - 1) ? this.lastPieceLength : this.pieceLength
       return new Piece(pieceLength)
     })
 
@@ -652,6 +664,10 @@ export default class Torrent extends EventEmitter {
 
     // User might destroy torrent in response to 'metadata' event
     if (this.destroyed) return
+
+    this.skipPieces.forEach((index) => {
+      if (index >= 0 && index < this.pieces.length) this._markVerified(index)
+    })
 
     if (this.skipVerify) {
       // Skip verifying exisitng data and just assume it's correct
@@ -670,7 +686,9 @@ export default class Torrent extends EventEmitter {
         this.getFileModtimes((err, fileModtimes) => {
           if (err) return this._destroy(err)
 
-          const unchanged = this.files.map((_, index) => fileModtimes[index] === this._fileModtimes[index]).every(x => x)
+          const unchanged = this.files.map((_, index) => fileModtimes[index] === this._fileModtimes[index]).every((x) =>
+            x
+          )
 
           if (unchanged) {
             this._markAllVerified()
@@ -690,19 +708,25 @@ export default class Torrent extends EventEmitter {
    * Gets the last modified time of every file on disk for this torrent.
    * Only valid in Node, not in the browser.
    */
-  getFileModtimes (cb) {
+  getFileModtimes(cb) {
     const ret = []
-    parallelLimit(this.files.map((file, index) => cb => {
-      const filePath = this.addUID ? path.join(this.name + ' - ' + this.infoHash.slice(0, 8)) : path.join(this.path, file.path)
-      fs.stat(filePath, (err, stat) => {
-        if (err && err.code !== 'ENOENT') return cb(err)
-        ret[index] = stat && stat.mtime.getTime()
-        cb(null)
-      })
-    }), FILESYSTEM_CONCURRENCY, err => {
-      this._debug('done getting file modtimes')
-      cb(err, ret)
-    })
+    parallelLimit(
+      this.files.map((file, index) => (cb) => {
+        const filePath = this.addUID
+          ? path.join(this.name + ' - ' + this.infoHash.slice(0, 8))
+          : path.join(this.path, file.path)
+        fs.stat(filePath, (err, stat) => {
+          if (err && err.code !== 'ENOENT') return cb(err)
+          ret[index] = stat && stat.mtime.getTime()
+          cb(null)
+        })
+      }),
+      FILESYSTEM_CONCURRENCY,
+      (err) => {
+        this._debug('done getting file modtimes')
+        cb(err, ret)
+      },
+    )
   }
 
   /**
@@ -717,7 +741,7 @@ export default class Torrent extends EventEmitter {
    * @param {verifyPieceCallback} cb
    * @private
    */
-  _verifyPiece (index, cb) {
+  _verifyPiece(index, cb) {
     if (this.destroyed) return cb(new Error('torrent is destroyed'))
 
     const getOpts = {}
@@ -742,7 +766,7 @@ export default class Torrent extends EventEmitter {
    * @param {callbackWithError} cb
    * @private
    */
-  _verifyPiecesUsingBitfield (cb) {
+  _verifyPiecesUsingBitfield(cb) {
     const piecesToCheck = new Set()
     const piecesToFilesMap = new Map()
     // First step, optimistically mark what is verified and what is not by blindly trusting the bitfield
@@ -751,6 +775,7 @@ export default class Torrent extends EventEmitter {
       let checkFile = 2
       let pieceToCheckForThisFile = null
       for (let i = file._startPiece; i <= file._endPiece; ++i) {
+        if (this.skipPieces.includes(i)) continue
         if (this.bitfield.get(i)) {
           if (checkFile) {
             pieceToCheckForThisFile = i
@@ -802,21 +827,27 @@ export default class Torrent extends EventEmitter {
    * @param {callbackWithError} cb
    * @private
    */
-  _verifyPiecesUsingHash (pieces, cb) {
-    parallelLimit(pieces.map((piece, index) => cb => {
-      const target = Number.isInteger(piece) ? piece : index
-      this._verifyPiece(target, (err, isVerified) => {
-        if (err) return cb(err)
-        if (isVerified) {
-          this._debug('piece verified %s', target)
-          this._markVerified(target)
-        } else {
-          this._markUnverified(target)
-          this._debug('piece invalid %s', target)
-        }
-        cb(null)
-      })
-    }), FILESYSTEM_CONCURRENCY, cb)
+  _verifyPiecesUsingHash(pieces, cb) {
+    parallelLimit(
+      pieces.map((piece, index) => [piece, index]).filter(([piece, index]) => {
+        return !this.skipPieces.includes(Number.isInteger(piece) ? piece : index)
+      }).map(([piece, index]) => (cb) => {
+        const target = Number.isInteger(piece) ? piece : index
+        this._verifyPiece(target, (err, isVerified) => {
+          if (err) return cb(err)
+          if (isVerified) {
+            this._debug('piece verified %s', target)
+            this._markVerified(target)
+          } else {
+            this._markUnverified(target)
+            this._debug('piece invalid %s', target)
+          }
+          cb(null)
+        })
+      }),
+      FILESYSTEM_CONCURRENCY,
+      cb,
+    )
   }
 
   /**
@@ -824,7 +855,7 @@ export default class Torrent extends EventEmitter {
    * @param {callbackWithError} cb
    * @private
    */
-  _verifyPieces (cb) {
+  _verifyPieces(cb) {
     if (this._hasStartupBitfield) {
       return this._verifyPiecesUsingBitfield(cb)
     }
@@ -839,7 +870,7 @@ export default class Torrent extends EventEmitter {
    * the scan, in which case `callback` will be called with an error.
    * @param  {callbackWithError=} cb
    */
-  rescanFiles (cb) {
+  rescanFiles(cb) {
     if (this.destroyed) throw new Error('torrent is destroyed')
     if (!cb) cb = noop
 
@@ -858,7 +889,7 @@ export default class Torrent extends EventEmitter {
    * Mark the entire torrent as verified ( i.e. fully downloaded )
    * @private
    */
-  _markAllVerified () {
+  _markAllVerified() {
     for (let index = 0; index < this.pieces.length; index++) {
       this._markVerified(index)
     }
@@ -869,7 +900,7 @@ export default class Torrent extends EventEmitter {
    * @param {number} index
    * @private
    */
-  _markVerified (index) {
+  _markVerified(index) {
     this.pieces[index] = null
     this._reservations[index] = null
     this.bitfield.set(index, true)
@@ -881,10 +912,8 @@ export default class Torrent extends EventEmitter {
    * @param {number} index
    * @private
    */
-  _markUnverified (index) {
-    const len = (index === this.pieces.length - 1)
-      ? this.lastPieceLength
-      : this.pieceLength
+  _markUnverified(index) {
+    const len = (index === this.pieces.length - 1) ? this.lastPieceLength : this.pieceLength
     this.pieces[index] = new Piece(len)
     this.bitfield.set(index, false)
     if (!this._startAsDeselected) this.select(index, index)
@@ -893,18 +922,18 @@ export default class Torrent extends EventEmitter {
     }
   }
 
-  _hasAllPieces () {
+  _hasAllPieces() {
     for (let index = 0; index < this.pieces.length; index++) {
       if (!this.bitfield.get(index)) return false
     }
     return true
   }
 
-  _hasNoPieces () {
+  _hasNoPieces() {
     return !this._hasMorePieces(0)
   }
 
-  _hasMorePieces (threshold) {
+  _hasMorePieces(threshold) {
     let count = 0
     for (let index = 0; index < this.pieces.length; index++) {
       if (this.bitfield.get(index)) {
@@ -918,7 +947,7 @@ export default class Torrent extends EventEmitter {
   /**
    * Called when the metadata, listening server, and underlying chunk store is initialized.
    */
-  _onStore () {
+  _onStore() {
     if (this.destroyed) return
     this._debug('on store')
 
@@ -935,7 +964,7 @@ export default class Torrent extends EventEmitter {
     this._updateSelections()
 
     // Start requesting pieces after we have initially verified them
-    this.wires.forEach(wire => {
+    this.wires.forEach((wire) => {
       // If we didn't have the metadata at the time ut_metadata was initialized for this
       // wire, we still want to make it available to the peer in case they request it.
       if (wire.ut_metadata) wire.ut_metadata.setMetadata(this.metadata)
@@ -944,13 +973,13 @@ export default class Torrent extends EventEmitter {
     })
   }
 
-  destroy (opts, cb) {
+  destroy(opts, cb) {
     if (typeof opts === 'function') return this.destroy(null, opts)
 
     this._destroy(null, opts, cb)
   }
 
-  _destroy (err, opts, cb) {
+  _destroy(err, opts, cb) {
     if (typeof opts === 'function') return this._destroy(err, null, opts)
     if (this.destroyed) return
     this.destroyed = true
@@ -978,12 +1007,12 @@ export default class Torrent extends EventEmitter {
       if (file instanceof File) file._destroy()
     }
 
-    const tasks = this._servers.map(server => cb => {
+    const tasks = this._servers.map((server) => (cb) => {
       server.destroy(cb)
     })
 
     if (this.discovery) {
-      tasks.push(cb => {
+      tasks.push((cb) => {
         this.discovery.destroy(cb)
       })
     }
@@ -993,7 +1022,7 @@ export default class Torrent extends EventEmitter {
       if (opts && opts.destroyStore !== undefined) {
         destroyStore = opts.destroyStore
       }
-      tasks.push(cb => {
+      tasks.push((cb) => {
         if (destroyStore) {
           this.store.destroy(cb)
         } else {
@@ -1033,7 +1062,7 @@ export default class Torrent extends EventEmitter {
     this._queue = null
   }
 
-  addPeer (peer, source) {
+  addPeer(peer, source) {
     if (this.destroyed) throw new Error('torrent is destroyed')
     if (!this.infoHash) throw new Error('addPeer() must not be called before the `infoHash` event')
 
@@ -1073,7 +1102,7 @@ export default class Torrent extends EventEmitter {
     return wasAdded
   }
 
-  _addPeer (peer, type, source) {
+  _addPeer(peer, type, source) {
     if (this.destroyed) {
       if (typeof peer !== 'string') peer.destroy()
       return null
@@ -1120,7 +1149,7 @@ export default class Torrent extends EventEmitter {
     return newPeer
   }
 
-  addWebSeed (urlOrConn) {
+  addWebSeed(urlOrConn) {
     if (this.destroyed) throw new Error('torrent is destroyed')
 
     let id
@@ -1168,7 +1197,7 @@ export default class Torrent extends EventEmitter {
    * Called whenever a new incoming TCP peer connects to this torrent swarm. Called with a
    * peer that has already sent a handshake.
    */
-  _addIncomingPeer (peer) {
+  _addIncomingPeer(peer) {
     if (this.destroyed) return peer.destroy(new Error('torrent is destroyed'))
     if (this.paused) return peer.destroy(new Error('torrent is paused'))
 
@@ -1180,8 +1209,8 @@ export default class Torrent extends EventEmitter {
   /**
    * @param {Peer} newPeer
    */
-  _registerPeer (newPeer) {
-    newPeer.on('download', downloaded => {
+  _registerPeer(newPeer) {
+    newPeer.on('download', (downloaded) => {
       if (this.destroyed) return
       this.received += downloaded
       this._downloadSpeed(downloaded)
@@ -1191,7 +1220,7 @@ export default class Torrent extends EventEmitter {
       this.client.emit('download', downloaded)
     })
 
-    newPeer.on('upload', uploaded => {
+    newPeer.on('upload', (uploaded) => {
       if (this.destroyed) return
       this.uploaded += uploaded
       this._uploadSpeed(uploaded)
@@ -1216,7 +1245,7 @@ export default class Torrent extends EventEmitter {
     this._peers.set(newPeer.id, newPeer)
   }
 
-  removePeer (peer) {
+  removePeer(peer) {
     const id = peer?.id || peer
     if (peer && !peer.id) peer = this._peers?.get(id)
 
@@ -1233,7 +1262,7 @@ export default class Torrent extends EventEmitter {
     this._drain()
   }
 
-  _select (start = 0, end = this.pieces.length - 1, priority, notify, isStreamSelection = false) {
+  _select(start = 0, end = this.pieces.length - 1, priority, notify, isStreamSelection = false) {
     if (this.destroyed) throw new Error('torrent is destroyed')
 
     if (start < 0 || end < start || this.pieces.length <= end) {
@@ -1249,7 +1278,7 @@ export default class Torrent extends EventEmitter {
       offset: 0,
       priority,
       notify,
-      isStreamSelection
+      isStreamSelection,
     })
 
     this._selections.sort((a, b) => b.priority - a.priority)
@@ -1257,11 +1286,11 @@ export default class Torrent extends EventEmitter {
     this._updateSelections()
   }
 
-  select (start, end, priority, notify) {
+  select(start, end, priority, notify) {
     this._select(start, end, priority, notify, false)
   }
 
-  _deselect (from, to, isStreamSelection = false) {
+  _deselect(from, to, isStreamSelection = false) {
     if (this.destroyed) throw new Error('torrent is destroyed')
 
     this._debug('deselect %s-%s', from, to)
@@ -1271,11 +1300,11 @@ export default class Torrent extends EventEmitter {
     this._updateSelections()
   }
 
-  deselect (start, end) {
+  deselect(start, end) {
     this._deselect(start, end, false)
   }
 
-  critical (start, end) {
+  critical(start, end) {
     if (this.destroyed) throw new Error('torrent is destroyed')
 
     this._debug('critical %s-%s', start, end)
@@ -1287,7 +1316,7 @@ export default class Torrent extends EventEmitter {
     this._updateSelections()
   }
 
-  _onWire (wire, addr) {
+  _onWire(wire, addr) {
     this._debug('got wire %s (%s)', wire._debugId, addr || 'Unknown')
 
     if (this._webSeedOnly && wire.type !== 'webSeed') {
@@ -1306,7 +1335,7 @@ export default class Torrent extends EventEmitter {
 
     // When peer sends PORT message, add that DHT node to routing table
     if (this.client.dht && this.client.dht.listening) {
-      wire.on('port', port => {
+      wire.on('port', (port) => {
         if (this.destroyed || this.client.dht.destroyed) {
           return
         }
@@ -1339,12 +1368,12 @@ export default class Torrent extends EventEmitter {
     // use ut_metadata extension
     wire.use(utMetadata(this.metadata))
 
-    wire.ut_metadata.on('warning', err => {
+    wire.ut_metadata.on('warning', (err) => {
       this._debug('ut_metadata warning: %s', err.message)
     })
 
     if (!this.metadata) {
-      wire.ut_metadata.on('metadata', metadata => {
+      wire.ut_metadata.on('metadata', (metadata) => {
         this._debug('got metadata via ut_metadata')
         this._onMetadata(metadata)
       })
@@ -1355,7 +1384,7 @@ export default class Torrent extends EventEmitter {
     if (this.client.utPex && typeof utPex === 'function' && !this.private) {
       wire.use(utPex())
 
-      wire.ut_pex.on('peer', peer => {
+      wire.ut_pex.on('peer', (peer) => {
         // Only add potential new peers when torrent is done and seedOutgoingConnections is false.
         if (!this.client.seedOutgoingConnections && this.done) {
           this._debug('ut_pex ignoring peer %s: torrent is done and seedOutgoingConnections is false', peer)
@@ -1365,7 +1394,7 @@ export default class Torrent extends EventEmitter {
         this.addPeer(peer, Peer.SOURCE_UT_PEX)
       })
 
-      wire.ut_pex.on('dropped', peer => {
+      wire.ut_pex.on('dropped', (peer) => {
         // the remote peer believes a given peer has been dropped from the torrent swarm.
         // if we're not currently connected to it, then remove it from the queue.
         const peerObj = this._peers.get(peer)
@@ -1399,14 +1428,16 @@ export default class Torrent extends EventEmitter {
   /**
    * @param {import('bittorrent-protocol').default} wire
    */
-  _onWireWithMetadata (wire) {
+  _onWireWithMetadata(wire) {
     let timeoutId = null
 
     const onChokeTimeout = () => {
       if (this.destroyed || wire.destroyed) return
 
-      if (this._numQueued > 2 * (this._numConns - this.numPeers) &&
-        wire.amInterested) {
+      if (
+        this._numQueued > 2 * (this._numConns - this.numPeers) &&
+        wire.amInterested
+      ) {
         wire.destroy()
       } else {
         timeoutId = setTimeout(onChokeTimeout, CHOKE_TIMEOUT)
@@ -1518,7 +1549,7 @@ export default class Torrent extends EventEmitter {
   /**
    * Called on selection changes.
    */
-  _updateSelections () {
+  _updateSelections() {
     if (!this.ready || this.destroyed) return
 
     queueMicrotask(() => {
@@ -1531,7 +1562,7 @@ export default class Torrent extends EventEmitter {
   /**
    * Garbage collect selections with respect to the store's current state.
    */
-  _gcSelections () {
+  _gcSelections() {
     for (const s of this._selections) {
       const oldOffset = s.offset
 
@@ -1555,18 +1586,18 @@ export default class Torrent extends EventEmitter {
   /**
    * Update interested status for all peers.
    */
-  _updateInterest () {
+  _updateInterest() {
     const prev = this._amInterested
     this._amInterested = !!this._selections.length
 
-    this.wires.forEach(wire => this._updateWireInterest(wire))
+    this.wires.forEach((wire) => this._updateWireInterest(wire))
 
     if (prev === this._amInterested) return
     if (this._amInterested) this.emit('interested')
     else this.emit('uninterested')
   }
 
-  _updateWireInterest (wire) {
+  _updateWireInterest(wire) {
     let interested = false
     for (let index = 0; index < this.pieces.length; ++index) {
       if (this.pieces[index] && wire.peerPieces.get(index)) {
@@ -1582,7 +1613,7 @@ export default class Torrent extends EventEmitter {
   /**
    * Heartbeat to update all peers and their requests.
    */
-  _update () {
+  _update() {
     if (IDLE_CALLBACK) {
       IDLE_CALLBACK(() => this._updateWireWrapper(), { timeout: 250 })
     } else {
@@ -1590,7 +1621,7 @@ export default class Torrent extends EventEmitter {
     }
   }
 
-  _updateWireWrapper () {
+  _updateWireWrapper() {
     if (this.destroyed) return
     // update wires in random order for better request distribution
     const ite = randomIterate(this.wires)
@@ -1604,7 +1635,7 @@ export default class Torrent extends EventEmitter {
    * Attempts to update a peer's requests
    * @param {import('bittorrent-protocol').default} wire
    */
-  _updateWire (wire) {
+  _updateWire(wire) {
     if (wire.destroyed) return false
     // to allow function hoisting
     const self = this
@@ -1614,20 +1645,22 @@ export default class Torrent extends EventEmitter {
     const minOutstandingRequests = isWebSeed
       ? Math.min(
         getPiecePipelineLength(wire, PIPELINE_MIN_DURATION, this.pieceLength),
-        self.maxWebConns
+        self.maxWebConns,
       )
       : getBlockPipelineLength(wire, PIPELINE_MIN_DURATION)
     if (wire.requests.length >= minOutstandingRequests) return
     const maxOutstandingRequests = isWebSeed
       ? Math.min(
         getPiecePipelineLength(wire, PIPELINE_MAX_DURATION, this.pieceLength),
-        self.maxWebConns
+        self.maxWebConns,
       )
       : getBlockPipelineLength(wire, PIPELINE_MAX_DURATION)
 
     if (wire.peerChoking) {
-      if (wire.hasFast && wire.peerAllowedFastSet.length > 0 &&
-        !this._hasMorePieces(wire.peerAllowedFastSet.length - 1)) {
+      if (
+        wire.hasFast && wire.peerAllowedFastSet.length > 0 &&
+        !this._hasMorePieces(wire.peerAllowedFastSet.length - 1)
+      ) {
         requestAllowedFastSet()
       }
       return
@@ -1637,13 +1670,15 @@ export default class Torrent extends EventEmitter {
 
     trySelectWire(false) || trySelectWire(true)
 
-    function requestAllowedFastSet () {
+    function requestAllowedFastSet() {
       if (wire.requests.length >= maxOutstandingRequests) return false
 
       for (const piece of wire.peerAllowedFastSet) {
         if (wire.peerPieces.get(piece) && !self.bitfield.get(piece)) {
-          while (self._request(wire, piece, false) &&
-            wire.requests.length < maxOutstandingRequests) {
+          while (
+            self._request(wire, piece, false) &&
+            wire.requests.length < maxOutstandingRequests
+          ) {
             // body intentionally empty
             // request all non-reserved blocks in this piece
           }
@@ -1657,12 +1692,12 @@ export default class Torrent extends EventEmitter {
       return false
     }
 
-    function genPieceFilterFunc (start, end, tried, rank) {
-      return i => i >= start && i <= end && !(i in tried) && wire.peerPieces.get(i) && (!rank || rank(i))
+    function genPieceFilterFunc(start, end, tried, rank) {
+      return (i) => i >= start && i <= end && !(i in tried) && wire.peerPieces.get(i) && (!rank || rank(i))
     }
 
     // TODO: Do we need both validateWire and trySelectWire?
-    function validateWire () {
+    function validateWire() {
       if (wire.requests.length) return
 
       let i = self._selections.length
@@ -1696,7 +1731,7 @@ export default class Torrent extends EventEmitter {
       // probably not, since 'have' and 'bitfield' messages might be coming
     }
 
-    function speedRanker () {
+    function speedRanker() {
       const speed = wire.downloadSpeed() || 1
       if (speed > SPEED_THRESHOLD) return () => true
 
@@ -1704,7 +1739,7 @@ export default class Torrent extends EventEmitter {
       let tries = 10
       let ptr = 0
 
-      return index => {
+      return (index) => {
         if (!tries || self.bitfield.get(index)) return true
 
         const piece = self.pieces[index]
@@ -1728,7 +1763,7 @@ export default class Torrent extends EventEmitter {
       }
     }
 
-    function shufflePriority (i) {
+    function shufflePriority(i) {
       let last = i
       for (let j = i; j < self._selections.length && self._selections.get(j).priority; j++) {
         last = j
@@ -1736,7 +1771,7 @@ export default class Torrent extends EventEmitter {
       self._selections.swap(i, last)
     }
 
-    function trySelectWire (hotswap) {
+    function trySelectWire(hotswap) {
       if (wire.requests.length >= maxOutstandingRequests) return true
       const rank = speedRanker()
 
@@ -1756,8 +1791,10 @@ export default class Torrent extends EventEmitter {
             piece = self._rarityMap.getRarestPiece(filter)
             if (piece < 0) break
 
-            while (self._request(wire, piece, self._critical[piece] || hotswap) &&
-              wire.requests.length < maxOutstandingRequests) {
+            while (
+              self._request(wire, piece, self._critical[piece] || hotswap) &&
+              wire.requests.length < maxOutstandingRequests
+            ) {
               // body intentionally empty
               // request all non-reserved blocks in this piece
             }
@@ -1775,8 +1812,10 @@ export default class Torrent extends EventEmitter {
           for (piece = next.from + next.offset; piece <= next.to; piece++) {
             if (!wire.peerPieces.get(piece) || !rank(piece)) continue
 
-            while (self._request(wire, piece, self._critical[piece] || hotswap) &&
-              wire.requests.length < maxOutstandingRequests) {
+            while (
+              self._request(wire, piece, self._critical[piece] || hotswap) &&
+              wire.requests.length < maxOutstandingRequests
+            ) {
               // body intentionally empty
               // request all non-reserved blocks in piece
             }
@@ -1797,38 +1836,37 @@ export default class Torrent extends EventEmitter {
    * Called periodically to update the choked status of all peers, handling optimistic
    * unchoking as described in BEP3.
    */
-  _rechoke () {
+  _rechoke() {
     if (!this.ready) return
 
     // wires in increasing order of quality (pop() gives next best peer)
-    const wireStack =
-      this.wires
-        .map(wire => ({ wire, random: Math.random(), downspeed: wire.downloadSpeed() })) // insert a random seed for randomizing the sort
-        .sort((objA, objB) => {
-          const wireA = objA.wire
-          const wireB = objB.wire
+    const wireStack = this.wires
+      .map((wire) => ({ wire, random: Math.random(), downspeed: wire.downloadSpeed() })) // insert a random seed for randomizing the sort
+      .sort((objA, objB) => {
+        const wireA = objA.wire
+        const wireB = objB.wire
 
-          // prefer peers that send us data faster
-          if (objA.downspeed !== objB.downspeed) {
-            return objA.downspeed - objB.downspeed
-          }
+        // prefer peers that send us data faster
+        if (objA.downspeed !== objB.downspeed) {
+          return objA.downspeed - objB.downspeed
+        }
 
-          // then prefer peers that can download data from us faster
-          const aup = wireA.uploadSpeed()
-          const bup = wireB.uploadSpeed()
-          if (aup !== bup) {
-            return aup - bup
-          }
+        // then prefer peers that can download data from us faster
+        const aup = wireA.uploadSpeed()
+        const bup = wireB.uploadSpeed()
+        if (aup !== bup) {
+          return aup - bup
+        }
 
-          // then prefer already unchoked peers (to minimize fibrillation)
-          if (wireA.amChoking !== wireB.amChoking) {
-            return wireA.amChoking ? -1 : 1 // choking < unchoked
-          }
+        // then prefer already unchoked peers (to minimize fibrillation)
+        if (wireA.amChoking !== wireB.amChoking) {
+          return wireA.amChoking ? -1 : 1 // choking < unchoked
+        }
 
-          // otherwise random order
-          return objA.random - objB.random
-        })
-        .map(obj => obj.wire) // return array of wires (remove random seed)
+        // otherwise random order
+        return objA.random - objB.random
+      })
+      .map((obj) => obj.wire) // return array of wires (remove random seed)
 
     if (this._rechokeOptimisticTime <= 0) {
       // clear old optimistic peer, so it can be rechoked normally and then replaced
@@ -1857,7 +1895,7 @@ export default class Torrent extends EventEmitter {
     // fill optimistic unchoke slot if empty
     if (this._rechokeOptimisticWire === null && this._rechokeNumSlots > 0) {
       // don't optimistically unchoke uninterested peers
-      const remaining = wireStack.filter(wire => wire.peerInterested)
+      const remaining = wireStack.filter((wire) => wire.peerInterested)
 
       if (remaining.length > 0) {
         // select random remaining (not yet unchoked) peer
@@ -1873,15 +1911,15 @@ export default class Torrent extends EventEmitter {
 
     // choke the rest
     wireStack
-      .filter(wire => wire !== this._rechokeOptimisticWire) // except the optimistically unchoked peer
-      .forEach(wire => wire.choke())
+      .filter((wire) => wire !== this._rechokeOptimisticWire) // except the optimistically unchoked peer
+      .forEach((wire) => wire.choke())
   }
 
   /**
    * Attempts to cancel a slow block request from another wire such that the
    * given wire may effectively swap out the request for one of its own.
    */
-  _hotswap (wire, index) {
+  _hotswap(wire, index) {
     const isWebSeed = wire.type === 'webSeed'
     const speed = wire.downloadSpeed()
     if (!this._reservations[index]) return false
@@ -1928,7 +1966,7 @@ export default class Torrent extends EventEmitter {
   /**
    * Attempts to request a block from the given wire.
    */
-  _request (wire, index, hotswap) {
+  _request(wire, index, hotswap) {
     const self = this
     const numRequests = wire.requests.length
     const isWebSeed = wire.type === 'webSeed'
@@ -1938,7 +1976,7 @@ export default class Torrent extends EventEmitter {
     const maxOutstandingRequests = isWebSeed
       ? Math.min(
         getPiecePipelineLength(wire, PIPELINE_MAX_DURATION, self.pieceLength),
-        self.maxWebConns
+        self.maxWebConns,
       )
       : getBlockPipelineLength(wire, PIPELINE_MAX_DURATION)
 
@@ -1963,11 +2001,15 @@ export default class Torrent extends EventEmitter {
     const chunkOffset = piece.chunkOffset(reservation)
     const chunkLength = isWebSeed ? piece.chunkLengthRemaining(reservation) : piece.chunkLength(reservation)
 
-    wire.request(index, chunkOffset, chunkLength, async function onChunk (err, chunk) {
+    wire.request(index, chunkOffset, chunkLength, async function onChunk(err, chunk) {
       if (self.destroyed) return
 
       // TODO: what is this for?
-      if (!self.ready) return self.once('ready', () => { onChunk(err, chunk) })
+      if (!self.ready) {
+        return self.once('ready', () => {
+          onChunk(err, chunk)
+        })
+      }
 
       if (r[i] === wire) r[i] = null
 
@@ -1976,8 +2018,11 @@ export default class Torrent extends EventEmitter {
       if (err) {
         self._debug(
           'error getting piece %s (offset: %s length: %s) from %s: %s',
-          index, chunkOffset, chunkLength, `${wire.remoteAddress}:${wire.remotePort}`,
-          err.message
+          index,
+          chunkOffset,
+          chunkLength,
+          `${wire.remoteAddress}:${wire.remotePort}`,
+          err.message,
         )
         isWebSeed ? piece.cancelRemaining(reservation) : piece.cancel(reservation)
         onUpdateTick()
@@ -1986,7 +2031,10 @@ export default class Torrent extends EventEmitter {
 
       self._debug(
         'got piece %s (offset: %s length: %s) from %s',
-        index, chunkOffset, chunkLength, `${wire.remoteAddress}:${wire.remotePort}`
+        index,
+        chunkOffset,
+        chunkLength,
+        `${wire.remoteAddress}:${wire.remotePort}`,
       )
 
       if (!piece.set(reservation, chunk, wire)) return onUpdateTick()
@@ -2001,14 +2049,14 @@ export default class Torrent extends EventEmitter {
       if (hex === self._hashes[index]) {
         self._debug('piece verified %s', index)
 
-        self.store.put(index, buf, err => {
+        self.store.put(index, buf, (err) => {
           if (err) {
             self._destroy(err)
             return
           } else {
             self.pieces[index] = null
             self._markVerified(index)
-            self.wires.forEach(wire => {
+            self.wires.forEach((wire) => {
               wire.have(index)
             })
           }
@@ -2022,18 +2070,20 @@ export default class Torrent extends EventEmitter {
       }
     })
 
-    function onUpdateTick () {
-      queueMicrotask(() => { self._update() })
+    function onUpdateTick() {
+      queueMicrotask(() => {
+        self._update()
+      })
     }
 
     return true
   }
 
-  _checkDone () {
+  _checkDone() {
     if (this.destroyed) return
 
     // are any new files done?
-    this.files.forEach(file => {
+    this.files.forEach((file) => {
       if (file.done) return
       for (let i = file._startPiece; i <= file._endPiece; ++i) {
         if (!this.bitfield.get(i)) return
@@ -2044,7 +2094,7 @@ export default class Torrent extends EventEmitter {
     })
 
     // is the torrent done? (if everything is downloaded)
-    const done = this.files.every(file => file.done)
+    const done = this.files.every((file) => file.done)
 
     if (!this.done && done) {
       this.done = true
@@ -2066,9 +2116,13 @@ export default class Torrent extends EventEmitter {
     return done
   }
 
-  async load (streams, cb) {
+  async load(streams, cb) {
     if (this.destroyed) throw new Error('torrent is destroyed')
-    if (!this.ready) return this.once('ready', () => { this.load(streams, cb) })
+    if (!this.ready) {
+      return this.once('ready', () => {
+        this.load(streams, cb)
+      })
+    }
 
     if (!Array.isArray(streams)) streams = [streams]
     if (!cb) cb = noop
@@ -2084,13 +2138,13 @@ export default class Torrent extends EventEmitter {
     }
   }
 
-  pause () {
+  pause() {
     if (this.destroyed) return
     this._debug('pause')
     this.paused = true
   }
 
-  preferWebSeed () {
+  preferWebSeed() {
     if (this.destroyed) return
     this._webSeedOnly = true
     for (const peer of this._peers.values()) {
@@ -2103,14 +2157,14 @@ export default class Torrent extends EventEmitter {
     this._update()
   }
 
-  resume () {
+  resume() {
     if (this.destroyed) return
     this._debug('resume')
     this.paused = false
     this._drain()
   }
 
-  _debug (...args) {
+  _debug(...args) {
     args[0] = `[${this.client._debugId}] [${this._debugId}] ${args[0]}`
     debug(...args)
   }
@@ -2121,10 +2175,18 @@ export default class Torrent extends EventEmitter {
    * many peers (over `this.maxConns`) in which case they will just sit in the
    * queue until another connection closes.
    */
-  _drain () {
-    this._debug('_drain numConns %s maxConns %s _peersLength %s _numPending %s', this._numConns, this.client.maxConns, this._peersLength, this._numPending)
-    if (typeof net.connect !== 'function' || this.destroyed || this.paused ||
-        this._numConns + this._numPending >= this.client.maxConns) {
+  _drain() {
+    this._debug(
+      '_drain numConns %s maxConns %s _peersLength %s _numPending %s',
+      this._numConns,
+      this.client.maxConns,
+      this._peersLength,
+      this._numPending,
+    )
+    if (
+      typeof net.connect !== 'function' || this.destroyed || this.paused ||
+      this._numConns + this._numPending >= this.client.maxConns
+    ) {
       return
     }
     this._debug('drain (%s queued, %s/%s peers)', this._numQueued, this.numPeers, this.client.maxConns)
@@ -2137,7 +2199,7 @@ export default class Torrent extends EventEmitter {
     const parts = addrToIPPort(peer.addr)
     const opts = {
       host: parts[0],
-      port: parts[1]
+      port: parts[1],
     }
 
     if (this.client.utp && peer.type === Peer.TYPE_UTP_OUTGOING) {
@@ -2150,13 +2212,15 @@ export default class Torrent extends EventEmitter {
     const conn = peer.conn
 
     this._numPending += 1
-    const donePending = once(() => { this._numPending -= 1 })
+    const donePending = once(() => {
+      this._numPending -= 1
+    })
 
     conn.once('connect', () => {
       donePending()
       if (!this.destroyed) peer.onConnect()
     })
-    conn.once('error', err => {
+    conn.once('error', (err) => {
       donePending()
       peer.destroy(err)
     })
@@ -2174,7 +2238,8 @@ export default class Torrent extends EventEmitter {
         } else {
           this._debug(
             'conn %s closed: will not re-add (max %s attempts)',
-            peer.addr, RECONNECT_WAIT.length
+            peer.addr,
+            RECONNECT_WAIT.length,
           )
         }
         return
@@ -2183,7 +2248,9 @@ export default class Torrent extends EventEmitter {
       const ms = RECONNECT_WAIT[peer.retries]
       this._debug(
         'conn %s closed: will re-add to queue in %sms (attempt %s)',
-        peer.addr, ms, peer.retries + 1
+        peer.addr,
+        ms,
+        peer.retries + 1,
       )
 
       const reconnectTimeout = setTimeout(() => {
@@ -2202,7 +2269,7 @@ export default class Torrent extends EventEmitter {
    * @param {string} addr
    * @return {boolean}
    */
-  _validAddr (addr) {
+  _validAddr(addr) {
     let parts
     try {
       parts = addrToIPPort(addr)
@@ -2220,13 +2287,14 @@ export default class Torrent extends EventEmitter {
    * @param {string} addr
    * @return {boolean}
    */
-  _isIPv4 (addr) {
-    const IPv4Pattern = /^((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$/
+  _isIPv4(addr) {
+    const IPv4Pattern =
+      /^((?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])[.]){3}(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$/
     return IPv4Pattern.test(addr)
   }
 }
 
-function getBlockPipelineLength (wire, duration) {
+function getBlockPipelineLength(wire, duration) {
   let length = 2 + Math.ceil(duration * wire.downloadSpeed() / Piece.BLOCK_LENGTH)
 
   // Honor reqq (maximum number of outstanding request messages) if specified by peer
@@ -2240,15 +2308,15 @@ function getBlockPipelineLength (wire, duration) {
   return length
 }
 
-function getPiecePipelineLength (wire, duration, pieceLength) {
+function getPiecePipelineLength(wire, duration, pieceLength) {
   return 1 + Math.ceil(duration * wire.downloadSpeed() / pieceLength)
 }
 
 /**
  * Returns a random integer in [0,high)
  */
-function randomInt (high) {
+function randomInt(high) {
   return Math.random() * high | 0
 }
 
-function noop () {}
+function noop() {}
