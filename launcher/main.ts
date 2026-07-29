@@ -1,11 +1,10 @@
 import { brotliCompressSync } from 'node:zlib'
 import { copy } from '@std/fs/copy'
 import { basename, dirname, join } from '@std/path'
-import { loadStormLib, type StormArchiveModule } from 'stormlib'
 import WebTorrent from 'webtorrent'
 import pageBytes from './page.html' with { type: 'bytes' }
 import parseTorrent from './vendor/parse-torrent/index.js'
-import { generatePatch, parseDBCEditPayload } from './patch.ts'
+import { parseDBCEditPayload } from './patch.ts'
 import { type ScannedFile, startScan } from './scan.ts'
 import torrentBytes from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
@@ -81,7 +80,6 @@ const scanAbort = new AbortController()
 let webseedUrl = ''
 let realmlist = ''
 let verificationHash = ''
-let stormLib: StormArchiveModule | null = null
 
 function log(message: string): void {
   const entry = { timestamp: new Date().toISOString(), message }
@@ -356,18 +354,9 @@ async function fetchPatchEdits() {
   return parseDBCEditPayload(await response.json())
 }
 
-async function ensureStormLib(): Promise<StormArchiveModule> {
-  if (stormLib) return stormLib
-  logStep('loading embedded StormLib WASM')
-  stormLib = await loadStormLib()
-  logStep('embedded StormLib WASM ready')
-  return stormLib
-}
-
 async function generateClientPatch(): Promise<string> {
   try {
     log('generating client patch')
-    const storm = await ensureStormLib()
     const root = clientPath()
     if (!root) throw new Error('client path is missing')
     const edits = await fetchPatchEdits()
@@ -375,7 +364,23 @@ async function generateClientPatch(): Promise<string> {
     if (edits.length === 0) throw new Error('patch definition contains no DBC edits')
     const outputPath = join(root, 'Data', 'patch-S.mpq')
     log(`generating client patch from ${edits.length} DBC edit(s)`)
-    await generatePatch(storm, root, edits, outputPath)
+    log('starting patch worker')
+    const worker = new Worker(new URL('./patch_worker.ts', import.meta.url), { type: 'module' })
+    await new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event) => {
+        worker.terminate()
+        if (event.data.ok) {
+          resolve()
+        } else {
+          reject(new Error(event.data.error))
+        }
+      }
+      worker.onerror = (event) => {
+        worker.terminate()
+        reject(new Error(event.message))
+      }
+      worker.postMessage({ edits, outputPath, root })
+    })
     log(`client patch generated: ${outputPath}`)
     return outputPath
   } catch (error) {
