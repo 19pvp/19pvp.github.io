@@ -214,6 +214,7 @@
               <progress id="progress" max="1" value="0"></progress>
               <div
                 id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
+              <button id="recheck" type="button" hidden>Check files again</button>
             </div>
             <span class="step-state">Starting</span>
           </div>
@@ -247,6 +248,7 @@
     const speed = document.querySelector('#speed')
     const eta = document.querySelector('#eta')
     const peers = document.querySelector('#peers')
+    const recheck = document.querySelector('#recheck')
     const steps = Object.fromEntries(
       [...document.querySelectorAll('.step')].map((step) => [step.dataset.step, step]),
     )
@@ -289,6 +291,10 @@
         set('download', 'done', 'Complete')
         progress.hidden = true
         stats.hidden = true
+      } else if (message === 'quick file check passed; full check skipped') {
+        recheck.hidden = false
+      } else if (message === 'full file recheck requested') {
+        recheck.hidden = true
       } else if (message === 'scan started') set('scan', 'active', 'Searching')
       else if (message === 'scan complete: existing client found') set('scan', 'done', 'Found')
       else if (message === 'scan complete: no existing client found') {
@@ -375,6 +381,21 @@
       }
       rememberPath('Download directory: ', data.clientPath || data.downloadPath)
       directoryMessage.textContent = 'Folder changed. Existing files are being checked.'
+    }
+    recheck.onclick = async () => {
+      recheck.disabled = true
+      recheck.textContent = 'Checking files…'
+      try {
+        const response = await fetch('/recheck', { method: 'POST' })
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.error || String(response.status))
+        }
+      } catch (error) {
+        recheck.disabled = false
+        recheck.textContent = 'Check files again'
+        directoryMessage.textContent = 'Could not check files: ' + error.message
+      }
     }
     const stream = new EventSource('/events')
     stream.onmessage = (event) => append(JSON.parse(event.data))

@@ -8,8 +8,6 @@ import { type ScannedFile, startScan } from './scan.ts'
 import torrent from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
 const CLIENT_DIRECTORY_NAME = 'World of Warcraft 3.3.5a'
-const TEMP_DIRECTORY = Deno.env.get('TEMP') ?? Deno.env.get('TMPDIR') ?? '/tmp'
-const OLD_DOWNLOAD_DIRECTORY = `${TEMP_DIRECTORY}/19pvp-launcher`
 const DOWNLOAD_DIRECTORY = Deno.cwd()
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
 const SERVICE_ORIGIN = Deno.env.get('LAUNCHER_SERVICE_ORIGIN') ?? 'https://19pvp.devazuka.com'
@@ -170,6 +168,35 @@ function clientPath(): string | null {
   return downloadPath ? join(downloadPath, CLIENT_DIRECTORY_NAME) : null
 }
 
+function quickCheckFiles(torrent: Torrent): boolean {
+  let present = 0
+  for (const file of torrent.files) {
+    const path = join(downloadPath!, file.path)
+    try {
+      const stat = Deno.statSync(path)
+      if (!stat.isFile) {
+        log(`quick file check rejected: ${path}; not a regular file`)
+      } else if (isRealmlistFile(file)) {
+        const content = new TextDecoder().decode(Deno.readFileSync(path)).trim().toLowerCase()
+        if (content === `set realmlist ${realmlist}`.toLowerCase()) {
+          present++
+          log(`quick file check accepted: ${path}; configured realmlist`)
+        } else {
+          log(`quick file check rejected: ${path}; configured realmlist not found`)
+        }
+      } else if (stat.size === file.length) {
+        present++
+      } else {
+        log(`quick file check rejected: ${path}; size=${stat.size}, expected=${file.length}`)
+      }
+    } catch {
+      log(`quick file check rejected: ${path}; missing or inaccessible`)
+    }
+  }
+  log(`quick file check: ${present}/${torrent.files.length} files have the right size`)
+  return present === torrent.files.length
+}
+
 export function isRealmlistFile(file: { name: string }): boolean {
   return file.name.toLowerCase() === 'realmlist.wtf'
 }
@@ -181,14 +208,7 @@ export function torrentDownloadPath(path: string): string {
 }
 
 export function savedDownloadPath(path: string | null): string {
-  const normalized = path ? torrentDownloadPath(path) : DOWNLOAD_DIRECTORY
-  return normalized === OLD_DOWNLOAD_DIRECTORY ? DOWNLOAD_DIRECTORY : normalized
-}
-
-function isTemporaryPath(path: string): boolean {
-  const temp = TEMP_DIRECTORY.replace(/[\\/]+$/, '').toLowerCase()
-  path = path.toLowerCase()
-  return path === temp || path.startsWith(`${temp}/`) || path.startsWith(`${temp}\\`)
+  return path ? torrentDownloadPath(path) : DOWNLOAD_DIRECTORY
 }
 
 export const addonToc = (version: string): string => `
@@ -594,6 +614,13 @@ function startTorrent(forceFullCheck = false): void {
   log('torrent loaded')
 }
 
+async function recheckFiles(): Promise<void> {
+  if (!quickCheckPassed) throw new Error('full recheck is not available')
+  quickCheckPassed = false
+  await stopTorrent()
+  if (!stopped && !changingPath) startTorrent(true)
+}
+
 function recover(error: unknown): void {
   if (stopped || recovering || changingPath || recoveringFiles) return
   recovering = true
@@ -648,6 +675,23 @@ export async function handler(request: Request): Promise<Response> {
     } catch (error) {
       log(`log upload failed: ${errorMessage(error)}`)
       return Response.json({ error: errorMessage(error) }, { status: 500 })
+    }
+  }
+
+  if (path === '/recheck') {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
+    }
+    const origin = request.headers.get('origin')
+    if (origin && origin !== new URL(request.url).origin) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    try {
+      await recheckFiles()
+      return Response.json({ ok: true })
+    } catch (error) {
+      log(`full file recheck failed: ${errorMessage(error)}`)
+      return Response.json({ error: errorMessage(error) }, { status: 400 })
     }
   }
 
@@ -741,7 +785,7 @@ if (import.meta.main) {
   logStep('launcher started; configuration received')
   await stopPreviousLauncher()
   const rawSavedDownloadPath = localStorage.getItem(SAVED_DOWNLOAD_PATH_KEY)
-  if (rawSavedDownloadPath && !isTemporaryPath(rawSavedDownloadPath)) {
+  if (rawSavedDownloadPath) {
     downloadPath = savedDownloadPath(rawSavedDownloadPath)
     if (downloadPath !== rawSavedDownloadPath) {
       log(`saved download directory normalized: ${rawSavedDownloadPath} -> ${downloadPath}`)
@@ -749,10 +793,6 @@ if (import.meta.main) {
     localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
   } else {
     downloadPath = DOWNLOAD_DIRECTORY
-    if (rawSavedDownloadPath) {
-      log(`ignoring temporary saved download directory: ${rawSavedDownloadPath}`)
-      localStorage.removeItem(SAVED_DOWNLOAD_PATH_KEY)
-    }
   }
   log(
     `download directory existed before startup: ${await exists(downloadPath) ? 'yes' : 'no'}`,
