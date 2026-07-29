@@ -199,6 +199,12 @@ const vendorNpcFlagsWithoutVendorOrTrainer = 4294967295 - (vendorNpcFlag | vendo
 const consortiumFaction = 1731
 const satchelAlwaysDropItemIds = [
   5740, // fireworks
+  9313, // green fireworks
+  41427, // dalaran fireworks
+  9315, // yellow fireworks
+  9314, // Red Streaks Fireworks
+  9312, // Blue fireworks
+  9317, // red-white-and-blue-firework
   6657, // deviate delicacy
   6522, // deviate fish raw
   8529, // noggfenger elixir
@@ -1708,10 +1714,11 @@ SET \`npcflag\` = \`npcflag\` & ${vendorNpcFlagsWithoutTrainer}
 WHERE LOWER(\`subname\`) LIKE '%merchant%'
    OR LOWER(\`subname\`) LIKE '%quartermaster%';`
   const vendorSlots = new Map<number, number>()
+  const extendedCostForVendorItem = (item: VendorItem) => item.currency === 'gold' ? 0 : getCost(item) ?? 0
   const vendorItemRows = vendorItems.map((item) => {
     const slot = (vendorSlots.get(item.npc) ?? 0) + 1
     vendorSlots.set(item.npc, slot)
-    const extendedCost = item.currency === 'gold' ? 0 : getCost(item) ?? 0
+    const extendedCost = extendedCostForVendorItem(item)
     return `  (${item.npc}, ${slot}, ${item.itemId}, 0, 0, ${extendedCost}, NULL)`
   })
   const goldVendorPrices = [
@@ -1734,9 +1741,13 @@ WHERE LOWER(\`subname\`) LIKE '%merchant%'
       .filter((item) => item.currency === 'arena')
       .map((item) => item.itemId),
   )].sort((a, b) => a - b)
-  const vendorItemIds = [...new Set(vendorItems.map((item) => item.itemId))].sort((a, b) => a - b)
+  const vendorItemIds = [...new Set(
+    vendorItems
+      .filter((item) => extendedCostForVendorItem(item) > 0)
+      .map((item) => item.itemId),
+  )].sort((a, b) => a - b)
   const vendorItemFlagsSql = vendorItemIds.length
-    ? `-- Mark all generated vendor items as refundable through item purchase records.
+    ? `-- Mark generated vendor items with an extended cost as refundable through item purchase records.
 UPDATE \`item_template\`
 SET \`Flags\` = \`Flags\` | 4096
 WHERE \`entry\` IN (${vendorItemIds.join(', ')});`
@@ -1796,6 +1807,7 @@ WHERE \`entry\` IN (${arenaClassRestrictionItemIds.join(', ')});`
   const satchelAlwaysDropItemIds = [...new Set(satchelAlwaysDropItems.map((item) => item.itemId))].sort((a, b) => a - b)
   const satchelAlwaysDropAssignments = [
     '`class` = 0',
+    '`InventoryType` = 0',
     '`Quality` = 1',
     '`Flags` = `Flags` & 4278189823',
     '`FlagsExtra` = `FlagsExtra` & 4294967292',
