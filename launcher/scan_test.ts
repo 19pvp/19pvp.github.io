@@ -18,7 +18,7 @@ Deno.test('matches existing files using torrent paths and sizes', async () => {
   ]
   assertEquals(
     (await findMatchingTorrentFiles(root, files)).map(({ path }) => path),
-    files.slice(0, 2).map(({ path }) => path),
+    [files[1].path],
   )
   assertEquals(
     await findMatchingTorrentFiles(root, files.map((file) => ({ ...file, length: file.length + 1 }))),

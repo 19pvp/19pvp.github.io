@@ -269,6 +269,10 @@
       {
         "ID": 33991,
         "Description_Lang_enUS": "Permanently enchant a piece of chest armor to grant 7 Mana every 5 seconds."
+      },
+      {
+        "ID": 29506,
+        "Name_Lang_enUS": "Aura of Protection"
       }
     ]
   }

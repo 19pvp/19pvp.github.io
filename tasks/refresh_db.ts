@@ -2546,6 +2546,7 @@ const satchelAlwaysDropItems = satchelAlwaysDropItemIds.flatMap((itemId) => {
   return [{ itemId, name: item.name }]
 })
 const vendorItems = parseVendorItems(gsheetData.ITEM, itemInfoById)
+const spellSchema = getDBCSchema('Spell')
 const scrollPatch = buildScrollPatch(
   gsheetData.ITEM
     .filter((row) => vendorCurrencyFromSource(row.SOURCE) && /^scroll of enchant/i.test(row.NAME?.trim() ?? ''))
@@ -2553,16 +2554,18 @@ const scrollPatch = buildScrollPatch(
       const itemId = Number(row.ID)
       if (!Number.isInteger(itemId) || itemId <= 0) return []
       return [{ itemId, spellIds: itemInfoById.get(itemId)?.spellIds ?? [] }]
-    }),
+  }),
   dbc.spell,
-  getDBCSchema('Spell'),
+  spellSchema,
 )
+const spellPatchRows = [...(scrollPatch.edit?.rows ?? [])]
+spellPatchRows.push({ ID: 29506, Name_Lang_enUS: 'Aura of Protection' })
 await Deno.writeTextFile(
   'launcher/patch.json',
-  JSON.stringify(scrollPatch.edit ? [scrollPatch.edit] : [], null, 2) + '\n',
+  JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',
 )
 console.log(
-  `wrote ${scrollPatch.edit?.rows.length ?? 0} scroll spell DBC edits; ` +
+  `wrote ${spellPatchRows.length} Spell.dbc edits (${scrollPatch.edit?.rows.length ?? 0} scroll descriptions and 1 spell name); ` +
     `${scrollPatch.missingSpellIds.length} spell IDs were missing from Spell.dbc and ` +
     `${scrollPatch.unchangedSpellIds.length} had no lower item-level requirement`,
 )

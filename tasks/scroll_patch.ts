@@ -10,7 +10,7 @@ export type SpellDescription = {
 export type ScrollPatchEdit = {
   filename: 'Spell.dbc'
   schema: Record<string, string>
-  rows: { ID: number; Description_Lang_enUS: string }[]
+  rows: { ID: number; Description_Lang_enUS?: string; Name_Lang_enUS?: string }[]
 }
 
 const itemLevelRequirement =
