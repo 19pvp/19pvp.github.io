@@ -7,7 +7,8 @@ WHERE `aa`.`id` IS NULL OR `aa`.`gmlevel` IN (0, 1);
 
 -- Preserve normal player gameplay permissions for levels 0 and 1. These are
 -- not chat commands: 3 and 5 allow normal battlegrounds and arenas, 24 allows
--- both-faction characters, and 49 allows password changes to request the account email.
+-- both-faction characters, 28 allows cross-faction /who results, and 49 allows
+-- password changes to request the account email.
 DELETE FROM `rbac_default_permissions`
 WHERE `secId` IN (0, 1);
 
@@ -15,10 +16,12 @@ INSERT INTO `rbac_default_permissions` (`secId`, `permissionId`, `realmId`) VALU
   (0, 3, -1),
   (0, 5, -1),
   (0, 24, -1),
+  (0, 28, -1),
   (0, 49, -1),
   (1, 3, -1),
   (1, 5, -1),
   (1, 24, -1),
+  (1, 28, -1),
   (1, 49, -1),
   (1, 217, -1),
   (1, 224, -1),
