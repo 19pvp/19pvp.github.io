@@ -1,6 +1,7 @@
 import { brotliCompressSync } from 'node:zlib'
 import { copy } from '@std/fs/copy'
 import { basename, dirname, join } from '@std/path'
+import { loadStormLib } from 'stormlib'
 import WebTorrent from 'webtorrent'
 import pageBytes from './page.html' with { type: 'bytes' }
 import { type ScannedFile, startScan } from './scan.ts'
@@ -705,6 +706,9 @@ export async function handler(request: Request): Promise<Response> {
 }
 
 if (import.meta.main) {
+  logStep('loading embedded StormLib WASM')
+  await loadStormLib()
+  logStep('embedded StormLib WASM ready')
   await loadLauncherConfig()
   started = true
   logStep('launcher started; configuration received')
