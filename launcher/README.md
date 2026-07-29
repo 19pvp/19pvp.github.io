@@ -78,7 +78,7 @@ Acceptance: the torrent completes through HTTP when peers are unavailable.
 ### Phase 5 — Destination directory
 
 - Add a real destination selector.
-- Default to `USER/Downloads/19pvp-wow-client`.
+- Default to the launcher's current working directory.
 - Persist the selected destination.
 - Create it when needed.
 - Show the selected path and disk-space errors.

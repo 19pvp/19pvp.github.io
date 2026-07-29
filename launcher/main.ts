@@ -8,12 +8,9 @@ import { type ScannedFile, startScan } from './scan.ts'
 import torrent from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
 const CLIENT_DIRECTORY_NAME = 'World of Warcraft 3.3.5a'
-const OLD_DOWNLOAD_DIRECTORY = `${Deno.env.get('TEMP') ?? Deno.env.get('TMPDIR') ?? '/tmp'}/19pvp-launcher`
-const DOWNLOAD_DIRECTORY = join(
-  Deno.env.get(Deno.build.os === 'windows' ? 'USERPROFILE' : 'HOME') ?? Deno.cwd(),
-  'Downloads',
-  '19pvp-wow-client',
-)
+const TEMP_DIRECTORY = Deno.env.get('TEMP') ?? Deno.env.get('TMPDIR') ?? '/tmp'
+const OLD_DOWNLOAD_DIRECTORY = `${TEMP_DIRECTORY}/19pvp-launcher`
+const DOWNLOAD_DIRECTORY = Deno.cwd()
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
 const SERVICE_ORIGIN = Deno.env.get('LAUNCHER_SERVICE_ORIGIN') ?? 'https://19pvp.devazuka.com'
 const LOG_UPLOAD_MAX_BYTES = 1024 * 1024
@@ -38,6 +35,7 @@ type LogEntry = { timestamp: string; message: string }
 type Torrent = {
   on(event: string, listener: (...args: unknown[]) => void): void
   pause(): void
+  preferWebSeed(): void
   done: boolean
   downloaded: number
   downloadSpeed: number
@@ -65,6 +63,7 @@ let activeTorrent: Torrent | null = null
 let downloadPath: string | null = null
 let statusTimer: ReturnType<typeof setInterval> | null = null
 let torrentReady = false
+let webSeedFinalizationStarted = false
 let recovering = false
 let started = false
 let stopped = false
@@ -181,6 +180,12 @@ export function torrentDownloadPath(path: string): string {
 export function savedDownloadPath(path: string | null): string {
   const normalized = path ? torrentDownloadPath(path) : DOWNLOAD_DIRECTORY
   return normalized === OLD_DOWNLOAD_DIRECTORY ? DOWNLOAD_DIRECTORY : normalized
+}
+
+function isTemporaryPath(path: string): boolean {
+  const temp = TEMP_DIRECTORY.replace(/[\\/]+$/, '').toLowerCase()
+  path = path.toLowerCase()
+  return path === temp || path.startsWith(`${temp}/`) || path.startsWith(`${temp}\\`)
 }
 
 export const addonToc = (version: string): string => `
@@ -398,6 +403,11 @@ function formatLogs(entries: LogEntry[]): string {
 
 function logStatus(): void {
   if (!activeTorrent) return
+  if (torrentReady && !activeTorrent.done && !webSeedFinalizationStarted && activeTorrent.progress >= 0.99) {
+    webSeedFinalizationStarted = true
+    log('99% reached; finishing remaining pieces from webseed')
+    activeTorrent.preferWebSeed()
+  }
   const remaining = Math.max(0, activeTorrent.length - activeTorrent.downloaded)
   const progress = activeTorrent.done
     ? '100.0'
@@ -479,6 +489,7 @@ function startTorrent(): void {
   if (!downloadPath) throw new Error('missing download path')
   if (statusTimer !== null) clearInterval(statusTimer)
   torrentReady = false
+  webSeedFinalizationStarted = false
   torrentStopped = false
 
   logStep('creating WebTorrent client')
@@ -714,11 +725,19 @@ if (import.meta.main) {
   logStep('launcher started; configuration received')
   await stopPreviousLauncher()
   const rawSavedDownloadPath = localStorage.getItem(SAVED_DOWNLOAD_PATH_KEY)
-  downloadPath = savedDownloadPath(rawSavedDownloadPath)
-  if (rawSavedDownloadPath && downloadPath !== rawSavedDownloadPath) {
-    log(`saved download directory normalized: ${rawSavedDownloadPath} -> ${downloadPath}`)
+  if (rawSavedDownloadPath && !isTemporaryPath(rawSavedDownloadPath)) {
+    downloadPath = savedDownloadPath(rawSavedDownloadPath)
+    if (downloadPath !== rawSavedDownloadPath) {
+      log(`saved download directory normalized: ${rawSavedDownloadPath} -> ${downloadPath}`)
+    }
+    localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
+  } else {
+    downloadPath = DOWNLOAD_DIRECTORY
+    if (rawSavedDownloadPath) {
+      log(`ignoring temporary saved download directory: ${rawSavedDownloadPath}`)
+      localStorage.removeItem(SAVED_DOWNLOAD_PATH_KEY)
+    }
   }
-  localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
   log(
     `download directory existed before startup: ${await exists(downloadPath) ? 'yes' : 'no'}`,
   )

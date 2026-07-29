@@ -81,8 +81,7 @@ Deno.test('normalizes selected client directory to torrent parent', () => {
 
 Deno.test('migrates the old tmp default path', () => {
   const path = savedDownloadPath('/tmp/19pvp-launcher/World of Warcraft 3.3.5a')
-  assertStringIncludes(path, 'Downloads')
-  assertStringIncludes(path, '19pvp-wow-client')
+  assertEquals(path, Deno.cwd())
 })
 
 Deno.test('finds realmlist files', () => {

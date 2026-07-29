@@ -156,6 +156,7 @@ export default class Torrent extends EventEmitter {
     this.ready = false
     this.destroyed = false
     this.paused = opts.paused || false
+    this._webSeedOnly = false
     this.done = false
 
     this.metadata = null
@@ -1289,6 +1290,11 @@ export default class Torrent extends EventEmitter {
   _onWire (wire, addr) {
     this._debug('got wire %s (%s)', wire._debugId, addr || 'Unknown')
 
+    if (this._webSeedOnly && wire.type !== 'webSeed') {
+      wire.destroy()
+      return
+    }
+
     this.wires.push(wire)
 
     if (addr) {
@@ -2082,6 +2088,19 @@ export default class Torrent extends EventEmitter {
     if (this.destroyed) return
     this._debug('pause')
     this.paused = true
+  }
+
+  preferWebSeed () {
+    if (this.destroyed) return
+    this._webSeedOnly = true
+    for (const peer of this._peers.values()) {
+      if (peer.type === Peer.TYPE_WEBSEED) continue
+      for (const request of peer.wire?.requests ?? []) {
+        this.pieces[request.piece]?.cancel((request.offset / Piece.BLOCK_LENGTH) | 0)
+      }
+      peer.destroy()
+    }
+    this._update()
   }
 
   resume () {
