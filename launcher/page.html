@@ -20,8 +20,10 @@
       margin: auto;
     }
     h1 {
+      margin: 0 0 20px;
       color: #f9fafb;
-      font: 600 20px/1.2 system-ui, sans-serif;
+      font: 600 30px/1.2 system-ui, sans-serif;
+      text-align: center;
     }
     label {
       display: block;
@@ -32,16 +34,42 @@
       color: #9ca3af;
       font-size: 13px;
     }
+    #directory-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      user-select: none;
+    }
+    #directory-message {
+      margin: 0;
+    }
+    #download-path {
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+      color: #9ca3af;
+    }
     #status {
-      margin: 24px 0;
+      margin: 24px 0 0;
       padding: 16px;
       border: 1px solid #374151;
       border-radius: 8px;
       background: #1f2937;
+      user-select: none;
     }
     #state {
       color: #f9fafb;
       font: 600 18px system-ui, sans-serif;
+    }
+    #scan-spinner {
+      display: inline-block;
+      margin-left: 8px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
     progress {
       display: block;
@@ -52,7 +80,42 @@
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
+      margin-top: 12px;
       color: #9ca3af;
+    }
+    #steps {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .step {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 12px;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      color: #9ca3af;
+      font-family: system-ui, sans-serif;
+    }
+    .step[data-state="active"] {
+      border-color: #facc15;
+      background: #422006;
+      color: #facc15;
+    }
+    .step[data-state="done"] {
+      border-color: #60a5fa;
+      background: #172554;
+      color: #60a5fa;
+    }
+    .step[data-state="failed"] {
+      border-color: #ff3366;
+      background: #4a0d1f;
+      color: #ff7a9c;
+      box-shadow: 0 0 10px #ff336644;
+    }
+    .step-title {
+      font-weight: 600;
     }
     #help {
       margin-top: 12px;
@@ -72,13 +135,32 @@
       color: #9ca3af;
     }
     button {
-      margin-left: 12px;
+      padding: 8px 12px;
+      border: 1px solid #4b5563;
+      border-radius: 6px;
+      background: #1f2937;
+      color: #d1d5db;
+      font: inherit;
+      cursor: default;
+      user-select: none;
+    }
+    button:hover {
+      border-color: #6b7280;
+      background: #374151;
+    }
+    button:focus-visible {
+      outline: 2px solid #60a5fa;
+      outline-offset: 2px;
     }
     #help a {
       color: #fde68a;
     }
     details {
       margin-top: 24px;
+    }
+    summary {
+      cursor: default;
+      user-select: none;
     }
     #logs {
       height: 50vh;
@@ -88,23 +170,42 @@
       border: 1px solid #374151;
       border-radius: 8px;
       background: #030712;
+      font-size: 12px;
+      line-height: 1.4;
       white-space: pre-wrap;
+    }
+    #close-page {
+      margin-top: 12px;
+    }
+    #close-message {
+      margin-left: 8px;
     }
     </style>
   </head>
   <body>
     <main>
       <h1>19PvP Launcher</h1>
-      <div>
+      <div id="directory-controls">
         <button id="choose-directory" type="button">Choose download folder</button>
         <span id="directory-message">No folder selected.</span>
       </div>
       <div id="download-path">Download directory: loading…</div>
       <section id="status" aria-live="polite">
-        <div id="state">Starting</div>
+        <div
+          id="state">Starting<span id="scan-spinner" hidden title="Looking for an existing game" aria-label="Looking for an existing game">⟳</span></div>
         <progress id="progress" max="1" value="0"></progress>
         <div
           id="stats"><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
+        <div id="steps" aria-label="Setup progress">
+          <div class="step" data-step="download"
+            data-state="active"><span class="step-title">💾 DOWNLOAD</span><span class="step-state">Starting</span></div>
+          <div class="step" data-step="scan"
+            data-state="pending"><span class="step-title">🔎 FIND EXISTING CLIENT</span><span class="step-state">Waiting</span></div>
+          <div class="step" data-step="realmlist"
+            data-state="pending"><span class="step-title">📝 CONFIGURE REALMLIST</span><span class="step-state">Waiting</span></div>
+          <div class="step" data-step="addon"
+            data-state="pending"><span class="step-title">📦 INSTALL THE COMPANION ADDON</span><span class="step-state">Waiting</span></div>
+        </div>
         <div id="help"
           hidden>Need help? Create a report link and send it to support. <a id="share-logs" href="#">Create report link</a><span id="share-result"></span></div>
         <div id="stopped" hidden>
@@ -121,11 +222,15 @@
     <script>
     const logView = document.querySelector('#logs')
     const state = document.querySelector('#state')
+    const scanSpinner = document.querySelector('#scan-spinner')
     const progress = document.querySelector('#progress')
     const downloaded = document.querySelector('#downloaded')
     const speed = document.querySelector('#speed')
     const eta = document.querySelector('#eta')
     const peers = document.querySelector('#peers')
+    const steps = Object.fromEntries(
+      [...document.querySelectorAll('.step')].map((step) => [step.dataset.step, step]),
+    )
     const downloadPath = document.querySelector('#download-path')
     const directoryMessage = document.querySelector('#directory-message')
     const help = document.querySelector('#help')
@@ -150,25 +255,44 @@
     const updateHelpVisibility = () => {
       help.hidden = !(reportVisible || serviceStopped || logDetails.open)
     }
+    const updateScanSpinner = (message) => {
+      if (message === 'scan started') scanSpinner.hidden = false
+      else if (message.startsWith('scan complete:') || message.startsWith('scan failed:')) scanSpinner.hidden = true
+      else if (message === 'launcher stopped') scanSpinner.hidden = true
+    }
+    const updateSteps = (message) => {
+      const set = (name, state, text) => {
+        steps[name].dataset.state = state
+        steps[name].querySelector('.step-state').textContent = text
+      }
+      if (message === 'torrent loaded') set('download', 'active', 'Downloading')
+      else if (message.startsWith('metadata received:')) set('download', 'active', 'Checking files')
+      else if (message === 'torrent ready; existing data checked') set('download', 'active', 'Downloading')
+      else if (message === 'download completed') set('download', 'done', 'Complete')
+      else if (message === 'scan started') set('scan', 'active', 'Searching')
+      else if (message === 'scan complete: existing client found') set('scan', 'done', 'Found')
+      else if (message === 'scan complete: no existing client found') {
+        set('scan', 'done', 'Scan over, no existing client found')
+      } else if (message.startsWith('scan failed:')) set('scan', 'done', 'Could not check')
+      else if (message === 'configuring realmlist') set('realmlist', 'active', 'Updating')
+      else if (message === 'realmlist updated successfully') set('realmlist', 'done', 'Updated successfully')
+      else if (message.startsWith('realmlist configuration failed:')) set('realmlist', 'failed', 'Failed')
+      else if (message === 'installing companion addon') set('addon', 'active', 'Installing')
+      else if (message.startsWith('companion addon installed successfully:')) set('addon', 'done', 'Installed successfully')
+      else if (message.startsWith('companion addon installation failed:')) set('addon', 'failed', 'Failed')
+    }
     const updateStatus = (message) => {
+      updateScanSpinner(message)
+      updateSteps(message)
       if (message === 'completed') {
         state.textContent = 'Completed'
         isComplete = true
-      } else if (message.includes('error:')) state.textContent = 'Error'
-      else if (message === 'torrent loaded') state.textContent = 'Loading torrent'
-      else if (message.startsWith('metadata received:')) {
-        state.textContent = 'Checking existing data'
-      } else if (message === 'torrent ready; existing data checked') {
-        state.textContent = 'Downloading'
-      } else if (message === 'scan started' || message.startsWith('scan root:')) {
-        state.textContent = 'Looking for an existing game'
-      } else if (message.startsWith('scan candidate')) {
-        state.textContent = 'Checking an existing game'
-      } else if (message.startsWith('existing client found:') || message.startsWith('copying ')) {
-        state.textContent = 'Using existing game files'
-      } else if (message.startsWith('restarting torrent to recheck')) {
-        state.textContent = 'Checking copied files'
-      } else if (message === 'launcher stopped') state.textContent = 'Stopped'
+      } else if (message.includes('error:') || message.startsWith('setup after download failed:')) {
+        state.textContent = 'Setup failed'
+      } else if (message === 'torrent loaded') state.textContent = 'Loading torrent'
+      else if (message.startsWith('metadata received:')) state.textContent = 'Checking existing data'
+      else if (message === 'torrent ready; existing data checked') state.textContent = 'Downloading'
+      else if (message === 'launcher stopped') state.textContent = 'Stopped'
       else if (message.startsWith('download directory:')) {
         rememberPath(
           'Download directory: ',

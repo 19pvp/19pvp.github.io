@@ -3,6 +3,7 @@ import { join, normalize } from '@std/path'
 const CLIENT_DIRECTORY_NAME = 'World of Warcraft 3.3.5a'
 const SCANNED_ROOTS_KEY = 'scannedScanRoots'
 const SCAN_WORKERS = 4
+const SCAN_PROGRESS_INTERVAL = 100
 const EXCLUDED_DIRECTORIES = new Set([
   '$recycle.bin',
   '.cache',
@@ -123,6 +124,7 @@ export function startScan(
     const roots = await scanRoots()
     const scannedRoots = savedRoots()
     const visited = new Set<string>()
+    let lastProgress = 0
     log('scan started')
 
     for (const root of roots) {
@@ -145,6 +147,10 @@ export function startScan(
           const normalizedPath = normalize(path)
           if (visited.has(normalizedPath)) continue
           visited.add(normalizedPath)
+          if (visited.size >= lastProgress + SCAN_PROGRESS_INTERVAL) {
+            lastProgress = visited.size
+            log(`scan progress: directories=${visited.size}`)
+          }
 
           let entries
           try {

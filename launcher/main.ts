@@ -71,6 +71,7 @@ let torrentReady = false
 let recovering = false
 let started = false
 let stopped = false
+let torrentStopped = true
 let changingPath = false
 let recoveringFiles = false
 let shutdownLauncher: (() => void) | null = null
@@ -95,15 +96,19 @@ function logStep(message: string): void {
 function formatBytes(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return '0 B'
   const units = ['B', 'KiB', 'MiB', 'GiB']
-  const unit = Math.min(
-    Math.floor(Math.log(value) / Math.log(1024)),
-    units.length - 1,
+  const unit = Math.max(
+    0,
+    Math.min(
+      Math.floor(Math.log(value) / Math.log(1024)),
+      units.length - 1,
+    ),
   )
   return `${(value / 1024 ** unit).toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`
 }
 
 function formatDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds <= 0) return 'unknown'
+  seconds = Math.ceil(seconds)
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   const secs = Math.floor(seconds % 60)
@@ -235,34 +240,53 @@ async function importDiscoveredFiles(source: string, files: ScannedFile[]): Prom
 
 async function patchRealmlist(): Promise<void> {
   if (!activeTorrent || !downloadPath) return
+  log('configuring realmlist')
   const files = activeTorrent.files.filter(isRealmlistFile)
   if (files.length === 0) {
-    log('warning: no realmlist.wtf file found')
-    return
+    const error = new Error('no realmlist.wtf file found')
+    log(`realmlist configuration failed: ${error.message}`)
+    throw error
   }
-  for (const file of files) {
-    const path = join(downloadPath, file.path)
-    await Deno.writeTextFile(path, `set realmlist ${REALMLIST}\r\n`)
-    log(`realmlist patched: ${path}`)
+  try {
+    for (const file of files) {
+      const path = join(downloadPath, file.path)
+      await Deno.writeTextFile(path, `set realmlist ${REALMLIST}\r\n`)
+      log(`realmlist patched: ${path}`)
+    }
+  } catch (error) {
+    log(`realmlist configuration failed: ${errorMessage(error)}`)
+    throw error
   }
+  log('realmlist updated successfully')
 }
 
 async function installAddon(): Promise<void> {
   const root = clientPath()
-  if (!root) return
-  if (!SERVICE_ORIGIN) {
-    log('warning: missing LAUNCHER_SERVICE_ORIGIN; addon not installed')
-    return
+  if (!root) {
+    const error = new Error('client path is missing')
+    log(`companion addon installation failed: ${error.message}`)
+    throw error
   }
-  const response = await fetch(`${SERVICE_ORIGIN}/launcher/addons/PvP19.lua`)
-  if (!response.ok) throw new Error(`addon download failed: ${response.status}`)
-  const version = response.headers.get('x-addon-version')
-  if (!version) throw new Error('addon download missing x-addon-version header')
-  const addonPath = join(root, 'Interface', 'AddOns', 'PvP19')
-  await Deno.mkdir(addonPath, { recursive: true })
-  await Deno.writeFile(join(addonPath, 'PvP19.lua'), new Uint8Array(await response.arrayBuffer()))
-  await Deno.writeTextFile(join(addonPath, 'PvP19.toc'), addonToc(version))
-  log(`addon installed: PvP19 ${version}`)
+  if (!SERVICE_ORIGIN) {
+    const error = new Error('missing LAUNCHER_SERVICE_ORIGIN')
+    log(`companion addon installation failed: ${error.message}`)
+    throw error
+  }
+  log('installing companion addon')
+  try {
+    const response = await fetch(`${SERVICE_ORIGIN}/launcher/addons/PvP19.lua`)
+    if (!response.ok) throw new Error(`addon download failed: ${response.status}`)
+    const version = response.headers.get('x-addon-version')
+    if (!version) throw new Error('addon download missing x-addon-version header')
+    const addonPath = join(root, 'Interface', 'AddOns', 'PvP19')
+    await Deno.mkdir(addonPath, { recursive: true })
+    await Deno.writeFile(join(addonPath, 'PvP19.lua'), new Uint8Array(await response.arrayBuffer()))
+    await Deno.writeTextFile(join(addonPath, 'PvP19.toc'), addonToc(version))
+    log(`companion addon installed successfully: PvP19 ${version}`)
+  } catch (error) {
+    log(`companion addon installation failed: ${errorMessage(error)}`)
+    throw error
+  }
 }
 
 async function pickDownloadPath(): Promise<string | null> {
@@ -299,8 +323,10 @@ async function pickDownloadPath(): Promise<string | null> {
 
 async function shareLogs(): Promise<Response> {
   if (!LOG_UPLOAD_ORIGIN || !LOG_UPLOAD_SECRET) {
+    const error = 'Missing LAUNCHER_LOG_ORIGIN or LAUNCHER_LOG_SECRET.'
+    log(`log upload failed: ${error}`)
     return Response.json(
-      { error: 'Missing LAUNCHER_LOG_ORIGIN or LAUNCHER_LOG_SECRET.' },
+      { error },
       { status: 500 },
     )
   }
@@ -333,7 +359,9 @@ async function shareLogs(): Promise<Response> {
     body: compressed,
   })
   if (!response.ok) {
-    return Response.json({ error: await response.text() }, {
+    const error = await response.text()
+    log(`log upload failed: ${response.status} ${error}`)
+    return Response.json({ error }, {
       status: response.status,
     })
   }
@@ -354,12 +382,18 @@ function formatLogs(entries: LogEntry[]): string {
 function logStatus(): void {
   if (!activeTorrent) return
   const remaining = Math.max(0, activeTorrent.length - activeTorrent.downloaded)
-  const progress = (Math.max(0, Math.min(1, activeTorrent.progress)) * 100).toFixed(1)
-  const eta = torrentReady && activeTorrent.downloadSpeed > 0
+  const progress = activeTorrent.done
+    ? '100.0'
+    : (Math.max(0, Math.min(0.999, activeTorrent.progress)) * 100).toFixed(1)
+  const eta = activeTorrent.done
+    ? 'complete'
+    : !torrentReady
+    ? `checking local files ${progress}%`
+    : activeTorrent.progress >= 0.999
+    ? 'checking final pieces'
+    : activeTorrent.downloadSpeed > 0
     ? formatDuration(remaining / activeTorrent.downloadSpeed)
-    : torrentReady
-    ? 'unknown'
-    : `checking local files ${progress}%`
+    : 'unknown'
   log(
     `status: peers=${activeTorrent.numPeers} speed=${formatBytes(activeTorrent.downloadSpeed)}/s ` +
       `progress=${progress}% ` +
@@ -372,17 +406,23 @@ async function stop(): Promise<void> {
   if (stopped) return
   stopped = true
   scanAbort.abort()
+  await stopTorrent()
+  log('launcher stopped')
+}
+
+async function stopTorrent(): Promise<void> {
+  if (torrentStopped) return
+  torrentStopped = true
   if (statusTimer !== null) clearInterval(statusTimer)
   statusTimer = null
   if (activeTorrent) log('stopping torrent')
-  activeTorrent = null
 
   const currentClient = client
   client = null
   if (currentClient) {
     await new Promise<void>((resolve) => currentClient.destroy(resolve))
   }
-  log('launcher stopped')
+  if (activeTorrent) log('torrent stopped; not seeding')
 }
 
 async function changeDownloadPath(path: string): Promise<boolean> {
@@ -422,6 +462,7 @@ function startTorrent(): void {
   if (!downloadPath) throw new Error('missing download path')
   if (statusTimer !== null) clearInterval(statusTimer)
   torrentReady = false
+  torrentStopped = false
 
   logStep('creating WebTorrent client')
   client = new WebTorrent(WEBTORRENT_OPTIONS) as unknown as Client
@@ -473,15 +514,25 @@ function startTorrent(): void {
   })
   activeTorrent.on(
     'wire',
-    () => log(`peer connected: ${activeTorrent!.numPeers} peer(s)`),
+    (wire) =>
+      log(
+        `peer connected${(wire as { type?: string }).type === 'webSeed' ? ' (webseed)' : ''}: ${
+          activeTorrent!.numPeers
+        } peer(s)`,
+      ),
   )
   activeTorrent.on('done', () => {
+    log('download completed')
     logStatus()
     Promise.all([patchRealmlist(), installAddon()]).then(
-      () => log('completed'),
-      (error) => {
+      async () => {
+        log('completed')
+        await stopTorrent()
+      },
+      async (error) => {
         log(`setup after download failed: ${errorMessage(error)}`)
         log('completed')
+        await stopTorrent()
       },
     )
   })
@@ -548,7 +599,12 @@ export async function handler(request: Request): Promise<Response> {
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 })
     }
-    return await shareLogs()
+    try {
+      return await shareLogs()
+    } catch (error) {
+      log(`log upload failed: ${errorMessage(error)}`)
+      return Response.json({ error: errorMessage(error) }, { status: 500 })
+    }
   }
 
   if (path === '/shutdown') {
@@ -576,6 +632,7 @@ export async function handler(request: Request): Promise<Response> {
       const changed = await changeDownloadPath(await request.text())
       return Response.json({ changed, downloadPath, clientPath: clientPath() })
     } catch (error) {
+      log(`download directory change failed: ${errorMessage(error)}`)
       return Response.json({ error: errorMessage(error) }, { status: 400 })
     }
   }
@@ -596,6 +653,7 @@ export async function handler(request: Request): Promise<Response> {
       const changed = await changeDownloadPath(selectedPath)
       return Response.json({ canceled: false, changed, downloadPath, clientPath: clientPath() })
     } catch (error) {
+      log(`folder picker failed: ${errorMessage(error)}`)
       return Response.json({ error: errorMessage(error) }, { status: 500 })
     }
   }

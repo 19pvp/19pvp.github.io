@@ -1876,8 +1876,8 @@ export default class Torrent extends EventEmitter {
    * given wire may effectively swap out the request for one of its own.
    */
   _hotswap (wire, index) {
+    const isWebSeed = wire.type === 'webSeed'
     const speed = wire.downloadSpeed()
-    if (speed < Piece.BLOCK_LENGTH) return false
     if (!this._reservations[index]) return false
 
     const r = this._reservations[index]
@@ -1892,10 +1892,11 @@ export default class Torrent extends EventEmitter {
     for (i = 0; i < r.length; i++) {
       const otherWire = r[i]
       if (!otherWire || otherWire === wire) continue
+      if (otherWire.type === 'webSeed') continue
 
       const otherSpeed = otherWire.downloadSpeed()
       if (otherSpeed >= SPEED_THRESHOLD) continue
-      if (2 * otherSpeed > speed || otherSpeed > minSpeed) continue
+      if ((!isWebSeed && 2 * otherSpeed > speed) || otherSpeed > minSpeed) continue
 
       minWire = otherWire
       minSpeed = otherSpeed
