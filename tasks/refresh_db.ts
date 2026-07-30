@@ -2594,7 +2594,12 @@ spellPatchRows.push({
   EffectMiscValue_1: 12,
   EffectMiscValue_2: 5,
   EffectMiscValue_3: 4,
+  AttributesEx5: 768, // SPELL_ATTR5_ALLOW_WHILE_STUNNED (256) | SPELL_ATTR5_ALLOW_WHILE_CONFUSED (512)
   Description_Lang_enUS: 'Removes any Stun, Fear and Polymorph effect. This effect shares a 45 sec cooldown with other similar effects.',
+})
+spellPatchRows.push({
+  ID: 58984,
+  Description_Lang_enUS: 'Instantly removes all existing harmful spell effects and allows you to slip into the shadows. Lasts until cancelled or upon moving.',
 })
 await Deno.writeTextFile(
   'launcher/patch.json',

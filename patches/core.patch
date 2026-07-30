@@ -1019,10 +1019,10 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..b7e11ec33 100644
+index 0f71208b0..b8d357fc7 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,70 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,79 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
@@ -1082,6 +1082,15 @@ index 0f71208b0..b7e11ec33 100644
 +        spellInfo->Effects[EFFECT_0].MiscValue = MECHANIC_STUN;      // 12
 +        spellInfo->Effects[EFFECT_1].MiscValue = MECHANIC_FEAR;      // 5
 +        spellInfo->Effects[EFFECT_2].MiscValue = MECHANIC_POLYMORPH; // 4
++        spellInfo->AttributesEx5 |= SPELL_ATTR5_ALLOW_WHILE_STUNNED | SPELL_ATTR5_ALLOW_WHILE_CONFUSED;
++    });
++
++    // Shadowmeld (night elf racial 58984): trigger Cloak of Shadows dispel (35729) to instantly remove all harmful spell effects
++    ApplySpellFix({ 58984 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_TRIGGER_SPELL;
++        spellInfo->Effects[EFFECT_2].TriggerSpell = 35729; // Cloak of Shadows dispel effect
++        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
 +    });
 +
 +    // Thunder Clap must not trigger weapon enchants.
