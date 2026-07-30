@@ -1019,7 +1019,7 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..35f2d5540 100644
+index 0f71208b0..e87ee849e 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
 @@ -40,6 +40,106 @@ void SpellMgr::LoadSpellInfoCorrections()
@@ -1047,7 +1047,7 @@ index 0f71208b0..35f2d5540 100644
 +    {
 +        spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN;
 +        spellInfo->Effects[EFFECT_0].MiscValue = SPELL_SCHOOL_MASK_ALL;
-+        spellInfo->Effects[EFFECT_0].BasePoints = 29; // 30% damage reduction (BasePoints 29 -> amount 30)
++        spellInfo->Effects[EFFECT_0].BasePoints = -31; // 30% damage reduction
 +    });
 +
 +    // Escape Artist (gnome racial id 20589): reduce CD to 45s (45000 ms)
@@ -1091,10 +1091,10 @@ index 0f71208b0..35f2d5540 100644
 +        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
 +    });
 +
-+    // Bull Rush (4083): 3s duration, 100% movement speed bonus
++    // Bull Rush (4083): 0.5s duration, 100% movement speed bonus
 +    ApplySpellFix({ 4083 }, [](SpellInfo* spellInfo)
 +    {
-+        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(27); // 3s
++        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(327); // 0.5s
 +        spellInfo->Effects[EFFECT_0].BasePoints = 99; // +100% move speed
 +    });
 +
@@ -1115,8 +1115,8 @@ index 0f71208b0..35f2d5540 100644
 +        // Effect 2: Trigger Stomp (55196) on enemy targets in radius
 +        spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_TRIGGER_SPELL;
 +        spellInfo->Effects[EFFECT_2].TriggerSpell = 55196;
-+        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENEMY);
-+        spellInfo->Effects[EFFECT_2].TargetB = SpellImplicitTargetInfo(TARGET_DEST_DYNO_EMPTY);
++        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_SRC_CASTER);
++        spellInfo->Effects[EFFECT_2].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENEMY);
 +        spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(14); // 8 yd radius
 +    });
 +
