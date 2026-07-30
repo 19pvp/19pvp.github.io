@@ -296,6 +296,22 @@
       {
         "ID": 28730,
         "EffectBasePoints_2": 11
+      },
+      {
+        "ID": 20572,
+        "DurationIndex": 9
+      },
+      {
+        "ID": 33697,
+        "DurationIndex": 9
+      },
+      {
+        "ID": 33702,
+        "DurationIndex": 9
+      },
+      {
+        "ID": 23230,
+        "DurationIndex": 9
       }
     ]
   }

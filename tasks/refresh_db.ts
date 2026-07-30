@@ -2583,6 +2583,12 @@ spellPatchRows.push({
   ID: 28730,
   EffectBasePoints_2: 11,
 })
+for (const id of [20572, 33697, 33702, 23230]) {
+  spellPatchRows.push({
+    ID: id,
+    DurationIndex: 9,
+  })
+}
 await Deno.writeTextFile(
   'launcher/patch.json',
   JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',

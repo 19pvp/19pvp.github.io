@@ -1019,10 +1019,10 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..f3010907a 100644
+index 0f71208b0..373d203dd 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,56 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,62 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
@@ -1068,6 +1068,12 @@ index 0f71208b0..f3010907a 100644
 +    ApplySpellFix({ 28730 }, [](SpellInfo* spellInfo)
 +    {
 +        spellInfo->Effects[EFFECT_1].BasePoints = 11; // 12% Mana
++    });
++
++    // Blood Fury (orc racial spells 20572, 33697, 33702, 23230): increase duration to 30s
++    ApplySpellFix({ 20572, 33697, 33702, 23230 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(9); // 30s
 +    });
 +
 +    // Thunder Clap must not trigger weapon enchants.
