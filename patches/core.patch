@@ -1019,10 +1019,10 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..b8d357fc7 100644
+index 0f71208b0..851879374 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,79 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,77 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
@@ -1042,14 +1042,12 @@ index 0f71208b0..b8d357fc7 100644
 +        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
 +    });
 +
-+    // Stoneform (dwarf racial id 20594): replace 10% armor increase (Effect 2) with 30% all-damage reduction
-+    ApplySpellFix({ 20594 }, [](SpellInfo* spellInfo)
++    // Stoneform (dwarf racial 65116 buff): replace 10% armor increase with 30% all-damage reduction (like Astral Shift 51479)
++    ApplySpellFix({ 65116 }, [](SpellInfo* spellInfo)
 +    {
-+        spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_APPLY_AURA;
-+        spellInfo->Effects[EFFECT_2].ApplyAuraName = SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN;
-+        spellInfo->Effects[EFFECT_2].MiscValue = SPELL_SCHOOL_MASK_ALL;
-+        spellInfo->Effects[EFFECT_2].BasePoints = -31; // -30% damage taken (basePoints + 1 = -30)
-+        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
++        spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN;
++        spellInfo->Effects[EFFECT_0].MiscValue = SPELL_SCHOOL_MASK_ALL;
++        spellInfo->Effects[EFFECT_0].BasePoints = 29; // 30% damage reduction (BasePoints 29 -> amount 30)
 +    });
 +
 +    // Escape Artist (gnome racial id 20589): reduce CD to 45s (45000 ms)

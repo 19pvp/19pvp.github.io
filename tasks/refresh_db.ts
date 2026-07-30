@@ -2567,7 +2567,10 @@ spellPatchRows.push({
 })
 spellPatchRows.push({
   ID: 20594,
-  Description_Lang_enUS: 'Removes all poison, disease and bleed effects, and reduces all damage taken by 30% for $d.',
+  Description_Lang_enUS: 'Removes all poison, disease and bleed effects, and reduces all damage taken by 30% for $65116d.',
+})
+spellPatchRows.push({
+  ID: 65116,
   AuraDescription_Lang_enUS: 'Damage taken reduced by 30%.',
 })
 spellPatchRows.push({
