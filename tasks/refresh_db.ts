@@ -2570,6 +2570,11 @@ spellPatchRows.push({
   Description_Lang_enUS: 'Removes all poison, disease and bleed effects, and reduces all damage taken by 30% for $d.',
   AuraDescription_Lang_enUS: 'Damage taken reduced by 30%.',
 })
+spellPatchRows.push({
+  ID: 20589,
+  RecoveryTime: 45000,
+  Description_Lang_enUS: 'Escape the effects of any immobilization or movement speed reduction effect. Only usable while snared or rooted.',
+})
 await Deno.writeTextFile(
   'launcher/patch.json',
   JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',

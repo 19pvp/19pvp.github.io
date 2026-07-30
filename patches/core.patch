@@ -1019,7 +1019,7 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..e60599e1d 100644
+index 0f71208b0..f3010907a 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
 @@ -40,6 +40,38 @@ void SpellMgr::LoadSpellInfoCorrections()
@@ -1061,3 +1061,40 @@ index 0f71208b0..e60599e1d 100644
      ApplySpellFix({
          467,    // Thorns (Rank 1)
          782,    // Thorns (Rank 2)
+diff --git a/src/server/scripts/Spells/spell_generic.cpp b/src/server/scripts/Spells/spell_generic.cpp
+index fb63ef229..d16e72e91 100644
+--- a/src/server/scripts/Spells/spell_generic.cpp
++++ b/src/server/scripts/Spells/spell_generic.cpp
+@@ -6100,8 +6100,32 @@ class spell_gen_filter_party_level_80 : public SpellScript
+     }
+ };
+ 
++// 20589 - Escape Artist
++class spell_gen_escape_artist : public SpellScript
++{
++    PrepareSpellScript(spell_gen_escape_artist);
++
++    SpellCastResult CheckRequirement()
++    {
++        Unit* caster = GetCaster();
++        if (!caster)
++            return SPELL_FAILED_DONT_REPORT;
++
++        if (caster->HasAuraWithMechanic((1ULL << MECHANIC_SNARE) | (1ULL << MECHANIC_ROOT)))
++            return SPELL_CAST_OK;
++
++        return SPELL_FAILED_NOTHING_TO_DISPEL;
++    }
++
++    void Register() override
++    {
++        OnCheckCast += SpellCheckCastFn(spell_gen_escape_artist::CheckRequirement);
++    }
++};
++
+ void AddSC_generic_spell_scripts()
+ {
++    RegisterSpellScript(spell_gen_escape_artist);
+     RegisterSpellScript(spell_silithyst);
+     RegisterSpellScript(spell_gen_5000_gold);
+     RegisterSpellScript(spell_gen_arena_drink);
