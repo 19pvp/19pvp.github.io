@@ -1,7 +1,7 @@
-import { assertEquals } from '@std/assert'
+import { assertEquals, assertThrows } from '@std/assert'
 import { loadStormLib } from 'stormlib'
 import { type DBCSchema, decodeDBC, encodeDBC } from './dbc.ts'
-import { generatePatch } from './patch.ts'
+import { generatePatch, parsePatchDefinition } from './patch.ts'
 
 Deno.test('generates an MPQ containing merged DBC edits', async () => {
   const schema: DBCSchema = { ID: 'int', Name: 'string', Amount: 'uint' }
@@ -24,6 +24,9 @@ Deno.test('generates an MPQ containing merged DBC edits', async () => {
       filename: 'Test.dbc',
       schema,
       rows: [{ ID: 1, Amount: 99 }, { ID: 2, Name: 'updated' }],
+    }], [{
+      path: 'Interface/GlueXML/GlueStrings.lua',
+      bytes: new TextEncoder().encode('ABILITY_INFO_SCOURGE1 = "updated"'),
     }], outputPath)
 
     const patch = await storm.open(outputPath)
@@ -34,8 +37,24 @@ Deno.test('generates an MPQ containing merged DBC edits', async () => {
       { ID: 1, Name: 'one', Amount: 99 },
       { ID: 2, Name: 'updated', Amount: 20 },
     ])
+    const glueFile = patch.getFile('Interface\\GlueXML\\GlueStrings.lua')
+    const glueBytes = new Uint8Array(glueFile.size)
+    glueFile.read(glueBytes)
+    assertEquals(new TextDecoder().decode(glueBytes), 'ABILITY_INFO_SCOURGE1 = "updated"')
     await patch.close()
   } finally {
     await Deno.remove(root, { recursive: true })
   }
+})
+
+Deno.test('parses patch file paths', () => {
+  assertEquals(parsePatchDefinition({ patches: [], files: ['Interface/GlueXML/GlueStrings.lua'] }), {
+    edits: [],
+    files: ['Interface/GlueXML/GlueStrings.lua'],
+  })
+  assertThrows(() => parsePatchDefinition({ patches: [], files: ['../GlueStrings.lua'] }))
+  assertEquals(parsePatchDefinition({ files: ['Interface/GlueXML/GlueStrings.lua'] }), {
+    edits: [],
+    files: ['Interface/GlueXML/GlueStrings.lua'],
+  })
 })

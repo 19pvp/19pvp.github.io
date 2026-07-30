@@ -35,22 +35,14 @@
       margin: 24px 0 4px;
       font-family: system-ui, sans-serif;
     }
-    #directory-message {
-      color: #9ca3af;
-      font-size: 13px;
-    }
-    #directory-controls {
+    #download-path-row {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
       gap: 8px 12px;
       user-select: none;
     }
-    #directory-message {
-      margin: 0;
-    }
     #download-path {
-      margin-top: 12px;
       overflow-wrap: anywhere;
       color: #9ca3af;
     }
@@ -65,16 +57,6 @@
     #state {
       color: #f9fafb;
       font: 600 18px system-ui, sans-serif;
-    }
-    #scan-spinner {
-      display: inline-block;
-      margin-left: 8px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
     }
     progress {
       display: block;
@@ -202,27 +184,23 @@
   <body>
     <main>
       <h1>19PvP Launcher</h1>
-      <div id="directory-controls">
-        <button id="choose-directory" type="button">Choose download folder</button>
+      <div id="download-path-row">
+        <div id="download-path">Download directory: loading…</div>
         <button id="recheck" type="button" hidden>Check files again</button>
-        <span id="directory-message">No folder selected.</span>
       </div>
-      <div id="download-path">Download directory: loading…</div>
       <section id="status" aria-live="polite">
-        <div
-          id="state">Starting<span id="scan-spinner" hidden title="Looking for an existing game" aria-label="Looking for an existing game">⟳</span></div>
+        <div id="state">Starting</div>
         <div id="steps" aria-label="Setup progress">
           <div class="step" data-step="download" data-state="active">
             <div class="step-main">
               <div class="step-title">💾 DOWNLOAD</div>
               <progress id="progress" max="1" value="0" hidden></progress>
               <div
-                id="stats" hidden><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
+                id="stats"
+                hidden><span id="downloaded">0 B / 0 B</span><span id="speed">0 B/s</span><span id="eta">Left: unknown</span><span id="peers">0 peers</span></div>
             </div>
             <span class="step-state">Starting</span>
           </div>
-          <div class="step" data-step="scan"
-            data-state="pending"><span class="step-title">🔎 FIND EXISTING CLIENT</span><span class="step-state">Waiting</span></div>
           <div class="step" data-step="realmlist"
             data-state="pending"><span class="step-title">📝 CONFIGURE REALMLIST</span><span class="step-state">Waiting</span></div>
           <div class="step" data-step="addon"
@@ -246,7 +224,6 @@
     <script>
     const logView = document.querySelector('#logs')
     const state = document.querySelector('#state')
-    const scanSpinner = document.querySelector('#scan-spinner')
     const progress = document.querySelector('#progress')
     const stats = document.querySelector('#stats')
     const downloaded = document.querySelector('#downloaded')
@@ -258,7 +235,6 @@
       [...document.querySelectorAll('.step')].map((step) => [step.dataset.step, step]),
     )
     const downloadPath = document.querySelector('#download-path')
-    const directoryMessage = document.querySelector('#directory-message')
     const logDetails = document.querySelector('#log-details')
     const shareLogs = document.querySelector('#share-logs')
     const shareResult = document.querySelector('#share-result')
@@ -281,11 +257,6 @@
       progress.hidden = true
       stats.hidden = true
     }
-    const updateScanSpinner = (message) => {
-      if (message === 'scan started') scanSpinner.hidden = false
-      else if (message.startsWith('scan complete:') || message.startsWith('scan failed:')) scanSpinner.hidden = true
-      else if (message === 'launcher stopped') scanSpinner.hidden = true
-    }
     const updateSteps = (message) => {
       const set = (name, state, text) => {
         steps[name].dataset.state = state
@@ -305,14 +276,7 @@
         recheck.hidden = false
       } else if (message === 'full file recheck requested') {
         recheck.hidden = true
-      } else if (message === 'scan started') set('scan', 'active', 'Searching')
-      else if (message === 'scan skipped: managed client files are already complete') {
-        set('scan', 'done', 'Already available')
-      } else if (message === 'scan complete: existing client found') set('scan', 'done', 'Found')
-      else if (message === 'scan complete: no existing client found') {
-        set('scan', 'done', 'Scan over, no existing client found')
-      } else if (message.startsWith('scan failed:')) set('scan', 'done', 'Could not check')
-      else if (message === 'configuring realmlist') set('realmlist', 'active', 'Updating')
+      } else if (message === 'configuring realmlist') set('realmlist', 'active', 'Updating')
       else if (message === 'realmlist updated successfully') set('realmlist', 'done', 'Updated successfully')
       else if (message.startsWith('realmlist configuration failed:')) set('realmlist', 'failed', 'Failed')
       else if (message === 'installing companion addon') set('addon', 'active', 'Installing')
@@ -323,7 +287,6 @@
       else if (message.startsWith('client patch generation failed:')) set('patch', 'failed', 'Failed')
     }
     const updateStatus = (message) => {
-      updateScanSpinner(message)
       updateSteps(message)
       const failure = message.includes('error:') || message.includes(' failed:')
       if (message === 'completed') {
@@ -341,15 +304,13 @@
         progress.hidden = false
         stats.hidden = false
         state.textContent = 'Loading torrent'
-      }
-      else if (message.startsWith('metadata received:')) state.textContent = 'Checking existing data'
+      } else if (message.startsWith('metadata received:')) state.textContent = 'Checking existing data'
       else if (message === 'torrent ready; existing data checked') state.textContent = 'Downloading'
       else if (message === 'launcher stopped') state.textContent = 'Stopped'
       if (message === 'download completed' || message === 'quick file check passed; torrent not needed') {
         torrentStarted = false
         hideTorrentStats()
-      }
-      else if (message.startsWith('download directory:')) {
+      } else if (message.startsWith('download directory:')) {
         rememberPath(
           'Download directory: ',
           message.slice('download directory:'.length).trim(),
@@ -388,25 +349,6 @@
       if (shouldScroll) logView.scrollTop = logView.scrollHeight
       updateStatus(entry.message)
     }
-    document.querySelector('#choose-directory').onclick = async () => {
-      directoryMessage.textContent = 'Opening folder picker…'
-      const response = await fetch('/pick-directory', { method: 'POST' })
-      const data = await response.json()
-      if (!response.ok) {
-        directoryMessage.textContent = 'Could not use this folder: ' + (data.error || response.status)
-        return
-      }
-      if (data.canceled) {
-        directoryMessage.textContent = 'No folder selected. Nothing changed.'
-        return
-      }
-      if (data.changed === false) {
-        directoryMessage.textContent = 'This is already the download folder.'
-        return
-      }
-      rememberPath('Download directory: ', data.clientPath || data.downloadPath)
-      directoryMessage.textContent = 'Folder changed. Existing files are being checked.'
-    }
     recheck.onclick = async () => {
       recheck.disabled = true
       recheck.textContent = 'Checking files…'
@@ -419,7 +361,8 @@
       } catch (error) {
         recheck.disabled = false
         recheck.textContent = 'Check files again'
-        directoryMessage.textContent = 'Could not check files: ' + error.message
+        state.textContent = 'Could not check files'
+        logDetails.open = true
       }
     }
     const stream = new EventSource('/events')

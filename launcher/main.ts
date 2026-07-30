@@ -1,15 +1,14 @@
 import { brotliCompressSync } from 'node:zlib'
-import { copy } from '@std/fs/copy'
-import { basename, dirname, join } from '@std/path'
+import { join } from '@std/path'
 import WebTorrent from 'webtorrent'
 import pageBytes from './page.html' with { type: 'bytes' }
 import parseTorrent from './vendor/parse-torrent/index.js'
-import { parseDBCEditPayload } from './patch.ts'
-import { type ScannedFile, startScan } from './scan.ts'
+import { parsePatchDefinition } from './patch.ts'
 import torrentBytes from './World of Warcraft 3.3.5a.torrent' with { type: 'bytes' }
 
 const CLIENT_DIRECTORY_NAME = 'World of Warcraft 3.3.5a'
-const DOWNLOAD_DIRECTORY = Deno.cwd()
+const downloadPath = Deno.cwd()
+const defaultClientPath = join(downloadPath, CLIENT_DIRECTORY_NAME)
 const TRACKER_URL = 'http://tracker.opentrackr.org:1337/announce'
 const SERVICE_ORIGIN = Deno.env.get('LAUNCHER_SERVICE_ORIGIN') ?? 'https://19pvp.devazuka.com'
 const LOG_UPLOAD_MAX_BYTES = 1024 * 1024
@@ -23,7 +22,6 @@ const WEBTORRENT_OPTIONS = {
 }
 const LOG_LIMIT = 500
 const STATUS_INTERVAL_MS = 1000
-const SAVED_DOWNLOAD_PATH_KEY = 'downloadPath'
 const SAVED_LAUNCHER_URL_KEY = 'launcherUrl'
 const encoder = new TextEncoder()
 const page = new TextDecoder().decode(pageBytes)
@@ -64,7 +62,7 @@ const logs: LogEntry[] = []
 let events: ReadableStreamDefaultController<Uint8Array> | null = null
 let client: Client | null = null
 let activeTorrent: Torrent | null = null
-let downloadPath: string | null = null
+let clientRoot = defaultClientPath
 let statusTimer: ReturnType<typeof setInterval> | null = null
 let torrentReady = false
 let webSeedFinalizationStarted = false
@@ -72,11 +70,8 @@ let recovering = false
 let started = false
 let stopped = false
 let torrentStopped = true
-let changingPath = false
-let recoveringFiles = false
 let quickCheckPassed = false
 let shutdownLauncher: (() => void) | null = null
-const scanAbort = new AbortController()
 let webseedUrl = ''
 let realmlist = ''
 let verificationHash = ''
@@ -142,11 +137,6 @@ async function loadLauncherConfig(): Promise<void> {
   verificationHash = config['verification-hash']
 }
 
-function isCrossDeviceRename(error: unknown): boolean {
-  const message = errorMessage(error)
-  return message.includes('Invalid cross-device link') || message.includes('EXDEV') || message.includes('os error 18')
-}
-
 async function stopPreviousLauncher(previousUrl = localStorage.getItem(SAVED_LAUNCHER_URL_KEY)): Promise<void> {
   const url = previousUrl
   if (!url) return
@@ -168,15 +158,21 @@ function exists(path: string): Promise<boolean> {
   })
 }
 
-function clientPath(): string | null {
-  return downloadPath ? join(downloadPath, CLIENT_DIRECTORY_NAME) : null
+function clientPath(): string {
+  return clientRoot
 }
 
-function quickCheckFiles(path: string, files: Torrent['files']): boolean {
+function clientFilePath(root: string, path: string): string {
+  const parts = path.replaceAll('\\', '/').split('/')
+  if (parts[0]?.toLowerCase() === CLIENT_DIRECTORY_NAME.toLowerCase()) parts.shift()
+  return join(root, ...parts)
+}
+
+function quickCheckFiles(root: string, files: Torrent['files']): boolean {
   const mpqFiles = files.filter((file) => file.name.toLowerCase().endsWith('.mpq'))
   let present = 0
   for (const file of mpqFiles) {
-    const filePath = join(path, file.path)
+    const filePath = clientFilePath(root, file.path)
     try {
       const stat = Deno.statSync(filePath)
       if (!stat.isFile) {
@@ -194,35 +190,29 @@ function quickCheckFiles(path: string, files: Torrent['files']): boolean {
   return present === mpqFiles.length
 }
 
-function findCompleteDownloadPath(): string | null {
-  const paths = [downloadPath, DOWNLOAD_DIRECTORY].filter(
-    (path, index, all): path is string => !!path && all.findIndex((candidate) => candidate === path) === index,
-  )
-  for (const path of paths) {
-    const root = join(path, CLIENT_DIRECTORY_NAME)
+function findExistingClient(): string | null {
+  log(`checking existing client: ${defaultClientPath}`)
+  if (quickCheckFiles(defaultClientPath, torrentFiles)) return defaultClientPath
+
+  log(`checking launcher directory as client: ${downloadPath}`)
+  if (quickCheckFiles(downloadPath, torrentFiles)) return downloadPath
+
+  for (const entry of Deno.readDirSync(downloadPath)) {
+    if (!entry.isDirectory || entry.name === CLIENT_DIRECTORY_NAME) continue
+    const candidate = join(downloadPath, entry.name)
     try {
-      if (!Deno.statSync(root).isDirectory) continue
+      if (!Deno.statSync(join(candidate, 'Data')).isDirectory) continue
     } catch {
       continue
     }
-    log(`checking existing client: ${root}`)
-    if (quickCheckFiles(path, torrentFiles)) return path
+    log(`checking existing client directory: ${candidate}`)
+    if (quickCheckFiles(candidate, torrentFiles)) return candidate
   }
   return null
 }
 
 export function isRealmlistFile(file: { name: string }): boolean {
   return file.name.toLowerCase() === 'realmlist.wtf'
-}
-
-export function torrentDownloadPath(path: string): string {
-  path = path.trim()
-  while (basename(path) === CLIENT_DIRECTORY_NAME) path = dirname(path)
-  return path
-}
-
-export function savedDownloadPath(path: string | null): string {
-  return path ? torrentDownloadPath(path) : DOWNLOAD_DIRECTORY
 }
 
 export const addonToc = (version: string): string => `
@@ -235,70 +225,7 @@ export const addonToc = (version: string): string => `
 PvP19.lua
 `
 
-async function recoverClientFiles(sourcePath: string | null, targetDownloadPath: string): Promise<void> {
-  if (!sourcePath) return
-  const source = join(torrentDownloadPath(sourcePath), CLIENT_DIRECTORY_NAME)
-  const target = join(targetDownloadPath, CLIENT_DIRECTORY_NAME)
-  if (source === target) return
-  if (!await exists(source)) {
-    log(`no client files to recover from: ${source}`)
-    return
-  }
-  log(`recovering client files from: ${source}`)
-  log(`recovering client files to: ${target}`)
-  try {
-    await Deno.rename(source, target)
-    log('client files moved')
-  } catch (error) {
-    if (!isCrossDeviceRename(error)) throw error
-    log('rename crossed devices; copying client files instead')
-    await copy(source, target, { overwrite: true })
-    await Deno.remove(source, { recursive: true })
-    log('client files copied and old files removed')
-  }
-}
-
-async function importDiscoveredFiles(source: string, files: ScannedFile[]): Promise<void> {
-  if (stopped || changingPath || recoveringFiles || source === clientPath()) return
-  if (activeTorrent?.done) {
-    log('existing client found after download completed; keeping downloaded client')
-    return
-  }
-  recoveringFiles = true
-  try {
-    log(`existing client found: ${source}`)
-    log('pausing torrent for existing client recovery')
-    activeTorrent?.pause?.()
-    if (statusTimer !== null) clearInterval(statusTimer)
-    statusTimer = null
-    const currentClient = client
-    client = null
-    activeTorrent = null
-    if (currentClient) {
-      await new Promise<void>((resolve) => currentClient.destroy(resolve))
-    }
-
-    log(`copying ${files.length} verified files from existing client`)
-    for (const file of files) {
-      const target = join(downloadPath!, file.path)
-      await Deno.mkdir(dirname(target), { recursive: true })
-      await Deno.copyFile(file.sourcePath, target)
-    }
-    log(`copied ${files.length} existing files`)
-    if (!stopped && !changingPath) {
-      log('restarting torrent to recheck copied files')
-      startTorrent()
-    }
-  } catch (error) {
-    log(`existing client recovery failed: ${errorMessage(error)}`)
-    if (!stopped && !changingPath) startTorrent()
-  } finally {
-    recoveringFiles = false
-  }
-}
-
 async function patchRealmlist(): Promise<void> {
-  if (!downloadPath) return
   log('configuring realmlist')
   const files = (activeTorrent?.files ?? torrentFiles).filter(isRealmlistFile)
   if (files.length === 0) {
@@ -308,7 +235,7 @@ async function patchRealmlist(): Promise<void> {
   }
   try {
     for (const file of files) {
-      const path = join(downloadPath, file.path)
+      const path = clientFilePath(clientPath(), file.path)
       await Deno.writeTextFile(path, `set realmlist ${realmlist}\r\n`)
       log(`realmlist patched: ${path}`)
     }
@@ -321,11 +248,6 @@ async function patchRealmlist(): Promise<void> {
 
 async function installAddon(): Promise<void> {
   const root = clientPath()
-  if (!root) {
-    const error = new Error('client path is missing')
-    log(`companion addon installation failed: ${error.message}`)
-    throw error
-  }
   if (!SERVICE_ORIGIN) {
     const error = new Error('missing launcher service URL')
     log(`companion addon installation failed: ${error.message}`)
@@ -348,22 +270,32 @@ async function installAddon(): Promise<void> {
   }
 }
 
-async function fetchPatchEdits() {
+async function fetchPatchDefinition() {
   const response = await fetch(`${SERVICE_ORIGIN}/launcher/patch`)
   if (!response.ok) throw new Error(`patch definition download failed: ${response.status}`)
-  return parseDBCEditPayload(await response.json())
+  return parsePatchDefinition(await response.json())
+}
+
+async function fetchPatchFiles(paths: readonly string[]) {
+  return await Promise.all(paths.map(async (path) => {
+    const response = await fetch(
+      `${SERVICE_ORIGIN}/launcher/patch-file/${path.split('/').map(encodeURIComponent).join('/')}`,
+    )
+    if (!response.ok) throw new Error(`patch file download failed: ${path}: ${response.status}`)
+    return { path, bytes: new Uint8Array(await response.arrayBuffer()) }
+  }))
 }
 
 async function generateClientPatch(): Promise<string> {
   try {
     log('generating client patch')
     const root = clientPath()
-    if (!root) throw new Error('client path is missing')
-    const edits = await fetchPatchEdits()
-    log(`patch definition downloaded: ${edits.length} DBC edit(s)`)
-    if (edits.length === 0) throw new Error('patch definition contains no DBC edits')
+    const { edits, files: filePaths } = await fetchPatchDefinition()
+    const files = await fetchPatchFiles(filePaths)
+    log(`patch definition downloaded: ${edits.length} DBC edit(s), ${files.length} file(s)`)
+    if (edits.length === 0 && files.length === 0) throw new Error('patch definition contains no edits or files')
     const outputPath = join(root, 'Data', 'patch-S.mpq')
-    log(`generating client patch from ${edits.length} DBC edit(s)`)
+    log(`generating client patch from ${edits.length} DBC edit(s), ${files.length} file(s)`)
     log('starting patch worker')
     const worker = new Worker(new URL('./patch_worker.ts', import.meta.url), { type: 'module' })
     await new Promise<void>((resolve, reject) => {
@@ -384,7 +316,7 @@ async function generateClientPatch(): Promise<string> {
         worker.terminate()
         reject(new Error(event.message))
       }
-      worker.postMessage({ edits, outputPath, root })
+      worker.postMessage({ edits, files, outputPath, root })
     })
     log(`client patch generated: ${outputPath}`)
     return outputPath
@@ -405,38 +337,6 @@ async function finishSetup(): Promise<void> {
     log('completed with errors')
   }
   await stopTorrent()
-}
-
-async function pickDownloadPath(): Promise<string | null> {
-  const output = await (async () => {
-    if (Deno.build.os === 'windows') {
-      return await new Deno.Command('powershell', {
-        args: [
-          '-NoProfile',
-          '-STA',
-          '-Command',
-          'Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.FolderBrowserDialog; if ($d.ShowDialog() -eq "OK") { [Console]::Write($d.SelectedPath) }',
-        ],
-      }).output()
-    }
-    if (Deno.build.os === 'darwin') {
-      return await new Deno.Command('osascript', {
-        args: ['-e', 'POSIX path of (choose folder with prompt "Choose download folder")'],
-      }).output()
-    }
-    try {
-      return await new Deno.Command('zenity', {
-        args: ['--file-selection', '--directory', '--title=Choose download folder'],
-      }).output()
-    } catch (error) {
-      if (!(error instanceof Deno.errors.NotFound)) throw error
-      return await new Deno.Command('kdialog', {
-        args: ['--getexistingdirectory'],
-      }).output()
-    }
-  })()
-  if (!output.success) return null
-  return new TextDecoder().decode(output.stdout).trim() || null
 }
 
 async function shareLogs(): Promise<Response> {
@@ -528,7 +428,6 @@ function logStatus(): void {
 async function stop(): Promise<void> {
   if (stopped) return
   stopped = true
-  scanAbort.abort()
   await stopTorrent()
   log('launcher stopped')
 }
@@ -548,51 +447,18 @@ async function stopTorrent(): Promise<void> {
   if (activeTorrent) log('torrent stopped; not seeding')
 }
 
-async function changeDownloadPath(path: string): Promise<boolean> {
-  path = torrentDownloadPath(path)
-  if (!path) throw new Error('missing download path')
-  if (path.includes('\0') || path.includes('\n')) throw new Error('invalid download path')
-  if (path === downloadPath) return false
-  const previousDownloadPath = downloadPath
-  if (changingPath) throw new Error('download path is already changing')
-  changingPath = true
-  try {
-    log(`changing download directory to: ${path}`)
-    if (statusTimer !== null) clearInterval(statusTimer)
-    statusTimer = null
-    activeTorrent = null
-
-    const currentClient = client
-    client = null
-    if (currentClient) {
-      log('stopping torrent for directory change')
-      await new Promise<void>((resolve) => currentClient.destroy(resolve))
-    }
-
-    await Deno.mkdir(path, { recursive: true })
-    await recoverClientFiles(previousDownloadPath, path)
-    downloadPath = path
-    localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
-    log(`download directory: ${downloadPath}`)
-    if (started && !stopped) startTorrent()
-    return true
-  } finally {
-    changingPath = false
-  }
-}
-
 function startTorrent(forceFullCheck = false): void {
-  if (!downloadPath) throw new Error('missing download path')
+  clientRoot = defaultClientPath
   if (statusTimer !== null) clearInterval(statusTimer)
   torrentReady = false
   quickCheckPassed = false
   webSeedFinalizationStarted = false
 
   log('loading embedded torrent')
-  const completeDownloadPath = !forceFullCheck ? findCompleteDownloadPath() : null
-  if (completeDownloadPath) {
-    downloadPath = completeDownloadPath
-    localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
+  const existingClient = !forceFullCheck ? findExistingClient() : null
+  if (existingClient) {
+    clientRoot = existingClient
+    log(`existing client found: ${clientPath()}`)
     quickCheckPassed = true
     torrentReady = true
     torrentStopped = true
@@ -600,20 +466,12 @@ function startTorrent(forceFullCheck = false): void {
     log(`metadata received: ${torrentMetadata.name} (${formatBytes(torrentMetadata.length)})`)
     log('quick file check passed; full check skipped')
     log('quick file check passed; torrent not needed')
-    log(`client files root: ${join(downloadPath, torrentMetadata.name)}`)
-    log('scan skipped: managed client files are already complete')
+    log(`client files root: ${clientPath()}`)
     log('download completed')
     void finishSetup()
     return
   }
 
-  startScan(
-    torrentFiles.map(({ path, length }) => ({ path, length })),
-    clientPath()!,
-    log,
-    importDiscoveredFiles,
-    scanAbort.signal,
-  )
   torrentStopped = false
 
   logStep('creating WebTorrent client')
@@ -640,25 +498,20 @@ function startTorrent(forceFullCheck = false): void {
       log(
         `metadata received: ${activeTorrent!.name} (${formatBytes(activeTorrent!.length)})`,
       )
-      if (!forceFullCheck && quickCheckFiles(downloadPath!, activeTorrent!.files)) {
+      if (!forceFullCheck && quickCheckFiles(clientPath(), activeTorrent!.files)) {
         quickCheckPassed = true
         activeTorrent!.skipVerify = true
         log('quick file check passed; full check skipped')
       } else if (forceFullCheck) {
-        if (quickCheckFiles(downloadPath!, activeTorrent!.files)) {
+        if (quickCheckFiles(clientPath(), activeTorrent!.files)) {
           activeTorrent!.skipPieces = [0]
           log('full file recheck requested; piece 0 skipped because its files are present')
         } else {
           log('full file recheck requested')
         }
       }
-      const clientRoot = join(downloadPath!, activeTorrent!.name)
-      const nestedClientRoot = join(clientRoot, CLIENT_DIRECTORY_NAME)
-      log(`client files root: ${clientRoot}`)
-      exists(clientRoot).then((found) => log(`client files root existed at startup: ${found ? 'yes' : 'no'}`))
-      exists(nestedClientRoot).then((found) => {
-        if (found) log(`warning: nested client directory found: ${nestedClientRoot}`)
-      })
+      log(`client files root: ${clientPath()}`)
+      exists(clientPath()).then((found) => log(`client files root existed at startup: ${found ? 'yes' : 'no'}`))
       log(`first torrent file: ${activeTorrent!.files[0]?.path ?? 'none'}`)
     },
   )
@@ -699,11 +552,11 @@ async function recheckFiles(): Promise<void> {
   if (!quickCheckPassed) throw new Error('full recheck is not available')
   quickCheckPassed = false
   await stopTorrent()
-  if (!stopped && !changingPath) startTorrent(true)
+  if (!stopped) startTorrent(true)
 }
 
 function recover(error: unknown): void {
-  if (stopped || torrentStopped || recovering || changingPath || recoveringFiles) return
+  if (stopped || torrentStopped || recovering) return
   recovering = true
   log(`recovering torrent: ${errorMessage(error)}`)
   if (statusTimer !== null) clearInterval(statusTimer)
@@ -805,44 +658,6 @@ export async function handler(request: Request): Promise<Response> {
     }
   }
 
-  if (path === '/download-path') {
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 })
-    }
-    const origin = request.headers.get('origin')
-    if (origin && origin !== new URL(request.url).origin) {
-      return new Response('Forbidden', { status: 403 })
-    }
-    try {
-      const changed = await changeDownloadPath(await request.text())
-      return Response.json({ changed, downloadPath, clientPath: clientPath() })
-    } catch (error) {
-      log(`download directory change failed: ${errorMessage(error)}`)
-      return Response.json({ error: errorMessage(error) }, { status: 400 })
-    }
-  }
-
-  if (path === '/pick-directory') {
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 })
-    }
-    const origin = request.headers.get('origin')
-    if (origin && origin !== new URL(request.url).origin) {
-      return new Response('Forbidden', { status: 403 })
-    }
-    try {
-      const selectedPath = await pickDownloadPath()
-      if (!selectedPath) {
-        return Response.json({ canceled: true, changed: false, downloadPath, clientPath: clientPath() })
-      }
-      const changed = await changeDownloadPath(selectedPath)
-      return Response.json({ canceled: false, changed, downloadPath, clientPath: clientPath() })
-    } catch (error) {
-      log(`folder picker failed: ${errorMessage(error)}`)
-      return Response.json({ error: errorMessage(error) }, { status: 500 })
-    }
-  }
-
   if (path === '/events') {
     // NOTE: this launcher has one browser client; a second stream replaces the first.
     let streamController: ReadableStreamDefaultController<Uint8Array> | null = null
@@ -912,16 +727,6 @@ if (import.meta.main) {
       started = true
       logStep('launcher started; configuration received')
       await stopPreviousLauncher(previousLauncherUrl)
-      const rawSavedDownloadPath = localStorage.getItem(SAVED_DOWNLOAD_PATH_KEY)
-      if (rawSavedDownloadPath) {
-        downloadPath = savedDownloadPath(rawSavedDownloadPath)
-        if (downloadPath !== rawSavedDownloadPath) {
-          log(`saved download directory normalized: ${rawSavedDownloadPath} -> ${downloadPath}`)
-        }
-        localStorage.setItem(SAVED_DOWNLOAD_PATH_KEY, downloadPath)
-      } else {
-        downloadPath = DOWNLOAD_DIRECTORY
-      }
       log(
         `download directory existed before startup: ${await exists(downloadPath) ? 'yes' : 'no'}`,
       )

@@ -9,6 +9,16 @@ export type DBCEdit = {
   rows: readonly Record<string, unknown>[]
 }
 
+export type PatchDefinition = {
+  edits: DBCEdit[]
+  files: string[]
+}
+
+export type PatchFile = {
+  path: string
+  bytes: Uint8Array
+}
+
 const sourceArchives = [
   'patch-enUS-3.MPQ',
   'patch-enUS-2.MPQ',
@@ -54,6 +64,20 @@ export function parseDBCEditPayload(payload: unknown): DBCEdit[] {
   })
 }
 
+export function parsePatchDefinition(payload: unknown): PatchDefinition {
+  const edits = isRecord(payload) && 'files' in payload && !('patches' in payload) ? [] : parseDBCEditPayload(payload)
+  const files = isRecord(payload) && 'files' in payload ? payload.files : []
+  if (!Array.isArray(files) || files.some((path) => !isPatchFilePath(path))) {
+    throw new Error('patch files must be relative slash-separated paths')
+  }
+  return { edits, files }
+}
+
+function isPatchFilePath(path: unknown): path is string {
+  return typeof path === 'string' && path.length > 0 &&
+    path.split('/').every((part) => part !== '' && part !== '.' && part !== '..' && !part.includes('\\'))
+}
+
 async function readOriginalDBC(
   storm: StormArchiveModule,
   clientRoot: string,
@@ -90,6 +114,7 @@ export async function generatePatch(
   storm: StormArchiveModule,
   clientRoot: string,
   edits: readonly DBCEdit[],
+  patchFiles: readonly PatchFile[],
   outputPath: string,
   report: (message: string) => void = () => {},
 ): Promise<void> {
@@ -104,6 +129,7 @@ export async function generatePatch(
       bytes: encodeDBC(edit.schema, rows),
     })
   }
+  for (const file of patchFiles) files.push({ name: file.path.replaceAll('/', '\\'), bytes: file.bytes })
 
   const archiveStarted = performance.now()
   const archive = storm.createArchive()
