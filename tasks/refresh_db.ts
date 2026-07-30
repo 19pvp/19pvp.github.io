@@ -2560,6 +2560,11 @@ const scrollPatch = buildScrollPatch(
 )
 const spellPatchRows = [...(scrollPatch.edit?.rows ?? [])]
 spellPatchRows.push({ ID: 29506, Name_Lang_enUS: 'Aura of Protection' })
+spellPatchRows.push({
+  ID: 26297,
+  Description_Lang_enUS: 'Increases your attack and casting speed by $s1%, removes spell pushback, and makes your attacks ignore target armor for $d.',
+  AuraDescription_Lang_enUS: 'Attack and casting speed increased. Immune to spell pushback. Attacks ignore armor.',
+})
 await Deno.writeTextFile(
   'launcher/patch.json',
   JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',

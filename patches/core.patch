@@ -1019,13 +1019,27 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..0d00a18eb 100644
+index 0f71208b0..922df976c 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,12 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,26 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
++    // Berserking (troll racial id 26297)
++    ApplySpellFix({ 26297 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->Effects[EFFECT_1].Effect = SPELL_EFFECT_APPLY_AURA;
++        spellInfo->Effects[EFFECT_1].ApplyAuraName = SPELL_AURA_MOD_ARMOR_PENETRATION_PCT;
++        spellInfo->Effects[EFFECT_1].BasePoints = 99; // 100% (basePoints + 1)
++        spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
++
++        spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_APPLY_AURA;
++        spellInfo->Effects[EFFECT_2].ApplyAuraName = SPELL_AURA_REDUCE_PUSHBACK;
++        spellInfo->Effects[EFFECT_2].BasePoints = 99; // 100% (basePoints + 1)
++        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
++    });
++
 +    // Thunder Clap must not trigger weapon enchants.
 +    ApplySpellFix({ 6343, 8198, 8204, 8205, 11580, 11581, 25264, 47501, 47502 }, [](SpellInfo* spellInfo)
 +    {
