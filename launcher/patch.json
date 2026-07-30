@@ -335,6 +335,20 @@
       {
         "ID": 59752,
         "Description_Lang_enUS": "Removes all movement impairing effects, disarms and all effects which cause loss of control of your character. This effect shares a cooldown with other similar effects."
+      },
+      {
+        "ID": 4083,
+        "DurationIndex": 27,
+        "EffectBasePoints_1": 99,
+        "AuraDescription_Lang_enUS": "Movement speed increased by 100%."
+      },
+      {
+        "ID": 55196,
+        "DurationIndex": 31
+      },
+      {
+        "ID": 20549,
+        "Description_Lang_enUS": "Stuns up to $i enemies within $a1 yds for $d, reduces their armor by $55196s2% for $55196d, and increases your movement speed by $4083s1% for $4083d."
       }
     ]
   }
