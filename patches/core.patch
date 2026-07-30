@@ -1019,24 +1019,36 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..922df976c 100644
+index 0f71208b0..e60599e1d 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,26 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,38 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
-+    // Berserking (troll racial id 26297)
++    // Berserking (troll racial id 26297): EFFECT_0 is Haste (from DBC)
 +    ApplySpellFix({ 26297 }, [](SpellInfo* spellInfo)
 +    {
++        // Effect 1: 100% Armor Penetration
 +        spellInfo->Effects[EFFECT_1].Effect = SPELL_EFFECT_APPLY_AURA;
 +        spellInfo->Effects[EFFECT_1].ApplyAuraName = SPELL_AURA_MOD_ARMOR_PENETRATION_PCT;
 +        spellInfo->Effects[EFFECT_1].BasePoints = 99; // 100% (basePoints + 1)
 +        spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
 +
++        // Effect 2: 100% Pushback Reduction
 +        spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_APPLY_AURA;
 +        spellInfo->Effects[EFFECT_2].ApplyAuraName = SPELL_AURA_REDUCE_PUSHBACK;
-+        spellInfo->Effects[EFFECT_2].BasePoints = 99; // 100% (basePoints + 1)
++        spellInfo->Effects[EFFECT_2].BasePoints = 100; // 100% reduction
++        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
++    });
++
++    // Stoneform (dwarf racial id 20594): replace 10% armor increase (Effect 2) with 30% all-damage reduction
++    ApplySpellFix({ 20594 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_APPLY_AURA;
++        spellInfo->Effects[EFFECT_2].ApplyAuraName = SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN;
++        spellInfo->Effects[EFFECT_2].MiscValue = SPELL_SCHOOL_MASK_ALL;
++        spellInfo->Effects[EFFECT_2].BasePoints = -31; // -30% damage taken (basePoints + 1 = -30)
 +        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
 +    });
 +
