@@ -2601,6 +2601,14 @@ spellPatchRows.push({
   ID: 58984,
   Description_Lang_enUS: 'Instantly removes all existing harmful spell effects and allows you to slip into the shadows. Lasts until cancelled or upon moving.',
 })
+spellPatchRows.push({
+  ID: 42292,
+  Description_Lang_enUS: 'Removes all movement impairing effects, disarms and all effects which cause loss of control of your character.',
+})
+spellPatchRows.push({
+  ID: 59752,
+  Description_Lang_enUS: 'Removes all movement impairing effects, disarms and all effects which cause loss of control of your character. This effect shares a cooldown with other similar effects.',
+})
 await Deno.writeTextFile(
   'launcher/patch.json',
   JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',

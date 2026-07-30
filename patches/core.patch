@@ -1139,3 +1139,15 @@ index fb63ef229..df0f81095 100644
      RegisterSpellScript(spell_silithyst);
      RegisterSpellScript(spell_gen_5000_gold);
      RegisterSpellScript(spell_gen_arena_drink);
+diff --git a/src/server/shared/SharedDefines.h b/src/server/shared/SharedDefines.h
+index 8b6dacc8b..6a2df39e3 100644
+--- a/src/server/shared/SharedDefines.h
++++ b/src/server/shared/SharedDefines.h
+@@ -1367,6 +1367,7 @@ inline constexpr uint64 IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK =
+     (1ULL << MECHANIC_TURN) |
+     (1ULL << MECHANIC_HORROR) |
+     (1ULL << MECHANIC_DAZE) |
++    (1ULL << MECHANIC_DISARM) |
+     (1ULL << MECHANIC_SAPPED);
+ 
+ // Spell dispel type
