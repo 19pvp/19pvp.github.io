@@ -312,6 +312,13 @@
       {
         "ID": 23230,
         "DurationIndex": 9
+      },
+      {
+        "ID": 7744,
+        "EffectMiscValue_1": 12,
+        "EffectMiscValue_2": 5,
+        "EffectMiscValue_3": 4,
+        "Description_Lang_enUS": "Removes any Stun, Fear and Polymorph effect. This effect shares a 45 sec cooldown with other similar effects."
       }
     ]
   }

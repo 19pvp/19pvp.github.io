@@ -2589,6 +2589,13 @@ for (const id of [20572, 33697, 33702, 23230]) {
     DurationIndex: 9,
   })
 }
+spellPatchRows.push({
+  ID: 7744,
+  EffectMiscValue_1: 12,
+  EffectMiscValue_2: 5,
+  EffectMiscValue_3: 4,
+  Description_Lang_enUS: 'Removes any Stun, Fear and Polymorph effect. This effect shares a 45 sec cooldown with other similar effects.',
+})
 await Deno.writeTextFile(
   'launcher/patch.json',
   JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',
