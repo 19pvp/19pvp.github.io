@@ -288,6 +288,14 @@
         "ID": 20589,
         "RecoveryTime": 45000,
         "Description_Lang_enUS": "Escape the effects of any immobilization or movement speed reduction effect. Only usable while snared or rooted."
+      },
+      {
+        "ID": 25046,
+        "EffectBasePoints_2": 29
+      },
+      {
+        "ID": 28730,
+        "EffectBasePoints_2": 11
       }
     ]
   }

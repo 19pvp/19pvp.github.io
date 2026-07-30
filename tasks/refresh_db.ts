@@ -2575,6 +2575,14 @@ spellPatchRows.push({
   RecoveryTime: 45000,
   Description_Lang_enUS: 'Escape the effects of any immobilization or movement speed reduction effect. Only usable while snared or rooted.',
 })
+spellPatchRows.push({
+  ID: 25046,
+  EffectBasePoints_2: 29,
+})
+spellPatchRows.push({
+  ID: 28730,
+  EffectBasePoints_2: 11,
+})
 await Deno.writeTextFile(
   'launcher/patch.json',
   JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',

@@ -1022,7 +1022,7 @@ diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/S
 index 0f71208b0..f3010907a 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,38 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,56 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
@@ -1050,6 +1050,24 @@ index 0f71208b0..f3010907a 100644
 +        spellInfo->Effects[EFFECT_2].MiscValue = SPELL_SCHOOL_MASK_ALL;
 +        spellInfo->Effects[EFFECT_2].BasePoints = -31; // -30% damage taken (basePoints + 1 = -30)
 +        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
++    });
++
++    // Escape Artist (gnome racial id 20589): reduce CD to 45s (45000 ms)
++    ApplySpellFix({ 20589 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->RecoveryTime = 45000;
++    });
++
++    // Arcane Torrent (blood elf racial energy 25046): double energy to 30
++    ApplySpellFix({ 25046 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->Effects[EFFECT_1].BasePoints = 29; // 30 Energy
++    });
++
++    // Arcane Torrent (blood elf racial mana 28730): double mana to 12%
++    ApplySpellFix({ 28730 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->Effects[EFFECT_1].BasePoints = 11; // 12% Mana
 +    });
 +
 +    // Thunder Clap must not trigger weapon enchants.
