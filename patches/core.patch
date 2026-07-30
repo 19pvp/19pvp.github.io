@@ -1019,10 +1019,10 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..851879374 100644
+index 0f71208b0..35f2d5540 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,77 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,106 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
@@ -1091,6 +1091,35 @@ index 0f71208b0..851879374 100644
 +        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
 +    });
 +
++    // Bull Rush (4083): 3s duration, 100% movement speed bonus
++    ApplySpellFix({ 4083 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(27); // 3s
++        spellInfo->Effects[EFFECT_0].BasePoints = 99; // +100% move speed
++    });
++
++    // Stomp (55196): reduce armor effect duration to 8s
++    ApplySpellFix({ 55196 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(31); // 8s
++    });
++
++    // War Stomp (tauren racial 20549): trigger Bull Rush (4083) on caster and Stomp (55196) on targets
++    ApplySpellFix({ 20549 }, [](SpellInfo* spellInfo)
++    {
++        // Effect 1: Trigger Bull Rush (4083) on caster
++        spellInfo->Effects[EFFECT_1].Effect = SPELL_EFFECT_TRIGGER_SPELL;
++        spellInfo->Effects[EFFECT_1].TriggerSpell = 4083;
++        spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
++
++        // Effect 2: Trigger Stomp (55196) on enemy targets in radius
++        spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_TRIGGER_SPELL;
++        spellInfo->Effects[EFFECT_2].TriggerSpell = 55196;
++        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENEMY);
++        spellInfo->Effects[EFFECT_2].TargetB = SpellImplicitTargetInfo(TARGET_DEST_DYNO_EMPTY);
++        spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(14); // 8 yd radius
++    });
++
 +    // Thunder Clap must not trigger weapon enchants.
 +    ApplySpellFix({ 6343, 8198, 8204, 8205, 11580, 11581, 25264, 47501, 47502 }, [](SpellInfo* spellInfo)
 +    {
@@ -1101,7 +1130,7 @@ index 0f71208b0..851879374 100644
          467,    // Thorns (Rank 1)
          782,    // Thorns (Rank 2)
 diff --git a/src/server/scripts/Spells/spell_generic.cpp b/src/server/scripts/Spells/spell_generic.cpp
-index fb63ef229..df0f81095 100644
+index fb63ef229..d16e72e91 100644
 --- a/src/server/scripts/Spells/spell_generic.cpp
 +++ b/src/server/scripts/Spells/spell_generic.cpp
 @@ -6100,8 +6100,32 @@ class spell_gen_filter_party_level_80 : public SpellScript
@@ -1133,7 +1162,7 @@ index fb63ef229..df0f81095 100644
 +
  void AddSC_generic_spell_scripts()
  {
-+    RegisterSpellScriptWithArgs(spell_gen_escape_artist, "spell_gen_escape_artist", 20589);
++    RegisterSpellScript(spell_gen_escape_artist);
      RegisterSpellScript(spell_silithyst);
      RegisterSpellScript(spell_gen_5000_gold);
      RegisterSpellScript(spell_gen_arena_drink);

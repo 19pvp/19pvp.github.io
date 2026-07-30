@@ -2612,6 +2612,20 @@ spellPatchRows.push({
   ID: 59752,
   Description_Lang_enUS: 'Removes all movement impairing effects, disarms and all effects which cause loss of control of your character. This effect shares a cooldown with other similar effects.',
 })
+spellPatchRows.push({
+  ID: 4083,
+  DurationIndex: 27, // 3s
+  EffectBasePoints_1: 99, // +100% speed
+  AuraDescription_Lang_enUS: 'Movement speed increased by $s1%.',
+})
+spellPatchRows.push({
+  ID: 55196,
+  DurationIndex: 31, // 8s
+})
+spellPatchRows.push({
+  ID: 20549,
+  Description_Lang_enUS: 'Stuns up to $i enemies within $a1 yds for $d, reduces their armor by $55196s2% for $55196d, and increases your movement speed by $4083s1% for $4083d.',
+})
 await Deno.writeTextFile(
   'launcher/patch.json',
   JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',

@@ -12,6 +12,9 @@ SET map = 530,
 
 UPDATE item_template SET SellPrice = 1 WHERE entry IN (892, 1276, 1306, 1459, 1560, 2035, 2046, 2512, 2516, 2910, 3429, 3555, 3561, 3585, 4316, 4368, 4369, 4708, 4800, 4818, 4998, 5312, 5317, 5356, 5627, 5749, 5750, 5961, 6189, 6265, 6333, 6467, 7336, 14169, 14568, 14743, 15019, 15946, 16981, 21841, 21934, 22979, 25873, 46978);
 
+DELETE FROM `spell_script_names` WHERE `spell_id` = 20589 AND `ScriptName` = 'spell_gen_escape_artist';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (20589, 'spell_gen_escape_artist');
+
 DROP TEMPORARY TABLE IF EXISTS starting_info_item;
 CREATE TEMPORARY TABLE starting_info_item (
   race TINYINT UNSIGNED NOT NULL DEFAULT 0,

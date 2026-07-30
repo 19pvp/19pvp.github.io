@@ -340,7 +340,7 @@
         "ID": 4083,
         "DurationIndex": 27,
         "EffectBasePoints_1": 99,
-        "AuraDescription_Lang_enUS": "Movement speed increased by 100%."
+        "AuraDescription_Lang_enUS": "Movement speed increased by $s1%."
       },
       {
         "ID": 55196,
