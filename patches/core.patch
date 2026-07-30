@@ -1103,7 +1103,7 @@ index 0f71208b0..b8d357fc7 100644
          467,    // Thorns (Rank 1)
          782,    // Thorns (Rank 2)
 diff --git a/src/server/scripts/Spells/spell_generic.cpp b/src/server/scripts/Spells/spell_generic.cpp
-index fb63ef229..d16e72e91 100644
+index fb63ef229..df0f81095 100644
 --- a/src/server/scripts/Spells/spell_generic.cpp
 +++ b/src/server/scripts/Spells/spell_generic.cpp
 @@ -6100,8 +6100,32 @@ class spell_gen_filter_party_level_80 : public SpellScript
@@ -1135,7 +1135,7 @@ index fb63ef229..d16e72e91 100644
 +
  void AddSC_generic_spell_scripts()
  {
-+    RegisterSpellScript(spell_gen_escape_artist);
++    RegisterSpellScriptWithArgs(spell_gen_escape_artist, "spell_gen_escape_artist", 20589);
      RegisterSpellScript(spell_silithyst);
      RegisterSpellScript(spell_gen_5000_gold);
      RegisterSpellScript(spell_gen_arena_drink);
