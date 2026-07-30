@@ -1019,10 +1019,10 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..e87ee849e 100644
+index 0f71208b0..f12ddd5d7 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,106 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,116 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
@@ -1101,6 +1101,16 @@ index 0f71208b0..e87ee849e 100644
 +    // Stomp (55196): reduce armor effect duration to 8s
 +    ApplySpellFix({ 55196 }, [](SpellInfo* spellInfo)
 +    {
++        spellInfo->Effects[EFFECT_0].Effect = 6;
++        spellInfo->Effects[EFFECT_0].BasePoints = -51;
++        spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_MOD_RESISTANCE_PCT;
++        spellInfo->Effects[EFFECT_0].MiscValue = 1;
++        spellInfo->Effects[EFFECT_1].ApplyAuraName = SPELL_AURA_NONE;
++        spellInfo->Effects[EFFECT_1].BasePoints = 0;
++        spellInfo->Effects[EFFECT_1].DieSides = 0;
++        spellInfo->Effects[EFFECT_1].Effect = 0;
++        spellInfo->Effects[EFFECT_1].TargetA = 0;
++        spellInfo->Effects[EFFECT_1].MiscValue = 0;
 +        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(31); // 8s
 +    });
 +
