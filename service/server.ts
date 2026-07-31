@@ -30,6 +30,7 @@ import { handleLog } from './logs.ts'
 import indexHTML from '../web/index.html' with { type: 'bytes' }
 import installHTMLRaw from '../web/install.html' with { type: 'text' }
 import eventsHTML from '../web/events.html' with { type: 'bytes' }
+import styleCSS from '../web/style.css' with { type: 'bytes' }
 import logoPNG from '../web/logo.png' with { type: 'bytes' }
 import pvp19Lua from '../addons/PvP19/PvP19.lua' with { type: 'bytes' }
 import pvp19Toc from '../addons/PvP19/PvP19.toc' with { type: 'text' }
@@ -97,6 +98,14 @@ export default {
       }
       if (url.pathname === '/events') {
         return new Response(eventsHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+      }
+      if (url.pathname === '/style.css') {
+        return new Response(styleCSS, {
+          headers: {
+            'cache-control': 'public, max-age=3600',
+            'content-type': 'text/css; charset=utf-8',
+          },
+        })
       }
       if (url.pathname === '/logo.png') {
         return new Response(logoPNG, {

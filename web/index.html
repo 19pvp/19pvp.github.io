@@ -10,228 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lacquer&display=swap" rel="stylesheet">
     <link rel="prefetch" href="/install" as="document">
+    <link rel="stylesheet" href="/style.css">
     <style>
-    .lacquer {
-      font-family: "Lacquer", system-ui;
-      font-weight: 400;
-      font-style: normal;
-    }
-    .comic-neue-light {
-      font-family: "Comic Neue", cursive;
-      font-weight: 300;
-      font-style: normal;
-    }
-    .comic-neue-regular {
-      font-family: "Comic Neue", cursive;
-      font-weight: 400;
-      font-style: normal;
-    }
-    .comic-neue-bold {
-      font-family: "Comic Neue", cursive;
-      font-weight: 700;
-      font-style: normal;
-    }
-    .comic-neue-light-italic {
-      font-family: "Comic Neue", cursive;
-      font-weight: 300;
-      font-style: italic;
-    }
-    .comic-neue-regular-italic {
-      font-family: "Comic Neue", cursive;
-      font-weight: 400;
-      font-style: italic;
-    }
-    .comic-neue-bold-italic {
-      font-family: "Comic Neue", cursive;
-      font-weight: 700;
-      font-style: italic;
-    }
-    @view-transition {
-      navigation: auto;
-    }
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      animation-duration: 0.15s;
-    }
-    body {
-      transition: opacity 0.15s ease-in-out;
-    }
-    body.page-exit {
-      opacity: 0;
-    }
-    :root {
-      color-scheme: dark;
-      --bg-color: #050508;
-      --card-bg: rgba(22, 24, 33, 0.7);
-      --border-color: rgba(255, 255, 255, 0.08);
-      --text-primary: #f3f4f6;
-      --text-secondary: #9ca3af;
-      --accent-color: #ffd15f;
-      --accent-hover: #ffe08a;
-      --discord-color: #5865f2;
-      --discord-hover: #4752c4;
-      --danger-color: #ef4444;
-      --success-color: #10b981;
-      --font-title: 'Lacquer', system-ui, cursive;
-      --font-sans: 'Comic Neue', cursive, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-primary);
-      font-family: var(--font-sans);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow-x: hidden;
-      background-image:
-        radial-gradient(circle at 10% 20%, rgba(88, 101, 242, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(255, 209, 95, 0.06) 0%, transparent 40%);
-      padding: 20px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 800px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 24px;
-      padding: 40px;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      position: relative;
-      overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .container::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, var(--discord-color), var(--accent-color));
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 35px;
-    }
-
-    .logo-icon {
-      max-height: 240px;
-      height: auto;
-      max-width: 100%;
-      width: auto;
-      margin-bottom: 15px;
-      display: inline-block;
-      filter: drop-shadow(0 0 15px rgba(255, 209, 95, 0.3));
-      animation: pulse 3s infinite alternate;
-    }
-
-    @keyframes pulse {
-      0% {
-        transform: scale(1);
-        filter: drop-shadow(0 0 10px rgba(255, 209, 95, 0.2));
-      }
-      100% {
-        transform: scale(1.05);
-        filter: drop-shadow(0 0 25px rgba(255, 209, 95, 0.5));
-      }
-    }
-
-    h1, h2, h3, button, .btn, .title-font {
-      font-family: var(--font-title);
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 400;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 8px;
-    }
-
-    .subtitle {
-      color: var(--text-secondary);
-      font-size: 1.15rem;
-      font-weight: 400;
-    }
-
-    .btn {
-      font-family: var(--font-title);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 14px 28px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border: none;
-      text-decoration: none;
-      gap: 10px;
-      width: 100%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .btn-discord {
-      background-color: var(--discord-color);
-      color: white;
-    }
-
-    .btn-discord:hover {
-      background-color: var(--discord-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
-    }
-
-    .btn-primary {
-      background-color: var(--accent-color);
-      color: #000000;
-    }
-
-    .btn-primary:hover {
-      background-color: var(--accent-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 209, 95, 0.3);
-    }
-
-    .btn-secondary {
-      background-color: transparent;
-      color: var(--text-primary);
-      border: 1px solid var(--border-color);
-    }
-
-    .btn-secondary:hover {
-      background-color: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.15);
-    }
-
-    .btn-danger {
-      background-color: transparent;
-      color: var(--danger-color);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-    }
-
-    .btn-danger:hover {
-      background-color: rgba(239, 68, 68, 0.1);
-      border-color: var(--danger-color);
-    }
-
     .login-section {
       display: flex;
       flex-direction: column;
@@ -302,33 +82,6 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-    }
-
-    label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    input {
-      width: 100%;
-      height: 46px;
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 0 15px;
-      color: white;
-      font-family: var(--font-mono);
-      font-size: 0.95rem;
-      transition: all 0.2s ease;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: var(--accent-color);
-      box-shadow: 0 0 0 2px rgba(255, 209, 95, 0.15);
     }
 
     .stats-container {
@@ -412,7 +165,7 @@
     }
 
     .badge-online {
-      background-color: rgba(16, 185, 129, 0.1);
+      background-color: var(--success-bg);
       color: var(--success-color);
     }
 
@@ -431,38 +184,6 @@
     .footer-actions .btn {
       flex: 1;
       min-width: 150px;
-    }
-
-    .status-banner {
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin-bottom: 20px;
-      display: none;
-    }
-
-    .status-success {
-      background-color: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.2);
-      color: var(--success-color);
-      display: block;
-    }
-
-    .status-error {
-      background-color: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      color: var(--danger-color);
-      display: block;
-    }
-
-    .nav-links {
-      margin-top: 10px;
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-    }
-
     .admin-link {
       color: var(--accent-color);
       font-weight: 600;
@@ -471,22 +192,22 @@
       align-items: center;
       gap: 6px;
       font-size: 0.95rem;
-      border: 1px solid rgba(255, 209, 95, 0.3);
+      border: 1px solid var(--accent-border);
       padding: 6px 14px;
       border-radius: 8px;
-      background: rgba(255, 209, 95, 0.05);
+      background: var(--accent-dim);
       transition: all 0.2s;
     }
 
     .admin-link:hover {
-      background: rgba(255, 209, 95, 0.15);
+      background: rgba(255, 209, 95, 0.2);
       border-color: var(--accent-color);
       transform: translateY(-1px);
     }
     </style>
   </head>
   <body>
-    <div class="container">
+    <div class="container white-box">
       <div id="loading" style="text-align: center; padding: 40px 0;">
         <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
         <h2>Loading portal...</h2>

@@ -9,89 +9,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lacquer&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
     <style>
-    .lacquer {
-      font-family: "Lacquer", system-ui;
-      font-weight: 400;
-      font-style: normal;
-    }
-    .comic-neue-light {
-      font-family: "Comic Neue", cursive;
-      font-weight: 300;
-      font-style: normal;
-    }
-    .comic-neue-regular {
-      font-family: "Comic Neue", cursive;
-      font-weight: 400;
-      font-style: normal;
-    }
-    .comic-neue-bold {
-      font-family: "Comic Neue", cursive;
-      font-weight: 700;
-      font-style: normal;
-    }
-    .comic-neue-light-italic {
-      font-family: "Comic Neue", cursive;
-      font-weight: 300;
-      font-style: italic;
-    }
-    .comic-neue-regular-italic {
-      font-family: "Comic Neue", cursive;
-      font-weight: 400;
-      font-style: italic;
-    }
-    .comic-neue-bold-italic {
-      font-family: "Comic Neue", cursive;
-      font-weight: 700;
-      font-style: italic;
-    }
-    :root {
-      color-scheme: dark;
-      --bg: #0d0e12;
-      --surface: #16181f;
-      --surface2: #1e2029;
-      --border: rgba(255,255,255,0.07);
-      --text: #e8eaf0;
-      --muted: #6b7280;
-      --accent: #ffd15f;
-      --accent-dim: rgba(255,209,95,0.12);
-      --green: #10b981;
-      --red: #ef4444;
-      --font-title: 'Lacquer', system-ui, cursive;
-      --font: 'Comic Neue', cursive, sans-serif;
-      --mono: 'JetBrains Mono', 'Fira Code', monospace;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      font-size: 14px;
-      line-height: 1.5;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ---- top bar ---- */
+    /* Top bar & layout overrides for events audit table */
     header {
       position: sticky;
       top: 0;
       z-index: 20;
       background: var(--surface);
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-color);
       padding: 10px 16px;
       display: flex;
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
-    }
-    header h1, h2, h3, button, .btn, .tab, .title-font {
-      font-family: var(--font-title);
     }
     header h1 {
       font-size: 1.3rem;
@@ -108,7 +39,7 @@
       width: auto;
     }
     header h1 span {
-      color: var(--accent);
+      color: var(--accent-color);
     }
     .controls {
       display: flex;
@@ -121,8 +52,8 @@
     input[type=text] {
       height: 32px;
       background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
       border-radius: 6px;
       padding: 0 10px;
       font-size: 12px;
@@ -130,7 +61,7 @@
     }
     select:focus,
     input:focus {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--accent-color);
       outline-offset: -1px;
     }
     #typeFilter {
@@ -142,7 +73,7 @@
     }
     .badge-count {
       background: var(--accent-dim);
-      color: var(--accent);
+      color: var(--accent-color);
       font-size: 11px;
       font-weight: 700;
       padding: 2px 8px;
@@ -150,37 +81,12 @@
       white-space: nowrap;
     }
 
-    /* ---- btn ---- */
     .btn {
-      font-family: var(--font-title);
       height: 32px;
       padding: 0 12px;
       border-radius: 6px;
-      border: 1px solid var(--border);
       font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-      text-decoration: none;
-      transition: background .15s, border-color .15s;
-    }
-    .btn-ghost {
-      background: transparent;
-      color: var(--text);
-    }
-    .btn-ghost:hover {
-      background: var(--surface2);
-    }
-    .btn-nav {
-      background: var(--surface2);
-      color: var(--muted);
-      border-color: var(--border);
-    }
-    .btn-nav:hover {
-      color: var(--text);
+      width: auto;
     }
 
     /* ---- tabs ---- */
@@ -191,22 +97,20 @@
     .tab {
       padding: 5px 12px;
       border-radius: 6px;
-      border: 1px solid var(--border);
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       background: transparent;
-      color: var(--muted);
+      color: var(--text-muted);
       transition: all .15s;
     }
     .tab.active {
       background: var(--accent-dim);
-      color: var(--accent);
-      border-color: rgba(255,209,95,0.3);
+      color: var(--accent-color);
     }
     .tab:hover:not(.active) {
       background: var(--surface2);
-      color: var(--text);
+      color: var(--text-primary);
     }
 
     /* ---- table ---- */
@@ -214,9 +118,9 @@
       flex: 1;
       overflow: auto;
       padding: 16px;
+      width: 100%;
     }
     .table-wrap {
-      border: 1px solid var(--border);
       border-radius: 10px;
       overflow: hidden;
     }
@@ -232,8 +136,8 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: .5px;
-      color: var(--muted);
-      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
       user-select: none;
       white-space: nowrap;
     }
@@ -241,7 +145,7 @@
       cursor: pointer;
     }
     thead th.sortable:hover {
-      color: var(--text);
+      color: var(--text-primary);
     }
     thead th.sort-asc::after {
       content: ' ▲';
@@ -252,14 +156,14 @@
       font-size: 9px;
     }
     tbody tr {
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-color);
       transition: background .1s;
     }
     tbody tr:last-child {
       border-bottom: none;
     }
     tbody tr:hover {
-      background: rgba(255,255,255,0.025);
+      background: rgba(255, 255, 255, 0.025);
     }
     td {
       padding: 8px 12px;
@@ -272,14 +176,14 @@
       border-radius: 5px;
       font-size: 10px;
       font-weight: 700;
-      font-family: var(--mono);
+      font-family: var(--font-mono);
       white-space: nowrap;
     }
 
     .data-cell {
-      font-family: var(--mono);
+      font-family: var(--font-mono);
       font-size: 11px;
-      color: var(--muted);
+      color: var(--text-muted);
       max-width: 360px;
       white-space: nowrap;
       overflow: hidden;
@@ -287,7 +191,7 @@
       cursor: pointer;
     }
     .data-cell:hover {
-      color: var(--text);
+      color: var(--text-primary);
     }
     .data-cell.expanded {
       white-space: pre-wrap;
@@ -297,19 +201,19 @@
     }
 
     .ts {
-      font-family: var(--mono);
+      font-family: var(--font-mono);
       font-size: 11px;
-      color: var(--muted);
+      color: var(--text-muted);
       white-space: nowrap;
     }
     .ts strong {
-      color: var(--text);
+      color: var(--text-primary);
       font-weight: 500;
     }
 
     .empty-state {
       text-align: center;
-      color: var(--muted);
+      color: var(--text-muted);
       padding: 60px 20px;
       font-size: 14px;
     }
@@ -324,12 +228,13 @@
       bottom: 0;
       z-index: 20;
       background: var(--surface);
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border-color);
       padding: 10px 16px;
       display: flex;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
+      width: 100%;
     }
     .pagination {
       display: flex;
@@ -337,7 +242,7 @@
       align-items: center;
     }
     .page-info {
-      color: var(--muted);
+      color: var(--text-muted);
       font-size: 12px;
     }
     .ml-auto {
@@ -473,7 +378,7 @@
         return
       }
 
-      let html = `<div class="table-wrap"><table>
+      let html = `<div class="table-wrap black-box"><table>
         <thead><tr>
           ${th('id', 'ID')}
           ${th('type', 'Type')}
