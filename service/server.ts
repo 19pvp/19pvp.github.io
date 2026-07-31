@@ -13,7 +13,6 @@ import installHTMLRaw from '../web/install.html' with { type: 'text' }
 import eventsHTML from '../web/events.html' with { type: 'bytes' }
 import pvp19Lua from '../addons/PvP19/PvP19.lua' with { type: 'bytes' }
 import pvp19Toc from '../addons/PvP19/PvP19.toc' with { type: 'text' }
-import launcherPatch from '../launcher/patch.json' with { type: 'json' }
 import manifestJSON from './manifest.json' with { type: 'json' }
 
 void import('./world-chat.ts').catch((err) => {
@@ -25,6 +24,35 @@ if (!pvp19AddonVersion) throw Error('missing PvP19 addon version in toc')
 const [realm] = await auth.sql`SELECT address FROM realmlist WHERE id = ${env.WORLD_ID}`
 const launcherRealmlist = String(realm?.address ?? '')
 if (!launcherRealmlist) throw Error(`realm not found: ${env.WORLD_ID}`)
+
+const patchPath = `${import.meta.dirname}/../patch-files/patch-S.mpq`
+let patchSha1 = ''
+try {
+  const file = await Deno.open(patchPath, { read: true })
+  const CHUNK_SIZE = 2 * 1024 * 1024 // 2MB blocks
+  const blockHashes: Uint8Array[] = []
+  const buf = new Uint8Array(CHUNK_SIZE)
+
+  while (true) {
+    const bytesRead = await file.read(buf)
+    if (bytesRead === null || bytesRead === 0) break
+    const chunk = buf.subarray(0, bytesRead)
+    const blockHash = new Uint8Array(await crypto.subtle.digest('SHA-256', chunk))
+    blockHashes.push(blockHash)
+  }
+  file.close()
+
+  // Concat all block hashes and compute Merkle root hash
+  const totalLength = blockHashes.reduce((acc, h) => acc + h.length, 0)
+  const combined = new Uint8Array(totalLength)
+  let offset = 0
+  for (const h of blockHashes) {
+    combined.set(h, offset)
+    offset += h.length
+  }
+  const rootBuffer = await crypto.subtle.digest('SHA-256', combined)
+  patchSha1 = Array.from(new Uint8Array(rootBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
+} catch {}
 
 const installHTMLBytes = new TextEncoder().encode(
   installHTMLRaw
@@ -59,13 +87,48 @@ export default {
           },
         })
       }
-      if (url.pathname.startsWith('/launcher/client-file/')) {
+      if (url.pathname === '/patch-S.mpq') {
+        const session = await getSession(req)
+        if (!session) return json({ error: 'Unauthorized' }, { status: 401 })
+        try {
+          const file = await Deno.open(patchPath, { read: true })
+          const stat = await file.stat()
+          const etag = `"${patchSha1 || stat.size}"`
+          const clientIfNoneMatch = req.headers.get('if-none-match')
+
+          if (clientIfNoneMatch === etag) {
+            file.close()
+            return new Response(null, {
+              status: 304,
+              headers: {
+                ...cors,
+                'etag': etag,
+                'cache-control': 'public, max-age=3600',
+              },
+            })
+          }
+
+          return new Response(file.readable, {
+            headers: {
+              ...cors,
+              'content-length': String(stat.size),
+              'content-type': 'application/octet-stream',
+              'cache-control': 'public, max-age=3600',
+              'etag': etag,
+            },
+          })
+        } catch (error) {
+          if (error instanceof Deno.errors.NotFound) return new Response('Not found', { status: 404 })
+          throw error
+        }
+      }
+      if (url.pathname.startsWith('/client-file/')) {
         if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
         const session = await getSession(req)
         if (!session) return json({ error: 'Unauthorized' }, { status: 401 })
         let path: string
         try {
-          path = decodeURIComponent(url.pathname.slice('/launcher/client-file/'.length))
+          path = decodeURIComponent(url.pathname.slice('/client-file/'.length))
         } catch {
           return new Response('Not found', { status: 404 })
         }

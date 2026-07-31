@@ -665,7 +665,7 @@
               const currentIndex = fileQueueIndex++
               const { item } = filesToDownload[currentIndex]
               const relativePath = item.path
-              const fileUrl = `${api}/launcher/client-file/${encodeURIComponent(relativePath)}`
+              const fileUrl = `${api}/client-file/${encodeURIComponent(relativePath)}`
 
               appendLog(`[Queue] Downloading ${relativePath}...`)
               let previousLoadedForFile = 0
@@ -732,7 +732,7 @@
         statusText.textContent = 'Installing PvP19 Addon...'
         progressFill.style.width = '50%'
 
-        const addonLuaRes = await fetch(`${api}/launcher/addons/PvP19.lua`)
+        const addonLuaRes = await fetch(`${api}/addons/PvP19.lua`)
         if (addonLuaRes.ok) {
           const addonLua = await addonLuaRes.text()
           const addonVer = addonLuaRes.headers.get('x-addon-version') || '1.0.0'
@@ -751,7 +751,7 @@
         statusText.textContent = 'Syncing server patch files...'
         progressFill.style.width = '75%'
 
-        const patchMetaRes = await fetch(`${api}/launcher/patch`)
+        const patchMetaRes = await fetch(`${api}/patch`)
         if (patchMetaRes.ok) {
           const patchMeta = await patchMetaRes.json()
           if (Array.isArray(patchMeta.files) && patchMeta.files.length > 0) {
@@ -760,7 +760,7 @@
               statusText.textContent = `Downloading ${patchFile} (${i + 1}/${patchMeta.files.length})...`
               appendLog(`Downloading server patch file Data/${patchFile}...`)
               await downloadToPath(
-                `${api}/launcher/patch-file/${encodeURIComponent(patchFile)}`,
+                `${api}/patch-file/${encodeURIComponent(patchFile)}`,
                 dirHandle,
                 `Data/${patchFile}`,
                 (loaded, total) => {
