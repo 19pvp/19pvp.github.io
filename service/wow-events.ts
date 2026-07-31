@@ -81,10 +81,17 @@ CREATE TABLE IF NOT EXISTS web_events_archive
 LIKE web_events;
 `
 
-try {
-  await auth.sql`ALTER TABLE web_events ADD INDEX web_events_archive_idx (end, at);`
-} catch (err) {
-  if (!(err instanceof Error) || !/Duplicate key name|already exists/i.test(err.message)) throw err
+const [existingIndex] = await auth.sql`
+  SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'web_events' AND INDEX_NAME = 'web_events_archive_idx'
+  LIMIT 1
+`
+if (!existingIndex) {
+  try {
+    await auth.sql`ALTER TABLE web_events ADD INDEX web_events_archive_idx (end, at);`
+  } catch (err) {
+    if (!(err instanceof Error) || !/Duplicate key name|already exists/i.test(err.message)) throw err
+  }
 }
 
 try {
