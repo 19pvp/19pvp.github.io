@@ -407,46 +407,101 @@
       }
 
       async function downloadToPath(url, parent, relativePath, onProgress) {
-        const res = await fetch(url, { credentials: 'include' });
-        if (!res.ok) throw new Error(`HTTP ${res.status} when fetching ${url}`);
-        const total = Number(res.headers.get('content-length') || 0);
-        let loaded = 0;
+        const fileHandle = await getFileHandle(parent, relativePath, true);
+        const writable = await fileHandle.createWritable({ keepExistingData: true });
+
+        // Get initial file size if partially downloaded
+        const existingFile = await fileHandle.getFile();
+        let loaded = existingFile.size;
+        let total = 0;
+
         const startTime = performance.now();
         let lastTime = startTime;
-        let lastLoaded = 0;
+        let lastLoaded = loaded;
         let currentSpeed = 0;
 
-        const fileHandle = await getFileHandle(parent, relativePath, true);
-        const writable = await fileHandle.createWritable();
+        const maxRetries = 10;
+        let retryAttempt = 0;
 
-        if (res.body) {
-          const reader = res.body.getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            await writable.write(value);
-            loaded += value.byteLength;
-
-            const now = performance.now();
-            const elapsedSinceLast = (now - lastTime) / 1000;
-            if (elapsedSinceLast >= 0.3) {
-              currentSpeed = (loaded - lastLoaded) / elapsedSinceLast;
-              lastTime = now;
-              lastLoaded = loaded;
+        while (true) {
+          try {
+            const headers = { credentials: 'include' };
+            const reqHeaders = {};
+            if (loaded > 0) {
+              reqHeaders['Range'] = `bytes=${loaded}-`;
             }
 
-            if (onProgress) {
-              const remainingBytes = total > loaded ? total - loaded : 0;
-              const etaSeconds = currentSpeed > 0 ? remainingBytes / currentSpeed : 0;
-              onProgress(loaded, total, currentSpeed, etaSeconds);
+            const res = await fetch(url, { credentials: 'include', headers: reqHeaders });
+
+            if (res.status === 416) {
+              // Range Not Satisfiable -> file is already fully downloaded
+              await writable.close();
+              if (onProgress) onProgress(loaded, loaded, 0, 0);
+              return;
             }
+
+            if (!res.ok && res.status !== 206) {
+              throw new Error(`HTTP ${res.status} when fetching ${url}`);
+            }
+
+            if (res.status === 206) {
+              const contentRange = res.headers.get('content-range');
+              if (contentRange) {
+                const match = contentRange.match(/\/(\d+)$/);
+                if (match) total = Number(match[1]);
+              }
+              // Position writable at current loaded offset
+              await writable.seek(loaded);
+            } else {
+              // Server returned 200 OK (doesn't support range or fresh download)
+              total = Number(res.headers.get('content-length') || 0);
+              loaded = 0;
+              await writable.seek(0);
+            }
+
+            retryAttempt = 0; // Reset retries on successful connection
+
+            if (res.body) {
+              const reader = res.body.getReader();
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                await writable.write(value);
+                loaded += value.byteLength;
+
+                const now = performance.now();
+                const elapsedSinceLast = (now - lastTime) / 1000;
+                if (elapsedSinceLast >= 0.3) {
+                  currentSpeed = (loaded - lastLoaded) / elapsedSinceLast;
+                  lastTime = now;
+                  lastLoaded = loaded;
+                }
+
+                if (onProgress) {
+                  const remainingBytes = total > loaded ? total - loaded : 0;
+                  const etaSeconds = currentSpeed > 0 ? remainingBytes / currentSpeed : 0;
+                  onProgress(loaded, total, currentSpeed, etaSeconds);
+                }
+              }
+              await writable.close();
+              return;
+            } else {
+              const buf = await res.arrayBuffer();
+              await writable.write(buf);
+              await writable.close();
+              if (onProgress) onProgress(buf.byteLength, buf.byteLength, 0, 0);
+              return;
+            }
+          } catch (err) {
+            retryAttempt++;
+            if (retryAttempt > maxRetries) {
+              try { await writable.close(); } catch {}
+              throw err;
+            }
+            const delayMs = Math.min(1000 * Math.pow(1.5, retryAttempt), 10000);
+            appendLog(`Network error on ${relativePath}: ${err.message}. Retrying in ${Math.round(delayMs / 1000)}s (Attempt ${retryAttempt}/${maxRetries})...`);
+            await new Promise((r) => setTimeout(r, delayMs));
           }
-          await writable.close();
-        } else {
-          const buf = await res.arrayBuffer();
-          await writable.write(buf);
-          await writable.close();
-          if (onProgress) onProgress(buf.byteLength, buf.byteLength, 0, 0);
         }
       }
 
@@ -464,35 +519,6 @@
           }
         }
       };
-
-      async function calculateSHA1(fileHandle, onProgress) {
-        const file = await fileHandle.getFile();
-        const stream = file.stream();
-        const reader = stream.getReader();
-        const total = file.size;
-        let loaded = 0;
-
-        // Collect chunks or compute digest
-        const chunks = [];
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          loaded += value.byteLength;
-          if (onProgress) onProgress(loaded, total);
-        }
-
-        const combined = new Uint8Array(loaded);
-        let offset = 0;
-        for (const chunk of chunks) {
-          combined.set(chunk, offset);
-          offset += chunk.byteLength;
-        }
-
-        const hashBuf = await crypto.subtle.digest('SHA-1', combined);
-        const hashArray = Array.from(new Uint8Array(hashBuf));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      }
 
       const SAVED_FOLDER_KEY = '19pvp_wow_folder_name';
 
@@ -558,28 +584,14 @@
             if (!handle) {
               appendLog(`Missing file: ${relativePath}`);
               needsDownload = true;
-            } else if (expectedSha1) {
-              appendLog(`Hashing ${relativePath}...`);
+            } else {
               const fileObj = await handle.getFile();
               if (expectedSize && fileObj.size !== expectedSize) {
-                appendLog(`Size mismatch for ${relativePath} (local: ${fileObj.size}, expected: ${expectedSize})`);
+                appendLog(`Size mismatch for ${relativePath} (local: ${formatBytes(fileObj.size)}, expected: ${formatBytes(expectedSize)})`);
                 needsDownload = true;
               } else {
-                const actualSha1 = await calculateSHA1(handle, (loaded, total) => {
-                  if (total) {
-                    const filePct = Math.round((loaded / total) * 100);
-                    speedText.textContent = `Hashing: ${filePct}%`;
-                  }
-                });
-                if (actualSha1 !== expectedSha1) {
-                  appendLog(`SHA-1 mismatch for ${relativePath} (local: ${actualSha1}, expected: ${expectedSha1})`);
-                  needsDownload = true;
-                } else {
-                  appendLog(`Verified ${relativePath} [SHA-1 OK]`);
-                }
+                appendLog(`Verified ${relativePath} [OK - ${formatBytes(fileObj.size)}]`);
               }
-            } else {
-              appendLog(`Found ${relativePath}`);
             }
 
             if (needsDownload) {

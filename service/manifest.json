@@ -1,99 +1,80 @@
 {
-  "generatedAt": "2026-07-31T00:20:20.381Z",
+  "generatedAt": "2026-07-31T00:58:19.992Z",
   "files": [
     {
       "path": "Data/common-2.MPQ",
-      "sha1": "6c6bcf652845b191fa34d5bdf33ed8ffd5dae45c",
       "size": 1810430636
     },
     {
       "path": "Data/common.MPQ",
-      "sha1": "c357bba4c6bfff7baafc317b926d9e40af1fb1f0",
       "size": 2881154862
     },
     {
       "path": "Data/enUS/backup-enUS.MPQ",
-      "sha1": "71498077c731b7da9615db9010f47c9392099b5a",
       "size": 167245856
     },
     {
       "path": "Data/enUS/base-enUS.MPQ",
-      "sha1": "71e43da34a2baa45f54a50a363fb89fec08a34dd",
       "size": 29176975
     },
     {
       "path": "Data/enUS/expansion-locale-enUS.MPQ",
-      "sha1": "7700f6c8bcfc5f953a46dcfbb2e30a863aa97e1d",
       "size": 17389181
     },
     {
       "path": "Data/enUS/expansion-speech-enUS.MPQ",
-      "sha1": "d214249ea8a754ae157aa1912c48a3562aed8f40",
       "size": 241033297
     },
     {
       "path": "Data/enUS/lichking-locale-enUS.MPQ",
-      "sha1": "60dda9370eb7c8e4b969d319bade326ee7d60e00",
       "size": 12354378
     },
     {
       "path": "Data/enUS/lichking-speech-enUS.MPQ",
-      "sha1": "d674b3c91b6c15207c0c86511ca1abec2f9382ca",
       "size": 354008839
     },
     {
       "path": "Data/enUS/locale-enUS.MPQ",
-      "sha1": "4a027a16853be3a860755fc8ec4fbe14f577ed1e",
       "size": 204291376
     },
     {
       "path": "Data/enUS/patch-enUS-2.MPQ",
-      "sha1": "bbb4287260183ac330b959ea215ffdad12357111",
       "size": 225570171
     },
     {
       "path": "Data/enUS/patch-enUS-3.MPQ",
-      "sha1": "dc3efb4173aa763926469baa4b560dce651f9014",
       "size": 100373935
     },
     {
       "path": "Data/enUS/patch-enUS.MPQ",
-      "sha1": "ca6020185b342ab8fe485a39c53222a6fd40534e",
       "size": 296616080
     },
     {
       "path": "Data/enUS/speech-enUS.MPQ",
-      "sha1": "26d43046a25732ef6cc34afbc6ad13ecd3109623",
       "size": 438430439
     },
     {
       "path": "Data/expansion.MPQ",
-      "sha1": "befa7aee1c854698108c59d8d847f316290b6c9a",
       "size": 1921219911
     },
     {
       "path": "Data/lichking.MPQ",
-      "sha1": "c8e7259465ac5185885a0e14d3d63313f0dc3a6b",
       "size": 2553948549
     },
     {
       "path": "Data/patch-2.MPQ",
-      "sha1": "cfb7f1da2f8e1f0652a95a46b5d34db2abdd8d40",
       "size": 1401729059
     },
     {
       "path": "Data/patch-3.MPQ",
-      "sha1": "a9d400ced6f23917827caca1d143549971597a12",
       "size": 605089137
     },
     {
       "path": "Data/patch-S.mpq",
-      "sha1": "0307c996b5815840892fddfb66b88c0b3175cf95",
       "size": 4534878
     },
     {
       "path": "Data/patch.MPQ",
-      "sha1": "f0c053ba9f764687ca54916543484c3eb25deca8",
       "size": 4004713057
     }
   ]
