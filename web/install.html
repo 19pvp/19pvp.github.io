@@ -8,7 +8,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="prefetch" href="/" as="document">
     <style>
+      @view-transition {
+        navigation: auto;
+      }
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: 0.15s;
+      }
+      body {
+        transition: opacity 0.15s ease-in-out;
+      }
+      body.page-exit {
+        opacity: 0;
+      }
       :root {
         color-scheme: dark;
         --bg-color: #050508;
@@ -848,6 +862,26 @@
           selectFolderBtn.disabled = false;
         }
       };
+
+      // Smooth SPA-like page navigation transition helper
+      document.addEventListener('click', (e) => {
+        const link = e.target.closest('a[href^="/"]');
+        if (!link || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        const targetUrl = new URL(link.href, location.origin);
+        if (targetUrl.origin !== location.origin) return;
+
+        e.preventDefault();
+        if (document.startViewTransition) {
+          document.startViewTransition(() => {
+            location.href = targetUrl.href;
+          });
+        } else {
+          document.body.classList.add('page-exit');
+          setTimeout(() => {
+            location.href = targetUrl.href;
+          }, 150);
+        }
+      });
     </script>
   </body>
 </html>
