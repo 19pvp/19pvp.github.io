@@ -391,11 +391,30 @@
         }
       }
 
+      function formatBytes(bytes) {
+        if (!bytes || bytes <= 0) return '0 B';
+        const units = ['B', 'KiB', 'MiB', 'GiB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i];
+      }
+
+      function formatETA(seconds) {
+        if (!Number.isFinite(seconds) || seconds <= 0) return 'calculating...';
+        if (seconds < 60) return `${Math.ceil(seconds)}s`;
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.ceil(seconds % 60);
+        return `${mins}m ${secs}s`;
+      }
+
       async function downloadToPath(url, parent, relativePath, onProgress) {
         const res = await fetch(url, { credentials: 'include' });
         if (!res.ok) throw new Error(`HTTP ${res.status} when fetching ${url}`);
         const total = Number(res.headers.get('content-length') || 0);
         let loaded = 0;
+        const startTime = performance.now();
+        let lastTime = startTime;
+        let lastLoaded = 0;
+        let currentSpeed = 0;
 
         const fileHandle = await getFileHandle(parent, relativePath, true);
         const writable = await fileHandle.createWritable();
@@ -407,14 +426,27 @@
             if (done) break;
             await writable.write(value);
             loaded += value.byteLength;
-            if (onProgress) onProgress(loaded, total);
+
+            const now = performance.now();
+            const elapsedSinceLast = (now - lastTime) / 1000;
+            if (elapsedSinceLast >= 0.3) {
+              currentSpeed = (loaded - lastLoaded) / elapsedSinceLast;
+              lastTime = now;
+              lastLoaded = loaded;
+            }
+
+            if (onProgress) {
+              const remainingBytes = total > loaded ? total - loaded : 0;
+              const etaSeconds = currentSpeed > 0 ? remainingBytes / currentSpeed : 0;
+              onProgress(loaded, total, currentSpeed, etaSeconds);
+            }
           }
           await writable.close();
         } else {
           const buf = await res.arrayBuffer();
           await writable.write(buf);
           await writable.close();
-          if (onProgress) onProgress(buf.byteLength, buf.byteLength);
+          if (onProgress) onProgress(buf.byteLength, buf.byteLength, 0, 0);
         }
       }
 
@@ -553,11 +585,15 @@
             if (needsDownload) {
               const fileUrl = `${api}/launcher/client-file/${encodeURIComponent(relativePath)}`;
               appendLog(`Downloading ${relativePath} from server...`);
-              statusText.textContent = `Downloading ${relativePath}...`;
-              await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total) => {
+              statusText.textContent = `Downloading ${relativePath} (${i + 1}/${manifestFiles.length})...`;
+              await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total, speed, eta) => {
                 if (total) {
-                  const pct = Math.round((loaded / total) * 100);
-                  speedText.textContent = `Downloading: ${pct}%`;
+                  const filePct = (loaded / total);
+                  const overallPct = Math.round(((i + filePct) / manifestFiles.length) * 100);
+                  progressFill.style.width = `${Math.min(100, Math.max(0, overallPct))}%`;
+                  speedText.textContent = `${formatBytes(loaded)} / ${formatBytes(total)} (${formatBytes(speed)}/s) - ETA: ${formatETA(eta)}`;
+                } else {
+                  speedText.textContent = `${formatBytes(loaded)} downloaded (${formatBytes(speed)}/s)`;
                 }
               });
               appendLog(`Finished download of ${relativePath}`);
