@@ -1468,7 +1468,7 @@ function FormatPlayer(player)
 end
 
 SERVER_START_AT = GetCurrTime()
-WORLD_ID = 1
+WORLD_ID = GetRealmID()
 function SendWebEvent(type, player, data)
   data = data or {}
   data.start = SERVER_START_AT

@@ -519,32 +519,18 @@ const replaceItemLinks = (_: string, itemStr: string, itemName: string) => {
 }
 
 wowEvents.on.GENERAL_CHANNEL_MESSAGE(async ({ data }) => {
-  console.log('[WorldChat] Received GENERAL_CHANNEL_MESSAGE event:', data)
-  if (!generalChannelId) {
-    console.warn('[WorldChat] DISCORD_GENERAL_CHANNEL_ID is not configured, skipping Discord post.')
-    return
-  }
-  if (typeof data !== 'object' || !data) return
+  if (!generalChannelId || typeof data !== 'object' || !data) return
   const { player, message } = data
   if (
     typeof player !== 'object' || !player || !('account' in player) || !('name' in player) ||
     typeof message !== 'string'
-  ) {
-    console.warn('[WorldChat] Invalid GENERAL_CHANNEL_MESSAGE payload structure:', data)
-    return
-  }
+  ) return
   const account = Number(player.account)
   const user = activeUsersByAccount[account] || (await getDiscordDataForAccount(account))
   const authorTag = user ? `<@${user.id}> (${String(player.name)})` : `**[${String(player.name)}]**`
   const formattedMsg = message.replace(/\|Hitem:([^|]+)\|h\[([^\]]+)]\|h/g, replaceItemLinks)
   const content = `${authorTag}: ${formattedMsg}`
-  console.log(`[WorldChat] Posting to Discord channel ${generalChannelId}:`, content)
-  try {
-    const res = await discord.rest.POST_CHANNEL_MESSAGE({ channel: generalChannelId, content })
-    console.log('[WorldChat] Successfully posted to Discord:', res)
-  } catch (err) {
-    console.error('[WorldChat] Failed to post message to Discord:', err)
-  }
+  await discord.rest.POST_CHANNEL_MESSAGE({ channel: generalChannelId, content })
 })
 
 wowEvents.on.COMMAND(async ({ data }) => {

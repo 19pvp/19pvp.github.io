@@ -416,6 +416,30 @@
       return await parentDir.getFileHandle(target, { create })
     }
 
+    async function computeFileMerkleHash(file) {
+      const CHUNK_SIZE = 2 * 1024 * 1024 // 2MB blocks
+      const blockHashes = []
+      let offset = 0
+
+      while (offset < file.size) {
+        const chunk = file.slice(offset, offset + CHUNK_SIZE)
+        const arrayBuf = await chunk.arrayBuffer()
+        const blockHash = new Uint8Array(await crypto.subtle.digest('SHA-256', arrayBuf))
+        blockHashes.push(blockHash)
+        offset += CHUNK_SIZE
+      }
+
+      const totalLength = blockHashes.reduce((acc, h) => acc + h.length, 0)
+      const combined = new Uint8Array(totalLength)
+      let pos = 0
+      for (const h of blockHashes) {
+        combined.set(h, pos)
+        pos += h.length
+      }
+      const rootBuffer = await crypto.subtle.digest('SHA-256', combined)
+      return Array.from(new Uint8Array(rootBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
+    }
+
     async function writeFile(parent, relativePath, content) {
       const fileHandle = await getFileHandle(parent, relativePath, true)
       const writable = await fileHandle.createWritable()
@@ -746,35 +770,44 @@
           setStep(stepAddon, 'error', 'Failed to download PvP19 Addon')
         }
 
-        // 4. Server Patch Files
+        // 4. Server Patch File (patch-S.mpq)
         setStep(stepPatch, 'active')
-        statusText.textContent = 'Syncing server patch files...'
+        statusText.textContent = 'Verifying 19PvP patch (patch-S.mpq)...'
         progressFill.style.width = '75%'
 
-        const patchMetaRes = await fetch(`${api}/patch`)
-        if (patchMetaRes.ok) {
-          const patchMeta = await patchMetaRes.json()
-          if (Array.isArray(patchMeta.files) && patchMeta.files.length > 0) {
-            for (let i = 0; i < patchMeta.files.length; i++) {
-              const patchFile = patchMeta.files[i]
-              statusText.textContent = `Downloading ${patchFile} (${i + 1}/${patchMeta.files.length})...`
-              appendLog(`Downloading server patch file Data/${patchFile}...`)
-              await downloadToPath(
-                `${api}/patch-file/${encodeURIComponent(patchFile)}`,
-                dirHandle,
-                `Data/${patchFile}`,
-                (loaded, total) => {
-                  if (total) {
-                    const pct = Math.round((loaded / total) * 100)
-                    progressFill.style.width = `${75 + (pct * 0.25)}%`
-                  }
-                },
-              )
+        try {
+          // Check if local patch-S.mpq exists and matches server Merkle root ETag
+          let patchUpToDate = false
+          const localPatchHandle = await getFileHandle(dirHandle, 'Data/patch-S.mpq', false)
+          if (localPatchHandle) {
+            const localFile = await localPatchHandle.getFile()
+            const localHash = await computeFileMerkleHash(localFile)
+            const headRes = await fetch(`${api}/patch-S.mpq`, { method: 'HEAD', credentials: 'include' })
+            const serverETag = headRes.headers.get('etag')?.replace(/"/g, '')
+            if (serverETag && localHash === serverETag) {
+              patchUpToDate = true
+              appendLog(`Local Data/patch-S.mpq is up to date [Merkle OK]`)
             }
           }
-          setStep(stepPatch, 'done', 'Patch files synced')
-        } else {
-          setStep(stepPatch, 'done', 'Patch files up to date')
+
+          if (!patchUpToDate) {
+            appendLog('Downloading server patch Data/patch-S.mpq...')
+            await downloadToPath(
+              `${api}/patch-S.mpq`,
+              dirHandle,
+              'Data/patch-S.mpq',
+              (loaded, total) => {
+                if (total) {
+                  const pct = Math.round((loaded / total) * 100)
+                  progressFill.style.width = `${75 + (pct * 0.25)}%`
+                }
+              },
+            )
+          }
+          setStep(stepPatch, 'done', '19PvP Patch (patch-S.mpq) verified')
+        } catch (patchErr) {
+          appendLog(`Warning updating patch-S.mpq: ${patchErr.message}`)
+          setStep(stepPatch, 'error', 'Failed to update 19PvP Patch')
         }
 
         // 5. Client Config.wtf Auto-Patching
