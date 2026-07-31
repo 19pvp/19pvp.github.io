@@ -312,7 +312,7 @@
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
           <div id="stepClient" class="step-item"><span>⚪</span> <span>Game Files</span></div>
-          <div id="stepWindows" class="step-item"><span>⚪</span> <span>Windows Client Binaries</span></div>
+          <div id="stepPlatform" class="step-item"><span>⚪</span> <span>Client Binaries</span></div>
           <div id="stepPatch" class="step-item"><span>⚪</span> <span>19PvP Game Patch</span></div>
           <div id="stepAddon" class="step-item"><span>⚪</span> <span>19PvP Addon</span></div>
           <div id="stepRealmlist" class="step-item"><span>⚪</span> <span>Server Connection</span></div>
@@ -328,7 +328,11 @@
 
         <div id="readyNotice" class="status-banner status-success"
           style="display: none; text-align: center; margin-bottom: 0;">
-          🎉 <strong>Client Ready!</strong> Open <code>WoW.exe</code> inside your client folder to start playing!
+          🎉 <strong>Client Ready!</strong>
+          <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
+            <li>Open the client folder you selected.</li>
+            <li>Start the game.</li>
+          </ol>
         </div>
       </div>
     </div>
@@ -344,7 +348,7 @@
     const speedText = document.getElementById('speedText')
     const progressFill = document.getElementById('progressFill')
     const stepClient = document.getElementById('stepClient')
-    const stepWindows = document.getElementById('stepWindows')
+    const stepPlatform = document.getElementById('stepPlatform')
     const stepPatch = document.getElementById('stepPatch')
     const stepAddon = document.getElementById('stepAddon')
     const stepRealmlist = document.getElementById('stepRealmlist')
@@ -361,8 +365,21 @@
     let MUST_REPORT_ERRORS = false
     let retryInstall = false
     const INSTALL_BUTTON_TEXT = '⚡ Verify & Install Client Updates'
-    const CLIENT_ARCHIVE = 'windows.zip'
-    const CLIENT_ARCHIVE_MARKER = 'Wow.exe'
+    const CLIENT_PLATFORM = /Mac/i.test(navigator.userAgentData?.platform || navigator.platform || '')
+      ? 'macos'
+      : 'windows'
+    const CLIENT_PLATFORM_LABEL = CLIENT_PLATFORM === 'macos' ? 'macOS' : 'Windows'
+    const CLIENT_ARCHIVE = `${CLIENT_PLATFORM}.zip`
+    const CLIENT_ARCHIVE_MARKER = CLIENT_PLATFORM === 'macos' ? 'World of Warcraft.app' : 'Wow.exe'
+    const CLIENT_LAUNCH_TARGET = CLIENT_PLATFORM === 'macos' ? 'World of Warcraft.app' : 'Wow.exe'
+
+    readyNotice.innerHTML = `
+      🎉 <strong>Client Ready!</strong>
+      <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
+        <li>Open the client folder you selected.</li>
+        <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
+      </ol>
+    `
     const REQUEST_TIMEOUT_MS = 30_000
 
     const hasFS = typeof window.showDirectoryPicker === 'function'
@@ -462,6 +479,12 @@
         `name=${JSON.stringify(name)}; parent=${JSON.stringify(parentName)}; ` +
         `writePermission=${permission}; validation=${fileNameValidation(name)}]`,
       )
+    }
+
+    async function hasClientMarker(parent) {
+      return CLIENT_PLATFORM === 'macos'
+        ? Boolean(await getDirectoryHandle(parent, CLIENT_ARCHIVE_MARKER, false))
+        : Boolean(await getFileHandle(parent, CLIENT_ARCHIVE_MARKER, false))
     }
 
     async function getDirectoryHandle(parent, path, create = false) {
@@ -752,7 +775,7 @@
 
         // 1. Verify Client Files with SHA-1
         setStep(stepClient, 'active')
-        setStep(stepWindows, 'active', 'Checking Windows client binaries...')
+        setStep(stepPlatform, 'active', `Checking ${CLIENT_PLATFORM_LABEL} client binaries...`)
         appendLog('Verifying client base installation files via WebCrypto SHA-1...')
 
         if (manifestFiles.length === 0) {
@@ -811,11 +834,10 @@
 
         let currentTotalBytes = alreadyVerifiedBytes
         if (executableFilesToExtract.length === 0) {
-          const markerHandle = await getFileHandle(dirHandle, CLIENT_ARCHIVE_MARKER, false)
-          if (!markerHandle) executableFilesToExtract.push('Windows client binaries')
+          if (!await hasClientMarker(dirHandle)) executableFilesToExtract.push(`${CLIENT_PLATFORM_LABEL} client binaries`)
         }
         let executableArchiveRequired = executableFilesToExtract.length > 0
-        if (!executableArchiveRequired) setStep(stepWindows, 'done', 'Windows client binaries verified')
+        if (!executableArchiveRequired) setStep(stepPlatform, 'done', `${CLIENT_PLATFORM_LABEL} client binaries verified`)
         const initialPct = fullProjectSize > 0 ? Math.round((alreadyVerifiedBytes / fullProjectSize) * 100) : 0
         progressFill.style.width = `${initialPct}%`
 
@@ -881,19 +903,19 @@
           try {
             const archiveHandle = await getFileHandle(dirHandle, CLIENT_ARCHIVE, false)
             if (!archiveHandle) {
-              setStep(stepWindows, 'active', `Downloading ${CLIENT_ARCHIVE}...`)
-              appendLog(`Downloading ${CLIENT_ARCHIVE} containing the protected Windows client files...`)
+              setStep(stepPlatform, 'active', `Downloading ${CLIENT_ARCHIVE}...`)
+              appendLog(`Downloading ${CLIENT_ARCHIVE} containing the protected ${CLIENT_PLATFORM_LABEL} client files...`)
               await downloadToPath(`${api}/client-file/${CLIENT_ARCHIVE}`, dirHandle, CLIENT_ARCHIVE)
             } else {
               appendLog(`Using existing ${CLIENT_ARCHIVE}.`)
             }
-            setStep(stepWindows, 'active', `Extract ${CLIENT_ARCHIVE}, then retry`)
+            setStep(stepPlatform, 'active', `Extract ${CLIENT_ARCHIVE}, then retry`)
           } catch (error) {
-            setStep(stepWindows, 'error', `Failed to download ${CLIENT_ARCHIVE}`)
+            setStep(stepPlatform, 'error', `Failed to download ${CLIENT_ARCHIVE}`)
             throw error
           }
           appendLog(
-            `Extract ${CLIENT_ARCHIVE} into this client directory, then click Retry installation to verify the Windows client files.`,
+            `Extract ${CLIENT_ARCHIVE} into this client directory, then click Retry installation to verify the ${CLIENT_PLATFORM_LABEL} client files.`,
           )
         }
 
