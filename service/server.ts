@@ -1,4 +1,23 @@
-import { TextLineStream } from '@std/streams'
+import { closeDbConnections } from './db.ts'
+
+const handleShutdown = async () => {
+  console.log('\nShutting down server...')
+  const timeout = setTimeout(() => {
+    console.warn('Forcing exit after 1s shutdown timeout.')
+    Deno.exit(0)
+  }, 1000)
+
+  await closeDbConnections().catch(() => {})
+  clearTimeout(timeout)
+  Deno.exit(0)
+}
+
+if (typeof Deno.addSignalListener === 'function') {
+  try {
+    Deno.addSignalListener('SIGINT', handleShutdown)
+    Deno.addSignalListener('SIGTERM', handleShutdown)
+  } catch {}
+}
 import { cors, json, runCommand, sse } from './utils.ts'
 import { watch } from '../tasks/config.ts'
 import { ac } from './soap.ts'

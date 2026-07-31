@@ -33,6 +33,12 @@ class RollbackValidation extends Error {
 
 const dbByConfig = new Map<string, Client>()
 
+export const closeDbConnections = async () => {
+  for (const client of dbByConfig.values()) {
+    await client.close().catch(() => {})
+  }
+}
+
 import { env } from './env.ts'
 
 const validateDatabaseName = (name: string, label = 'database') => {
