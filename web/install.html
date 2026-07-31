@@ -359,6 +359,8 @@
     let MUST_REPORT_ERRORS = false
     let retryInstall = false
     const INSTALL_BUTTON_TEXT = '⚡ Verify & Install Client Updates'
+    const CLIENT_ARCHIVE = 'windows.zip'
+    const CLIENT_ARCHIVE_MARKER = 'Wow.exe'
     const REQUEST_TIMEOUT_MS = 30_000
 
     const hasFS = typeof window.showDirectoryPicker === 'function'
@@ -392,7 +394,7 @@
     function appendLog(msg) {
       logBox.style.display = 'block'
       const shouldScroll = logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 16
-      logBox.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`
+      logBox.textContent += `[${(Date.now() / 1000).toFixed(3)}] ${msg}\n`
       if (shouldScroll) {
         logBox.scrollTop = logBox.scrollHeight
       }
@@ -437,6 +439,29 @@
       if (text) elem.children[1].textContent = text
     }
 
+    function fileNameValidation(name) {
+      if (!name) return 'empty name'
+      if (name === '.' || name === '..') return 'dot path segment'
+      if (/[\\/\0\u0000-\u001f<>:"|?*]/.test(name)) return 'contains a filesystem-forbidden character'
+      if (/[ .]$/.test(name)) return 'ends with a space or dot'
+      if (/^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(?:\..*)?$/i.test(name)) return 'reserved Windows device name'
+      return 'valid-looking filename'
+    }
+
+    async function explainFileSystemError(error, parent, path, name, operation) {
+      let permission = 'unknown'
+      try {
+        permission = await parent.queryPermission({ mode: 'readwrite' })
+      } catch {}
+      const parentName = parent?.name || '(unknown directory)'
+      const browserError = error?.name ? `${error.name}: ` : ''
+      return Error(
+        `${browserError}${errorMessage(error)} [operation=${operation}; path=${JSON.stringify(String(path))}; ` +
+        `name=${JSON.stringify(name)}; parent=${JSON.stringify(parentName)}; ` +
+        `writePermission=${permission}; validation=${fileNameValidation(name)}]`,
+      )
+    }
+
     async function getDirectoryHandle(parent, path, create = false) {
       if (!path) return parent
       const parts = String(path).replace(/\\/g, '/').split('/').map(p => p.trim()).filter(Boolean)
@@ -452,7 +477,11 @@
           }
         }
         if (!create && !found) return null
-        curr = await curr.getDirectoryHandle(target, { create })
+        try {
+          curr = await curr.getDirectoryHandle(target, { create })
+        } catch (error) {
+          throw await explainFileSystemError(error, curr, path, target, 'getDirectoryHandle')
+        }
       }
       return curr
     }
@@ -475,7 +504,11 @@
         }
       }
       if (!create && !found) return null
-      return await parentDir.getFileHandle(target, { create })
+      try {
+        return await parentDir.getFileHandle(target, { create })
+      } catch (error) {
+        throw await explainFileSystemError(error, parentDir, path, target, 'getFileHandle')
+      }
     }
 
     async function computeFileMerkleHash(file) {
@@ -684,6 +717,8 @@
       if (!hasFS) return
       try {
         dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
+        const permission = await dirHandle.requestPermission({ mode: 'readwrite' })
+        if (permission !== 'granted') throw Error(`Write permission was not granted (${permission})`)
         folderPath.textContent = dirHandle.name
         localStorage.setItem(SAVED_FOLDER_KEY, dirHandle.name)
         syncBtn.style.display = 'inline-flex'
@@ -720,7 +755,6 @@
         if (manifestFiles.length === 0) {
           // Fallback default list if manifest is not pre-populated
           manifestFiles = [
-            { path: 'WoW.exe' },
             { path: 'Data/common.MPQ' },
             { path: 'Data/common-2.MPQ' },
             { path: 'Data/expansion.MPQ' },
@@ -733,6 +767,8 @@
         let alreadyVerifiedBytes = 0
         let remainingBytesToDownload = 0
         const filesToDownload = []
+        const executableFilesToExtract = []
+        const isExecutable = (path) => /\.(?:dll|exe)$/i.test(path)
 
         for (let i = 0; i < manifestFiles.length; i++) {
           const item = manifestFiles[i]
@@ -743,8 +779,12 @@
           const handle = await getFileHandle(dirHandle, relativePath, false)
           if (!handle) {
             appendLog(`Missing file: ${relativePath}`)
-            filesToDownload.push({ item, index: i, expectedSize })
-            remainingBytesToDownload += expectedSize
+            if (isExecutable(relativePath)) {
+              executableFilesToExtract.push(relativePath)
+            } else {
+              filesToDownload.push({ item, index: i, expectedSize })
+              remainingBytesToDownload += expectedSize
+            }
           } else {
             const fileObj = await handle.getFile()
             if (expectedSize && fileObj.size !== expectedSize) {
@@ -753,8 +793,12 @@
                   formatBytes(expectedSize)
                 })`,
               )
-              filesToDownload.push({ item, index: i, expectedSize })
-              remainingBytesToDownload += expectedSize
+              if (isExecutable(relativePath)) {
+                executableFilesToExtract.push(relativePath)
+              } else {
+                filesToDownload.push({ item, index: i, expectedSize })
+                remainingBytesToDownload += expectedSize
+              }
             } else {
               alreadyVerifiedBytes += expectedSize
               appendLog(`Verified ${relativePath} [OK - ${formatBytes(fileObj.size)}]`)
@@ -763,6 +807,11 @@
         }
 
         let currentTotalBytes = alreadyVerifiedBytes
+        if (executableFilesToExtract.length === 0) {
+          const markerHandle = await getFileHandle(dirHandle, CLIENT_ARCHIVE_MARKER, false)
+          if (!markerHandle) executableFilesToExtract.push('Windows client binaries')
+        }
+        let executableArchiveRequired = executableFilesToExtract.length > 0
         const initialPct = fullProjectSize > 0 ? Math.round((alreadyVerifiedBytes / fullProjectSize) * 100) : 0
         progressFill.style.width = `${initialPct}%`
 
@@ -824,7 +873,28 @@
           await Promise.all(workers)
         }
 
+        if (executableArchiveRequired) {
+          const archiveHandle = await getFileHandle(dirHandle, CLIENT_ARCHIVE, false)
+          if (!archiveHandle) {
+            appendLog(`Downloading ${CLIENT_ARCHIVE} containing the protected Windows client files...`)
+            await downloadToPath(`${api}/client-file/${CLIENT_ARCHIVE}`, dirHandle, CLIENT_ARCHIVE)
+          } else {
+            appendLog(`Using existing ${CLIENT_ARCHIVE}.`)
+          }
+          appendLog(
+            `Extract ${CLIENT_ARCHIVE} into this client directory, then click Retry installation to verify the Windows client files.`,
+          )
+        }
+
         statusText.textContent = 'Base client files verified & complete'
+        if (executableArchiveRequired) {
+          setStep(stepClient, 'active', `Extract ${CLIENT_ARCHIVE}, then retry`)
+          statusText.textContent = `Extract ${CLIENT_ARCHIVE}, then retry installation.`
+          retryInstall = true
+          appendLog('Installation is paused until the executable archive is extracted.')
+          return
+        }
+
         progressFill.style.width = '100%'
         speedText.textContent = `${formatBytes(fullProjectSize)} / ${formatBytes(fullProjectSize)} (100%)`
         setStep(stepClient, 'done', 'Base client files verified & complete')
@@ -1037,8 +1107,7 @@
         statusText.textContent = 'Error: ' + errorMessage(err)
       } finally {
         if (MUST_REPORT_ERRORS) await uploadLogs()
-        syncBtn.textContent = MUST_REPORT_ERRORS ? '↻ Retry installation' : INSTALL_BUTTON_TEXT
-        retryInstall = MUST_REPORT_ERRORS
+        syncBtn.textContent = MUST_REPORT_ERRORS || retryInstall ? '↻ Retry installation' : INSTALL_BUTTON_TEXT
         syncBtn.disabled = false
         selectFolderBtn.disabled = false
       }

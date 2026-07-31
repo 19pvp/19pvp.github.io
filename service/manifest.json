@@ -1,10 +1,6 @@
 {
-  "generatedAt": "2026-07-31T01:20:16.971Z",
+  "generatedAt": "2026-07-31T15:50:15.830Z",
   "files": [
-    {
-      "path": "Battle.net.dll",
-      "size": 15588224
-    },
     {
       "path": "Data/common-2.MPQ",
       "size": 1810430636
@@ -76,34 +72,6 @@
     {
       "path": "Data/patch.MPQ",
       "size": 4004713057
-    },
-    {
-      "path": "dbghelp.dll",
-      "size": 1039728
-    },
-    {
-      "path": "DivxDecoder.dll",
-      "size": 413696
-    },
-    {
-      "path": "ijl15.dll",
-      "size": 372736
-    },
-    {
-      "path": "msvcr80.dll",
-      "size": 632656
-    },
-    {
-      "path": "Scan.dll",
-      "size": 47876
-    },
-    {
-      "path": "unicows.dll",
-      "size": 245408
-    },
-    {
-      "path": "Wow.exe",
-      "size": 7699456
     }
   ]
 }
