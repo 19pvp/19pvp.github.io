@@ -10,7 +10,6 @@ import { handleLauncherLog } from './launcher_logs.ts'
 
 import indexHTML from '../web/index.html' with { type: 'bytes' }
 import installHTMLRaw from '../web/install.html' with { type: 'text' }
-import adminHTML from '../web/admin.html' with { type: 'bytes' }
 import eventsHTML from '../web/events.html' with { type: 'bytes' }
 import pvp19Lua from '../addons/PvP19/PvP19.lua' with { type: 'bytes' }
 import pvp19Toc from '../addons/PvP19/PvP19.toc' with { type: 'text' }
@@ -37,7 +36,6 @@ if (!launcherRealmlist) throw new Error(`realm not found: ${env.WORLD_ID}`)
 const installHTMLBytes = new TextEncoder().encode(
   installHTMLRaw
     .replace('MANIFEST_PLACEHOLDER', JSON.stringify(manifestJSON))
-    .replace('WEBSEED_PLACEHOLDER', JSON.stringify(env.LAUNCHER_WEBSEED_URL))
     .replace('REALMLIST_PLACEHOLDER', JSON.stringify(launcherRealmlist)),
 )
 
@@ -621,10 +619,14 @@ export default {
         return new Response(indexHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
       if (url.pathname === '/install') {
+        const session = await getSession(req)
+        if (!session) {
+          return new Response(null, {
+            status: 302,
+            headers: { location: '/auth/discord/login' },
+          })
+        }
         return new Response(installHTMLBytes, { headers: { 'content-type': 'text/html; charset=utf-8' } })
-      }
-      if (url.pathname === '/admin') {
-        return new Response(adminHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
       if (url.pathname === '/events') {
         return new Response(eventsHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
@@ -638,24 +640,41 @@ export default {
           },
         })
       }
-      if (url.pathname === '/launcher/config') {
+      if (url.pathname.startsWith('/launcher/client-file/')) {
         if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
-        return json({
-          webseedUrl: env.LAUNCHER_WEBSEED_URL,
-          realmlist: launcherRealmlist,
-          'verification-hash': env.LAUNCHER_VERIFICATION_HASH,
-        })
+        const session = await getSession(req)
+        if (!session) {
+          return json({ error: 'Unauthorized' }, { status: 401 })
+        }
+        let path: string
+        try {
+          path = decodeURIComponent(url.pathname.slice('/launcher/client-file/'.length))
+        } catch {
+          return new Response('Not found', { status: 404 })
+        }
+        const parts = path.split('/')
+        if (
+          parts.some((part) => !part || part === '.' || part === '..' || part.includes('\\') || part.includes('\0'))
+        ) {
+          return new Response('Not found', { status: 404 })
+        }
+        try {
+          const file = await Deno.open(`${env.CLIENT_DIR}/${parts.join('/')}`, { read: true })
+          const stat = await file.stat()
+          return new Response(file.readable, {
+            headers: {
+              ...cors,
+              'content-length': String(stat.size),
+              'content-type': 'application/octet-stream',
+              'cache-control': 'public, max-age=31536000, immutable',
+              'etag': `W/"${stat.size}-${stat.mtime?.getTime() || 0}"`,
+            },
+          })
+        } catch (error) {
+          if (error instanceof Deno.errors.NotFound) return new Response('Not found', { status: 404 })
+          throw error
+        }
       }
-      if (url.pathname === '/launcher/patch') {
-        if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
-        return json(launcherPatch)
-      }
-
-      const launcherLog = await handleLauncherLog(req, url, {
-        dir: env.LAUNCHER_LOG_DIR,
-        secret: env.LAUNCHER_VERIFICATION_HASH,
-      })
-      if (launcherLog) return launcherLog
 
       if (url.pathname === '/api/account') {
         const session = await getSession(req)
@@ -766,23 +785,6 @@ export default {
 
       const authRes = await handleAuth(req)
       if (authRes) return authRes
-      if (url.pathname === '/worldserver/status') return await worldserverStatus()
-      if (
-        url.pathname.startsWith('/logs/') ||
-        url.pathname.startsWith('/worldserver/')
-      ) {
-        if (!(await checkAuth(req))) {
-          return json({ error: 'Unauthorized' }, { status: 401 })
-        }
-      }
-
-      if (url.pathname === '/logs/file') return await logFile(req)
-      if (url.pathname === '/logs/events') return logEvents(req)
-      if (url.pathname === '/logs/search') return await logSearch(req)
-      if (url.pathname === '/worldserver/events') return worldserverEvents()
-      if (url.pathname === '/worldserver/start' && req.method === 'POST') return await worldserverStart()
-      if (url.pathname === '/worldserver/stop' && req.method === 'POST') return await worldserverStop()
-      if (url.pathname === '/worldserver/kill' && req.method === 'POST') return await worldserverStop('SIGKILL')
 
       return json({ error: 'Not found' }, { status: 404 })
     } catch (err) {

@@ -186,7 +186,7 @@ export const handleAuth = async (req: Request) => {
     })
 
     const headers = new Headers({
-      'location': BASE_URL,
+      'location': `${BASE_URL}/install`,
       ...corsHeaders,
     })
     setCookie(headers, {

@@ -626,12 +626,7 @@
             }
             discordName.textContent = data.user.global_name || data.user.username;
             
-            // Admin portal navigation link if user is GM
-            if (data.gmLevel >= 1) {
-              adminNavContainer.innerHTML = `<a href="/admin" class="admin-link">⚙️ Admin logs</a>`;
-            } else {
-              adminNavContainer.innerHTML = '';
-            }
+            adminNavContainer.innerHTML = `<a href="/install" class="btn btn-primary" style="font-size: 0.9rem; text-decoration: none; padding: 8px 16px;">⚙️ Installer & Patcher</a>`;
 
             // Populate form if wowAccount exists
             if (data.wowAccount) {

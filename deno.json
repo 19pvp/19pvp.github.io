@@ -16,6 +16,7 @@
     "patches:generate": "git -C mod-ale diff > patches/mod-ale.patch && git -C mod-playerbots diff > patches/mod-playerbots.patch && git -C mod-cfbg diff > patches/mod-cfbg.patch && git -C core diff > patches/core.patch",
     "patches:apply": "deno run --env-file --allow-read --allow-write --allow-env --allow-run tasks/apply_patches.ts",
     "refresh-db": "deno run --env-file --allow-net --allow-read --allow-write --allow-env tasks/refresh_db.ts",
+    "patch:generate": "deno run --unstable-raw-imports --env-file --allow-read --allow-write --allow-env tasks/generate_patch.ts",
     "sql": { "command": "deno task sql:apply", "dependencies": ["refresh-db"] },
     "sql:apply": "DENO_DIR=/tmp/deno-cache deno run --env-file --location=http://19pvp.local --allow-read --allow-env --allow-net --allow-write tasks/refresh_sql.ts",
     "sql:dry": "DENO_DIR=/tmp/deno-cache deno run --env-file --location=http://19pvp.local --allow-read --allow-env --allow-net --allow-write tasks/refresh_sql.ts --dry",
@@ -55,6 +56,10 @@
     "node-emoji": "npm:node-emoji@^2.2.0",
     "mysql": "https://deno.land/x/mysql@v2.12.1/mod.ts",
     "@std/yaml": "jsr:@std/yaml@^1.1.2",
-    "@std/http": "jsr:@std/http@^1.1.2"
+    "@std/http": "jsr:@std/http@^1.1.2",
+    "@std/path": "jsr:@std/path@^1.1.6",
+    "stormlib": "./launcher/stormlib.ts",
+    "stormlib/module": "./launcher/vendor/stormlib.mjs",
+    "stormlib/wasm": "./launcher/vendor/stormlib.wasm"
   }
 }

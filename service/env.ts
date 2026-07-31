@@ -50,6 +50,11 @@ export const env = {
   GEMINI_TOKEN: get('GEMINI_TOKEN'),
   CORE_PATH: get('CORE_PATH', false, `/root/services/${projectName}/core`),
   WORLDSERVER_SERVICE_NAME: get('WORLDSERVER_SERVICE_NAME', false, `${projectName}-worldserver`),
+  CLIENT_DIR: get(
+    'CLIENT_DIR',
+    false,
+    `/root/services/${projectName}/client`,
+  ),
   LAUNCHER_LOG_DIR: get(
     'LAUNCHER_LOG_DIR',
     false,
