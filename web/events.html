@@ -90,7 +90,7 @@
       gap: 12px;
       flex-wrap: wrap;
     }
-    header h1, h2, h3, .title-font {
+    header h1, h2, h3, button, .btn, .tab, .title-font {
       font-family: var(--font-title);
     }
     header h1 {
@@ -102,7 +102,9 @@
       gap: 8px;
     }
     header h1 img {
-      height: 24px;
+      max-height: 24px;
+      height: auto;
+      max-width: 100%;
       width: auto;
     }
     header h1 span {
@@ -150,6 +152,7 @@
 
     /* ---- btn ---- */
     .btn {
+      font-family: var(--font-title);
       height: 32px;
       padding: 0 12px;
       border-radius: 6px;

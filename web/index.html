@@ -129,7 +129,9 @@
     }
 
     .logo-icon {
-      height: 240px;
+      max-height: 240px;
+      height: auto;
+      max-width: 100%;
       width: auto;
       margin-bottom: 15px;
       display: inline-block;
@@ -148,7 +150,7 @@
       }
     }
 
-    h1, h2, h3, .title-font {
+    h1, h2, h3, button, .btn, .title-font {
       font-family: var(--font-title);
     }
 
@@ -169,6 +171,7 @@
     }
 
     .btn {
+      font-family: var(--font-title);
       display: inline-flex;
       align-items: center;
       justify-content: center;
