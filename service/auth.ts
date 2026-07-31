@@ -15,40 +15,62 @@ const roleGMLevel: Record<string, number> = {
   [env.GM_LEVEL_3]: 3,
 }
 
-// In-memory session store & temporary OAuth state store
-const sessions = new Map<string, { user: unknown; gmLevel: number; fingerprint: string; discordId: string }>()
+// In-memory temporary OAuth state store
 const states = new Set<string>()
 
-// Cryptographically secure random session signing secret generated once at startup
-const sessionSecret = crypto.randomUUID()
+// Stable secret key derived from environment
+const sessionSecret = env.LAUNCHER_VERIFICATION_HASH || '19pvp-stable-session-secret-seed'
 
-const hashSessionId = async (id: string) => {
-  const data = new TextEncoder().encode(id + sessionSecret)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
+const getKey = async () => {
+  const enc = new TextEncoder()
+  return await crypto.subtle.importKey(
+    'raw',
+    enc.encode(sessionSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify'],
+  )
 }
 
-const getClientFingerprint = (req: Request) => {
-  return req.headers.get('user-agent') || ''
+const signSessionData = async (data: string) => {
+  const key = await getKey()
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data))
+  return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+const verifySessionData = async (data: string, signatureHex: string) => {
+  const key = await getKey()
+  const sigBytes = new Uint8Array(signatureHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || [])
+  return await crypto.subtle.verify('HMAC', key, sigBytes, new TextEncoder().encode(data))
 }
 
 export const getSession = async (req: Request) => {
   const cookies = getCookies(req.headers)
   const cookieValue = cookies['logs_session']
   if (!cookieValue) return null
-  const [sessionId, signature] = cookieValue.split('.')
-  if (!sessionId || !signature) return null
-  const expectedSig = await hashSessionId(sessionId)
-  if (signature !== expectedSig) return null
+  const lastDot = cookieValue.lastIndexOf('.')
+  if (lastDot === -1) return null
+  const payloadB64 = cookieValue.slice(0, lastDot)
+  const signature = cookieValue.slice(lastDot + 1)
+  if (!payloadB64 || !signature) return null
 
-  const session = sessions.get(sessionId)
-  if (!session) return null
+  try {
+    const isValid = await verifySessionData(payloadB64, signature)
+    if (!isValid) return null
 
-  if (session.fingerprint !== getClientFingerprint(req)) {
-    sessions.delete(sessionId)
+    const jsonStr = new TextDecoder().decode(Uint8Array.from(atob(payloadB64), (c) => c.charCodeAt(0)))
+    const session = JSON.parse(jsonStr)
+
+    if (session.exp && Date.now() > session.exp) return null
+
+    return {
+      user: session.user,
+      gmLevel: Number(session.gmLevel || 0),
+      discordId: String(session.discordId),
+    }
+  } catch {
     return null
   }
-  return session
 }
 
 export const checkAuth = async (req: Request) => {
@@ -81,6 +103,7 @@ export const handleAuth = async (req: Request) => {
       response_type: 'code',
       scope: 'identify guilds.join',
       state,
+      prompt: 'none',
     })}`
 
     const headers = new Headers({
@@ -163,9 +186,6 @@ export const handleAuth = async (req: Request) => {
       console.error('Failed to fetch guild membership info:', err)
     }
 
-    const sessionId = crypto.randomUUID()
-    const signature = await hashSessionId(sessionId)
-
     // Ensure discord_account entry exists
     const discordId = BigInt(user.id)
     const [existingLink] = await auth.sql`
@@ -178,12 +198,15 @@ export const handleAuth = async (req: Request) => {
       `
     }
 
-    sessions.set(sessionId, {
+    const payload = JSON.stringify({
       user,
       gmLevel,
-      fingerprint: getClientFingerprint(req),
       discordId: user.id,
+      exp: Date.now() + 30 * 24 * 60 * 60 * 1000,
     })
+    const payloadB64 = btoa(String.fromCharCode(...new TextEncoder().encode(payload)))
+    const signature = await signSessionData(payloadB64)
+    const token = `${payloadB64}.${signature}`
 
     const headers = new Headers({
       'location': `${BASE_URL}/install`,
@@ -191,12 +214,12 @@ export const handleAuth = async (req: Request) => {
     })
     setCookie(headers, {
       name: 'logs_session',
-      value: `${sessionId}.${signature}`,
+      value: token,
       path: '/',
       httpOnly: true,
       secure: true,
       sameSite: 'None',
-      maxAge: 86400,
+      maxAge: 30 * 24 * 60 * 60,
     })
     setCookie(headers, {
       name: 'discord_oauth_state',
@@ -226,9 +249,6 @@ export const handleAuth = async (req: Request) => {
   }
 
   if (url.pathname === '/auth/logout' && req.method === 'POST') {
-    const cookies = getCookies(req.headers)
-    const sessionId = cookies['logs_session']?.split('.')?.[0]
-    sessionId && sessions.delete(sessionId)
     const headers = new Headers(corsHeaders)
     setCookie(headers, {
       name: 'logs_session',
