@@ -9,12 +9,13 @@ import { env } from './env.ts'
 import { handleLauncherLog } from './launcher_logs.ts'
 
 import indexHTML from '../web/index.html' with { type: 'bytes' }
-import installHTML from '../web/install.html' with { type: 'bytes' }
+import installHTMLRaw from '../web/install.html' with { type: 'text' }
 import adminHTML from '../web/admin.html' with { type: 'bytes' }
 import eventsHTML from '../web/events.html' with { type: 'bytes' }
 import pvp19Lua from '../addons/PvP19/PvP19.lua' with { type: 'bytes' }
 import pvp19Toc from '../addons/PvP19/PvP19.toc' with { type: 'text' }
 import launcherPatch from '../launcher/patch.json' with { type: 'json' }
+import manifestJSON from './manifest.json' with { type: 'json' }
 
 void import('./world-chat.ts').catch((err) => {
   console.error('Discord bridge failed to start', err)
@@ -32,6 +33,13 @@ if (!pvp19AddonVersion) throw new Error('missing PvP19 addon version in toc')
 const [realm] = await auth.sql`SELECT address FROM realmlist WHERE id = ${env.WORLD_ID}`
 const launcherRealmlist = String(realm?.address ?? '')
 if (!launcherRealmlist) throw new Error(`realm not found: ${env.WORLD_ID}`)
+
+const installHTMLBytes = new TextEncoder().encode(
+  installHTMLRaw
+    .replace('MANIFEST_PLACEHOLDER', JSON.stringify(manifestJSON))
+    .replace('WEBSEED_PLACEHOLDER', JSON.stringify(env.LAUNCHER_WEBSEED_URL))
+    .replace('REALMLIST_PLACEHOLDER', JSON.stringify(launcherRealmlist)),
+)
 
 const systemctl = (...args: string[]) => runCommand('systemctl', args)
 
@@ -613,7 +621,7 @@ export default {
         return new Response(indexHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
       if (url.pathname === '/install') {
-        return new Response(installHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+        return new Response(installHTMLBytes, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
       if (url.pathname === '/admin') {
         return new Response(adminHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })

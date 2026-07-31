@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>">
-    <title>19 PvP - Client Installer & Patch Launcher</title>
+    <title>19 PvP - Client Installer & Patcher</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -187,14 +187,16 @@
 
       .log-box {
         font-family: var(--font-mono);
-        font-size: 0.85rem;
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid var(--border-color);
+        font-size: 0.82rem;
+        background: #030712;
+        border: 1px solid #374151;
         border-radius: 10px;
         padding: 12px;
-        max-height: 150px;
+        height: 240px;
         overflow-y: auto;
+        white-space: pre-wrap;
         color: #a7f3d0;
+        margin-top: 10px;
       }
     </style>
   </head>
@@ -202,7 +204,7 @@
     <div class="container">
       <div class="header">
         <div class="logo-icon">⚔️</div>
-        <h1>19 PvP Web Installer & Launcher</h1>
+        <h1>19 PvP Web Installer & Patcher</h1>
         <div class="subtitle">Direct File System Access Client Management</div>
       </div>
 
@@ -276,11 +278,36 @@
       const logBox = document.getElementById('logBox');
       const readyNotice = document.getElementById('readyNotice');
 
+      // Embedded static client manifest & environment
+      const EMBEDDED_MANIFEST = MANIFEST_PLACEHOLDER;
+      const EMBEDDED_WEBSEED = WEBSEED_PLACEHOLDER;
+      const EMBEDDED_REALMLIST = REALMLIST_PLACEHOLDER;
+
       let dirHandle = null;
 
       const hasFS = typeof window.showDirectoryPicker === 'function';
+      const isSecure = window.isSecureContext;
+
       if (!hasFS) {
         unsupportedAlert.style.display = 'block';
+        if (!isSecure && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+          unsupportedAlert.innerHTML = `
+            <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ HTTPS Required</strong>
+            The File System Access API is disabled by your browser because this site is loaded over HTTP without SSL.<br>
+            Please access this page via <strong>https://</strong> or on <strong>localhost</strong>.
+          `;
+        } else {
+          unsupportedAlert.innerHTML = `
+            <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ File System Access Disabled or Unsupported</strong>
+            Your browser environment does not expose <code>showDirectoryPicker</code>.<br>
+            If you are using <strong>Brave</strong>, make sure <i>File System Access API</i> is allowed in your Shield / Site Settings, or use Chrome/Edge over HTTPS:
+            <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+              <a href="https://www.google.com/chrome/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Google Chrome ↗</a>
+              <a href="https://brave.com/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Brave Browser ↗</a>
+              <a href="https://www.microsoft.com/edge" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Microsoft Edge ↗</a>
+            </div>
+          `;
+        }
         selectFolderBtn.disabled = true;
         selectFolderBtn.style.opacity = '0.5';
         selectFolderBtn.style.cursor = 'not-allowed';
@@ -288,8 +315,11 @@
 
       function appendLog(msg) {
         logBox.style.display = 'block';
+        const shouldScroll = logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 16;
         logBox.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
-        logBox.scrollTop = logBox.scrollHeight;
+        if (shouldScroll) {
+          logBox.scrollTop = logBox.scrollHeight;
+        }
       }
 
       function setStep(elem, state, text) {
@@ -404,6 +434,58 @@
         }
       };
 
+      async function calculateSHA1(fileHandle, onProgress) {
+        const file = await fileHandle.getFile();
+        const stream = file.stream();
+        const reader = stream.getReader();
+        const total = file.size;
+        let loaded = 0;
+
+        // Collect chunks or compute digest
+        const chunks = [];
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          loaded += value.byteLength;
+          if (onProgress) onProgress(loaded, total);
+        }
+
+        const combined = new Uint8Array(loaded);
+        let offset = 0;
+        for (const chunk of chunks) {
+          combined.set(chunk, offset);
+          offset += chunk.byteLength;
+        }
+
+        const hashBuf = await crypto.subtle.digest('SHA-1', combined);
+        const hashArray = Array.from(new Uint8Array(hashBuf));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      const SAVED_FOLDER_KEY = '19pvp_wow_folder_name';
+
+      const savedFolderName = localStorage.getItem(SAVED_FOLDER_KEY);
+      if (savedFolderName) {
+        folderPath.textContent = savedFolderName + ' (Re-select to grant permission)';
+      }
+
+      selectFolderBtn.onclick = async () => {
+        if (!hasFS) return;
+        try {
+          dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+          folderPath.textContent = dirHandle.name;
+          localStorage.setItem(SAVED_FOLDER_KEY, dirHandle.name);
+          syncBtn.style.display = 'inline-flex';
+          readyNotice.style.display = 'none';
+          appendLog(`Selected directory: ${dirHandle.name}`);
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            appendLog(`Error selecting directory: ${err.message}`);
+          }
+        }
+      };
+
       syncBtn.onclick = async () => {
         if (!dirHandle) return;
         syncBtn.disabled = true;
@@ -412,26 +494,79 @@
         readyNotice.style.display = 'none';
 
         try {
-          // Fetch Config
-          statusText.textContent = 'Loading server launcher config...';
-          const cfgRes = await fetch(`${api}/launcher/config`);
-          if (!cfgRes.ok) throw new Error('Could not fetch launcher config');
-          const cfg = await cfgRes.json();
-          const targetRealmlist = cfg.realmlist;
+          const targetRealmlist = EMBEDDED_REALMLIST || '19pvp.devazuka.com';
+          let manifestFiles = EMBEDDED_MANIFEST && Array.isArray(EMBEDDED_MANIFEST.files) ? EMBEDDED_MANIFEST.files : [];
+          let webseedUrl = EMBEDDED_WEBSEED || 'https://dl.devazuka.com/wow/';
 
-          // 1. Verify Client
+          // 1. Verify Client Files with SHA-1
           setStep(stepClient, 'active');
-          appendLog('Checking client base installation...');
-          let commonMPQ = await getFileHandle(dirHandle, 'Data/common.MPQ', false)
-            || await getFileHandle(dirHandle, 'Data/common-2.MPQ', false);
+          appendLog('Verifying client base installation files via WebCrypto SHA-1...');
 
-          if (!commonMPQ) {
-            appendLog('Base client files missing. Starting webseed download...');
-            setStep(stepClient, 'active', 'Downloading base client files...');
-            const webseedUrl = cfg.webseedUrl || 'https://dl.devazuka.com/wow/';
-            appendLog(`Connecting to webseed: ${webseedUrl}`);
+          if (manifestFiles.length === 0) {
+            // Fallback default list if manifest is not pre-populated
+            manifestFiles = [
+              { path: 'WoW.exe' },
+              { path: 'Data/common.MPQ' },
+              { path: 'Data/common-2.MPQ' },
+              { path: 'Data/expansion.MPQ' },
+              { path: 'Data/lichking.MPQ' }
+            ];
           }
-          setStep(stepClient, 'done', 'Base client verified');
+
+          for (let i = 0; i < manifestFiles.length; i++) {
+            const item = manifestFiles[i];
+            const relativePath = item.path;
+            const expectedSha1 = item.sha1 ? item.sha1.toLowerCase() : '';
+            const expectedSize = item.size || 0;
+
+            statusText.textContent = `Verifying ${relativePath} (${i + 1}/${manifestFiles.length})...`;
+            progressFill.style.width = `${Math.round(((i) / manifestFiles.length) * 20)}%`;
+
+            const handle = await getFileHandle(dirHandle, relativePath, false);
+            let needsDownload = false;
+
+            if (!handle) {
+              appendLog(`Missing file: ${relativePath}`);
+              needsDownload = true;
+            } else if (expectedSha1) {
+              appendLog(`Hashing ${relativePath}...`);
+              const fileObj = await handle.getFile();
+              if (expectedSize && fileObj.size !== expectedSize) {
+                appendLog(`Size mismatch for ${relativePath} (local: ${fileObj.size}, expected: ${expectedSize})`);
+                needsDownload = true;
+              } else {
+                const actualSha1 = await calculateSHA1(handle, (loaded, total) => {
+                  if (total) {
+                    const filePct = Math.round((loaded / total) * 100);
+                    speedText.textContent = `Hashing: ${filePct}%`;
+                  }
+                });
+                if (actualSha1 !== expectedSha1) {
+                  appendLog(`SHA-1 mismatch for ${relativePath} (local: ${actualSha1}, expected: ${expectedSha1})`);
+                  needsDownload = true;
+                } else {
+                  appendLog(`Verified ${relativePath} [SHA-1 OK]`);
+                }
+              }
+            } else {
+              appendLog(`Found ${relativePath}`);
+            }
+
+            if (needsDownload) {
+              const fileUrl = `${webseedUrl.replace(/\/$/, '')}/${relativePath}`;
+              appendLog(`Downloading ${relativePath} from webseed: ${fileUrl}`);
+              statusText.textContent = `Downloading ${relativePath}...`;
+              await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total) => {
+                if (total) {
+                  const pct = Math.round((loaded / total) * 100);
+                  speedText.textContent = `Downloading: ${pct}%`;
+                }
+              });
+              appendLog(`Finished download of ${relativePath}`);
+            }
+          }
+          speedText.textContent = '';
+          setStep(stepClient, 'done', 'Base client files verified & complete');
 
           // 2. Realmlist Update
           setStep(stepRealmlist, 'active');
