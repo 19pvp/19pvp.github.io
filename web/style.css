@@ -273,7 +273,6 @@ label {
 }
 
 /* Custom Hand-Drawn Box & Button Border Utilities */
-.btn,
 .white-box {
   border-style: solid;
   border-width: 8px;

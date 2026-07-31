@@ -53,7 +53,7 @@
   <body>
     <div class="container black-box">
       <div style="display: flex; justify-content: flex-start; margin-bottom: 16px;">
-        <a href="/" class="btn btn-secondary" style="font-size: 0.85rem; padding: 8px 14px;">
+        <a href="/" class="btn btn-secondary white-box" style="font-size: 0.85rem; padding: 8px 14px;">
           ← Back to Dashboard
         </a>
       </div>
@@ -69,9 +69,9 @@
         Your current browser does not support directory read/write access (File System Access API).<br>
         Please use a Chromium-based browser to manage or install your client:
         <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
-          <a href="https://www.google.com/chrome/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Google Chrome ↗</a>
-          <a href="https://brave.com/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Brave Browser ↗</a>
-          <a href="https://www.microsoft.com/edge" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Microsoft Edge ↗</a>
+          <a href="https://www.google.com/chrome/" target="_blank" class="btn btn-secondary white-box" style="font-size: 0.85rem;">Google Chrome ↗</a>
+          <a href="https://brave.com/" target="_blank" class="btn btn-secondary white-box" style="font-size: 0.85rem;">Brave Browser ↗</a>
+          <a href="https://www.microsoft.com/edge" target="_blank" class="btn btn-secondary white-box" style="font-size: 0.85rem;">Microsoft Edge ↗</a>
         </div>
       </div>
 
@@ -82,7 +82,7 @@
             <span id="folderPath"
               style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No folder selected</span>
           </div>
-          <button id="selectFolderBtn" class="btn btn-secondary">
+          <button id="selectFolderBtn" class="btn btn-secondary white-box">
             📁 Select Folder
           </button>
         </div>
@@ -98,7 +98,7 @@
         </div>
 
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button id="syncBtn" class="btn btn-primary" style="display: none;">
+          <button id="syncBtn" class="btn btn-primary white-box" style="display: none;">
             ⚡ Verify & Install Client Updates
           </button>
         </div>
@@ -285,20 +285,27 @@
       const parts = String(path).replace(/\\/g, '/').split('/').map(p => p.trim()).filter(Boolean)
       let curr = parent
       for (const part of parts) {
-        let target = part
-        let found = false
-        for await (const name of curr.keys()) {
-          if (name.toLowerCase() === part.toLowerCase()) {
-            target = name
-            found = true
-            break
-          }
-        }
-        if (!create && !found) return null
         try {
-          curr = await curr.getDirectoryHandle(target, { create })
+          curr = await curr.getDirectoryHandle(part, { create })
         } catch (error) {
-          throw await explainFileSystemError(error, curr, path, target, 'getDirectoryHandle')
+          if (!create && (error.name === 'NotFoundError' || error.name === 'TypeMismatchError')) {
+            // Case-insensitive fallback if exact match not found
+            let foundHandle = null
+            try {
+              for await (const name of curr.keys()) {
+                if (name.toLowerCase() === part.toLowerCase()) {
+                  foundHandle = await curr.getDirectoryHandle(name, { create: false })
+                  break
+                }
+              }
+            } catch {}
+            if (foundHandle) {
+              curr = foundHandle
+              continue
+            }
+            return null
+          }
+          throw await explainFileSystemError(error, curr, path, part, 'getDirectoryHandle')
         }
       }
       return curr
@@ -312,20 +319,21 @@
       const parentDir = await getDirectoryHandle(parent, parts.join('/'), create)
       if (!parentDir) return null
 
-      let target = fileName
-      let found = false
-      for await (const name of parentDir.keys()) {
-        if (name.toLowerCase() === fileName.toLowerCase()) {
-          target = name
-          found = true
-          break
-        }
-      }
-      if (!create && !found) return null
       try {
-        return await parentDir.getFileHandle(target, { create })
+        return await parentDir.getFileHandle(fileName, { create })
       } catch (error) {
-        throw await explainFileSystemError(error, parentDir, path, target, 'getFileHandle')
+        if (!create && (error.name === 'NotFoundError' || error.name === 'TypeMismatchError')) {
+          // Case-insensitive fallback if exact match not found
+          try {
+            for await (const name of parentDir.keys()) {
+              if (name.toLowerCase() === fileName.toLowerCase()) {
+                return await parentDir.getFileHandle(name, { create: false })
+              }
+            }
+          } catch {}
+          return null
+        }
+        throw await explainFileSystemError(error, parentDir, path, fileName, 'getFileHandle')
       }
     }
 
@@ -433,7 +441,9 @@
             total = Number(res.headers.get('content-length') || 0)
           }
 
-          writable = await fileHandle.createWritable({ keepExistingData: isPartial })
+          // Re-acquire handle to ensure state object cache is fresh before creating writable stream
+          const freshHandle = await getFileHandle(parent, relativePath, true)
+          writable = await freshHandle.createWritable({ keepExistingData: isPartial })
           if (isPartial) {
             await writable.seek(startOffset)
             appendLog(`Resuming ${relativePath} from ${formatBytes(startOffset)} / ${formatBytes(total)}...`)
