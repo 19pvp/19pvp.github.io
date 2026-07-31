@@ -160,7 +160,7 @@ export default {
         }
       }
       if (url.pathname.startsWith('/client-file/')) {
-        if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
+        if (req.method !== 'GET' && req.method !== 'HEAD') return new Response('Method not allowed', { status: 405 })
         const session = await getSession(req)
         if (!session) return json({ error: 'Unauthorized' }, { status: 401 })
         let path: string
@@ -176,15 +176,74 @@ export default {
           return new Response('Not found', { status: 404 })
         }
         try {
-          const file = await Deno.open(`${env.CLIENT_DIR}/${parts.join('/')}`, { read: true })
+          const filePath = `${env.CLIENT_DIR}/${parts.join('/')}`
+          const file = await Deno.open(filePath, { read: true })
           const stat = await file.stat()
+          const etag = `W/"${stat.size}-${stat.mtime?.getTime() || 0}"`
+
+          const rangeHeader = req.headers.get('range')
+          if (rangeHeader) {
+            const match = rangeHeader.match(/^bytes=(\d+)-(\d+)?$/)
+            if (match) {
+              const start = parseInt(match[1], 10)
+              const end = match[2] ? parseInt(match[2], 10) : stat.size - 1
+
+              if (start >= stat.size || end >= stat.size || start > end) {
+                file.close()
+                return new Response('Range Not Satisfiable', {
+                  status: 416,
+                  headers: { ...cors, 'content-range': `bytes */${stat.size}` },
+                })
+              }
+
+              await file.seek(start, Deno.SeekMode.Start)
+              const chunkLength = end - start + 1
+
+              // Create bounded readable stream for range
+              let bytesRead = 0
+              const stream = file.readable.pipeThrough(
+                new TransformStream({
+                  transform(chunk, controller) {
+                    const remaining = chunkLength - bytesRead
+                    if (remaining <= 0) {
+                      controller.terminate()
+                      return
+                    }
+                    if (chunk.byteLength > remaining) {
+                      controller.enqueue(chunk.subarray(0, remaining))
+                      bytesRead += remaining
+                      controller.terminate()
+                    } else {
+                      controller.enqueue(chunk)
+                      bytesRead += chunk.byteLength
+                    }
+                  },
+                }),
+              )
+
+              return new Response(stream, {
+                status: 206,
+                headers: {
+                  ...cors,
+                  'content-range': `bytes ${start}-${end}/${stat.size}`,
+                  'accept-ranges': 'bytes',
+                  'content-length': String(chunkLength),
+                  'content-type': 'application/octet-stream',
+                  'cache-control': 'public, max-age=31536000, immutable',
+                  'etag': etag,
+                },
+              })
+            }
+          }
+
           return new Response(file.readable, {
             headers: {
               ...cors,
+              'accept-ranges': 'bytes',
               'content-length': String(stat.size),
               'content-type': 'application/octet-stream',
               'cache-control': 'public, max-age=31536000, immutable',
-              'etag': `W/"${stat.size}-${stat.mtime?.getTime() || 0}"`,
+              'etag': etag,
             },
           })
         } catch (error) {

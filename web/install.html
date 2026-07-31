@@ -51,7 +51,7 @@
     </style>
   </head>
   <body>
-    <div class="container white-box">
+    <div class="container black-box">
       <div style="display: flex; justify-content: flex-start; margin-bottom: 16px;">
         <a href="/" class="btn btn-secondary" style="font-size: 0.85rem; padding: 8px 14px;">
           ← Back to Dashboard
@@ -387,43 +387,29 @@
     }
 
     async function downloadToPath(url, parent, relativePath, onProgress) {
-      let fileHandle
-      let writable
-      let existingFile
-      try {
-        fileHandle = await getFileHandle(parent, relativePath, true)
-        writable = await fileHandle.createWritable({ keepExistingData: true })
-        // Get initial file size if partially downloaded
-        existingFile = await fileHandle.getFile()
-      } catch (error) {
-        if (writable) await writable.close().catch(() => {})
-        reportError(`Failed to prepare ${relativePath}`, error)
-        throw error
-      }
-      let loaded = existingFile.size
-      let total = 0
-
-      const startTime = performance.now()
-      let lastTime = startTime
-      let lastLoaded = loaded
-      let currentSpeed = 0
-
-      const maxRetries = 10
+      const maxRetries = 5
       let retryAttempt = 0
 
       while (true) {
+        let fileHandle
+        let writable
+        let existingSize = 0
+
         try {
+          fileHandle = await getFileHandle(parent, relativePath, true)
+          const fileObj = await fileHandle.getFile()
+          existingSize = fileObj.size
+
           const reqHeaders = {}
-          if (loaded > 0) {
-            reqHeaders['Range'] = `bytes=${loaded}-`
+          if (existingSize > 0) {
+            reqHeaders['Range'] = `bytes=${existingSize}-`
           }
 
           const res = await fetchWithTimeout(url, { credentials: 'include', headers: reqHeaders })
 
+          // 416 Range Not Satisfiable -> file already fully downloaded
           if (res.status === 416) {
-            // Range Not Satisfiable -> file is already fully downloaded
-            await writable.close()
-            if (onProgress) onProgress(loaded, loaded, 0, 0)
+            if (onProgress) onProgress(existingSize, existingSize, 0, 0)
             return
           }
 
@@ -431,22 +417,35 @@
             throw Error(`HTTP ${res.status} when fetching ${url}`)
           }
 
-          if (res.status === 206) {
+          // Resuming: keep existing data and seek to the end of existing data
+          const isPartial = res.status === 206
+          const startOffset = isPartial ? existingSize : 0
+
+          let total = 0
+          if (isPartial) {
             const contentRange = res.headers.get('content-range')
             if (contentRange) {
               const match = contentRange.match(/\/(\d+)$/)
               if (match) total = Number(match[1])
             }
-            // Position writable at current loaded offset
-            await writable.seek(loaded)
+            if (!total) total = startOffset + Number(res.headers.get('content-length') || 0)
           } else {
-            // Server returned 200 OK (doesn't support range or fresh download)
             total = Number(res.headers.get('content-length') || 0)
-            loaded = 0
-            await writable.seek(0)
           }
 
-          retryAttempt = 0 // Reset retries on successful connection
+          writable = await fileHandle.createWritable({ keepExistingData: isPartial })
+          if (isPartial) {
+            await writable.seek(startOffset)
+            appendLog(`Resuming ${relativePath} from ${formatBytes(startOffset)} / ${formatBytes(total)}...`)
+          } else {
+            appendLog(`Downloading ${relativePath} (${formatBytes(total)})...`)
+          }
+
+          let loaded = startOffset
+          const startTime = performance.now()
+          let lastTime = startTime
+          let lastLoaded = startOffset
+          let currentSpeed = 0
 
           if (res.body) {
             const reader = res.body.getReader()
@@ -480,16 +479,17 @@
             return
           }
         } catch (err) {
-          retryAttempt++
-          if (retryAttempt > maxRetries) {
+          if (writable) {
             try {
               await writable.close()
-            } catch (closeError) {
-              reportError(`Failed to close ${relativePath}`, closeError)
-            }
+            } catch {}
+          }
+          retryAttempt++
+          if (retryAttempt > maxRetries) {
+            reportError(`Failed downloading ${relativePath}`, err)
             throw err
           }
-          const delayMs = Math.min(1000 * Math.pow(1.5, retryAttempt), 10000)
+          const delayMs = Math.min(1000 * Math.pow(1.5, retryAttempt), 5000)
           reportError(`Network error on ${relativePath}`, err)
           appendLog(
             `Retrying ${relativePath} in ${
@@ -641,55 +641,43 @@
             } verified (${initialPct}% ready). Downloading ${formatBytes(remainingBytesToDownload)} missing data...`,
           )
           const totalStartTime = performance.now()
-          const CONCURRENCY = 4
-          let fileQueueIndex = 0
           let completedCount = 0
 
-          const runWorker = async () => {
-            while (fileQueueIndex < filesToDownload.length) {
-              const currentIndex = fileQueueIndex++
-              const { item } = filesToDownload[currentIndex]
-              const relativePath = item.path
-              const fileUrl = `${api}/client-file/${encodeURIComponent(relativePath)}`
+          for (const { item } of filesToDownload) {
+            const relativePath = item.path
+            const fileUrl = `${api}/client-file/${encodeURIComponent(relativePath)}`
 
-              appendLog(`[Queue] Downloading ${relativePath}...`)
-              let previousLoadedForFile = 0
+            appendLog(`Downloading ${relativePath}...`)
+            let previousLoadedForFile = 0
 
-              try {
-                await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total, speed, fileEta) => {
-                  const now = performance.now()
-                  const deltaLoaded = loaded - previousLoadedForFile
-                  previousLoadedForFile = loaded
-                  currentTotalBytes += deltaLoaded
+            try {
+              await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total, speed, fileEta) => {
+                const now = performance.now()
+                const deltaLoaded = loaded - previousLoadedForFile
+                previousLoadedForFile = loaded
+                currentTotalBytes += deltaLoaded
 
-                  const overallPct = fullProjectSize > 0 ? Math.round((currentTotalBytes / fullProjectSize) * 100) : 0
-                  progressFill.style.width = `${Math.min(100, Math.max(0, overallPct))}%`
+                const overallPct = fullProjectSize > 0 ? Math.round((currentTotalBytes / fullProjectSize) * 100) : 0
+                progressFill.style.width = `${Math.min(100, Math.max(0, overallPct))}%`
 
-                  const elapsedSecs = (now - totalStartTime) / 1000
-                  const downloadedSoFar = currentTotalBytes - alreadyVerifiedBytes
-                  if (elapsedSecs > 0.5 && downloadedSoFar > 0) {
-                    const overallSpeed = downloadedSoFar / elapsedSecs
-                    const bytesLeft = Math.max(0, fullProjectSize - currentTotalBytes)
-                    const totalEta = overallSpeed > 0 ? bytesLeft / overallSpeed : 0
-                    statusText.textContent = `Updating files (${completedCount}/${filesToDownload.length}) • ${overallPct}%`
-                    speedText.textContent = `${formatBytes(overallSpeed)}/s • ${formatETA(totalEta)} remaining`
-                  }
-                })
-              } catch (error) {
-                reportError(`Failed to download ${relativePath}`, error)
-                throw error
-              }
-
-              completedCount++
-              appendLog(`[Queue] Finished ${relativePath} (${completedCount}/${filesToDownload.length})`)
+                const elapsedSecs = (now - totalStartTime) / 1000
+                const downloadedSoFar = currentTotalBytes - alreadyVerifiedBytes
+                if (elapsedSecs > 0.5 && downloadedSoFar > 0) {
+                  const overallSpeed = downloadedSoFar / elapsedSecs
+                  const bytesLeft = Math.max(0, fullProjectSize - currentTotalBytes)
+                  const totalEta = overallSpeed > 0 ? bytesLeft / overallSpeed : 0
+                  statusText.textContent = `Updating files (${completedCount}/${filesToDownload.length}) • ${overallPct}%`
+                  speedText.textContent = `${formatBytes(overallSpeed)}/s • ${formatETA(totalEta)} remaining`
+                }
+              })
+            } catch (error) {
+              reportError(`Failed to download ${relativePath}`, error)
+              throw error
             }
-          }
 
-          const workers = []
-          for (let w = 0; w < Math.min(CONCURRENCY, filesToDownload.length); w++) {
-            workers.push(runWorker())
+            completedCount++
+            appendLog(`Finished ${relativePath} (${completedCount}/${filesToDownload.length})`)
           }
-          await Promise.all(workers)
         }
 
         if (executableArchiveRequired) {
