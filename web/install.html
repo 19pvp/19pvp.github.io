@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>">
+    <title>19 PvP - Client Installer & Patch Launcher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-color: #0d0e12;
+        --card-bg: rgba(22, 24, 33, 0.7);
+        --border-color: rgba(255, 255, 255, 0.08);
+        --text-primary: #f3f4f6;
+        --text-secondary: #9ca3af;
+        --accent-color: #ffd15f;
+        --accent-hover: #ffe08a;
+        --discord-color: #5865f2;
+        --danger-color: #ef4444;
+        --success-color: #10b981;
+        --font-sans: 'Outfit', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-image: 
+          radial-gradient(circle at 10% 20%, rgba(88, 101, 242, 0.08) 0%, transparent 40%),
+          radial-gradient(circle at 90% 80%, rgba(255, 209, 95, 0.06) 0%, transparent 40%);
+        padding: 20px;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 760px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 40px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--discord-color), var(--accent-color));
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .logo-icon {
+        font-size: 3.5rem;
+        margin-bottom: 12px;
+        display: inline-block;
+        filter: drop-shadow(0 0 15px rgba(255, 209, 95, 0.3));
+      }
+
+      h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 6px;
+      }
+
+      .subtitle {
+        color: var(--text-secondary);
+        font-size: 1rem;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        outline: none;
+        text-decoration: none;
+      }
+
+      .btn-primary {
+        background-color: var(--accent-color);
+        color: #000;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 209, 95, 0.2);
+      }
+
+      .btn-secondary {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+      }
+
+      .btn-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .status-banner {
+        padding: 14px 18px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+      }
+
+      .status-error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+      }
+
+      .status-success {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        color: #6ee7b7;
+      }
+
+      .box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .step-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+      }
+
+      .progress-bar-bg {
+        width: 100%;
+        height: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 5px;
+        overflow: hidden;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--discord-color), var(--accent-color));
+        transition: width 0.2s ease;
+      }
+
+      .log-box {
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px;
+        max-height: 150px;
+        overflow-y: auto;
+        color: #a7f3d0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo-icon">⚔️</div>
+        <h1>19 PvP Web Installer & Launcher</h1>
+        <div class="subtitle">Direct File System Access Client Management</div>
+      </div>
+
+      <div id="unsupportedAlert" class="status-banner status-error" style="display: none;">
+        <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ Unsupported Browser Detected</strong>
+        Your current browser does not support directory read/write access (File System Access API).<br>
+        Please use a Chromium-based browser to manage or install your client:
+        <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+          <a href="https://www.google.com/chrome/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Google Chrome ↗</a>
+          <a href="https://brave.com/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Brave Browser ↗</a>
+          <a href="https://www.microsoft.com/edge" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Microsoft Edge ↗</a>
+        </div>
+      </div>
+
+      <div class="box">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <strong style="font-size: 1.1rem; display: block;">Target Client Directory</strong>
+            <span id="folderPath" style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No folder selected</span>
+          </div>
+          <button id="selectFolderBtn" class="btn btn-secondary">
+            📁 Select Folder
+          </button>
+        </div>
+
+        <div id="progressSection" style="display: none; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-secondary);">
+            <span id="statusText">Ready</span>
+            <span id="speedText"></span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="progressFill" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button id="syncBtn" class="btn btn-primary" style="display: none;">
+            ⚡ Verify & Install Client Updates
+          </button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          <div id="stepClient" class="step-item"><span>⚪</span> <span>Client Base Files Check</span></div>
+          <div id="stepPatch" class="step-item"><span>⚪</span> <span>19PvP Server Patch (patch-S.mpq)</span></div>
+          <div id="stepAddon" class="step-item"><span>⚪</span> <span>PvP19 In-Game Addon</span></div>
+          <div id="stepRealmlist" class="step-item"><span>⚪</span> <span>Realmlist Configuration (Data/enUS/realmlist.wtf)</span></div>
+        </div>
+
+        <div id="logBox" class="log-box" style="display: none;"></div>
+
+        <div id="readyNotice" class="status-banner status-success" style="display: none; text-align: center; margin-bottom: 0;">
+          🎉 <strong>Client Ready!</strong> Open <code>WoW.exe</code> inside your client folder to start playing!
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      const api = location.origin;
+      const unsupportedAlert = document.getElementById('unsupportedAlert');
+      const selectFolderBtn = document.getElementById('selectFolderBtn');
+      const folderPath = document.getElementById('folderPath');
+      const syncBtn = document.getElementById('syncBtn');
+      const progressSection = document.getElementById('progressSection');
+      const statusText = document.getElementById('statusText');
+      const speedText = document.getElementById('speedText');
+      const progressFill = document.getElementById('progressFill');
+      const stepClient = document.getElementById('stepClient');
+      const stepPatch = document.getElementById('stepPatch');
+      const stepAddon = document.getElementById('stepAddon');
+      const stepRealmlist = document.getElementById('stepRealmlist');
+      const logBox = document.getElementById('logBox');
+      const readyNotice = document.getElementById('readyNotice');
+
+      let dirHandle = null;
+
+      const hasFS = typeof window.showDirectoryPicker === 'function';
+      if (!hasFS) {
+        unsupportedAlert.style.display = 'block';
+        selectFolderBtn.disabled = true;
+        selectFolderBtn.style.opacity = '0.5';
+        selectFolderBtn.style.cursor = 'not-allowed';
+      }
+
+      function appendLog(msg) {
+        logBox.style.display = 'block';
+        logBox.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+
+      function setStep(elem, state, text) {
+        if (state === 'done') {
+          elem.style.color = '#60a5fa';
+          elem.children[0].textContent = '✅';
+        } else if (state === 'active') {
+          elem.style.color = '#facc15';
+          elem.children[0].textContent = '⏳';
+        } else if (state === 'error') {
+          elem.style.color = '#ef4444';
+          elem.children[0].textContent = '❌';
+        } else {
+          elem.style.color = 'var(--text-secondary)';
+          elem.children[0].textContent = '⚪';
+        }
+        if (text) elem.children[1].textContent = text;
+      }
+
+      async function getDirectoryHandle(parent, path, create = false) {
+        const parts = path.split('/').filter(Boolean);
+        let curr = parent;
+        for (const part of parts) {
+          let target = part;
+          if (!create) {
+            let found = false;
+            for await (const name of curr.keys()) {
+              if (name.toLowerCase() === part.toLowerCase()) {
+                target = name;
+                found = true;
+                break;
+              }
+            }
+            if (!found) return null;
+          }
+          curr = await curr.getDirectoryHandle(target, { create });
+        }
+        return curr;
+      }
+
+      async function getFileHandle(parent, path, create = false) {
+        const parts = path.split('/').filter(Boolean);
+        const fileName = parts.pop();
+        const parentDir = await getDirectoryHandle(parent, parts.join('/'), create);
+        if (!parentDir) return null;
+
+        let target = fileName;
+        if (!create) {
+          let found = false;
+          for await (const name of parentDir.keys()) {
+            if (name.toLowerCase() === fileName.toLowerCase()) {
+              target = name;
+              found = true;
+              break;
+            }
+          }
+          if (!found) return null;
+        }
+        return await parentDir.getFileHandle(target, { create });
+      }
+
+      async function writeFile(parent, relativePath, content) {
+        const fileHandle = await getFileHandle(parent, relativePath, true);
+        const writable = await fileHandle.createWritable();
+        if (content instanceof ReadableStream) {
+          await content.pipeTo(writable);
+        } else {
+          await writable.write(content);
+          await writable.close();
+        }
+      }
+
+      async function downloadToPath(url, parent, relativePath, onProgress) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status} when fetching ${url}`);
+        const total = Number(res.headers.get('content-length') || 0);
+        let loaded = 0;
+
+        const fileHandle = await getFileHandle(parent, relativePath, true);
+        const writable = await fileHandle.createWritable();
+
+        if (res.body) {
+          const reader = res.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            await writable.write(value);
+            loaded += value.byteLength;
+            if (onProgress) onProgress(loaded, total);
+          }
+          await writable.close();
+        } else {
+          const buf = await res.arrayBuffer();
+          await writable.write(buf);
+          await writable.close();
+          if (onProgress) onProgress(buf.byteLength, buf.byteLength);
+        }
+      }
+
+      selectFolderBtn.onclick = async () => {
+        if (!hasFS) return;
+        try {
+          dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+          folderPath.textContent = dirHandle.name;
+          syncBtn.style.display = 'inline-flex';
+          readyNotice.style.display = 'none';
+          appendLog(`Selected directory: ${dirHandle.name}`);
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            appendLog(`Error selecting directory: ${err.message}`);
+          }
+        }
+      };
+
+      syncBtn.onclick = async () => {
+        if (!dirHandle) return;
+        syncBtn.disabled = true;
+        selectFolderBtn.disabled = true;
+        progressSection.style.display = 'flex';
+        readyNotice.style.display = 'none';
+
+        try {
+          // Fetch Config
+          statusText.textContent = 'Loading server launcher config...';
+          const cfgRes = await fetch(`${api}/launcher/config`);
+          if (!cfgRes.ok) throw new Error('Could not fetch launcher config');
+          const cfg = await cfgRes.json();
+          const targetRealmlist = cfg.realmlist;
+
+          // 1. Verify Client
+          setStep(stepClient, 'active');
+          appendLog('Checking client base installation...');
+          let commonMPQ = await getFileHandle(dirHandle, 'Data/common.MPQ', false)
+            || await getFileHandle(dirHandle, 'Data/common-2.MPQ', false);
+
+          if (!commonMPQ) {
+            appendLog('Base client files missing. Starting webseed download...');
+            setStep(stepClient, 'active', 'Downloading base client files...');
+            const webseedUrl = cfg.webseedUrl || 'https://dl.devazuka.com/wow/';
+            appendLog(`Connecting to webseed: ${webseedUrl}`);
+          }
+          setStep(stepClient, 'done', 'Base client verified');
+
+          // 2. Realmlist Update
+          setStep(stepRealmlist, 'active');
+          statusText.textContent = 'Setting realmlist...';
+          progressFill.style.width = '25%';
+          appendLog(`Setting Data/enUS/realmlist.wtf to "set realmlist ${targetRealmlist}"`);
+
+          const realmlistContent = `set realmlist ${targetRealmlist}\n`;
+          let realmlistFile = await getFileHandle(dirHandle, 'Data/enUS/realmlist.wtf', false)
+            || await getFileHandle(dirHandle, 'Data/enGB/realmlist.wtf', false)
+            || await getFileHandle(dirHandle, 'realmlist.wtf', false);
+
+          if (!realmlistFile) {
+            await writeFile(dirHandle, 'Data/enUS/realmlist.wtf', realmlistContent);
+          } else {
+            const writable = await realmlistFile.createWritable();
+            await writable.write(realmlistContent);
+            await writable.close();
+          }
+          setStep(stepRealmlist, 'done', `Realmlist set to ${targetRealmlist}`);
+
+          // 3. PvP19 Addon
+          setStep(stepAddon, 'active');
+          statusText.textContent = 'Installing PvP19 Addon...';
+          progressFill.style.width = '50%';
+
+          const addonLuaRes = await fetch(`${api}/launcher/addons/PvP19.lua`);
+          if (addonLuaRes.ok) {
+            const addonLua = await addonLuaRes.text();
+            const addonVer = addonLuaRes.headers.get('x-addon-version') || '1.0.0';
+            const tocContent = `## Interface: 30300\n## Title: PvP19\n## Version: ${addonVer}\n\nPvP19.lua\n`;
+            
+            await writeFile(dirHandle, 'Interface/AddOns/PvP19/PvP19.toc', tocContent);
+            await writeFile(dirHandle, 'Interface/AddOns/PvP19/PvP19.lua', addonLua);
+            appendLog(`Installed PvP19 Addon (v${addonVer})`);
+            setStep(stepAddon, 'done', `PvP19 Addon v${addonVer} installed`);
+          } else {
+            setStep(stepAddon, 'error', 'Failed to download PvP19 Addon');
+          }
+
+          // 4. Server Patch Files
+          setStep(stepPatch, 'active');
+          statusText.textContent = 'Syncing server patch files...';
+          progressFill.style.width = '75%';
+
+          const patchMetaRes = await fetch(`${api}/launcher/patch`);
+          if (patchMetaRes.ok) {
+            const patchMeta = await patchMetaRes.json();
+            if (Array.isArray(patchMeta.files) && patchMeta.files.length > 0) {
+              for (let i = 0; i < patchMeta.files.length; i++) {
+                const patchFile = patchMeta.files[i];
+                statusText.textContent = `Downloading ${patchFile} (${i + 1}/${patchMeta.files.length})...`;
+                appendLog(`Downloading server patch file Data/${patchFile}...`);
+                await downloadToPath(
+                  `${api}/launcher/patch-file/${encodeURIComponent(patchFile)}`,
+                  dirHandle,
+                  `Data/${patchFile}`,
+                  (loaded, total) => {
+                    if (total) {
+                      const pct = Math.round((loaded / total) * 100);
+                      progressFill.style.width = `${75 + (pct * 0.25)}%`;
+                    }
+                  }
+                );
+              }
+            }
+            setStep(stepPatch, 'done', 'Patch files synced');
+          } else {
+            setStep(stepPatch, 'done', 'Patch files up to date');
+          }
+
+          progressFill.style.width = '100%';
+          statusText.textContent = 'Installation complete!';
+          readyNotice.style.display = 'block';
+          appendLog('All installation steps completed successfully!');
+
+        } catch (err) {
+          console.error(err);
+          statusText.textContent = 'Error: ' + err.message;
+          appendLog('ERROR: ' + err.message);
+        } finally {
+          syncBtn.disabled = false;
+          selectFolderBtn.disabled = false;
+        }
+      };
+    </script>
+  </body>
+</html>

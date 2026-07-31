@@ -9,6 +9,7 @@ import { env } from './env.ts'
 import { handleLauncherLog } from './launcher_logs.ts'
 
 import indexHTML from '../web/index.html' with { type: 'bytes' }
+import installHTML from '../web/install.html' with { type: 'bytes' }
 import adminHTML from '../web/admin.html' with { type: 'bytes' }
 import eventsHTML from '../web/events.html' with { type: 'bytes' }
 import pvp19Lua from '../addons/PvP19/PvP19.lua' with { type: 'bytes' }
@@ -610,6 +611,9 @@ export default {
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
       if (url.pathname === '/') {
         return new Response(indexHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+      }
+      if (url.pathname === '/install') {
+        return new Response(installHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
       if (url.pathname === '/admin') {
         return new Response(adminHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
