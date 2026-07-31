@@ -316,6 +316,11 @@
     const EMBEDDED_REALMLIST = REALMLIST_PLACEHOLDER
 
     let dirHandle = null
+    // Set for any install failure; logs are uploaded once, after the install flow finishes.
+    let MUST_REPORT_ERRORS = false
+    let retryInstall = false
+    const INSTALL_BUTTON_TEXT = '⚡ Verify & Install Client Updates'
+    const REQUEST_TIMEOUT_MS = 30_000
 
     const hasFS = typeof window.showDirectoryPicker === 'function'
     const isSecure = window.isSecureContext
@@ -351,6 +356,28 @@
       logBox.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`
       if (shouldScroll) {
         logBox.scrollTop = logBox.scrollHeight
+      }
+    }
+
+    function errorMessage(error) {
+      return error instanceof Error ? error.message : String(error)
+    }
+
+    function reportError(context, error) {
+      MUST_REPORT_ERRORS = true
+      const message = `${context}: ${errorMessage(error)}`
+      console.error(message, error)
+      appendLog(`ERROR: ${message}`)
+    }
+
+    async function fetchWithTimeout(input, init = {}, timeout = REQUEST_TIMEOUT_MS) {
+      try {
+        return await fetch(input, { ...init, signal: AbortSignal.timeout(timeout) })
+      } catch (error) {
+        if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+          throw Error(`Timed out after ${Math.ceil(timeout / 1000)}s: ${typeof input === 'string' ? input : 'request'}`)
+        }
+        throw error
       }
     }
 
@@ -443,11 +470,18 @@
     async function writeFile(parent, relativePath, content) {
       const fileHandle = await getFileHandle(parent, relativePath, true)
       const writable = await fileHandle.createWritable()
-      if (content instanceof ReadableStream) {
-        await content.pipeTo(writable)
-      } else {
-        await writable.write(content)
-        await writable.close()
+      try {
+        if (content instanceof ReadableStream) {
+          await content.pipeTo(writable)
+        } else {
+          await writable.write(content)
+        }
+      } finally {
+        try {
+          await writable.close()
+        } catch (error) {
+          reportError(`Failed to close ${relativePath}`, error)
+        }
       }
     }
 
@@ -485,13 +519,12 @@
 
       while (true) {
         try {
-          const headers = { credentials: 'include' }
           const reqHeaders = {}
           if (loaded > 0) {
             reqHeaders['Range'] = `bytes=${loaded}-`
           }
 
-          const res = await fetch(url, { credentials: 'include', headers: reqHeaders })
+          const res = await fetchWithTimeout(url, { credentials: 'include', headers: reqHeaders })
 
           if (res.status === 416) {
             // Range Not Satisfiable -> file is already fully downloaded
@@ -501,7 +534,7 @@
           }
 
           if (!res.ok && res.status !== 206) {
-            throw new Error(`HTTP ${res.status} when fetching ${url}`)
+            throw Error(`HTTP ${res.status} when fetching ${url}`)
           }
 
           if (res.status === 206) {
@@ -557,12 +590,15 @@
           if (retryAttempt > maxRetries) {
             try {
               await writable.close()
-            } catch {}
+            } catch (closeError) {
+              reportError(`Failed to close ${relativePath}`, closeError)
+            }
             throw err
           }
           const delayMs = Math.min(1000 * Math.pow(1.5, retryAttempt), 10000)
+          reportError(`Network error on ${relativePath}`, err)
           appendLog(
-            `Network error on ${relativePath}: ${err.message}. Retrying in ${
+            `Retrying ${relativePath} in ${
               Math.round(delayMs / 1000)
             }s (Attempt ${retryAttempt}/${maxRetries})...`,
           )
@@ -571,18 +607,26 @@
       }
     }
 
-    selectFolderBtn.onclick = async () => {
-      if (!hasFS) return
+    async function uploadLogs() {
       try {
-        dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
-        folderPath.textContent = dirHandle.name
-        syncBtn.style.display = 'inline-flex'
-        readyNotice.style.display = 'none'
-        appendLog(`Selected directory: ${dirHandle.name}`)
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          appendLog(`Error selecting directory: ${err.message}`)
-        }
+        const logs = logBox.textContent || ''
+        if (!logs) return
+        const compressed = await new Response(
+          new Blob([logs]).stream().pipeThrough(new CompressionStream('gzip')),
+        ).arrayBuffer()
+        const digest = await crypto.subtle.digest('SHA-1', compressed)
+        const sha1 = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('')
+        const response = await fetch(`${api}/logs/${sha1}`, {
+          method: 'POST',
+          headers: { 'content-encoding': 'gzip', 'content-type': 'text/plain' },
+          body: compressed,
+        })
+        if (!response.ok) throw Error(`Upload failed: ${response.status}`)
+        appendLog('Installation logs uploaded.')
+      } catch (error) {
+        // Do not call reportError here: this is the final reporting attempt and must not recurse.
+        console.error('Log upload error', error)
+        appendLog(`ERROR: Log upload failed: ${errorMessage(error)}`)
       }
     }
 
@@ -603,14 +647,20 @@
         readyNotice.style.display = 'none'
         appendLog(`Selected directory: ${dirHandle.name}`)
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          appendLog(`Error selecting directory: ${err.message}`)
+        if (err?.name !== 'AbortError') {
+          reportError('Error selecting directory', err)
         }
       }
     }
 
     syncBtn.onclick = async () => {
       if (!dirHandle) return
+      if (retryInstall) {
+        logBox.textContent = ''
+        logBox.style.display = 'none'
+        retryInstall = false
+      }
+      MUST_REPORT_ERRORS = false
       syncBtn.disabled = true
       selectFolderBtn.disabled = true
       progressSection.style.display = 'flex'
@@ -746,8 +796,15 @@
           await writeFile(dirHandle, 'Data/enUS/realmlist.wtf', realmlistContent)
         } else {
           const writable = await realmlistFile.createWritable()
-          await writable.write(realmlistContent)
-          await writable.close()
+          try {
+            await writable.write(realmlistContent)
+          } finally {
+            try {
+              await writable.close()
+            } catch (closeError) {
+              reportError('Failed to close realmlist.wtf', closeError)
+            }
+          }
         }
         setStep(stepRealmlist, 'done', `Realmlist set to ${targetRealmlist}`)
 
@@ -756,7 +813,7 @@
         statusText.textContent = 'Installing PvP19 Addon...'
         progressFill.style.width = '50%'
 
-        const addonLuaRes = await fetch(`${api}/addons/PvP19.lua`)
+        const addonLuaRes = await fetchWithTimeout(`${api}/addons/PvP19.lua`)
         if (addonLuaRes.ok) {
           const addonLua = await addonLuaRes.text()
           const addonVer = addonLuaRes.headers.get('x-addon-version') || '1.0.0'
@@ -767,6 +824,7 @@
           appendLog(`Installed PvP19 Addon (v${addonVer})`)
           setStep(stepAddon, 'done', `PvP19 Addon v${addonVer} installed`)
         } else {
+          reportError('Failed to download PvP19 Addon', Error(`HTTP ${addonLuaRes.status}`))
           setStep(stepAddon, 'error', 'Failed to download PvP19 Addon')
         }
 
@@ -782,7 +840,8 @@
           if (localPatchHandle) {
             const localFile = await localPatchHandle.getFile()
             const localHash = await computeFileMerkleHash(localFile)
-            const headRes = await fetch(`${api}/patch-S.mpq`, { method: 'HEAD', credentials: 'include' })
+            const headRes = await fetchWithTimeout(`${api}/patch-S.mpq`, { method: 'HEAD', credentials: 'include' })
+            if (!headRes.ok) throw Error(`HTTP ${headRes.status} when checking patch-S.mpq`)
             const serverETag = headRes.headers.get('etag')?.replace(/"/g, '')
             if (serverETag && localHash === serverETag) {
               patchUpToDate = true
@@ -806,7 +865,7 @@
           }
           setStep(stepPatch, 'done', '19PvP Patch (patch-S.mpq) verified')
         } catch (patchErr) {
-          appendLog(`Warning updating patch-S.mpq: ${patchErr.message}`)
+          reportError('Failed to update patch-S.mpq', patchErr)
           setStep(stepPatch, 'error', 'Failed to update 19PvP Patch')
         }
 
@@ -818,14 +877,18 @@
           // Fetch account username if available
           let accountName = ''
           try {
-            const accRes = await fetch(`${api}/api/account`, { credentials: 'include' })
+            const accRes = await fetchWithTimeout(`${api}/api/account`, { credentials: 'include' })
             if (accRes.ok) {
               const accData = await accRes.json()
               if (accData.wowAccount && accData.wowAccount.username) {
                 accountName = accData.wowAccount.username
               }
+            } else {
+              reportError('Failed to fetch account details', Error(`HTTP ${accRes.status}`))
             }
-          } catch {}
+          } catch (accountErr) {
+            reportError('Failed to fetch account details', accountErr)
+          }
 
           const screenWidth = window.screen.width || 1920
           const screenHeight = window.screen.height || 1080
@@ -909,19 +972,25 @@
             })`,
           )
         } catch (configErr) {
-          appendLog(`Warning patching Config.wtf: ${configErr.message}`)
+          reportError('Failed to patch Config.wtf', configErr)
           setStep(stepConfig, 'done', 'Configured default settings')
         }
 
         progressFill.style.width = '100%'
-        statusText.textContent = 'Installation complete!'
+        statusText.textContent = MUST_REPORT_ERRORS ? 'Installation complete with errors.' : 'Installation complete!'
         readyNotice.style.display = 'block'
-        appendLog('All installation steps completed successfully!')
+        appendLog(
+          MUST_REPORT_ERRORS
+            ? 'Installation completed with errors; logs will be uploaded.'
+            : 'All installation steps completed successfully!',
+        )
       } catch (err) {
-        console.error(err)
-        statusText.textContent = 'Error: ' + err.message
-        appendLog('ERROR: ' + err.message)
+        reportError('Installation failed', err)
+        statusText.textContent = 'Error: ' + errorMessage(err)
       } finally {
+        if (MUST_REPORT_ERRORS) await uploadLogs()
+        syncBtn.textContent = MUST_REPORT_ERRORS ? '↻ Retry installation' : INSTALL_BUTTON_TEXT
+        retryInstall = MUST_REPORT_ERRORS
         syncBtn.disabled = false
         selectFolderBtn.disabled = false
       }

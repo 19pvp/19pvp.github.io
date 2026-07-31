@@ -25,7 +25,7 @@ import { checkAuth, getSession, handleAuth } from './auth.ts'
 import { getAccountDetails, setOrCreateAccount } from './account.ts'
 import { auth } from './db.ts'
 import { env } from './env.ts'
-import { handleLauncherLog } from './launcher_logs.ts'
+import { handleLog } from './logs.ts'
 
 import indexHTML from '../web/index.html' with { type: 'bytes' }
 import installHTMLRaw from '../web/install.html' with { type: 'text' }
@@ -285,8 +285,8 @@ export default {
       const authRes = await handleAuth(req)
       if (authRes) return authRes
 
-      const launcherLog = await handleLauncherLog(req, url)
-      if (launcherLog) return launcherLog
+      const logResponse = await handleLog(req, url)
+      if (logResponse) return logResponse
 
       return json({ error: 'Not found' }, { status: 404 })
     } catch (err) {

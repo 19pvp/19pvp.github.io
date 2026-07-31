@@ -55,7 +55,7 @@ export const env = {
     false,
     `/root/services/${projectName}/client`,
   ),
-  LAUNCHER_LOG_DIR: get('LAUNCHER_LOG_DIR', false, `${Deno.cwd()}/logs`),
+  LOG_DIR: get('LOG_DIR', false, `${Deno.cwd()}/logs`),
   SESSION_SECRET: get(
     'SESSION_SECRET',
     false,
@@ -70,6 +70,7 @@ export const env = {
   // Discord channels
   DISCORD_GENERAL_CHANNEL_ID: get('DISCORD_GENERAL_CHANNEL_ID') || get('DISCORD_GUILD_ID') || '',
   DISCORD_GM_COMMAND_CHANNEL_ID: get('DISCORD_GM_COMMAND_CHANNEL_ID', false, '1519357383946535183'),
+  DISCORD_LOG_CHANNEL_ID: get('DISCORD_LOG_CHANNEL_ID', false, '1519357383946535183'),
 
   // Game details
   WORLD_ID: getNumber('WORLD_ID', 1),
