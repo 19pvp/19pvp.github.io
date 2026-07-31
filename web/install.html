@@ -87,13 +87,27 @@
           </button>
         </div>
 
-        <div id="progressSection" style="display: none; flex-direction: column; gap: 8px;">
-          <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-secondary);">
-            <span id="statusText">Verifying client files...</span>
-            <span id="speedText"></span>
+        <div id="progressSection" style="display: none; flex-direction: column; gap: 14px;">
+          <!-- Current File Progress Bar -->
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+              <span id="fileStatusText">Preparing file...</span>
+              <span id="fileSpeedText">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="fileProgressFill" class="progress-bar-fill"></div>
+            </div>
           </div>
-          <div class="progress-bar-bg">
-            <div id="progressFill" class="progress-bar-fill"></div>
+
+          <!-- Total Download Progress Bar -->
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+              <span id="totalStatusText">Total Progress</span>
+              <span id="totalSpeedText">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="progressFill" class="progress-bar-fill"></div>
+            </div>
           </div>
         </div>
 
@@ -394,67 +408,119 @@
       return `${mins}m ${secs}s`
     }
 
+    const CHUNK_SIZE = 100 * 1024 * 1024 // 100MB per chunk block
+
     async function downloadToPath(url, parent, relativePath, onProgress) {
+      // 1. HEAD request to determine file size and Range support
+      const headRes = await fetchWithTimeout(url, { method: 'HEAD', credentials: 'include' })
+      if (!headRes.ok) throw Error(`HTTP ${headRes.status} HEAD ${url}`)
+
+      const totalSize = Number(headRes.headers.get('content-length') || 0)
+      const acceptRanges = headRes.headers.get('accept-ranges') === 'bytes'
+
+      // If server does not support Range or file fits in 1 block, download directly
+      if (!acceptRanges || !totalSize || totalSize <= CHUNK_SIZE) {
+        return downloadSingleFile(url, parent, relativePath, onProgress)
+      }
+
+      // 2. Calculate chunk blocks
+      const numChunks = Math.ceil(totalSize / CHUNK_SIZE)
+      const fileName = relativePath.split('/').pop()
+      const dirPath = relativePath.includes('/') ? relativePath.substring(0, relativePath.lastIndexOf('/')) : ''
+      const targetDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
+
+      const chunkPaths = []
+      let totalLoadedAcrossChunks = 0
+
+      for (let i = 0; i < numChunks; i++) {
+        const chunkFileName = `${i}_${fileName}`
+        chunkPaths.push(chunkFileName)
+
+        const startByte = i * CHUNK_SIZE
+        const endByte = Math.min(totalSize - 1, (i + 1) * CHUNK_SIZE - 1)
+        const expectedChunkSize = endByte - startByte + 1
+
+        // Check if chunk file is already saved & complete on disk
+        let chunkComplete = false
+        try {
+          const existingChunkHandle = await getFileHandle(targetDir, chunkFileName, false)
+          if (existingChunkHandle) {
+            const fileObj = await existingChunkHandle.getFile()
+            if (fileObj.size === expectedChunkSize) {
+              chunkComplete = true
+              totalLoadedAcrossChunks += expectedChunkSize
+              appendLog(`[Resume] Block ${i + 1}/${numChunks} of ${fileName} is already complete on disk.`)
+            }
+          }
+        } catch {}
+
+        if (!chunkComplete) {
+          appendLog(`Downloading block ${i + 1}/${numChunks} (${formatBytes(expectedChunkSize)}) for ${fileName}...`)
+          let chunkLoaded = 0
+
+          await downloadSingleFile(
+            url,
+            targetDir,
+            chunkFileName,
+            (loaded, total, speed) => {
+              const delta = loaded - chunkLoaded
+              chunkLoaded = loaded
+              totalLoadedAcrossChunks += delta
+              if (onProgress) {
+                onProgress(totalLoadedAcrossChunks, totalSize, speed)
+              }
+            },
+            { 'Range': `bytes=${startByte}-${endByte}` },
+          )
+        } else if (onProgress) {
+          onProgress(totalLoadedAcrossChunks, totalSize, 0)
+        }
+      }
+
+      // 3. Stitch all chunk blocks into final file
+      appendLog(`Stitching ${numChunks} block files into ${relativePath}...`)
+      const finalFileHandle = await getFileHandle(parent, relativePath, true)
+      const writable = await finalFileHandle.createWritable()
+
+      for (let i = 0; i < numChunks; i++) {
+        const chunkHandle = await getFileHandle(targetDir, chunkPaths[i], false)
+        if (!chunkHandle) throw Error(`Missing block file: ${chunkPaths[i]}`)
+        const chunkFile = await chunkHandle.getFile()
+        await writable.write(chunkFile)
+      }
+      await writable.close()
+
+      // 4. Clean up temporary chunk block files
+      for (const chunkFileName of chunkPaths) {
+        try {
+          await targetDir.removeEntry(chunkFileName)
+        } catch {}
+      }
+
+      appendLog(`Successfully stitched block files into ${relativePath} [OK].`)
+    }
+
+    async function downloadSingleFile(url, parent, relativePath, onProgress, extraHeaders = {}) {
       const maxRetries = 5
       let retryAttempt = 0
 
       while (true) {
-        let fileHandle
         let writable
-        let existingSize = 0
-
         try {
-          fileHandle = await getFileHandle(parent, relativePath, true)
-          const fileObj = await fileHandle.getFile()
-          existingSize = fileObj.size
-
-          const reqHeaders = {}
-          if (existingSize > 0) {
-            reqHeaders['Range'] = `bytes=${existingSize}-`
-          }
-
-          const res = await fetchWithTimeout(url, { credentials: 'include', headers: reqHeaders })
-
-          // 416 Range Not Satisfiable -> file already fully downloaded
-          if (res.status === 416) {
-            if (onProgress) onProgress(existingSize, existingSize, 0, 0)
-            return
-          }
-
+          const res = await fetchWithTimeout(url, { credentials: 'include', headers: extraHeaders })
           if (!res.ok && res.status !== 206) {
             throw Error(`HTTP ${res.status} when fetching ${url}`)
           }
 
-          // Resuming: keep existing data and seek to the end of existing data
-          const isPartial = res.status === 206
-          const startOffset = isPartial ? existingSize : 0
+          const fileHandle = await getFileHandle(parent, relativePath, true)
+          writable = await fileHandle.createWritable()
 
-          let total = 0
-          if (isPartial) {
-            const contentRange = res.headers.get('content-range')
-            if (contentRange) {
-              const match = contentRange.match(/\/(\d+)$/)
-              if (match) total = Number(match[1])
-            }
-            if (!total) total = startOffset + Number(res.headers.get('content-length') || 0)
-          } else {
-            total = Number(res.headers.get('content-length') || 0)
-          }
+          const total = Number(res.headers.get('content-length') || 0)
+          let loaded = 0
 
-          // Re-acquire handle to ensure state object cache is fresh before creating writable stream
-          const freshHandle = await getFileHandle(parent, relativePath, true)
-          writable = await freshHandle.createWritable({ keepExistingData: isPartial })
-          if (isPartial) {
-            await writable.seek(startOffset)
-            appendLog(`Resuming ${relativePath} from ${formatBytes(startOffset)} / ${formatBytes(total)}...`)
-          } else {
-            appendLog(`Downloading ${relativePath} (${formatBytes(total)})...`)
-          }
-
-          let loaded = startOffset
           const startTime = performance.now()
           let lastTime = startTime
-          let lastLoaded = startOffset
+          let lastLoaded = 0
           let currentSpeed = 0
 
           if (res.body) {
@@ -652,13 +718,20 @@
           )
           const totalStartTime = performance.now()
           let completedCount = 0
+          let lastUIUpdate = 0
 
           for (const { item } of filesToDownload) {
             const relativePath = item.path
             const fileUrl = `${api}/client-file/${encodeURIComponent(relativePath)}`
+            const fileIndexStr = `${completedCount + 1} of ${filesToDownload.length}`
 
             appendLog(`Downloading ${relativePath}...`)
             let previousLoadedForFile = 0
+
+            // Initial UI state for new file
+            fileStatusText.textContent = `${relativePath} (${fileIndexStr})`
+            fileSpeedText.textContent = `0%`
+            fileProgressFill.style.width = `0%`
 
             try {
               await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total, speed, fileEta) => {
@@ -667,17 +740,31 @@
                 previousLoadedForFile = loaded
                 currentTotalBytes += deltaLoaded
 
-                const overallPct = fullProjectSize > 0 ? Math.round((currentTotalBytes / fullProjectSize) * 100) : 0
-                progressFill.style.width = `${Math.min(100, Math.max(0, overallPct))}%`
+                const filePct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0
+                fileProgressFill.style.width = `${filePct}%`
 
-                const elapsedSecs = (now - totalStartTime) / 1000
-                const downloadedSoFar = currentTotalBytes - alreadyVerifiedBytes
-                if (elapsedSecs > 0.5 && downloadedSoFar > 0) {
-                  const overallSpeed = downloadedSoFar / elapsedSecs
+                const overallPct = fullProjectSize > 0 ? Math.min(100, Math.round((currentTotalBytes / fullProjectSize) * 100)) : 0
+                progressFill.style.width = `${overallPct}%`
+
+                // Throttle text updates to every 0.5s
+                if (now - lastUIUpdate >= 500 || loaded === total) {
+                  lastUIUpdate = now
+
+                  // Current file: 25% . show file (3 of 75)
+                  fileStatusText.textContent = `${relativePath} (${fileIndexStr})`
+                  fileSpeedText.textContent = `${filePct}%`
+
+                  // Big total: 54% . 20m 45s remaining
+                  const elapsedSecs = (now - totalStartTime) / 1000
+                  const downloadedSoFar = currentTotalBytes - alreadyVerifiedBytes
+                  const overallSpeed = (elapsedSecs > 0.5 && downloadedSoFar > 0) ? (downloadedSoFar / elapsedSecs) : 0
                   const bytesLeft = Math.max(0, fullProjectSize - currentTotalBytes)
                   const totalEta = overallSpeed > 0 ? bytesLeft / overallSpeed : 0
-                  statusText.textContent = `Updating files (${completedCount}/${filesToDownload.length}) • ${overallPct}%`
-                  speedText.textContent = `${formatBytes(overallSpeed)}/s • ${formatETA(totalEta)} remaining`
+
+                  totalStatusText.textContent = `Total Progress (${overallPct}%)`
+                  totalSpeedText.textContent = overallSpeed > 0
+                    ? `${formatBytes(overallSpeed)}/s • ${formatETA(totalEta)} remaining`
+                    : `${overallPct}%`
                 }
               })
             } catch (error) {
@@ -686,6 +773,8 @@
             }
 
             completedCount++
+            fileProgressFill.style.width = `100%`
+            fileSpeedText.textContent = `100%`
             appendLog(`Finished ${relativePath} (${completedCount}/${filesToDownload.length})`)
           }
         }
@@ -696,7 +785,14 @@
             if (!archiveHandle) {
               setStep(stepPlatform, 'active', `Downloading ${CLIENT_ARCHIVE}...`)
               appendLog(`Downloading ${CLIENT_ARCHIVE} containing the protected ${CLIENT_PLATFORM_LABEL} client files...`)
-              await downloadToPath(`${api}/client-file/${CLIENT_ARCHIVE}`, dirHandle, CLIENT_ARCHIVE)
+              fileStatusText.textContent = `Downloading ${CLIENT_ARCHIVE}`
+              fileSpeedText.textContent = `0%`
+              fileProgressFill.style.width = `0%`
+              await downloadToPath(`${api}/client-file/${CLIENT_ARCHIVE}`, dirHandle, CLIENT_ARCHIVE, (loaded, total) => {
+                const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0
+                fileProgressFill.style.width = `${pct}%`
+                fileSpeedText.textContent = `${pct}%`
+              })
             } else {
               appendLog(`Using existing ${CLIENT_ARCHIVE}.`)
             }
@@ -710,16 +806,17 @@
           )
         }
 
-        statusText.textContent = 'Base client files verified & complete'
+        totalStatusText.textContent = 'Base client files verified & complete'
         if (executableArchiveRequired) {
-          statusText.textContent = `Extract ${CLIENT_ARCHIVE}, then retry installation.`
+          totalStatusText.textContent = `Extract ${CLIENT_ARCHIVE}, then retry installation.`
           retryInstall = true
           appendLog('Installation is paused until the executable archive is extracted.')
           return
         }
 
         progressFill.style.width = '100%'
-        speedText.textContent = `${formatBytes(fullProjectSize)} / ${formatBytes(fullProjectSize)} (100%)`
+        fileProgressFill.style.width = '100%'
+        totalSpeedText.textContent = `${formatBytes(fullProjectSize)} / ${formatBytes(fullProjectSize)} (100%)`
         setStep(stepClient, 'done', 'Base client files verified & complete')
 
         // 2. Realmlist Update
