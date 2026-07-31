@@ -21,6 +21,7 @@
     }
 
     .progress-bar-bg {
+      position: relative;
       width: 100%;
       height: 10px;
       background: rgba(255, 255, 255, 0.08);
@@ -33,6 +34,22 @@
       width: 0%;
       background: linear-gradient(90deg, var(--discord-color), var(--accent-color));
       transition: width 0.2s ease;
+    }
+
+    .chunk-ticks {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      display: flex;
+    }
+
+    .chunk-tick {
+      height: 100%;
+      border-right: 1.5px solid rgba(0, 0, 0, 0.6);
+      box-sizing: border-box;
     }
 
     .log-box {
@@ -96,6 +113,7 @@
             </div>
             <div class="progress-bar-bg">
               <div id="fileProgressFill" class="progress-bar-fill"></div>
+              <div id="fileChunkTicks" class="chunk-ticks"></div>
             </div>
           </div>
 
@@ -303,20 +321,6 @@
           curr = await curr.getDirectoryHandle(part, { create })
         } catch (error) {
           if (!create && (error.name === 'NotFoundError' || error.name === 'TypeMismatchError')) {
-            // Case-insensitive fallback if exact match not found
-            let foundHandle = null
-            try {
-              for await (const name of curr.keys()) {
-                if (name.toLowerCase() === part.toLowerCase()) {
-                  foundHandle = await curr.getDirectoryHandle(name, { create: false })
-                  break
-                }
-              }
-            } catch {}
-            if (foundHandle) {
-              curr = foundHandle
-              continue
-            }
             return null
           }
           throw await explainFileSystemError(error, curr, path, part, 'getDirectoryHandle')
@@ -337,14 +341,6 @@
         return await parentDir.getFileHandle(fileName, { create })
       } catch (error) {
         if (!create && (error.name === 'NotFoundError' || error.name === 'TypeMismatchError')) {
-          // Case-insensitive fallback if exact match not found
-          try {
-            for await (const name of parentDir.keys()) {
-              if (name.toLowerCase() === fileName.toLowerCase()) {
-                return await parentDir.getFileHandle(name, { create: false })
-              }
-            }
-          } catch {}
           return null
         }
         throw await explainFileSystemError(error, parentDir, path, fileName, 'getFileHandle')
@@ -410,6 +406,19 @@
 
     const CHUNK_SIZE = 100 * 1024 * 1024 // 100MB per chunk block
 
+    function renderChunkTicks(numChunks) {
+      fileChunkTicks.innerHTML = ''
+      if (!numChunks || numChunks <= 1) return
+      const fragment = document.createDocumentFragment()
+      for (let i = 0; i < numChunks - 1; i++) {
+        const tick = document.createElement('div')
+        tick.className = 'chunk-tick'
+        tick.style.width = `${100 / numChunks}%`
+        fragment.appendChild(tick)
+      }
+      fileChunkTicks.appendChild(fragment)
+    }
+
     async function downloadToPath(url, parent, relativePath, onProgress) {
       // 1. HEAD request to determine file size and Range support
       const headRes = await fetchWithTimeout(url, { method: 'HEAD', credentials: 'include' })
@@ -420,36 +429,42 @@
 
       // If server does not support Range or file fits in 1 block, download directly
       if (!acceptRanges || !totalSize || totalSize <= CHUNK_SIZE) {
+        renderChunkTicks(0)
         return downloadSingleFile(url, parent, relativePath, onProgress)
       }
 
-      // 2. Calculate chunk blocks
+      // 2. Calculate 100MB chunk block files (0_file.MPQ, 1_file.MPQ, etc.)
       const numChunks = Math.ceil(totalSize / CHUNK_SIZE)
+      renderChunkTicks(numChunks)
+
       const fileName = relativePath.split('/').pop()
       const dirPath = relativePath.includes('/') ? relativePath.substring(0, relativePath.lastIndexOf('/')) : ''
-      const targetDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
 
       const chunkPaths = []
       let totalLoadedAcrossChunks = 0
 
       for (let i = 0; i < numChunks; i++) {
         const chunkFileName = `${i}_${fileName}`
-        chunkPaths.push(chunkFileName)
+        const chunkRelativePath = dirPath ? `${dirPath}/${chunkFileName}` : chunkFileName
+        chunkPaths.push(chunkRelativePath)
 
         const startByte = i * CHUNK_SIZE
         const endByte = Math.min(totalSize - 1, (i + 1) * CHUNK_SIZE - 1)
         const expectedChunkSize = endByte - startByte + 1
 
-        // Check if chunk file is already saved & complete on disk
+        // Check if block file is already complete on disk
         let chunkComplete = false
         try {
-          const existingChunkHandle = await getFileHandle(targetDir, chunkFileName, false)
-          if (existingChunkHandle) {
-            const fileObj = await existingChunkHandle.getFile()
-            if (fileObj.size === expectedChunkSize) {
-              chunkComplete = true
-              totalLoadedAcrossChunks += expectedChunkSize
-              appendLog(`[Resume] Block ${i + 1}/${numChunks} of ${fileName} is already complete on disk.`)
+          const freshDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
+          if (freshDir) {
+            const existingChunkHandle = await getFileHandle(freshDir, chunkFileName, false)
+            if (existingChunkHandle) {
+              const fileObj = await existingChunkHandle.getFile()
+              if (fileObj.size === expectedChunkSize) {
+                chunkComplete = true
+                totalLoadedAcrossChunks += expectedChunkSize
+                appendLog(`[Resume] Block ${i + 1}/${numChunks} of ${fileName} is complete.`)
+              }
             }
           }
         } catch {}
@@ -458,6 +473,7 @@
           appendLog(`Downloading block ${i + 1}/${numChunks} (${formatBytes(expectedChunkSize)}) for ${fileName}...`)
           let chunkLoaded = 0
 
+          const targetDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
           await downloadSingleFile(
             url,
             targetDir,
@@ -477,27 +493,35 @@
         }
       }
 
-      // 3. Stitch all chunk blocks into final file
+      // 3. Stitch 100MB block files into final target file synchronously before starting next download
       appendLog(`Stitching ${numChunks} block files into ${relativePath}...`)
-      const finalFileHandle = await getFileHandle(parent, relativePath, true)
+      const finalDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
+      const finalFileHandle = await getFileHandle(finalDir, fileName, true)
       const writable = await finalFileHandle.createWritable()
 
       for (let i = 0; i < numChunks; i++) {
-        const chunkHandle = await getFileHandle(targetDir, chunkPaths[i], false)
-        if (!chunkHandle) throw Error(`Missing block file: ${chunkPaths[i]}`)
+        const chunkFileName = `${i}_${fileName}`
+        const freshDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
+        const chunkHandle = await getFileHandle(freshDir, chunkFileName, false)
+        if (!chunkHandle) throw Error(`Missing block file: ${chunkFileName}`)
+
         const chunkFile = await chunkHandle.getFile()
-        await writable.write(chunkFile)
+        // Stream chunk Blob directly into destination writable without creating arrayBuffers
+        await chunkFile.stream().pipeTo(writable, { preventClose: true })
       }
       await writable.close()
 
-      // 4. Clean up temporary chunk block files
-      for (const chunkFileName of chunkPaths) {
-        try {
-          await targetDir.removeEntry(chunkFileName)
-        } catch {}
+      // Clean up temporary block files
+      const cleanupDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
+      if (cleanupDir) {
+        for (let i = 0; i < numChunks; i++) {
+          try {
+            await cleanupDir.removeEntry(`${i}_${fileName}`)
+          } catch {}
+        }
       }
 
-      appendLog(`Successfully stitched block files into ${relativePath} [OK].`)
+      appendLog(`Successfully stitched ${relativePath} [OK].`)
     }
 
     async function downloadSingleFile(url, parent, relativePath, onProgress, extraHeaders = {}) {
@@ -524,28 +548,30 @@
           let currentSpeed = 0
 
           if (res.body) {
-            const reader = res.body.getReader()
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
-              await writable.write(value)
-              loaded += value.byteLength
+            // Stream response body directly using a TransformStream to monitor progress without intermediate arrayBuffer/File object caching
+            const progressStream = new TransformStream({
+              transform(chunk, controller) {
+                controller.enqueue(chunk)
+                loaded += chunk.byteLength
 
-              const now = performance.now()
-              const elapsedSinceLast = (now - lastTime) / 1000
-              if (elapsedSinceLast >= 0.3) {
-                currentSpeed = (loaded - lastLoaded) / elapsedSinceLast
-                lastTime = now
-                lastLoaded = loaded
-              }
+                const now = performance.now()
+                const elapsedSinceLast = (now - lastTime) / 1000
+                if (elapsedSinceLast >= 0.3) {
+                  currentSpeed = (loaded - lastLoaded) / elapsedSinceLast
+                  lastTime = now
+                  lastLoaded = loaded
+                }
 
-              if (onProgress) {
-                const remainingBytes = total > loaded ? total - loaded : 0
-                const etaSeconds = currentSpeed > 0 ? remainingBytes / currentSpeed : 0
-                onProgress(loaded, total, currentSpeed, etaSeconds)
-              }
-            }
-            await writable.close()
+                if (onProgress) {
+                  const remainingBytes = total > loaded ? total - loaded : 0
+                  const etaSeconds = currentSpeed > 0 ? remainingBytes / currentSpeed : 0
+                  onProgress(loaded, total, currentSpeed, etaSeconds)
+                }
+              },
+            })
+
+            await res.body.pipeTo(progressStream.writable)
+            await progressStream.readable.pipeTo(writable)
             return
           } else {
             const buf = await res.arrayBuffer()
@@ -775,7 +801,7 @@
             completedCount++
             fileProgressFill.style.width = `100%`
             fileSpeedText.textContent = `100%`
-            appendLog(`Finished ${relativePath} (${completedCount}/${filesToDownload.length})`)
+            appendLog(`Finished downloading ${relativePath} (${completedCount}/${filesToDownload.length})`)
           }
         }
 
