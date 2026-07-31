@@ -55,20 +55,11 @@ export const env = {
     false,
     `/root/services/${projectName}/client`,
   ),
-  LAUNCHER_LOG_DIR: get(
-    'LAUNCHER_LOG_DIR',
+  LAUNCHER_LOG_DIR: get('LAUNCHER_LOG_DIR', false, `${Deno.cwd()}/logs`),
+  SESSION_SECRET: get(
+    'SESSION_SECRET',
     false,
-    `/root/services/${projectName}/launcher-logs`,
-  ),
-  LAUNCHER_VERIFICATION_HASH: get(
-    'LAUNCHER_VERIFICATION_HASH',
-    false,
-    crypto.getRandomValues(new Uint8Array(8)).toHex(),
-  ),
-  LAUNCHER_WEBSEED_URL: get(
-    'LAUNCHER_WEBSEED_URL',
-    false,
-    'https://dl.devazuka.com/wow/',
+    localStorage.sessionSecret || (localStorage.sessionSecret = crypto.randomUUID()),
   ),
 
   // Worldserver SOAP access

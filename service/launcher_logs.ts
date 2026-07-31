@@ -1,38 +1,32 @@
 import { createHash } from 'node:crypto'
+import { getSession } from './auth.ts'
+import { env } from './env.ts'
 
 const maxBytes = 1024 * 1024
 const route = /^\/launcher\/logs\/([a-f0-9]{40})$/
-
-type Options = {
-  dir: string
-  secret: string
-}
+const logDir = env.LAUNCHER_LOG_DIR
 
 const json = (data: unknown, init?: ResponseInit) => Response.json(data, init)
 
-const logPath = (dir: string, sha1: string) => `${dir}/${sha1.slice(0, 2)}/${sha1.slice(2)}`
+const logPath = (sha1: string) => `${logDir}/${sha1.slice(0, 2)}/${sha1.slice(2)}`
 
 export const handleLauncherLog = async (
   req: Request,
   url: URL,
-  options: Options,
 ) => {
   const match = url.pathname.match(route)
   if (!match) return null
 
+  const session = await getSession(req)
+  if (!session) return json({ error: 'Unauthorized' }, { status: 401 })
+
   const sha1 = match[1]
-  if (req.method === 'POST') return await save(req, sha1, url, options)
-  if (req.method === 'GET') return await get(sha1, options)
+  if (req.method === 'POST') return await save(req, sha1, url)
+  if (req.method === 'GET') return await get(sha1)
   return new Response('Method not allowed', { status: 405 })
 }
 
-const save = async (req: Request, sha1: string, url: URL, options: Options) => {
-  if (
-    !options.secret ||
-    req.headers.get('x-verification-hash') !== options.secret
-  ) {
-    return json({ error: 'Forbidden' }, { status: 403 })
-  }
+const save = async (req: Request, sha1: string, url: URL) => {
   if (req.headers.get('content-encoding') !== 'br') {
     return json({ error: 'Only Brotli logs are accepted.' }, { status: 415 })
   }
@@ -40,7 +34,7 @@ const save = async (req: Request, sha1: string, url: URL, options: Options) => {
     return json({ error: 'Missing request body.' }, { status: 400 })
   }
 
-  const dir = `${options.dir}/${sha1.slice(0, 2)}`
+  const dir = `${logDir}/${sha1.slice(0, 2)}`
   await Deno.mkdir(dir, { recursive: true })
   const tempPath = `${dir}/.${crypto.randomUUID()}.tmp`
   const file = await Deno.open(tempPath, { createNew: true, write: true })
@@ -67,13 +61,13 @@ const save = async (req: Request, sha1: string, url: URL, options: Options) => {
     return json({ error: 'SHA-1 mismatch.' }, { status: 400 })
   }
 
-  await Deno.rename(tempPath, logPath(options.dir, sha1))
+  await Deno.rename(tempPath, logPath(sha1))
   return json({ url: `${url.origin}/launcher/logs/${sha1}` }, { status: 201 })
 }
 
-const get = async (sha1: string, options: Options) => {
+const get = async (sha1: string) => {
   try {
-    const file = await Deno.open(logPath(options.dir, sha1), { read: true })
+    const file = await Deno.open(logPath(sha1), { read: true })
     return new Response(file.readable, {
       headers: {
         'cache-control': 'public, max-age=31536000, immutable',

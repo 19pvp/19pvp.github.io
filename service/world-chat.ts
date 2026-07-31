@@ -458,14 +458,14 @@ username <new username> <new password>
   if (!fullMessage.length) return console.log('empty message, skipping.')
   console.log('[general]:', fullMessage)
   try {
-  const result = await auth.sql`
+    const result = await auth.sql`
     INSERT INTO discord_message (world_id, message, discord_id)
     VALUES (${env.WORLD_ID}, ${fullMessage}, ${id})
   `
-  console.log('message inserted:', { result })
-} catch (err) {
-  console.log('failed to insert message:', err)
-}
+    console.log('message inserted:', { result })
+  } catch (err) {
+    console.log('failed to insert message:', err)
+  }
 })
 /*
 const _guildMemberUpdateExample = {
@@ -492,8 +492,12 @@ const _guildMemberUpdateExample = {
   avatar: null
 }
 */
-discord.on.GUILD_MEMBER_ADD((member: DiscordMember) => { syncUserData(member)?.catch((err) => console.error('GUILD_MEMBER_ADD sync error:', err)) })
-discord.on.GUILD_MEMBER_UPDATE((member: DiscordMember) => { syncUserData(member)?.catch((err) => console.error('GUILD_MEMBER_UPDATE sync error:', err)) })
+discord.on.GUILD_MEMBER_ADD((member: DiscordMember) => {
+  syncUserData(member)?.catch((err) => console.error('GUILD_MEMBER_ADD sync error:', err))
+})
+discord.on.GUILD_MEMBER_UPDATE((member: DiscordMember) => {
+  syncUserData(member)?.catch((err) => console.error('GUILD_MEMBER_UPDATE sync error:', err))
+})
 
 /*
 const _wowMessageEvent = {

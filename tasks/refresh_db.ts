@@ -1741,16 +1741,20 @@ WHERE LOWER(\`subname\`) LIKE '%merchant%'
   const goldVendorSellPriceCase = goldVendorPrices
     .map(([itemId, price]) => `  WHEN ${itemId} THEN ${Math.floor(price / 4)}`)
     .join('\n')
-  const arenaItemIds = [...new Set(
-    vendorItems
-      .filter((item) => item.currency === 'arena')
-      .map((item) => item.itemId),
-  )].sort((a, b) => a - b)
-  const vendorItemIds = [...new Set(
-    vendorItems
-      .filter((item) => extendedCostForVendorItem(item) > 0)
-      .map((item) => item.itemId),
-  )].sort((a, b) => a - b)
+  const arenaItemIds = [
+    ...new Set(
+      vendorItems
+        .filter((item) => item.currency === 'arena')
+        .map((item) => item.itemId),
+    ),
+  ].sort((a, b) => a - b)
+  const vendorItemIds = [
+    ...new Set(
+      vendorItems
+        .filter((item) => extendedCostForVendorItem(item) > 0)
+        .map((item) => item.itemId),
+    ),
+  ].sort((a, b) => a - b)
   const vendorItemFlagsSql = vendorItemIds.length
     ? `-- Mark generated vendor items with an extended cost as refundable through item purchase records.
 UPDATE \`item_template\`
@@ -2522,7 +2526,9 @@ const luaItem = (itemId: number) => {
   const icon = display?.InventoryIcon_1 ?? ''
   return `    [${itemId}] = { random_suffix = ${itemRandomSuffix.get(itemId) ?? 0}, random_property = ${
     itemRandomProperty.get(itemId) ?? 0
-  }, icon = ${luaString(icon)}${properties.length ? `, properties = ${luaArray(properties, (option) => String(option.id))}` : ''}},`
+  }, icon = ${luaString(icon)}${
+    properties.length ? `, properties = ${luaArray(properties, (option) => String(option.id))}` : ''
+  }},`
 }
 
 const luaOption = (option: RandomEnchantOption) =>
@@ -2554,7 +2560,7 @@ const scrollPatch = buildScrollPatch(
       const itemId = Number(row.ID)
       if (!Number.isInteger(itemId) || itemId <= 0) return []
       return [{ itemId, spellIds: itemInfoById.get(itemId)?.spellIds ?? [] }]
-  }),
+    }),
   dbc.spell,
   spellSchema,
 )
@@ -2562,12 +2568,14 @@ const spellPatchRows = [...(scrollPatch.edit?.rows ?? [])]
 spellPatchRows.push({ ID: 29506, Name_Lang_enUS: 'Aura of Protection' })
 spellPatchRows.push({
   ID: 26297,
-  Description_Lang_enUS: 'Increases your attack and casting speed by $s1%, removes spell pushback, and makes your attacks ignore target armor for $d.',
+  Description_Lang_enUS:
+    'Increases your attack and casting speed by $s1%, removes spell pushback, and makes your attacks ignore target armor for $d.',
   AuraDescription_Lang_enUS: 'Attack and casting speed increased. Immune to spell pushback. Attacks ignore armor.',
 })
 spellPatchRows.push({
   ID: 20594,
-  Description_Lang_enUS: 'Removes all poison, disease and bleed effects, and reduces all damage taken by 30% for $65116d.',
+  Description_Lang_enUS:
+    'Removes all poison, disease and bleed effects, and reduces all damage taken by 30% for $65116d.',
 })
 spellPatchRows.push({
   ID: 65116,
@@ -2576,7 +2584,8 @@ spellPatchRows.push({
 spellPatchRows.push({
   ID: 20589,
   RecoveryTime: 45000,
-  Description_Lang_enUS: 'Escape the effects of any immobilization or movement speed reduction effect. Only usable while snared or rooted.',
+  Description_Lang_enUS:
+    'Escape the effects of any immobilization or movement speed reduction effect. Only usable while snared or rooted.',
 })
 spellPatchRows.push({
   ID: 25046,
@@ -2598,19 +2607,23 @@ spellPatchRows.push({
   EffectMiscValue_2: 5,
   EffectMiscValue_3: 4,
   AttributesEx5: 768, // SPELL_ATTR5_ALLOW_WHILE_STUNNED (256) | SPELL_ATTR5_ALLOW_WHILE_CONFUSED (512)
-  Description_Lang_enUS: 'Removes any Stun, Fear and Polymorph effect. This effect shares a 45 sec cooldown with other similar effects.',
+  Description_Lang_enUS:
+    'Removes any Stun, Fear and Polymorph effect. This effect shares a 45 sec cooldown with other similar effects.',
 })
 spellPatchRows.push({
   ID: 58984,
-  Description_Lang_enUS: 'Instantly removes all existing harmful spell effects and allows you to slip into the shadows. Lasts until cancelled or upon moving.',
+  Description_Lang_enUS:
+    'Instantly removes all existing harmful spell effects and allows you to slip into the shadows. Lasts until cancelled or upon moving.',
 })
 spellPatchRows.push({
   ID: 42292,
-  Description_Lang_enUS: 'Removes all movement impairing effects, disarms and all effects which cause loss of control of your character.',
+  Description_Lang_enUS:
+    'Removes all movement impairing effects, disarms and all effects which cause loss of control of your character.',
 })
 spellPatchRows.push({
   ID: 59752,
-  Description_Lang_enUS: 'Removes all movement impairing effects, disarms and all effects which cause loss of control of your character. This effect shares a cooldown with other similar effects.',
+  Description_Lang_enUS:
+    'Removes all movement impairing effects, disarms and all effects which cause loss of control of your character. This effect shares a cooldown with other similar effects.',
 })
 spellPatchRows.push({
   ID: 4083,
@@ -2624,25 +2637,28 @@ spellPatchRows.push({
 })
 spellPatchRows.push({
   ID: 20549,
-  Description_Lang_enUS: 'Stuns up to $i enemies within $a1 yds for $d, reduces their armor by $55196s2% for $55196d, and increases your movement speed by $4083s1% for $4083d.',
+  Description_Lang_enUS:
+    'Stuns up to $i enemies within $a1 yds for $d, reduces their armor by $55196s2% for $55196d, and increases your movement speed by $4083s1% for $4083d.',
 })
 await Deno.writeTextFile(
   'launcher/patch.json',
   JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',
 )
 console.log(
-  `wrote ${spellPatchRows.length} Spell.dbc edits (${scrollPatch.edit?.rows.length ?? 0} scroll descriptions and 1 spell name); ` +
+  `wrote ${spellPatchRows.length} Spell.dbc edits (${
+    scrollPatch.edit?.rows.length ?? 0
+  } scroll descriptions and 1 spell name); ` +
     `${scrollPatch.missingSpellIds.length} spell IDs were missing from Spell.dbc and ` +
     `${scrollPatch.unchangedSpellIds.length} had no lower item-level requirement`,
 )
 const wsgBotRoster = parseWsgBotRoster()
 const wsgBotItems = parseWsgBotItems([], wsgBotRoster, starterItems, botStarterItems)
 const wsgBotStartupSpecsByClass = {
-  [playerClassIdByName.mage]: { talents: '--3400003', glyphs: [42741,43359] },
-  [playerClassIdByName.priest]: { talents: '-23005-', glyphs: [55674,43371] },
-  [playerClassIdByName.druid]: { talents: '--230032', glyphs: [40914,43335] },
-  [playerClassIdByName.warrior]: { talents: '050-005-', glyphs: [43417,43395] },
-  [playerClassIdByName.rogue]: { talents: '-025-030', glyphs: [42974,43379] },
+  [playerClassIdByName.mage]: { talents: '--3400003', glyphs: [42741, 43359] },
+  [playerClassIdByName.priest]: { talents: '-23005-', glyphs: [55674, 43371] },
+  [playerClassIdByName.druid]: { talents: '--230032', glyphs: [40914, 43335] },
+  [playerClassIdByName.warrior]: { talents: '050-005-', glyphs: [43417, 43395] },
+  [playerClassIdByName.rogue]: { talents: '-025-030', glyphs: [42974, 43379] },
 } as const
 
 const luaWsgBotStartupSpecs = Object.entries(wsgBotStartupSpecsByClass)

@@ -1,5 +1,5 @@
-import { loadStormLib, ArchiveFlags, Compression } from '../launcher/stormlib.ts'
-import { parsePatchDefinition, generatePatch, type DBCEdit } from '../launcher/patch.ts'
+import { ArchiveFlags, Compression, loadStormLib } from '../launcher/stormlib.ts'
+import { type DBCEdit, generatePatch, parsePatchDefinition } from '../launcher/patch.ts'
 import launcherPatch from '../launcher/patch.json' with { type: 'json' }
 import { env } from '../service/env.ts'
 

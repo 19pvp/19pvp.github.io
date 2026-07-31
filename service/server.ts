@@ -203,10 +203,7 @@ export default {
       const authRes = await handleAuth(req)
       if (authRes) return authRes
 
-      const launcherLog = await handleLauncherLog(req, url, {
-        dir: env.LAUNCHER_LOG_DIR,
-        secret: env.LAUNCHER_LOG_SECRET,
-      })
+      const launcherLog = await handleLauncherLog(req, url)
       if (launcherLog) return launcherLog
 
       return json({ error: 'Not found' }, { status: 404 })

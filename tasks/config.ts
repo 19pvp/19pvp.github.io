@@ -43,7 +43,7 @@ const parseConf = (text: string) => {
 
   for (const raw of text.split('\n')) {
     const line = raw.trim()
-    
+
     if (!line) {
       pendingMsg = ''
       continue

@@ -308,7 +308,7 @@ const connect = (failCount: number) => {
         log(cyan(t), d)
         const on = ON[t]
         const once = ONCE[t]
-        if (on) for (const fn of on) run(fn, d)
+        if (on) { for (const fn of on) run(fn, d) }
         if (once) {
           for (const fn of once) run(fn, d)
           once.clear()

@@ -15,62 +15,49 @@ const roleGMLevel: Record<string, number> = {
   [env.GM_LEVEL_3]: 3,
 }
 
-// In-memory temporary OAuth state store
+// In-memory OAuth state store
 const states = new Set<string>()
 
-// Stable secret key derived from environment
-const sessionSecret = env.LAUNCHER_VERIFICATION_HASH || '19pvp-stable-session-secret-seed'
-
-const getKey = async () => {
-  const enc = new TextEncoder()
-  return await crypto.subtle.importKey(
-    'raw',
-    enc.encode(sessionSecret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign', 'verify'],
-  )
+type SessionData = {
+  user: unknown
+  gmLevel: number
+  discordId: string
+  exp: number
 }
 
-const signSessionData = async (data: string) => {
-  const key = await getKey()
-  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data))
-  return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, '0')).join('')
+const getStoredSession = (sessionId: string): SessionData | null => {
+  try {
+    const raw = localStorage.getItem(`session:${sessionId}`)
+    if (!raw) return null
+    const data: SessionData = JSON.parse(raw)
+    if (data.exp && Date.now() > data.exp) {
+      localStorage.removeItem(`session:${sessionId}`)
+      return null
+    }
+    return data
+  } catch {
+    return null
+  }
 }
 
-const verifySessionData = async (data: string, signatureHex: string) => {
-  const key = await getKey()
-  const sigBytes = new Uint8Array(signatureHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || [])
-  return await crypto.subtle.verify('HMAC', key, sigBytes, new TextEncoder().encode(data))
+const saveStoredSession = (sessionId: string, data: Omit<SessionData, 'exp'>) => {
+  const session: SessionData = {
+    ...data,
+    exp: Date.now() + 30 * 24 * 60 * 60 * 1000,
+  }
+  localStorage.setItem(`session:${sessionId}`, JSON.stringify(session))
+}
+
+const removeStoredSession = (sessionId: string) => {
+  localStorage.removeItem(`session:${sessionId}`)
 }
 
 export const getSession = async (req: Request) => {
   const cookies = getCookies(req.headers)
-  const cookieValue = cookies['logs_session']
-  if (!cookieValue) return null
-  const lastDot = cookieValue.lastIndexOf('.')
-  if (lastDot === -1) return null
-  const payloadB64 = cookieValue.slice(0, lastDot)
-  const signature = cookieValue.slice(lastDot + 1)
-  if (!payloadB64 || !signature) return null
+  const sessionId = cookies['logs_session']
+  if (!sessionId) return null
 
-  try {
-    const isValid = await verifySessionData(payloadB64, signature)
-    if (!isValid) return null
-
-    const jsonStr = new TextDecoder().decode(Uint8Array.from(atob(payloadB64), (c) => c.charCodeAt(0)))
-    const session = JSON.parse(jsonStr)
-
-    if (session.exp && Date.now() > session.exp) return null
-
-    return {
-      user: session.user,
-      gmLevel: Number(session.gmLevel || 0),
-      discordId: String(session.discordId),
-    }
-  } catch {
-    return null
-  }
+  return getStoredSession(sessionId)
 }
 
 export const checkAuth = async (req: Request) => {
@@ -198,15 +185,12 @@ export const handleAuth = async (req: Request) => {
       `
     }
 
-    const payload = JSON.stringify({
+    const sessionId = crypto.randomUUID()
+    saveStoredSession(sessionId, {
       user,
       gmLevel,
       discordId: user.id,
-      exp: Date.now() + 30 * 24 * 60 * 60 * 1000,
     })
-    const payloadB64 = btoa(String.fromCharCode(...new TextEncoder().encode(payload)))
-    const signature = await signSessionData(payloadB64)
-    const token = `${payloadB64}.${signature}`
 
     const headers = new Headers({
       'location': `${BASE_URL}/install`,
@@ -214,7 +198,7 @@ export const handleAuth = async (req: Request) => {
     })
     setCookie(headers, {
       name: 'logs_session',
-      value: token,
+      value: sessionId,
       path: '/',
       httpOnly: true,
       secure: true,
@@ -249,6 +233,10 @@ export const handleAuth = async (req: Request) => {
   }
 
   if (url.pathname === '/auth/logout' && req.method === 'POST') {
+    const cookies = getCookies(req.headers)
+    const sessionId = cookies['logs_session']
+    if (sessionId) removeStoredSession(sessionId)
+
     const headers = new Headers(corsHeaders)
     setCookie(headers, {
       name: 'logs_session',

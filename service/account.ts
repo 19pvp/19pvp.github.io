@@ -231,7 +231,7 @@ export const getAccountDetails = async (discordId: string) => {
       id: accountId,
       username: String(acc.username),
     },
-    characters: accountChars.map(char => ({
+    characters: accountChars.map((char) => ({
       guid: Number(char.guid),
       name: String(char.name),
       race: Number(char.race),
@@ -245,7 +245,7 @@ export const getAccountDetails = async (discordId: string) => {
     stats: {
       totalPlayTime,
       lastTimeOnline,
-    }
+    },
   }
 }
 
@@ -254,7 +254,7 @@ export const setOrCreateAccount = async (
   discordLogin: string,
   username: string,
   password: string,
-  gmLevel: number
+  gmLevel: number,
 ) => {
   const [link] = await auth.sql`
     SELECT account_id FROM discord_account WHERE discord_id = ${BigInt(discordId)}
@@ -264,7 +264,9 @@ export const setOrCreateAccount = async (
     const acc = await createAccount({ username, password, gmLevel })
     if (link) {
       await auth.sql`
-        UPDATE discord_account SET account_id = ${acc.id}, discord_login = ${discordLogin} WHERE discord_id = ${BigInt(discordId)}
+        UPDATE discord_account SET account_id = ${acc.id}, discord_login = ${discordLogin} WHERE discord_id = ${
+        BigInt(discordId)
+      }
       `
     } else {
       await auth.sql`
@@ -282,4 +284,3 @@ export const setOrCreateAccount = async (
     return res
   }
 }
-
