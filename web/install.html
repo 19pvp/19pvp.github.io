@@ -10,8 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg-color: #0d0e12;
-        --card-bg: rgba(22, 24, 33, 0.7);
+        color-scheme: dark;
+        --bg-color: #050508;
+        --card-bg: #0c0d12;
         --border-color: rgba(255, 255, 255, 0.08);
         --text-primary: #f3f4f6;
         --text-secondary: #9ca3af;
@@ -40,8 +41,8 @@
         align-items: center;
         justify-content: center;
         background-image: 
-          radial-gradient(circle at 10% 20%, rgba(88, 101, 242, 0.08) 0%, transparent 40%),
-          radial-gradient(circle at 90% 80%, rgba(255, 209, 95, 0.06) 0%, transparent 40%);
+          radial-gradient(circle at 50% 0%, rgba(88, 101, 242, 0.06) 0%, transparent 50%),
+          radial-gradient(circle at 50% 100%, rgba(255, 209, 95, 0.04) 0%, transparent 50%);
         padding: 20px;
       }
 
@@ -202,6 +203,12 @@
   </head>
   <body>
     <div class="container">
+      <div style="display: flex; justify-content: flex-start; margin-bottom: 16px;">
+        <a href="/" class="btn btn-secondary" style="font-size: 0.85rem; padding: 8px 14px;">
+          ← Back to Dashboard
+        </a>
+      </div>
+
       <div class="header">
         <div class="logo-icon">⚔️</div>
         <h1>19 PvP Web Installer & Patcher</h1>
@@ -247,13 +254,19 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-          <div id="stepClient" class="step-item"><span>⚪</span> <span>Client Base Files Check</span></div>
-          <div id="stepPatch" class="step-item"><span>⚪</span> <span>19PvP Server Patch (patch-S.mpq)</span></div>
-          <div id="stepAddon" class="step-item"><span>⚪</span> <span>PvP19 In-Game Addon</span></div>
-          <div id="stepRealmlist" class="step-item"><span>⚪</span> <span>Realmlist Configuration (Data/enUS/realmlist.wtf)</span></div>
+          <div id="stepClient" class="step-item"><span>⚪</span> <span>Game Files</span></div>
+          <div id="stepPatch" class="step-item"><span>⚪</span> <span>19PvP Game Patch</span></div>
+          <div id="stepAddon" class="step-item"><span>⚪</span> <span>19PvP Addon</span></div>
+          <div id="stepRealmlist" class="step-item"><span>⚪</span> <span>Server Connection</span></div>
+          <div id="stepConfig" class="step-item"><span>⚪</span> <span>Game Settings</span></div>
         </div>
 
-        <div id="logBox" class="log-box" style="display: none;"></div>
+        <details style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+          <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; user-select: none;">
+            📋 Show Technical Logs
+          </summary>
+          <div id="logBox" class="log-box"></div>
+        </details>
 
         <div id="readyNotice" class="status-banner status-success" style="display: none; text-align: center; margin-bottom: 0;">
           🎉 <strong>Client Ready!</strong> Open <code>WoW.exe</code> inside your client folder to start playing!
@@ -275,6 +288,7 @@
       const stepPatch = document.getElementById('stepPatch');
       const stepAddon = document.getElementById('stepAddon');
       const stepRealmlist = document.getElementById('stepRealmlist');
+      const stepConfig = document.getElementById('stepConfig');
       const logBox = document.getElementById('logBox');
       const readyNotice = document.getElementById('readyNotice');
 
@@ -635,8 +649,8 @@
                     const overallSpeed = downloadedSoFar / elapsedSecs;
                     const bytesLeft = Math.max(0, fullProjectSize - currentTotalBytes);
                     const totalEta = overallSpeed > 0 ? bytesLeft / overallSpeed : 0;
-                    statusText.textContent = `Downloading (${completedCount}/${filesToDownload.length} files) • ${formatBytes(currentTotalBytes)} / ${formatBytes(fullProjectSize)} (${overallPct}%)`;
-                    speedText.textContent = `${formatBytes(overallSpeed)}/s • ETA: ${formatETA(totalEta)}`;
+                    statusText.textContent = `Updating files (${completedCount}/${filesToDownload.length}) • ${overallPct}%`;
+                    speedText.textContent = `${formatBytes(overallSpeed)}/s • ${formatETA(totalEta)} remaining`;
                   }
                 });
 
@@ -725,6 +739,99 @@
             setStep(stepPatch, 'done', 'Patch files synced');
           } else {
             setStep(stepPatch, 'done', 'Patch files up to date');
+          }
+
+          // 5. Client Config.wtf Auto-Patching
+          setStep(stepConfig, 'active');
+          statusText.textContent = 'Patching WoW client settings...';
+
+          try {
+            // Fetch account username if available
+            let accountName = '';
+            try {
+              const accRes = await fetch(`${api}/api/account`, { credentials: 'include' });
+              if (accRes.ok) {
+                const accData = await accRes.json();
+                if (accData.wowAccount && accData.wowAccount.username) {
+                  accountName = accData.wowAccount.username;
+                }
+              }
+            } catch {}
+
+            const screenWidth = window.screen.width || 1920;
+            const screenHeight = window.screen.height || 1080;
+
+            const refreshRate = await new Promise((resolve) => {
+              let repaint = 0;
+              const start = performance.now();
+              const withRepaint = () => {
+                requestAnimationFrame(() => {
+                  if (performance.now() - start < 1000) {
+                    repaint += 1;
+                    withRepaint();
+                  } else {
+                    resolve(Math.max(60, repaint));
+                  }
+                });
+              };
+              withRepaint();
+            });
+
+            const configEntries = {
+              'SET realmName': '"19PvP"',
+              'SET realmList': `"${targetRealmlist}"`,
+              'SET gxResolution': `"${screenWidth}x${screenHeight}"`,
+              'SET gxRefresh': `"${refreshRate}"`,
+              'SET gxWindow': '"1"',
+              'SET gxMaximize': '"1"',
+              'SET movie': '"0"',
+              'SET gameTip': '"0"',
+              'SET showGameTips': '"0"',
+              'SET Sound_EnableErrorSpeech': '"0"',
+              'SET readTOS': '"1"',
+              'SET readEULA': '"1"',
+              'SET readTerminationWithoutNotice': '"1"',
+              'SET showToolsUI': '"1"',
+              'SET accounttype': '"LK"',
+            };
+
+            if (accountName) {
+              configEntries['SET accountName'] = `"${accountName}"`;
+            }
+
+            // Read existing Config.wtf if present to preserve custom settings
+            let configText = '';
+            const configHandle = await getFileHandle(dirHandle, 'WTF/Config.wtf', false);
+            if (configHandle) {
+              const fileObj = await configHandle.getFile();
+              configText = await fileObj.text();
+            }
+
+            const configLines = configText.split(/\r?\n/).filter(Boolean);
+            const patchedMap = new Map();
+
+            for (const line of configLines) {
+              const match = line.match(/^(SET\s+[^\s]+)\s+(.+)$/i);
+              if (match) {
+                patchedMap.set(match[1], match[2]);
+              }
+            }
+
+            // Apply override settings
+            for (const [key, val] of Object.entries(configEntries)) {
+              patchedMap.set(key, val);
+            }
+
+            const newConfigText = Array.from(patchedMap.entries())
+              .map(([k, v]) => `${k} ${v}`)
+              .join('\n') + '\n';
+
+            await writeFile(dirHandle, 'WTF/Config.wtf', newConfigText);
+            appendLog(`Configured WTF/Config.wtf with resolution ${screenWidth}x${screenHeight}, accepted EULA/TOS${accountName ? `, account: ${accountName}` : ''}`);
+            setStep(stepConfig, 'done', `Settings configured (${screenWidth}x${screenHeight}, EULA Accepted${accountName ? `, Account: ${accountName}` : ''})`);
+          } catch (configErr) {
+            appendLog(`Warning patching Config.wtf: ${configErr.message}`);
+            setStep(stepConfig, 'done', 'Configured default settings');
           }
 
           progressFill.style.width = '100%';

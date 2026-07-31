@@ -623,7 +623,7 @@ export default {
         if (!session) {
           return new Response(null, {
             status: 302,
-            headers: { location: '/auth/discord/login' },
+            headers: { location: '/' },
           })
         }
         return new Response(installHTMLBytes, { headers: { 'content-type': 'text/html; charset=utf-8' } })
