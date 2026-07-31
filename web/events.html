@@ -6,7 +6,45 @@
     <link rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
     <title>19 PvP – Event Audit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lacquer&display=swap" rel="stylesheet">
     <style>
+    .lacquer {
+      font-family: "Lacquer", system-ui;
+      font-weight: 400;
+      font-style: normal;
+    }
+    .comic-neue-light {
+      font-family: "Comic Neue", cursive;
+      font-weight: 300;
+      font-style: normal;
+    }
+    .comic-neue-regular {
+      font-family: "Comic Neue", cursive;
+      font-weight: 400;
+      font-style: normal;
+    }
+    .comic-neue-bold {
+      font-family: "Comic Neue", cursive;
+      font-weight: 700;
+      font-style: normal;
+    }
+    .comic-neue-light-italic {
+      font-family: "Comic Neue", cursive;
+      font-weight: 300;
+      font-style: italic;
+    }
+    .comic-neue-regular-italic {
+      font-family: "Comic Neue", cursive;
+      font-weight: 400;
+      font-style: italic;
+    }
+    .comic-neue-bold-italic {
+      font-family: "Comic Neue", cursive;
+      font-weight: 700;
+      font-style: italic;
+    }
     :root {
       color-scheme: dark;
       --bg: #0d0e12;
@@ -19,7 +57,8 @@
       --accent-dim: rgba(255,209,95,0.12);
       --green: #10b981;
       --red: #ef4444;
-      --font: 'Inter', system-ui, sans-serif;
+      --font-title: 'Lacquer', system-ui, cursive;
+      --font: 'Comic Neue', cursive, sans-serif;
       --mono: 'JetBrains Mono', 'Fira Code', monospace;
     }
     * {
@@ -31,7 +70,7 @@
       background: var(--bg);
       color: var(--text);
       font-family: var(--font);
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.5;
       min-height: 100vh;
       display: flex;
@@ -51,10 +90,20 @@
       gap: 12px;
       flex-wrap: wrap;
     }
+    header h1, h2, h3, .title-font {
+      font-family: var(--font-title);
+    }
     header h1 {
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 1.3rem;
+      font-weight: 400;
       white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    header h1 img {
+      height: 24px;
+      width: auto;
     }
     header h1 span {
       color: var(--accent);
@@ -295,7 +344,7 @@
   </head>
   <body>
     <header>
-      <h1>⚔️ 19PvP <span>Events</span></h1>
+      <h1><img src="/logo.png" alt="19 PvP Logo"> 19PvP <span>Events</span></h1>
       <div class="controls">
         <div class="tab-row">
           <button class="tab active" id="tabActive" onclick="switchTable('active')">Active</button>

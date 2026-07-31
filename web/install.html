@@ -8,11 +8,44 @@
     <title>19 PvP - Client Installer & Patcher</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lacquer&display=swap" rel="stylesheet">
     <link rel="prefetch" href="/" as="document">
     <style>
+    .lacquer {
+      font-family: "Lacquer", system-ui;
+      font-weight: 400;
+      font-style: normal;
+    }
+    .comic-neue-light {
+      font-family: "Comic Neue", cursive;
+      font-weight: 300;
+      font-style: normal;
+    }
+    .comic-neue-regular {
+      font-family: "Comic Neue", cursive;
+      font-weight: 400;
+      font-style: normal;
+    }
+    .comic-neue-bold {
+      font-family: "Comic Neue", cursive;
+      font-weight: 700;
+      font-style: normal;
+    }
+    .comic-neue-light-italic {
+      font-family: "Comic Neue", cursive;
+      font-weight: 300;
+      font-style: italic;
+    }
+    .comic-neue-regular-italic {
+      font-family: "Comic Neue", cursive;
+      font-weight: 400;
+      font-style: italic;
+    }
+    .comic-neue-bold-italic {
+      font-family: "Comic Neue", cursive;
+      font-weight: 700;
+      font-style: italic;
+    }
     @view-transition {
       navigation: auto;
     }
@@ -38,7 +71,8 @@
       --discord-color: #5865f2;
       --danger-color: #ef4444;
       --success-color: #10b981;
-      --font-sans: 'Outfit', sans-serif;
+      --font-title: 'Lacquer', system-ui, cursive;
+      --font-sans: 'Comic Neue', cursive, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
     }
 
@@ -92,15 +126,20 @@
     }
 
     .logo-icon {
-      font-size: 3.5rem;
+      height: 80px;
+      width: auto;
       margin-bottom: 12px;
       display: inline-block;
       filter: drop-shadow(0 0 15px rgba(255, 209, 95, 0.3));
     }
 
+    h1, h2, h3, .title-font {
+      font-family: var(--font-title);
+    }
+
     h1 {
-      font-size: 2.2rem;
-      font-weight: 800;
+      font-size: 2.5rem;
+      font-weight: 400;
       letter-spacing: -0.5px;
       background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
       -webkit-background-clip: text;
@@ -227,7 +266,7 @@
       </div>
 
       <div class="header">
-        <div class="logo-icon">⚔️</div>
+        <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
         <h1>19 PvP Web Installer & Patcher</h1>
         <div class="subtitle">Direct File System Access Client Management</div>
       </div>
