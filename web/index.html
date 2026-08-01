@@ -92,8 +92,6 @@
 
     .stat-card {
       background: rgba(0, 0, 0, 0.15);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
       padding: 20px;
       display: flex;
       flex-direction: column;
@@ -123,8 +121,6 @@
     }
 
     .char-table-wrapper {
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
       overflow: hidden;
       background: rgba(0, 0, 0, 0.1);
     }
@@ -262,7 +258,7 @@
                   <input type="password" id="wowPassword" placeholder="••••••••••••" required minlength="4">
                 </div>
               </div>
-              <button type="submit" class="btn btn-primary white-box" style="margin-top: 20px;">
+              <button type="submit" class="btn btn-primary black-box" style="margin-top: 20px;">
                 Save Account Credentials
               </button>
             </form>
@@ -270,7 +266,7 @@
 
           <div id="charactersSection" style="display: none;">
             <div class="section-title">⚔️ Your Characters</div>
-            <div class="char-table-wrapper">
+            <div class="char-table-wrapper white-box">
               <table>
                 <thead>
                   <tr>
@@ -287,11 +283,11 @@
           </div>
 
           <div class="stats-container">
-            <div class="stat-card">
+            <div class="stat-card white-box">
               <span>Total Play Time</span>
               <strong id="statPlayTime">0h</strong>
             </div>
-            <div class="stat-card">
+            <div class="stat-card white-box">
               <span>Last Time Online</span>
               <strong id="statLastOnline">Never</strong>
             </div>

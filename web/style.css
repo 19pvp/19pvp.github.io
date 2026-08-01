@@ -25,6 +25,7 @@
   --discord-glow: rgba(88, 101, 242, 0.4);
   
   --danger-color: #ef4444;
+  --danger-button-bg: #301920;
   --danger-bg: rgba(239, 68, 68, 0.1);
   --danger-border: rgba(239, 68, 68, 0.2);
   --danger-text: #fca5a5;
@@ -198,7 +199,7 @@ h1 {
 }
 
 .btn-danger {
-  background-color: transparent;
+  background-color: var(--danger-button-bg);
   color: var(--danger-color);
 }
 
