@@ -297,7 +297,7 @@ label {
   padding-bottom: 4px;
   border-style: solid;
   border-width: 0 0 6px 0;
-  border-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="642.1" height="5.4" viewBox="0 0 642.1 5.4"><path fill="none" stroke="%23ffd15f" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2"/></svg>') 0 10 6 10 stretch;
+  border-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="644.1" height="5.4" viewBox="-1 0 644.1 5.4"><path fill="none" stroke="%23ffd15f" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2"/></svg>') 0 0 6 0 stretch;
   transition: color 0.2s ease;
 }
 
@@ -305,3 +305,9 @@ label {
   color: var(--accent-hover);
 }
 
+/* Hand-Drawn Horizontal Rule */
+.hand-drawn-rule {
+  border: 0;
+  border-bottom: 6px solid transparent;
+  border-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="644.1" height="5.4" viewBox="-1 0 644.1 5.4"><path fill="none" stroke="%239ca3af" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2"/></svg>') 0 0 6 0 stretch;
+}
