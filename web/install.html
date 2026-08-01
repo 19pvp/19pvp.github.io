@@ -129,10 +129,6 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button id="syncBtn" class="btn btn-primary white-box" style="display: none;">
-            ⚡ Verify & Install Client Updates
-          </button>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
@@ -658,9 +654,11 @@
         if (permission !== 'granted') throw Error(`Write permission was not granted (${permission})`)
         folderPath.textContent = dirHandle.name
         localStorage.setItem(SAVED_FOLDER_KEY, dirHandle.name)
-        syncBtn.style.display = 'inline-flex'
         readyNotice.style.display = 'none'
         appendLog(`Selected directory: ${dirHandle.name}`)
+
+        // Automatically start verification & installation process
+        startInstallation()
       } catch (err) {
         if (err?.name !== 'AbortError') {
           reportError('Error selecting directory', err)
@@ -668,7 +666,7 @@
       }
     }
 
-    syncBtn.onclick = async () => {
+    async function startInstallation() {
       if (!dirHandle) return
       if (retryInstall) {
         logBox.textContent = ''
@@ -676,7 +674,6 @@
         retryInstall = false
       }
       MUST_REPORT_ERRORS = false
-      syncBtn.disabled = true
       selectFolderBtn.disabled = true
       progressSection.style.display = 'flex'
       readyNotice.style.display = 'none'
