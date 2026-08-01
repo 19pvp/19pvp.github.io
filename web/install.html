@@ -430,7 +430,8 @@
       // If server does not support Range or file fits in 1 block, download directly
       if (!acceptRanges || !totalSize || totalSize <= CHUNK_SIZE) {
         renderChunkTicks(0)
-        return downloadSingleFile(url, parent, relativePath, onProgress)
+        await downloadSingleFile(url, parent, relativePath, onProgress)
+        return null // No background stitching required
       }
 
       // 2. Download in 100MB block files (0_fileName, 1_fileName, etc.)
@@ -493,44 +494,53 @@
         }
       }
 
-      // 3. Stitch chunks by appending chunk-by-chunk with open-seek-write-close cycles!
-      appendLog(`Stitching ${numChunks} block files into ${relativePath}...`)
-      for (let i = 0; i < numChunks; i++) {
-        const chunkFileName = `${i}_${fileName}`
-        const freshDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
-        const chunkHandle = await getFileHandle(freshDir, chunkFileName, false)
-        if (!chunkHandle) throw Error(`Missing block file: ${chunkFileName}`)
+      // 3. Launch background stitching immediately and return an object with the active promise { stitch: promise }
+      const stitchPromise = (async () => {
+        try {
+          appendLog(`[Background] Stitching ${numChunks} block files into ${relativePath}...`)
+          const finalDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
+          const finalFileHandle = await getFileHandle(finalDir, fileName, true)
+          const writable = await finalFileHandle.createWritable()
 
-        const chunkFile = await chunkHandle.getFile()
-        const targetOffset = i * CHUNK_SIZE
+          const SLICE_SIZE = 32 * 1024 * 1024 // 32MB fast memory slices
 
-        appendLog(`[Stitch] Appending block ${i + 1}/${numChunks} (${chunkFileName}, ${formatBytes(chunkFile.size)}) to ${fileName}...`)
+          for (let i = 0; i < numChunks; i++) {
+            const chunkFileName = `${i}_${fileName}`
+            const freshDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
+            const chunkHandle = await getFileHandle(freshDir, chunkFileName, false)
+            if (!chunkHandle) throw Error(`Missing block file: ${chunkFileName}`)
 
-        // Open target file, seek to block offset, write chunk data, and close immediately
-        const finalDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
-        const finalFileHandle = await getFileHandle(finalDir, fileName, true)
-        const writable = await finalFileHandle.createWritable({ keepExistingData: i > 0 })
+            const chunkFile = await chunkHandle.getFile()
+            appendLog(`[Background] Copying block ${i + 1}/${numChunks} (${chunkFileName}, ${formatBytes(chunkFile.size)})...`)
 
-        if (i > 0) {
-          await writable.seek(targetOffset)
+            let offset = 0
+            while (offset < chunkFile.size) {
+              const slice = chunkFile.slice(offset, offset + SLICE_SIZE)
+              const buf = await slice.arrayBuffer()
+              await writable.write(buf)
+              offset += SLICE_SIZE
+            }
+            appendLog(`[Background] Finished block ${i + 1}/${numChunks} (${chunkFileName}).`)
+          }
+          await writable.close()
+
+          // Clean up temporary 100MB block files after stitching completes
+          const cleanupDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
+          if (cleanupDir) {
+            for (let i = 0; i < numChunks; i++) {
+              try {
+                await cleanupDir.removeEntry(`${i}_${fileName}`)
+              } catch {}
+            }
+          }
+
+          appendLog(`[Background] Successfully stitched ${relativePath} (${formatBytes(totalSize)}) [OK].`)
+        } catch (err) {
+          reportError(`Background stitching failed for ${relativePath}`, err)
         }
+      })()
 
-        // Stream current chunk into target file
-        await chunkFile.stream().pipeTo(writable)
-        appendLog(`[Stitch] Completed appending block ${i + 1}/${numChunks} (${chunkFileName}).`)
-      }
-
-      // 4. Clean up temporary 100MB block files after stitching completes
-      const cleanupDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
-      if (cleanupDir) {
-        for (let i = 0; i < numChunks; i++) {
-          try {
-            await cleanupDir.removeEntry(`${i}_${fileName}`)
-          } catch {}
-        }
-      }
-
-      appendLog(`Successfully stitched ${relativePath} (${formatBytes(totalSize)}) [OK].`)
+      return { stitch: stitchPromise }
     }
 
     async function downloadSingleFile(url, parent, relativePath, onProgress, extraHeaders = {}) {
@@ -557,30 +567,28 @@
           let currentSpeed = 0
 
           if (res.body) {
-            // Stream response body directly using a TransformStream to monitor progress without intermediate arrayBuffer/File object caching
-            const progressStream = new TransformStream({
-              transform(chunk, controller) {
-                controller.enqueue(chunk)
-                loaded += chunk.byteLength
+            const reader = res.body.getReader()
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              await writable.write(value)
+              loaded += value.byteLength
 
-                const now = performance.now()
-                const elapsedSinceLast = (now - lastTime) / 1000
-                if (elapsedSinceLast >= 0.3) {
-                  currentSpeed = (loaded - lastLoaded) / elapsedSinceLast
-                  lastTime = now
-                  lastLoaded = loaded
-                }
+              const now = performance.now()
+              const elapsedSinceLast = (now - lastTime) / 1000
+              if (elapsedSinceLast >= 0.3) {
+                currentSpeed = (loaded - lastLoaded) / elapsedSinceLast
+                lastTime = now
+                lastLoaded = loaded
+              }
 
-                if (onProgress) {
-                  const remainingBytes = total > loaded ? total - loaded : 0
-                  const etaSeconds = currentSpeed > 0 ? remainingBytes / currentSpeed : 0
-                  onProgress(loaded, total, currentSpeed, etaSeconds)
-                }
-              },
-            })
-
-            await res.body.pipeTo(progressStream.writable)
-            await progressStream.readable.pipeTo(writable)
+              if (onProgress) {
+                const remainingBytes = total > loaded ? total - loaded : 0
+                const etaSeconds = currentSpeed > 0 ? remainingBytes / currentSpeed : 0
+                onProgress(loaded, total, currentSpeed, etaSeconds)
+              }
+            }
+            await writable.close()
             return
           } else {
             const buf = await res.arrayBuffer()
@@ -679,7 +687,7 @@
 
         // 1. Verify Client Files with SHA-1
         setStep(stepClient, 'active')
-        setStep(stepPlatform, 'active', `Checking ${CLIENT_PLATFORM_LABEL} client binaries...`)
+        setStep(stepPlatform, 'pending')
         appendLog('Verifying client base installation files via WebCrypto SHA-1...')
 
         if (manifestFiles.length === 0) {
@@ -755,6 +763,8 @@
           let completedCount = 0
           let lastUIUpdate = 0
 
+          const pendingStitchTasks = []
+
           for (const { item } of filesToDownload) {
             const relativePath = item.path
             const fileUrl = `${api}/client-file/${encodeURIComponent(relativePath)}`
@@ -769,7 +779,7 @@
             fileProgressFill.style.width = `0%`
 
             try {
-              await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total, speed, fileEta) => {
+              const res = await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total, speed, fileEta) => {
                 const now = performance.now()
                 const deltaLoaded = loaded - previousLoadedForFile
                 previousLoadedForFile = loaded
@@ -802,6 +812,9 @@
                     : `${overallPct}%`
                 }
               })
+              if (res && res.stitch) {
+                pendingStitchTasks.push(res.stitch)
+              }
             } catch (error) {
               reportError(`Failed to download ${relativePath}`, error)
               throw error
@@ -812,9 +825,15 @@
             fileSpeedText.textContent = `100%`
             appendLog(`Finished downloading ${relativePath} (${completedCount}/${filesToDownload.length})`)
           }
+
+          if (pendingStitchTasks.length > 0) {
+            appendLog(`Waiting for background file stitching to finalize (${pendingStitchTasks.length} task${pendingStitchTasks.length > 1 ? 's' : ''})...`)
+            await Promise.all(pendingStitchTasks)
+          }
         }
 
         if (executableArchiveRequired) {
+          setStep(stepPlatform, 'active', `Checking ${CLIENT_PLATFORM_LABEL} client binaries...`)
           try {
             const archiveHandle = await getFileHandle(dirHandle, CLIENT_ARCHIVE, false)
             if (!archiveHandle) {
