@@ -200,16 +200,43 @@
       border-color: var(--accent-color);
       transform: translateY(-1px);
     }
+
+    .container-content {
+      transition: opacity 0.2s ease-in-out;
+      opacity: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.page-entering .container-content,
+    body.page-exiting .container-content {
+      opacity: 0;
+    }
     </style>
   </head>
-  <body>
+  <body class="page-entering">
     <div class="container black-box">
-      <div id="loading" style="text-align: center; padding: 40px 0;">
-        <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
-        <h2>Loading portal...</h2>
+      <!-- Top Hand-Drawn Progress/Loading Bar -->
+      <div id="topLoadingBarContainer" style="position: absolute; top: 0; left: 0; right: 0; height: 12px; overflow: hidden; pointer-events: none;">
+        <svg>
+          <path id="handDrawnBorderPath" d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2" />
+        </svg>
+        <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;">
+          <defs>
+            <linearGradient id="progressGradTopBar" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="var(--discord-color)" />
+              <stop offset="100%" stop-color="var(--accent-color)" />
+            </linearGradient>
+          </defs>
+          <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" />
+          <use id="topLoadingPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTopBar)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="750" stroke-dashoffset="0" />
+        </svg>
       </div>
 
-      <div id="guestView" style="display: none;">
+      <div id="main-content" class="container-content">
+
+      <div id="guestView">
         <div class="header">
           <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
           <h1>19 PvP Server</h1>
@@ -229,7 +256,7 @@
         </div>
       </div>
 
-      <div id="memberView" style="display: none;">
+      <div id="memberView">
         <div class="dashboard">
           <div class="user-profile">
             <div class="user-info">
@@ -264,7 +291,7 @@
             </form>
           </div>
 
-          <div id="charactersSection" style="display: none;">
+          <div id="charactersSection">
             <div class="section-title">⚔️ Your Characters</div>
             <div class="char-table-wrapper white-box">
               <table>
@@ -298,11 +325,11 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
 
     <script type="module">
     const api = location.origin
-    const loading = document.getElementById('loading')
     const guestView = document.getElementById('guestView')
     const memberView = document.getElementById('memberView')
 
@@ -414,7 +441,6 @@
         const res = await fetch(`${api}/api/account`, { credentials: 'include' })
         const data = await res.json()
 
-        loading.style.display = 'none'
 
         if (data.authenticated) {
           guestView.style.display = 'none'
@@ -471,33 +497,105 @@
           memberView.style.display = 'none'
         }
       } catch (err) {
-        loading.style.display = 'none'
         guestView.style.display = 'block'
         memberView.style.display = 'none'
       }
     }
 
     // Smooth SPA-like page navigation transition helper
-    document.addEventListener('click', (e) => {
-      const link = e.target.closest('a[href^="/"]')
-      if (!link || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
-      const targetUrl = new URL(link.href, location.origin)
-      if (targetUrl.origin !== location.origin) return
+    if ('navigation' in window && !window.hasSetupSPA) {
+      window.hasSetupSPA = true
+      navigation.addEventListener('navigate', (event) => {
+        const url = new URL(event.destination.url)
+        if (url.origin !== location.origin) return
+        if (event.hashChange || !event.canIntercept || event.downloadRequest) return
 
-      e.preventDefault()
-      if (document.startViewTransition) {
-        document.startViewTransition(() => {
-          location.href = targetUrl.href
+        event.intercept({
+          async handler() {
+            const currentContent = document.getElementById('main-content')
+            const topPath = document.getElementById('topLoadingPath')
+            const master = document.getElementById('handDrawnBorderPath')
+
+            let intervalId = null
+            let currentPct = 50
+
+            const updateProgress = (pct) => {
+              if (topPath && master) {
+                const length = master.getTotalLength() || 750
+                topPath.style.strokeDasharray = length
+                topPath.style.strokeDashoffset = length - (pct / 100) * length
+              }
+            }
+
+            if (topPath && master) {
+              topPath.style.transition = 'none'
+              updateProgress(0)
+              topPath.getBoundingClientRect()
+              topPath.style.transition = 'stroke-dashoffset 0.2s ease-out'
+              updateProgress(50)
+              intervalId = setInterval(() => {
+                currentPct += (100 - currentPct) / 2
+                updateProgress(currentPct)
+              }, 200)
+            }
+
+            if (currentContent) {
+              currentContent.style.transition = 'opacity 0.15s ease-in-out'
+              currentContent.style.opacity = '0'
+            }
+
+            try {
+              const response = await fetch(url.href, { signal: event.signal })
+              if (!response.ok) throw new Error('Fetch failed')
+              const html = await response.text()
+              if (event.signal.aborted) return
+              const doc = new DOMParser().parseFromString(html, 'text/html')
+
+              document.title = doc.title
+              const newContent = doc.getElementById('main-content')
+              if (currentContent && newContent) {
+                currentContent.innerHTML = newContent.innerHTML
+                currentContent.style.opacity = '0'
+              } else {
+                document.body.innerHTML = doc.body.innerHTML
+              }
+
+              if (intervalId) clearInterval(intervalId)
+              updateProgress(100)
+
+              if (currentContent) {
+                currentContent.getBoundingClientRect()
+                currentContent.style.transition = 'opacity 0.2s cubic-bezier(0, 0, 0.2, 1)'
+                currentContent.style.opacity = '1'
+              }
+
+              const scripts = doc.querySelectorAll('script')
+              for (const script of scripts) {
+                const newScript = document.createElement('script')
+                if (script.src) {
+                  newScript.src = script.src
+                } else {
+                  newScript.textContent = script.textContent + `\n// ${Date.now()}`
+                }
+                newScript.type = script.type || 'text/javascript'
+                document.body.appendChild(newScript)
+              }
+            } catch (error) {
+              if (event.signal.aborted || error.name === 'AbortError') return
+              location.href = url.href
+            } finally {
+              if (intervalId) clearInterval(intervalId)
+            }
+          }
         })
-      } else {
-        document.body.classList.add('page-exit')
-        setTimeout(() => {
-          location.href = targetUrl.href
-        }, 150)
-      }
-    })
+      })
+    }
 
     loadDashboard()
+
+    requestAnimationFrame(() => {
+      document.body.classList.remove('page-entering')
+    })
     </script>
   </body>
 </html>
