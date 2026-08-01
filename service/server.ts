@@ -102,7 +102,7 @@ export default {
       if (url.pathname === '/style.css') {
         return new Response(styleCSS, {
           headers: {
-            'cache-control': 'public, max-age=3600',
+            /* 'cache-control': 'public, max-age=3600', */
             'content-type': 'text/css; charset=utf-8',
           },
         })
