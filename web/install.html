@@ -20,20 +20,14 @@
       color: var(--text-secondary);
     }
 
-    .progress-bar-bg {
-      position: relative;
+    .progress-bar-svg {
       width: 100%;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 5px;
-      overflow: hidden;
+      height: 18px;
+      display: block;
     }
 
-    .progress-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--discord-color), var(--accent-color));
-      transition: width 0.2s ease;
+    .progress-bar-svg path {
+      transition: stroke-dashoffset 0.1s linear;
     }
 
     .chunk-ticks {
@@ -48,7 +42,7 @@
 
     .chunk-tick {
       height: 100%;
-      border-right: 1.5px solid rgba(0, 0, 0, 0.6);
+      border-right: 3px solid var(--surface);
       box-sizing: border-box;
     }
 
@@ -92,10 +86,10 @@
         </div>
       </div>
 
-      <div class="box black-box">
+      <div class="box black-box" style="padding: 8px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
           <div>
-            <strong style="font-size: 1.1rem; display: block;">Target Client Directory</strong>
+            <strong style="font-size: 1.1rem;">Target Client Directory :</strong>
             <span id="directoryPath"
               style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No directory selected</span>
           </div>
@@ -104,15 +98,27 @@
           </button>
         </div>
 
-        <div id="progressSection" style="display: none; flex-direction: column; gap: 14px;">
+        <div id="progressSection" style="display: none; flex-direction: column; gap: 14px; padding-top: 18px;">
           <!-- Current File Progress Bar -->
           <div style="display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
               <span id="fileStatusText">Preparing file...</span>
               <span id="fileSpeedText">0%</span>
             </div>
-            <div class="progress-bar-bg">
-              <div id="fileProgressFill" class="progress-bar-fill"></div>
+            <div style="width: 100%; height: 18px; position: relative;">
+              <svg style="display: none;">
+                <path id="handDrawnBorderPath" d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2" />
+              </svg>
+              <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;">
+                <defs>
+                  <linearGradient id="progressGradFile" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="var(--discord-color)" />
+                    <stop offset="100%" stop-color="var(--accent-color)" />
+                  </linearGradient>
+                </defs>
+                <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" />
+                <use id="fileProgressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradFile)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0" stroke-dashoffset="0" />
+              </svg>
               <div id="fileChunkTicks" class="chunk-ticks"></div>
             </div>
           </div>
@@ -123,8 +129,17 @@
               <span id="totalStatusText">Total Progress</span>
               <span id="totalSpeedText">0%</span>
             </div>
-            <div class="progress-bar-bg">
-              <div id="progressFill" class="progress-bar-fill"></div>
+            <div style="width: 100%; height: 18px; position: relative;">
+              <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block; transform: scale(1, -1);">
+                <defs>
+                  <linearGradient id="progressGradTotal" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="var(--discord-color)" />
+                    <stop offset="100%" stop-color="var(--accent-color)" />
+                  </linearGradient>
+                </defs>
+                <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" />
+                <use id="progressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTotal)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0" stroke-dashoffset="0" />
+              </svg>
             </div>
           </div>
         </div>
@@ -171,7 +186,34 @@
     const fileSpeedText = document.getElementById('fileSpeedText')
     const totalStatusText = document.getElementById('totalStatusText')
     const totalSpeedText = document.getElementById('totalSpeedText')
-    const progressFill = document.getElementById('progressFill')
+    const progressPath = document.getElementById('progressPath')
+    const fileProgressPath = document.getElementById('fileProgressPath')
+    const handDrawnBorderPath = document.getElementById('handDrawnBorderPath')
+
+    const progressFill = {
+      style: {
+        set width(val) {
+          if (progressPath && handDrawnBorderPath) {
+            const pct = parseFloat(val) || 0
+            const length = handDrawnBorderPath.getTotalLength() || 750
+            progressPath.style.strokeDasharray = length
+            progressPath.style.strokeDashoffset = length - (pct / 100) * length
+          }
+        }
+      }
+    }
+    const fileProgressFill = {
+      style: {
+        set width(val) {
+          if (fileProgressPath && handDrawnBorderPath) {
+            const pct = parseFloat(val) || 0
+            const length = handDrawnBorderPath.getTotalLength() || 750
+            fileProgressPath.style.strokeDasharray = length
+            fileProgressPath.style.strokeDashoffset = length - (pct / 100) * length
+          }
+        }
+      }
+    }
     const stepClient = document.getElementById('stepClient')
     const stepPlatform = document.getElementById('stepPlatform')
     const stepPatch = document.getElementById('stepPatch')
