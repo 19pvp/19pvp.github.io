@@ -72,6 +72,7 @@ const getCSSVar = (name) => {
 };
 
 // Generate styles dynamically using actual theme CSS variables
+const bgColor = parseColorToHex(getCSSVar('--bg-color'));
 const cardBg = parseColorToHex(getCSSVar('--card-bg'));
 const accentColor = parseColorToHex(getCSSVar('--accent-color'));
 const accentHover = parseColorToHex(getCSSVar('--accent-hover'));
@@ -91,7 +92,7 @@ const borderColor = parseColorToHex(getCSSVar('--border-color'));
 const styleEl = document.createElement('style');
 styleEl.innerHTML = `
   /* Main card container */
-  ${generateBoxVariant('container', accentColor, cardBg, 12)}
+  ${generateBoxVariant('container', cardBg, cardBg, 12)}
 
   /* Buttons */
   ${generateBoxVariant('btn-primary', '000000', accentColor, 10)}
@@ -125,13 +126,17 @@ styleEl.innerHTML = `
   ${generateBoxVariant('status-success', successColor, successBg, 10)}
   ${generateBoxVariant('status-error', dangerColor, dangerBg, 10)}
 
-  /* Wrapper layouts & Table wraps */
-  ${generateBoxVariant('char-table-wrapper', 'ffffff', surface, 10)}
-  ${generateBoxVariant('table-wrap', 'ffffff', surface, 10)}
-  ${generateBoxVariant('box', 'ffffff', surface, 10)}
+  /* Wrapper layouts & Table wraps & logs */
+  ${generateBoxVariant('char-table-wrapper', surface, surface, 10)}
+  ${generateBoxVariant('table-wrap', surface, surface, 10)}
+  ${generateBoxVariant('box', surface, surface, 10)}
+  ${generateBoxVariant('log-box', borderColor || 'ffffff14', bgColor, 10)}
+  ${generateBoxVariantMulti('thead', surface2, surface2, 6)}
 
   /* White/Black box fallbacks */
   ${generateBoxVariant('white-box', 'ffffff', 'none', 8)}
   ${generateBoxVariant('black-box', '000000', 'none', 10)}
+
+
 `;
 document.head.appendChild(styleEl);

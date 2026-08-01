@@ -130,11 +130,11 @@ h1 {
 
 @keyframes pulse {
   0% {
-    transform: scale(1);
+    opacity: 0.85;
     filter: drop-shadow(0 0 10px rgba(255, 209, 95, 0.2));
   }
   100% {
-    transform: scale(1.05);
+    opacity: 1;
     filter: drop-shadow(0 0 25px rgba(255, 209, 95, 0.5));
   }
 }
@@ -164,7 +164,6 @@ h1 {
 
 .btn-discord:hover {
   background-color: var(--discord-hover);
-  transform: translateY(-2px);
   box-shadow: 0 6px 20px var(--discord-glow);
 }
 
@@ -175,7 +174,6 @@ h1 {
 
 .btn-primary:hover {
   background-color: var(--accent-hover);
-  transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(255, 209, 95, 0.3);
 }
 
@@ -195,6 +193,7 @@ h1 {
 
 .btn-danger:hover {
   background-color: var(--danger-bg);
+  color: #ffffff;
 }
 
 .btn-ghost {
@@ -325,11 +324,12 @@ label {
 /* ==========================================
    Hand-Drawn Divider (Dotted)
    ========================================== */
-.hand-drawn-divider {
+.hand-drawn-divider,
+tbody tr td::after {
   display: block;
   background-color: var(--divider-color, var(--border-color));
   mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 121 9'%3E%3Cpath d='M0 6q0-3 4-3 8-2 10 3 1 3-4 2L3 9q-4 1-3-3m19-1q0-3 4-3 7 0 7 4 1 2-6 2-6 0-5-3m15 1q-1-3 9-3 6-1 7 2 2 2-9 3-8 0-7-2m21 0q0-3 4-4 9-1 8 3 0 2-4 2-9 3-8-1m18 0V4q-1-2 6-2 10 1 7 4zm17 0q0-4 4-4 7 0 7 3 1 3-5 2zm17 0q-2-3 1-4 9-3 11-1 5 2-3 5z' fill='black'/%3E%3C/svg%3E");
-  mask-size: 121px 9px;
+  mask-size: 125px 9px;
   mask-repeat: repeat-x;
   z-index: 1;
 }
@@ -345,4 +345,25 @@ label {
   mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8.5 120.9'%3E%3Cpath d='M6 121q-3-1-4-4-2-8 3-10 3-1 3 4v7q2 4-2 3m-1-19q-3 0-3-4-1-6 4-7l1 5q0 8-2 6m1-15q-4 1-3-9l1-7q4-2 3 8 2 9-1 8M5 66q-2 1-3-5-1-7 2-7 2 0 3 4 2 9-2 8m1-18H3q-2 1-1-6 1-9 4-7zM5 31q-3 0-3-4 0-7 3-7 2-1 2 5zm1-17q-2 2-5-1L0 2q2-5 5 3 3 7 1 9' fill='black'/%3E%3C/svg%3E");
   mask-size: 8.5px 120.9px;
   mask-repeat: repeat-y;
+}
+
+/* Table row hand-drawn divider lines */
+tbody tr td {
+  position: relative;
+}
+
+tbody tr td::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  mask-size: 42px 3px;
+  pointer-events: none;
+  z-index: auto;
+}
+
+tbody tr:last-child td::after {
+  display: none !important;
 }
