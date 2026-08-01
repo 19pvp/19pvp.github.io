@@ -96,11 +96,11 @@
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
           <div>
             <strong style="font-size: 1.1rem; display: block;">Target Client Directory</strong>
-            <span id="folderPath"
-              style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No folder selected</span>
+            <span id="directoryPath"
+              style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No directory selected</span>
           </div>
-          <button id="selectFolderBtn" class="btn btn-secondary white-box">
-            📁 Select Folder
+          <button id="selectDirectoryBtn" class="btn btn-secondary white-box">
+            📁 Select Directory
           </button>
         </div>
 
@@ -140,7 +140,9 @@
           <div id="stepConfig" class="step-item"><span>⚪</span> <span>Game Settings</span></div>
         </div>
 
-        <details style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+        <hr class="hand-drawn-rule" aria-hidden="true">
+
+        <details style="margin-top: 10px; padding-top: 10px;">
           <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; user-select: none;">
             📋 Show Technical Logs
           </summary>
@@ -151,7 +153,7 @@
           style="display: none; text-align: center; margin-bottom: 0;">
           🎉 <strong>Client Ready!</strong>
           <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
-            <li>Open the client folder you selected.</li>
+            <li>Open the client directory you selected.</li>
             <li>Start the game.</li>
           </ol>
         </div>
@@ -161,8 +163,8 @@
     <script type="module">
     const api = location.origin
     const unsupportedAlert = document.getElementById('unsupportedAlert')
-    const selectFolderBtn = document.getElementById('selectFolderBtn')
-    const folderPath = document.getElementById('folderPath')
+    const selectDirectoryBtn = document.getElementById('selectDirectoryBtn')
+    const directoryPath = document.getElementById('directoryPath')
     const syncBtn = document.getElementById('syncBtn')
     const progressSection = document.getElementById('progressSection')
     const statusText = document.getElementById('statusText')
@@ -197,7 +199,7 @@
     readyNotice.innerHTML = `
       🎉 <strong>Client Ready!</strong>
       <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
-        <li>Open the client folder you selected.</li>
+        <li>Open the client directory you selected.</li>
         <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
       </ol>
     `
@@ -226,9 +228,9 @@
           </div>
         `
       }
-      selectFolderBtn.disabled = true
-      selectFolderBtn.style.opacity = '0.5'
-      selectFolderBtn.style.cursor = 'not-allowed'
+      selectDirectoryBtn.disabled = true
+      selectDirectoryBtn.style.opacity = '0.5'
+      selectDirectoryBtn.style.cursor = 'not-allowed'
     }
 
     function appendLog(msg) {
@@ -639,21 +641,21 @@
       }
     }
 
-    const SAVED_FOLDER_KEY = '19pvp_wow_folder_name'
+    const SAVED_DIRECTORY_KEY = '19pvp_wow_directory_name'
 
-    const savedFolderName = localStorage.getItem(SAVED_FOLDER_KEY)
-    if (savedFolderName) {
-      folderPath.textContent = savedFolderName + ' (Re-select to grant permission)'
+    const savedDirectoryName = localStorage.getItem(SAVED_DIRECTORY_KEY)
+    if (savedDirectoryName) {
+      directoryPath.textContent = savedDirectoryName + ' (Re-select to grant permission)'
     }
 
-    selectFolderBtn.onclick = async () => {
+    selectDirectoryBtn.onclick = async () => {
       if (!hasFS) return
       try {
         dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
         const permission = await dirHandle.requestPermission({ mode: 'readwrite' })
         if (permission !== 'granted') throw Error(`Write permission was not granted (${permission})`)
-        folderPath.textContent = dirHandle.name
-        localStorage.setItem(SAVED_FOLDER_KEY, dirHandle.name)
+        directoryPath.textContent = dirHandle.name
+        localStorage.setItem(SAVED_DIRECTORY_KEY, dirHandle.name)
         readyNotice.style.display = 'none'
         appendLog(`Selected directory: ${dirHandle.name}`)
 
@@ -674,7 +676,7 @@
         retryInstall = false
       }
       MUST_REPORT_ERRORS = false
-      selectFolderBtn.disabled = true
+      selectDirectoryBtn.disabled = true
       progressSection.style.display = 'flex'
       readyNotice.style.display = 'none'
 
@@ -1080,7 +1082,7 @@
         if (MUST_REPORT_ERRORS) await uploadLogs()
         syncBtn.textContent = MUST_REPORT_ERRORS || retryInstall ? '↻ Retry installation' : INSTALL_BUTTON_TEXT
         syncBtn.disabled = false
-        selectFolderBtn.disabled = false
+        selectDirectoryBtn.disabled = false
       }
     }
 
