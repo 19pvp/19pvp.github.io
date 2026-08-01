@@ -133,11 +133,11 @@
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
           <div id="stepClient" class="step-item"><span>⚪</span> <span>Game Files</span></div>
-          <div id="stepPlatform" class="step-item"><span>⚪</span> <span>Client Binaries</span></div>
           <div id="stepPatch" class="step-item"><span>⚪</span> <span>19PvP Game Patch</span></div>
           <div id="stepAddon" class="step-item"><span>⚪</span> <span>19PvP Addon</span></div>
           <div id="stepRealmlist" class="step-item"><span>⚪</span> <span>Server Connection</span></div>
           <div id="stepConfig" class="step-item"><span>⚪</span> <span>Game Settings</span></div>
+          <div id="stepPlatform" class="step-item"><span>⚪</span> <span>Client Binaries</span></div>
         </div>
 
         <hr class="hand-drawn-rule" aria-hidden="true">
@@ -167,8 +167,10 @@
     const directoryPath = document.getElementById('directoryPath')
     const syncBtn = document.getElementById('syncBtn')
     const progressSection = document.getElementById('progressSection')
-    const statusText = document.getElementById('statusText')
-    const speedText = document.getElementById('speedText')
+    const fileStatusText = document.getElementById('fileStatusText')
+    const fileSpeedText = document.getElementById('fileSpeedText')
+    const totalStatusText = document.getElementById('totalStatusText')
+    const totalSpeedText = document.getElementById('totalSpeedText')
     const progressFill = document.getElementById('progressFill')
     const stepClient = document.getElementById('stepClient')
     const stepPlatform = document.getElementById('stepPlatform')
@@ -748,7 +750,6 @@
           if (!await hasClientMarker(dirHandle)) executableFilesToExtract.push(`${CLIENT_PLATFORM_LABEL} client binaries`)
         }
         let executableArchiveRequired = executableFilesToExtract.length > 0
-        if (!executableArchiveRequired) setStep(stepPlatform, 'done', `${CLIENT_PLATFORM_LABEL} client binaries verified`)
         const initialPct = fullProjectSize > 0 ? Math.round((alreadyVerifiedBytes / fullProjectSize) * 100) : 0
         progressFill.style.width = `${initialPct}%`
 
@@ -831,42 +832,6 @@
           }
         }
 
-        if (executableArchiveRequired) {
-          setStep(stepPlatform, 'active', `Checking ${CLIENT_PLATFORM_LABEL} client binaries...`)
-          try {
-            const archiveHandle = await getFileHandle(dirHandle, CLIENT_ARCHIVE, false)
-            if (!archiveHandle) {
-              setStep(stepPlatform, 'active', `Downloading ${CLIENT_ARCHIVE}...`)
-              appendLog(`Downloading ${CLIENT_ARCHIVE} containing the protected ${CLIENT_PLATFORM_LABEL} client files...`)
-              fileStatusText.textContent = `Downloading ${CLIENT_ARCHIVE}`
-              fileSpeedText.textContent = `0%`
-              fileProgressFill.style.width = `0%`
-              await downloadToPath(`${api}/client-file/${CLIENT_ARCHIVE}`, dirHandle, CLIENT_ARCHIVE, (loaded, total) => {
-                const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0
-                fileProgressFill.style.width = `${pct}%`
-                fileSpeedText.textContent = `${pct}%`
-              })
-            } else {
-              appendLog(`Using existing ${CLIENT_ARCHIVE}.`)
-            }
-            setStep(stepPlatform, 'active', `Extract ${CLIENT_ARCHIVE}, then retry`)
-          } catch (error) {
-            setStep(stepPlatform, 'error', `Failed to download ${CLIENT_ARCHIVE}`)
-            throw error
-          }
-          appendLog(
-            `Extract ${CLIENT_ARCHIVE} into this client directory, then click Retry installation to verify the ${CLIENT_PLATFORM_LABEL} client files.`,
-          )
-        }
-
-        totalStatusText.textContent = 'Base client files verified & complete'
-        if (executableArchiveRequired) {
-          totalStatusText.textContent = `Extract ${CLIENT_ARCHIVE}, then retry installation.`
-          retryInstall = true
-          appendLog('Installation is paused until the executable archive is extracted.')
-          return
-        }
-
         progressFill.style.width = '100%'
         fileProgressFill.style.width = '100%'
         totalSpeedText.textContent = `${formatBytes(fullProjectSize)} / ${formatBytes(fullProjectSize)} (100%)`
@@ -874,7 +839,7 @@
 
         // 2. Realmlist Update
         setStep(stepRealmlist, 'active')
-        statusText.textContent = 'Setting realmlist...'
+        totalStatusText.textContent = 'Setting realmlist...'
         progressFill.style.width = '25%'
         appendLog(`Setting Data/enUS/realmlist.wtf to "set realmlist ${targetRealmlist}"`)
 
@@ -905,7 +870,7 @@
 
         // 3. PvP19 Addon
         setStep(stepAddon, 'active')
-        statusText.textContent = 'Installing PvP19 Addon...'
+        totalStatusText.textContent = 'Installing PvP19 Addon...'
         progressFill.style.width = '50%'
 
         const addonLuaRes = await fetchWithTimeout(`${api}/addons/PvP19.lua`)
@@ -925,7 +890,7 @@
 
         // 4. Server Patch File (patch-S.mpq)
         setStep(stepPatch, 'active')
-        statusText.textContent = 'Verifying 19PvP patch (patch-S.mpq)...'
+        totalStatusText.textContent = 'Verifying 19PvP patch (patch-S.mpq)...'
         progressFill.style.width = '75%'
 
         try {
@@ -966,7 +931,7 @@
 
         // 5. Client Config.wtf Auto-Patching
         setStep(stepConfig, 'active')
-        statusText.textContent = 'Patching WoW client settings...'
+        totalStatusText.textContent = 'Patching WoW client settings...'
 
         try {
           // Fetch account username if available
@@ -1069,8 +1034,45 @@
           setStep(stepConfig, 'done', 'Configured default settings')
         }
 
+        // 6. Platform / Client Binaries Check
+        setStep(stepPlatform, 'active')
+        if (executableArchiveRequired) {
+          setStep(stepPlatform, 'active', `Checking ${CLIENT_PLATFORM_LABEL} client binaries...`)
+          try {
+            const archiveHandle = await getFileHandle(dirHandle, CLIENT_ARCHIVE, false)
+            if (!archiveHandle) {
+              setStep(stepPlatform, 'active', `Downloading ${CLIENT_ARCHIVE}...`)
+              appendLog(`Downloading ${CLIENT_ARCHIVE} containing the protected ${CLIENT_PLATFORM_LABEL} client files...`)
+              fileStatusText.textContent = `Downloading ${CLIENT_ARCHIVE}`
+              fileSpeedText.textContent = `0%`
+              fileProgressFill.style.width = `0%`
+              await downloadToPath(`${api}/client-file/${CLIENT_ARCHIVE}`, dirHandle, CLIENT_ARCHIVE, (loaded, total) => {
+                const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0
+                fileProgressFill.style.width = `${pct}%`
+                fileSpeedText.textContent = `${pct}%`
+              })
+            } else {
+              appendLog(`Using existing ${CLIENT_ARCHIVE}.`)
+            }
+            setStep(stepPlatform, 'active', `Extract ${CLIENT_ARCHIVE}, then retry`)
+          } catch (error) {
+            setStep(stepPlatform, 'error', `Failed to download ${CLIENT_ARCHIVE}`)
+            throw error
+          }
+          appendLog(
+            `Extract ${CLIENT_ARCHIVE} into this client directory, then click Retry installation to verify the ${CLIENT_PLATFORM_LABEL} client files.`,
+          )
+
+          totalStatusText.textContent = `Extract ${CLIENT_ARCHIVE}, then retry installation.`
+          retryInstall = true
+          appendLog('Installation is paused until the executable archive is extracted.')
+          return
+        } else {
+          setStep(stepPlatform, 'done', `${CLIENT_PLATFORM_LABEL} client binaries verified`)
+        }
+
         progressFill.style.width = '100%'
-        statusText.textContent = MUST_REPORT_ERRORS ? 'Installation complete with errors.' : 'Installation complete!'
+        totalStatusText.textContent = MUST_REPORT_ERRORS ? 'Installation complete with errors.' : 'Installation complete!'
         readyNotice.style.display = 'block'
         appendLog(
           MUST_REPORT_ERRORS
@@ -1079,7 +1081,7 @@
         )
       } catch (err) {
         reportError('Installation failed', err)
-        statusText.textContent = 'Error: ' + errorMessage(err)
+        totalStatusText.textContent = 'Error: ' + errorMessage(err)
       } finally {
         if (MUST_REPORT_ERRORS) await uploadLogs()
         syncBtn.textContent = MUST_REPORT_ERRORS || retryInstall ? '↻ Retry installation' : INSTALL_BUTTON_TEXT
