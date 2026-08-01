@@ -27,10 +27,11 @@ import { auth } from './db.ts'
 import { env } from './env.ts'
 import { handleLog } from './logs.ts'
 
-import indexHTML from '../web/index.html' with { type: 'bytes' }
+import indexHTMLRaw from '../web/index.html' with { type: 'text' }
 import installHTMLRaw from '../web/install.html' with { type: 'text' }
-import eventsHTML from '../web/events.html' with { type: 'bytes' }
-import styleCSS from '../web/style.css' with { type: 'bytes' }
+import eventsHTMLRaw from '../web/events.html' with { type: 'text' }
+import styleCSSRaw from '../web/style.css' with { type: 'text' }
+import scriptJSRaw from '../web/script.js' with { type: 'text' }
 import logoPNG from '../web/logo.png' with { type: 'bytes' }
 import pvp19Lua from '../addons/PvP19/PvP19.lua' with { type: 'bytes' }
 import pvp19Toc from '../addons/PvP19/PvP19.toc' with { type: 'text' }
@@ -75,11 +76,20 @@ try {
   patchSha1 = Array.from(new Uint8Array(rootBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
 } catch {}
 
+const inlineAssets = (html: string) => {
+  return html
+    .replace(/<link rel="stylesheet" href="\/style\.css(\?v=\d+)?"\s*\/?>/, `<style>${styleCSSRaw}</style>`)
+    .replace('<script type="module">', `<script type="module">\n${scriptJSRaw}\n`)
+}
+
+const indexHTMLBytes = new TextEncoder().encode(inlineAssets(indexHTMLRaw))
+const eventsHTMLBytes = new TextEncoder().encode(inlineAssets(eventsHTMLRaw))
 const installHTMLBytes = new TextEncoder().encode(
-  installHTMLRaw
+  inlineAssets(installHTMLRaw)
     .replace('MANIFEST_PLACEHOLDER', JSON.stringify(manifestJSON))
     .replace('REALMLIST_PLACEHOLDER', JSON.stringify(launcherRealmlist)),
 )
+const styleCSSBytes = new TextEncoder().encode(styleCSSRaw)
 
 void watch()
 
@@ -89,7 +99,7 @@ export default {
       const url = new URL(req.url)
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
       if (url.pathname === '/') {
-        return new Response(indexHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+        return new Response(indexHTMLBytes, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
       if (url.pathname === '/install') {
         const session = await getSession(req)
@@ -97,10 +107,10 @@ export default {
         return new Response(installHTMLBytes, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
       if (url.pathname === '/events') {
-        return new Response(eventsHTML, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+        return new Response(eventsHTMLBytes, { headers: { 'content-type': 'text/html; charset=utf-8' } })
       }
       if (url.pathname === '/style.css') {
-        return new Response(styleCSS, {
+        return new Response(styleCSSBytes, {
           headers: {
             /* 'cache-control': 'public, max-age=3600', */
             'content-type': 'text/css; charset=utf-8',
