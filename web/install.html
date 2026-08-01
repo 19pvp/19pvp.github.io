@@ -1054,21 +1054,29 @@
             } else {
               appendLog(`Using existing ${CLIENT_ARCHIVE}.`)
             }
-            setStep(stepPlatform, 'active', `Extract ${CLIENT_ARCHIVE}, then retry`)
+            setStep(stepPlatform, 'done', `${CLIENT_ARCHIVE} downloaded (requires extraction)`)
+            appendLog(`Zip file ${CLIENT_ARCHIVE} is ready. Please extract its contents inside this directory before launching the game.`)
+            readyNotice.innerHTML = `
+              🎉 <strong>Client Ready!</strong>
+              <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
+                <li>Open the client directory you selected.</li>
+                <li>Extract <code>${CLIENT_ARCHIVE}</code> into the directory.</li>
+                <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
+              </ol>
+            `
           } catch (error) {
             setStep(stepPlatform, 'error', `Failed to download ${CLIENT_ARCHIVE}`)
             throw error
           }
-          appendLog(
-            `Extract ${CLIENT_ARCHIVE} into this client directory, then click Retry installation to verify the ${CLIENT_PLATFORM_LABEL} client files.`,
-          )
-
-          totalStatusText.textContent = `Extract ${CLIENT_ARCHIVE}, then retry installation.`
-          retryInstall = true
-          appendLog('Installation is paused until the executable archive is extracted.')
-          return
         } else {
           setStep(stepPlatform, 'done', `${CLIENT_PLATFORM_LABEL} client binaries verified`)
+          readyNotice.innerHTML = `
+            🎉 <strong>Client Ready!</strong>
+            <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
+              <li>Open the client directory you selected.</li>
+              <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
+            </ol>
+          `
         }
 
         progressFill.style.width = '100%'
