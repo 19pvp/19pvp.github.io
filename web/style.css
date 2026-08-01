@@ -251,7 +251,9 @@ h1 {
 input[type="text"],
 input[type="password"],
 select {
+  padding: 12px 14px;
   background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   color: var(--text-primary);
   font-family: var(--font-mono);
@@ -262,6 +264,7 @@ select {
 input:focus,
 select:focus {
   outline: none;
+  border-color: var(--accent-color);
   box-shadow: 0 0 0 2px rgba(255, 209, 95, 0.15);
 }
 

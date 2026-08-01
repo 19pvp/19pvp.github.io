@@ -878,7 +878,7 @@
         progressFill.style.width = '25%'
         appendLog(`Setting Data/enUS/realmlist.wtf to "set realmlist ${targetRealmlist}"`)
 
-        const realmlistContent = `set realmlist ${targetRealmlist}\n`
+        const realmlistContent = `set realmlist ${targetRealmlist.toLowerCase()}\n`
         let realmlistFile = await getFileHandle(dirHandle, 'Data/enUS/realmlist.wtf', false) ||
           await getFileHandle(dirHandle, 'Data/enGB/realmlist.wtf', false) ||
           await getFileHandle(dirHandle, 'realmlist.wtf', false)
@@ -886,14 +886,18 @@
         if (!realmlistFile) {
           await writeFile(dirHandle, 'Data/enUS/realmlist.wtf', realmlistContent)
         } else {
-          const writable = await realmlistFile.createWritable()
-          try {
-            await writable.write(realmlistContent)
-          } finally {
+          const fileObj = await realmlistFile.getFile()
+          const currentContent = await fileObj.text()
+          if (currentContent.trim().toLowerCase() !== realmlistContent.trim()) {
+            const writable = await realmlistFile.createWritable()
             try {
-              await writable.close()
-            } catch (closeError) {
-              reportError('Failed to close realmlist.wtf', closeError)
+              await writable.write(realmlistContent)
+            } finally {
+              try {
+                await writable.close()
+              } catch (closeError) {
+                reportError('Failed to close realmlist.wtf', closeError)
+              }
             }
           }
         }
@@ -1025,43 +1029,41 @@
           // Read existing Config.wtf if present to preserve custom settings
           let configText = ''
           const configHandle = await getFileHandle(dirHandle, 'WTF/Config.wtf', false)
+          let needsWrite = false
           if (configHandle) {
             const fileObj = await configHandle.getFile()
             configText = await fileObj.text()
+            needsWrite = configText.includes('SET readTOS "1"')
+          } else {
+            needsWrite = true
           }
 
-          const configLines = configText.split(/\r?\n/).filter(Boolean)
-          const patchedMap = new Map()
+          if (needsWrite) {
+            configText = Object.entries(configEntries)
+              .map(([k, v]) => `${k} ${v}`)
+              .join('\n') + '\n'
 
-          for (const line of configLines) {
-            const match = line.match(/^(SET\s+[^\s]+)\s+(.+)$/i)
-            if (match) {
-              patchedMap.set(match[1], match[2])
-            }
+            await writeFile(dirHandle, 'WTF/Config.wtf', configText)
+            appendLog(
+              `Configured WTF/Config.wtf with resolution ${screenWidth}x${screenHeight}, accepted EULA/TOS${
+                accountName ? `, account: ${accountName}` : ''
+              }`,
+            )
+            setStep(
+              stepConfig,
+              'done',
+              `Settings configured (${screenWidth}x${screenHeight}, EULA Accepted${
+                accountName ? `, Account: ${accountName}` : ''
+              })`,
+            )
+          } else {
+            appendLog('WTF/Config.wtf already exists and TOS are accepted.')
+            setStep(
+              stepConfig,
+              'done',
+              'Settings verified (TOS already accepted)'
+            )
           }
-
-          // Apply override settings
-          for (const [key, val] of Object.entries(configEntries)) {
-            patchedMap.set(key, val)
-          }
-
-          const newConfigText = Array.from(patchedMap.entries())
-            .map(([k, v]) => `${k} ${v}`)
-            .join('\n') + '\n'
-
-          await writeFile(dirHandle, 'WTF/Config.wtf', newConfigText)
-          appendLog(
-            `Configured WTF/Config.wtf with resolution ${screenWidth}x${screenHeight}, accepted EULA/TOS${
-              accountName ? `, account: ${accountName}` : ''
-            }`,
-          )
-          setStep(
-            stepConfig,
-            'done',
-            `Settings configured (${screenWidth}x${screenHeight}, EULA Accepted${
-              accountName ? `, Account: ${accountName}` : ''
-            })`,
-          )
         } catch (configErr) {
           reportError('Failed to patch Config.wtf', configErr)
           setStep(stepConfig, 'done', 'Configured default settings')
