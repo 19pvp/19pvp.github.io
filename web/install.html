@@ -60,21 +60,9 @@
       margin-top: 10px;
     }
 
-    .container-content {
-      transition: opacity 0.2s ease-in-out;
-      opacity: 1;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    body.page-entering .container-content,
-    body.page-exiting .container-content {
-      opacity: 0;
-    }
     </style>
   </head>
-  <body class="page-entering">
+  <body>
     <div class="container black-box">
       <!-- Top Hand-Drawn Progress/Loading Bar -->
       <div id="topLoadingBarContainer" style="position: absolute; top: 0; left: 0; right: 0; height: 12px; overflow: hidden; pointer-events: none;">
@@ -90,12 +78,11 @@
         </svg>
       </div>
 
-      <div id="main-content" class="container-content">
-        <div style="display: flex; justify-content: flex-start; margin-bottom: 16px;">
-          <a href="/" class="hand-drawn-link">
-            ← Back to Dashboard
-          </a>
-        </div>
+      <div style="display: flex; justify-content: flex-start; margin-bottom: 16px;">
+        <a href="/" class="hand-drawn-link">
+          ← Back to Dashboard
+        </a>
+      </div>
 
       <div class="header">
         <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
@@ -200,7 +187,6 @@
             <li>Start the game.</li>
           </ol>
         </div>
-      </div>
       </div>
     </div>
 
@@ -1169,97 +1155,30 @@
       }
     }
 
-    // Smooth SPA-like page navigation transition helper
-    if ('navigation' in window && !window.hasSetupSPA) {
-      window.hasSetupSPA = true
-      navigation.addEventListener('navigate', (event) => {
-        const url = new URL(event.destination.url)
-        if (url.origin !== location.origin) return
-        if (event.hashChange || !event.canIntercept || event.downloadRequest) return
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('a[href^="/"]')
+      if (!link || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
+      const targetUrl = new URL(link.href, location.origin)
+      if (targetUrl.origin !== location.origin) return
 
-        event.intercept({
-          async handler() {
-            const currentContent = document.getElementById('main-content')
-            const topPath = document.getElementById('topLoadingPath')
-            const master = document.getElementById('handDrawnBorderPath')
+      e.preventDefault()
 
-            let intervalId = null
-            let currentPct = 50
+      const topPath = document.getElementById('topLoadingPath')
+      const master = document.getElementById('handDrawnBorderPath')
 
-            const updateProgress = (pct) => {
-              if (topPath && master) {
-                const length = master.getTotalLength() || 750
-                topPath.style.strokeDasharray = length
-                topPath.style.strokeDashoffset = length - (pct / 100) * length
-              }
-            }
+      if (topPath && master) {
+        const length = master.getTotalLength() || 750
+        topPath.style.transition = 'none'
+        topPath.style.strokeDasharray = length
+        topPath.style.strokeDashoffset = length // Reset to empty (0% progress)
+        topPath.getBoundingClientRect() // Trigger reflow
+        topPath.style.transition = 'stroke-dashoffset 0.3s ease-in-out'
+        topPath.style.strokeDashoffset = 0 // Animate to full (100% progress)
+      }
 
-            if (topPath && master) {
-              topPath.style.transition = 'none'
-              updateProgress(0)
-              topPath.getBoundingClientRect()
-              topPath.style.transition = 'stroke-dashoffset 0.2s ease-out'
-              updateProgress(50)
-              intervalId = setInterval(() => {
-                currentPct += (100 - currentPct) / 2
-                updateProgress(currentPct)
-              }, 200)
-            }
-
-            if (currentContent) {
-              currentContent.style.transition = 'opacity 0.15s ease-in-out'
-              currentContent.style.opacity = '0'
-            }
-
-            try {
-              const response = await fetch(url.href, { signal: event.signal })
-              if (!response.ok) throw new Error('Fetch failed')
-              const html = await response.text()
-              if (event.signal.aborted) return
-              const doc = new DOMParser().parseFromString(html, 'text/html')
-
-              document.title = doc.title
-              const newContent = doc.getElementById('main-content')
-              if (currentContent && newContent) {
-                currentContent.innerHTML = newContent.innerHTML
-                currentContent.style.opacity = '0'
-              } else {
-                document.body.innerHTML = doc.body.innerHTML
-              }
-
-              if (intervalId) clearInterval(intervalId)
-              updateProgress(100)
-
-              if (currentContent) {
-                currentContent.getBoundingClientRect()
-                currentContent.style.transition = 'opacity 0.2s cubic-bezier(0, 0, 0.2, 1)'
-                currentContent.style.opacity = '1'
-              }
-
-              const scripts = doc.querySelectorAll('script')
-              for (const script of scripts) {
-                const newScript = document.createElement('script')
-                if (script.src) {
-                  newScript.src = script.src
-                } else {
-                  newScript.textContent = script.textContent + `\n// ${Date.now()}`
-                }
-                newScript.type = script.type || 'text/javascript'
-                document.body.appendChild(newScript)
-              }
-            } catch (error) {
-              if (event.signal.aborted || error.name === 'AbortError') return
-              location.href = url.href
-            } finally {
-              if (intervalId) clearInterval(intervalId)
-            }
-          }
-        })
-      })
-    }
-
-    requestAnimationFrame(() => {
-      document.body.classList.remove('page-entering')
+      setTimeout(() => {
+        location.href = targetUrl.href
+      }, 300)
     })
     </script>
   </body>
