@@ -433,7 +433,7 @@
         return downloadSingleFile(url, parent, relativePath, onProgress)
       }
 
-      // 2. Calculate 100MB chunk block files (0_file.MPQ, 1_file.MPQ, etc.)
+      // 2. Download in 100MB block files (0_fileName, 1_fileName, etc.)
       const numChunks = Math.ceil(totalSize / CHUNK_SIZE)
       renderChunkTicks(numChunks)
 
@@ -463,7 +463,7 @@
               if (fileObj.size === expectedChunkSize) {
                 chunkComplete = true
                 totalLoadedAcrossChunks += expectedChunkSize
-                appendLog(`[Resume] Block ${i + 1}/${numChunks} of ${fileName} is complete.`)
+                appendLog(`[Resume] Block ${i + 1}/${numChunks} of ${fileName} (${formatBytes(expectedChunkSize)}) is saved & complete on disk.`)
               }
             }
           }
@@ -493,12 +493,8 @@
         }
       }
 
-      // 3. Stitch 100MB block files into final target file synchronously before starting next download
+      // 3. Stitch chunks by appending chunk-by-chunk with open-seek-write-close cycles!
       appendLog(`Stitching ${numChunks} block files into ${relativePath}...`)
-      const finalDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
-      const finalFileHandle = await getFileHandle(finalDir, fileName, true)
-      const writable = await finalFileHandle.createWritable()
-
       for (let i = 0; i < numChunks; i++) {
         const chunkFileName = `${i}_${fileName}`
         const freshDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
@@ -506,12 +502,25 @@
         if (!chunkHandle) throw Error(`Missing block file: ${chunkFileName}`)
 
         const chunkFile = await chunkHandle.getFile()
-        // Stream chunk Blob directly into destination writable without creating arrayBuffers
-        await chunkFile.stream().pipeTo(writable, { preventClose: true })
-      }
-      await writable.close()
+        const targetOffset = i * CHUNK_SIZE
 
-      // Clean up temporary block files
+        appendLog(`[Stitch] Appending block ${i + 1}/${numChunks} (${chunkFileName}, ${formatBytes(chunkFile.size)}) to ${fileName}...`)
+
+        // Open target file, seek to block offset, write chunk data, and close immediately
+        const finalDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
+        const finalFileHandle = await getFileHandle(finalDir, fileName, true)
+        const writable = await finalFileHandle.createWritable({ keepExistingData: i > 0 })
+
+        if (i > 0) {
+          await writable.seek(targetOffset)
+        }
+
+        // Stream current chunk into target file
+        await chunkFile.stream().pipeTo(writable)
+        appendLog(`[Stitch] Completed appending block ${i + 1}/${numChunks} (${chunkFileName}).`)
+      }
+
+      // 4. Clean up temporary 100MB block files after stitching completes
       const cleanupDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
       if (cleanupDir) {
         for (let i = 0; i < numChunks; i++) {
@@ -521,7 +530,7 @@
         }
       }
 
-      appendLog(`Successfully stitched ${relativePath} [OK].`)
+      appendLog(`Successfully stitched ${relativePath} (${formatBytes(totalSize)}) [OK].`)
     }
 
     async function downloadSingleFile(url, parent, relativePath, onProgress, extraHeaders = {}) {
