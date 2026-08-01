@@ -72,13 +72,8 @@
       min-width: 180px;
     }
     .badge-count {
-      background: var(--accent-dim);
+      --badge-bg: var(--accent-dim);
       color: var(--accent-color);
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 99px;
-      white-space: nowrap;
     }
 
     .btn {
@@ -171,13 +166,8 @@
     }
 
     .type-badge {
-      display: inline-block;
-      padding: 2px 7px;
-      border-radius: 5px;
-      font-size: 10px;
-      font-weight: 700;
       font-family: var(--font-mono);
-      white-space: nowrap;
+      font-size: 10px;
     }
 
     .data-cell {
@@ -341,7 +331,7 @@
 
     const typeBadge = (type) => {
       const [fg, bg] = typeColors[type] || ['#d1d5db', '#1f2937']
-      return `<span class="type-badge" style="color:${fg};background:${bg}20;outline:1px solid ${fg}20">${type}</span>`
+      return `<span class="type-badge" style="color:${fg}; --badge-bg:${bg}20">${type}</span>`
     }
 
     const fmtDate = (ts) => {
