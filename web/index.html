@@ -135,8 +135,7 @@
 
     table {
       width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
+      border-collapse: collapse;
       text-align: left;
       font-size: 0.9rem;
     }
@@ -148,11 +147,11 @@
 
     th {
       color: var(--text-muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.75rem;
-      letter-spacing: 0.5px;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      font-family: var(--font-title);
     }
+    th span.badge { display: flex; }
 
     .badge-online {
       --badge-bg: var(--success-bg);
@@ -278,11 +277,11 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Level</th>
-                    <th>Race</th>
-                    <th>Class</th>
-                    <th>Status</th>
+                    <th><span class="badge badge-offline">Name</span></th>
+                    <th><span class="badge badge-offline">Level</span></th>
+                    <th><span class="badge badge-offline">Race</span></th>
+                    <th><span class="badge badge-offline">Class</span></th>
+                    <th><span class="badge badge-offline">Status</span></th>
                   </tr>
                 </thead>
                 <tbody id="characterRows"></tbody>

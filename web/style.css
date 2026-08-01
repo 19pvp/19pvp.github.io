@@ -254,7 +254,6 @@ input:focus,
 select:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(255, 209, 95, 0.15);
 }
 
 label {

@@ -131,7 +131,6 @@ styleEl.innerHTML = `
   ${generateBoxVariant('table-wrap', surface, surface, 10)}
   ${generateBoxVariant('box', surface, surface, 10)}
   ${generateBoxVariant('log-box', borderColor || 'ffffff14', bgColor, 10)}
-  ${generateBoxVariantMulti('thead tr', surface2, surface2, 6)}
 
   /* White/Black box fallbacks */
   ${generateBoxVariant('white-box', 'ffffff', 'none', 8)}
