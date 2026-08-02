@@ -16,6 +16,7 @@ const eventTypes = [
   'BATTLEGROUND_LEAVE',
   'BATTLEGROUND_START',
   'BATTLEGROUND_END',
+  'PVP_BG_STATS',
   'PLAYER_LOCATION',
   'PVP_KILL', // { player, victim, map, x, y, z }
   'LUCKY_FISHING_HAT_OBTAINED', // { player }
@@ -25,7 +26,7 @@ const eventTypes = [
 
 type WowEventType = typeof eventTypes[number]
 
-type WebEvent = SqlRow & {
+export type WebEvent = SqlRow & {
   id: number
   type: string
   at: Date | number

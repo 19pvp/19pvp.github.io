@@ -1,0 +1,84 @@
+import { auth, type SqlRow } from './db.ts'
+import { type WebEvent, wowEvents } from './wow-events.ts'
+import {
+  isLeaderboardMetric,
+  isLeaderboardPeriod,
+  LEADERBOARD_METRICS,
+  type LeaderboardMetric,
+  type LeaderboardPeriod,
+  LeaderboardStore,
+} from './leaderboards_store.ts'
+import { env } from './env.ts'
+
+const BATCH_SIZE = 1_000
+const store = new LeaderboardStore()
+let replayedThrough = 0
+
+const eventTimestamp = (event: Pick<WebEvent, 'at'> | SqlRow) => {
+  const value = event.at
+  return value instanceof Date ? value.getTime() : Number(value) || Date.now()
+}
+
+const eventData = (data: unknown) => {
+  if (typeof data !== 'string') return data
+  try {
+    return JSON.parse(data)
+  } catch {
+    return null
+  }
+}
+
+const applyEvent = (event: Pick<WebEvent, 'id' | 'at' | 'data'> | SqlRow) => {
+  store.addMatch(eventData(event.data), eventTimestamp(event))
+}
+
+const replay = async () => {
+  let cursor = 0
+  while (true) {
+    const events = await auth.sql`
+      SELECT id, at, data FROM web_events
+      WHERE world=${env.WORLD_ID} AND type='PVP_BG_STATS' AND id > ${cursor}
+      UNION ALL
+      SELECT id, at, data FROM web_events_archive
+      WHERE world=${env.WORLD_ID} AND type='PVP_BG_STATS' AND id > ${cursor}
+      ORDER BY id
+      LIMIT ${BATCH_SIZE}
+    `
+    if (!events.length) break
+
+    for (const event of events) {
+      applyEvent(event)
+      cursor = Math.max(cursor, Number(event.id) || cursor)
+    }
+  }
+  replayedThrough = cursor
+}
+
+export const leaderboardReady = replay().catch((error) => {
+  console.error('Failed to hydrate battleground leaderboards', error)
+  throw error
+})
+
+wowEvents.on.PVP_BG_STATS(async (event) => {
+  await leaderboardReady
+  if (Number(event.id) <= replayedThrough) return
+  applyEvent(event)
+  replayedThrough = Math.max(replayedThrough, Number(event.id) || replayedThrough)
+})
+
+export const getLeaderboards = async (metricParam: string, periodParam: string) => {
+  await leaderboardReady
+  if (!isLeaderboardMetric(metricParam)) throw new Error('Unknown leaderboard metric')
+  if (!isLeaderboardPeriod(periodParam)) throw new Error('Unknown leaderboard period')
+
+  const rows = store.getLeaderboard(metricParam as LeaderboardMetric, periodParam as LeaderboardPeriod)
+  const definition = LEADERBOARD_METRICS.find(([key]) => key === metricParam)
+  return {
+    metric: { key: definition![0], label: definition![1] },
+    period: periodParam,
+    metrics: LEADERBOARD_METRICS.map(([key, label]) => ({ key, label })),
+    rows: rows.map((row, index) => ({ rank: index + 1, ...row })),
+  }
+}
+
+export { store as leaderboardStore }

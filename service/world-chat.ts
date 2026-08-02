@@ -4,6 +4,7 @@ import { auth, type SqlRow } from './db.ts'
 import { discord } from './discord.ts'
 import { describeImage } from './gemini.ts'
 import { handleInitialStateEvents, wowEvents } from './wow-events.ts'
+import { leaderboardReady } from './leaderboards.ts'
 import { createAccount, getUsername, setGmLevel, setPassword, setUsernameAndPassword } from './account.ts'
 
 import { env } from './env.ts'
@@ -550,6 +551,6 @@ wowEvents.on.COMMAND(async ({ data }) => {
   await discord.rest.POST_CHANNEL_MESSAGE({ channel: gmCommandChannelId, content })
 })
 
-handleInitialStateEvents().catch((err) => {
+leaderboardReady.then(handleInitialStateEvents).catch((err) => {
   console.error('Failed to start WoW event polling', err)
 })

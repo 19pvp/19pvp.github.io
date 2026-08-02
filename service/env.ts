@@ -1,4 +1,5 @@
 import { projectName } from '../env.ts'
+import worldserverConfig from '../config/worldserver.json' with { type: 'json' }
 
 export const isServer = Deno.mainModule.endsWith('server.ts') || Deno.args.includes('serve')
 
@@ -73,5 +74,5 @@ export const env = {
   DISCORD_LOG_CHANNEL_ID: get('DISCORD_LOG_CHANNEL_ID', false, '1519357383946535183'),
 
   // Game details
-  WORLD_ID: getNumber('WORLD_ID', 1),
+  WORLD_ID: getNumber('WORLD_ID', Number(worldserverConfig.RealmID)),
 }

@@ -190,6 +190,56 @@
         border-color: var(--accent-color);
         transform: translateY(-1px);
       }
+    .leaderboard-section {
+      margin-bottom: 34px;
+    }
+
+    .leaderboard-controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .leaderboard-controls label {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .leaderboard-table-wrapper {
+      overflow-x: auto;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+      padding: 8px 10px;
+    }
+
+    .leaderboard-table th:first-child,
+    .leaderboard-table td:first-child {
+      width: 1%;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    .leaderboard-table td:last-child,
+    .leaderboard-table th:last-child {
+      text-align: right;
+    }
+
+    .leaderboard-empty,
+    .leaderboard-status {
+      color: var(--text-secondary);
+      padding: 15px 10px;
+    }
+
+    @media (max-width: 600px) {
+      .leaderboard-controls {
+        flex-direction: column;
+      }
+    }
     </style>
   </head>
   <body>
@@ -224,6 +274,39 @@
       </div>
 
       <main id="page-content" data-page="home">
+        <section id="leaderboardsSection" class="leaderboard-section">
+          <div class="section-title">🏆 Battleground Leaderboards</div>
+          <div class="leaderboard-controls">
+            <label>
+              Metric
+              <select id="leaderboardMetric" aria-label="Leaderboard metric"></select>
+            </label>
+            <label>
+              Period
+              <select id="leaderboardPeriod" aria-label="Leaderboard period">
+                <option value="today">Today</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="all" selected>All time</option>
+              </select>
+            </label>
+          </div>
+          <div id="leaderboardStatus" class="leaderboard-status" role="status">Loading leaderboard…</div>
+          <div class="leaderboard-table-wrapper">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Player</th>
+                  <th>Matches</th>
+                  <th id="leaderboardValueHeading">Value</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardRows"></tbody>
+            </table>
+          </div>
+        </section>
+
         <div id="guestView" style="display: none;">
           <div class="login-section">
             <button id="discordLoginBtn" class="btn btn-discord">
@@ -329,6 +412,12 @@
     const charactersSection = document.getElementById('charactersSection')
     const characterRows = document.getElementById('characterRows')
 
+    const leaderboardMetric = document.getElementById('leaderboardMetric')
+    const leaderboardPeriod = document.getElementById('leaderboardPeriod')
+    const leaderboardStatus = document.getElementById('leaderboardStatus')
+    const leaderboardRows = document.getElementById('leaderboardRows')
+    const leaderboardValueHeading = document.getElementById('leaderboardValueHeading')
+
     const statPlayTime = document.getElementById('statPlayTime')
     const statGold = document.getElementById('statGold')
 
@@ -420,6 +509,51 @@
         remainder && `${remainder}<span class="money-dot money-dot-copper" aria-hidden="true"></span>`,
       ].filter(Boolean).join(' ') || '0'
     }
+
+    const compactNumber = new Intl.NumberFormat(undefined, {
+      notation: 'compact',
+      compactDisplay: 'short',
+      maximumFractionDigits: 1,
+    })
+    const formatLeaderboardValue = (value) => compactNumber.format(Number(value) || 0)
+
+    async function loadLeaderboard() {
+      leaderboardStatus.textContent = 'Loading leaderboard…'
+      try {
+        const params = new URLSearchParams({
+          metric: leaderboardMetric.value || 'damageDone',
+          period: leaderboardPeriod.value || 'all',
+        })
+        const res = await fetch(`${api}/api/leaderboards?${params}`)
+        const data = await res.json()
+        if (!res.ok) throw Error(data.error || 'Unable to load leaderboard')
+
+        if (leaderboardMetric.options.length === 0) {
+          for (const metric of data.metrics || []) {
+            leaderboardMetric.add(new Option(metric.label, metric.key))
+          }
+          leaderboardMetric.value = data.metric.key
+        }
+        leaderboardValueHeading.textContent = data.metric.label
+        leaderboardRows.innerHTML = data.rows.length
+          ? data.rows.map((row) => `
+              <tr>
+                <td>${row.rank}</td>
+                <td><strong>${row.name}</strong></td>
+                <td>${formatLeaderboardValue(row.matches)}</td>
+                <td>${formatLeaderboardValue(row.value)}</td>
+              </tr>
+            `).join('')
+          : '<tr><td class="leaderboard-empty" colspan="4">No battleground data yet.</td></tr>'
+        leaderboardStatus.textContent = `${data.metric.label} · ${data.period === 'all' ? 'All time' : data.period}`
+      } catch (err) {
+        leaderboardRows.innerHTML = ''
+        leaderboardStatus.textContent = err.message || 'Unable to load leaderboard.'
+      }
+    }
+
+    leaderboardMetric.onchange = loadLeaderboard
+    leaderboardPeriod.onchange = loadLeaderboard
 
     accountForm.onsubmit = async (e) => {
       e.preventDefault()
@@ -515,6 +649,7 @@
       }
     }
 
+    loadLeaderboard()
     loadDashboard()
     </script>
   </body>

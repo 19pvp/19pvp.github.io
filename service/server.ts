@@ -26,6 +26,7 @@ import { getAccountDetails, setOrCreateAccount } from './account.ts'
 import { auth } from './db.ts'
 import { env } from './env.ts'
 import { handleLog } from './logs.ts'
+import { getLeaderboards } from './leaderboards.ts'
 
 import indexHTMLRaw from '../web/index.html' with { type: 'text' }
 import installHTMLRaw from '../web/install.html' with { type: 'text' }
@@ -306,6 +307,20 @@ export default {
           } catch (err) {
             return json({ error: String(err) }, { status: 400, headers: corsHeaders })
           }
+        }
+      }
+
+      if (url.pathname === '/api/leaderboards') {
+        if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
+        const metric = url.searchParams.get('metric') || 'damageDone'
+        const period = url.searchParams.get('period') || 'all'
+        try {
+          return json(await getLeaderboards(metric, period))
+        } catch (error) {
+          if (error instanceof Error && error.message.startsWith('Unknown leaderboard')) {
+            return json({ error: error.message }, { status: 400 })
+          }
+          throw error
         }
       }
 
