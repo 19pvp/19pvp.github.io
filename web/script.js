@@ -174,9 +174,13 @@ const setNavigationProgress = (progress) => {
 
 const startNavigationProgress = () => {
   const container = document.getElementById('topLoadingBarContainer')
+  const path = document.getElementById('topLoadingPath')
   container?.classList.add('is-loading')
   container?.classList.remove('is-complete')
-  setNavigationProgress(0.04)
+  if (path) path.style.transition = 'none'
+  setNavigationProgress(0)
+  path?.getBoundingClientRect()
+  if (path) path.style.transition = ''
 }
 
 const finishNavigationProgress = () => {

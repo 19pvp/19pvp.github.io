@@ -80,7 +80,7 @@ body.page-exit {
 #topLoadingBarContainer {
   opacity: 1;
   z-index: 30;
-  transition: opacity 0.18s ease;
+  transition: opacity 0.18s cubic-bezier(0, 1, 0.5, 1);
 }
 
 #topLoadingBarContainer.is-loading,
@@ -89,7 +89,7 @@ body.page-exit {
 }
 
 #topLoadingPath {
-  transition: stroke-dashoffset 0.12s linear;
+  transition: stroke-dashoffset 1s cubic-bezier(0, 1, 0.5, 1);
 }
 
 #page-content {
