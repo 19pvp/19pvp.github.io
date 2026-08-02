@@ -210,50 +210,8 @@
       position: relative;
     }
 
-    .leaderboard-average-toggle {
-      flex-direction: column !important;
-      align-items: flex-start;
-      justify-content: flex-start;
-      gap: 7px;
-      white-space: nowrap;
-    }
-
-    .leaderboard-group-control {
+    .leaderboard-controls label.leaderboard-group-control {
       flex: 2;
-    }
-
-    .leaderboard-average-toggle input[type="checkbox"] {
-      appearance: none;
-      width: 34px;
-      height: 20px;
-      margin: 0;
-      border: 1px solid var(--border-light);
-      border-radius: 999px;
-      background: var(--surface2);
-      position: relative;
-      cursor: pointer;
-    }
-
-    .leaderboard-average-toggle input[type="checkbox"]::before {
-      content: "";
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--text-secondary);
-      transition: transform .15s ease, background .15s ease;
-    }
-
-    .leaderboard-average-toggle input[type="checkbox"]:checked {
-      background: var(--accent-dim);
-      border-color: var(--accent-border);
-    }
-
-    .leaderboard-average-toggle input[type="checkbox"]:checked::before {
-      transform: translateX(14px);
-      background: var(--accent-color);
     }
 
     .leaderboard-controls select {
@@ -278,6 +236,10 @@
     .leaderboard-table th,
     .leaderboard-table td {
       padding: 8px 10px;
+    }
+
+    .leaderboard-table tbody tr {
+      height: 42px;
     }
 
     .leaderboard-table th[data-sort-key] {
@@ -387,16 +349,13 @@
                 <option value="all" selected>All time</option>
               </select>
             </label>
-            <label class="leaderboard-average-toggle">
-              <span>Average</span>
-              <input id="leaderboardAverage" type="checkbox" role="switch" aria-label="Show average">
-            </label>
             <label>
               Unit
               <select id="leaderboardAverageUnit" aria-label="Average unit">
-                <option value="hour" selected>Hour</option>
-                <option value="minute">Minute</option>
-                <option value="second">Second</option>
+                <option value="all" selected>Total</option>
+                <option value="hour">Per hour</option>
+                <option value="minute">Per minute</option>
+                <option value="second">Per second</option>
               </select>
             </label>
           </div>
@@ -525,7 +484,6 @@
 
     const leaderboardGroup = document.getElementById('leaderboardGroup')
     const leaderboardPeriod = document.getElementById('leaderboardPeriod')
-    const leaderboardAverage = document.getElementById('leaderboardAverage')
     const leaderboardAverageUnit = document.getElementById('leaderboardAverageUnit')
     const leaderboardStatus = document.getElementById('leaderboardStatus')
     const leaderboardRows = document.getElementById('leaderboardRows')
@@ -779,7 +737,8 @@
     const leaderboardPageSize = 20
     let leaderboardData = []
     let leaderboardPage = 0
-    const leaderboardAverageUnits = {
+    const leaderboardValueUnits = {
+      all: { label: 'total', multiplier: 1 },
       hour: { label: 'hour', multiplier: 3600 },
       minute: { label: 'minute', multiplier: 60 },
       second: { label: 'second', multiplier: 1 },
@@ -791,12 +750,11 @@
       const period = ['today', 'week', 'month', 'all'].includes(params.get('leaderboard-period'))
         ? params.get('leaderboard-period')
         : 'all'
-      const unit = leaderboardAverageUnits[params.get('leaderboard-unit')] ? params.get('leaderboard-unit') : 'hour'
+      const unit = leaderboardValueUnits[params.get('leaderboard-unit')] ? params.get('leaderboard-unit') : 'all'
       return {
         group,
         sortKey: group.keys.includes(params.get('leaderboard-sort')) ? params.get('leaderboard-sort') : group.keys[0],
         period,
-        mode: params.get('leaderboard-mode') === 'average' ? 'average' : 'absolute',
         unit,
       }
     }
@@ -804,7 +762,6 @@
     const syncLeaderboardControls = (state) => {
       leaderboardGroup.value = state.group.key
       leaderboardPeriod.value = state.period
-      leaderboardAverage.checked = state.mode === 'average'
       leaderboardAverageUnit.value = state.unit
     }
 
@@ -814,14 +771,14 @@
       if (changes.sort !== undefined) url.searchParams.set('leaderboard-sort', changes.sort)
       if (changes.period !== undefined) url.searchParams.set('leaderboard-period', changes.period)
       if (changes.unit !== undefined) url.searchParams.set('leaderboard-unit', changes.unit)
-      if (changes.mode !== undefined) url.searchParams.set('leaderboard-mode', changes.mode)
       history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`)
     }
 
-    const leaderboardValue = (row, key, mode, unit) => {
+    const leaderboardValue = (row, key, unit) => {
       const total = leaderboardDerivedValues[key] ? leaderboardDerivedValues[key](row.stats) : row.stats[key]
-      const averageMultiplier = leaderboardAverageUnits[unit].multiplier
-      return mode === 'average'
+      const average = unit !== 'all'
+      const averageMultiplier = leaderboardValueUnits[unit].multiplier
+      return average
         ? leaderboardDerivedValues[key]
           ? row.timePlayed ? total * averageMultiplier / row.timePlayed : 0
           : row.averages[key] * averageMultiplier
@@ -830,7 +787,8 @@
 
     const renderLeaderboardPage = () => {
       const state = readLeaderboardState()
-      const { group, sortKey, mode, unit } = state
+      const { group, sortKey, unit } = state
+      const otherUnit = unit === 'all' ? 'hour' : 'all'
       const pageCount = Math.ceil(leaderboardData.length / leaderboardPageSize)
       const start = leaderboardPage * leaderboardPageSize
       const pageRows = leaderboardData.slice(start, start + leaderboardPageSize)
@@ -844,8 +802,7 @@
           return `<th data-sort-key="${key}" title="${title}"${selected ? ' aria-sort="descending"' : ''}>${selected ? `<span class="badge badge-offline">${label}</span>` : label}</th>`
         }).join('')}
       `
-      leaderboardRows.innerHTML = pageRows.length
-        ? pageRows.map((row, index) => {
+      const renderedRows = pageRows.map((row, index) => {
           const classInfo = classMap[row.class]
           return `
               <tr>
@@ -858,28 +815,34 @@
                   <strong class="${classInfo?.key || ''}" title="Played ${formatFullDuration(row.timePlayed)} over ${row.matches} battlegrounds">${row.name}</strong>
                 </td>
                 ${group.keys.map((key) => {
-                  const selectedMode = mode
-                  const otherMode = mode === 'average' ? 'absolute' : 'average'
-                  const averageLabel = `Average / ${leaderboardAverageUnits[unit].label}`
-                  const otherLabel = otherMode ? averageLabel : 'Total'
+                  const otherLabel = otherUnit === 'all' ? 'Total' : `Average / ${leaderboardValueUnits[otherUnit].label}`
                   const otherValue = durationMetrics.has(key)
-                    ? formatFullDuration(leaderboardValue(row, key, otherMode, unit))
-                    : formatLeaderboardValue(leaderboardValue(row, key, otherMode, unit), key)
+                    ? formatFullDuration(leaderboardValue(row, key, otherUnit))
+                    : formatLeaderboardValue(leaderboardValue(row, key, otherUnit), key)
                   let title = `${otherLabel}: ${otherValue}`
                   const countKey = durationCountKeys[key]
                   if (countKey) {
-                    const countValue = leaderboardValue(row, countKey, selectedMode, unit)
+                    const countValue = leaderboardValue(row, countKey, unit)
                     const averageDuration = countValue
-                      ? leaderboardValue(row, key, selectedMode, unit) / countValue
+                      ? leaderboardValue(row, key, unit) / countValue
                       : 0
                     title += `; Count: ${formatLeaderboardValue(countValue)}; Average duration / count: ${formatDuration(averageDuration)}`
                   }
-                  return `<td title="${title}">${formatLeaderboardValue(leaderboardValue(row, key, selectedMode, unit), key)}</td>`
+                  return `<td title="${title}">${formatLeaderboardValue(leaderboardValue(row, key, unit), key)}</td>`
                 }).join('')}
               </tr>
             `
-        }).join('')
-        : `<tr><td class="leaderboard-empty" colspan="${group.keys.length + 2}">No battleground data yet.</td></tr>`
+      }).join('')
+      const emptyRows = Array.from({ length: leaderboardPageSize - pageRows.length }, (_, index) => {
+        const message = !pageRows.length && index === 0
+        return '<tr>' +
+          '<td>' + (start + pageRows.length + index + 1) + '</td>' +
+          '<td' + (message ? ' class="leaderboard-empty"' : '') + '>' +
+          (message ? 'No battleground data yet.' : '-') + '</td>' +
+          group.keys.map(() => '<td>-</td>').join('') +
+          '</tr>'
+      }).join('')
+      leaderboardRows.innerHTML = renderedRows + emptyRows
       leaderboardPageLabel.textContent = pageCount ? `Page ${leaderboardPage + 1} of ${pageCount}` : ''
       leaderboardPrevious.disabled = leaderboardPage === 0
       leaderboardNext.disabled = pageCount === 0 || leaderboardPage >= pageCount - 1
@@ -893,7 +856,7 @@
         const params = new URLSearchParams({
           metric: state.sortKey,
           period: state.period,
-          mode: state.mode,
+          mode: state.unit === 'all' ? 'absolute' : 'average',
         })
         const res = await fetch(`${api}/api/leaderboards?${params}`)
         const data = await res.json()
@@ -910,8 +873,8 @@
         leaderboardData = data.rows || []
         leaderboardPage = 0
         renderLeaderboardPage()
-        const averageLabel = `Average / ${leaderboardAverageUnits[currentState.unit].label}`
-        leaderboardStatus.textContent = `${currentState.group.label} · ${currentState.mode === 'average' ? averageLabel : 'Total'} · ${data.period === 'all' ? 'All time' : data.period}`
+        const valueLabel = currentState.unit === 'all' ? 'Total' : `Average / ${leaderboardValueUnits[currentState.unit].label}`
+        leaderboardStatus.textContent = `${currentState.group.label} · ${valueLabel} · ${data.period === 'all' ? 'All time' : data.period}`
       } catch (err) {
         leaderboardData = []
         leaderboardPage = 0
@@ -925,16 +888,9 @@
       updateLeaderboardUrl({ group: group.key, sort: group.keys[0] })
       loadLeaderboard()
     }
-    leaderboardAverage.onchange = () => {
-      updateLeaderboardUrl({ mode: leaderboardAverage.checked ? 'average' : 'absolute' })
-      loadLeaderboard()
-    }
     leaderboardAverageUnit.onchange = () => {
       updateLeaderboardUrl({ unit: leaderboardAverageUnit.value })
-      renderLeaderboardPage()
-      const state = readLeaderboardState()
-      const averageLabel = `Average / ${leaderboardAverageUnits[state.unit].label}`
-      leaderboardStatus.textContent = `${state.group.label} · ${state.mode === 'average' ? averageLabel : 'Total'} · ${state.period === 'all' ? 'All time' : state.period}`
+      loadLeaderboard()
     }
     leaderboardPeriod.onchange = () => {
       updateLeaderboardUrl({ period: leaderboardPeriod.value })
