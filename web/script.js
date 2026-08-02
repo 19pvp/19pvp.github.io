@@ -132,7 +132,11 @@ styleEl.innerHTML = `
     '00000033',
     8,
   )
-}
+  }
+
+  /* Leaderboard selects */
+  ${generateBoxVariantMulti('.leaderboard-controls select', borderColor || 'ffffff14', surface2, 8)}
+  ${generateBoxVariantMulti('.leaderboard-controls select:focus', accentColor, surface2, 8)}
 
   /* Status Banners */
   ${generateBoxVariant('status-success', successColor, successBg, 10)}
@@ -140,6 +144,7 @@ styleEl.innerHTML = `
 
   /* Wrapper layouts & Table wraps & logs */
   ${generateBoxVariant('char-table-wrapper', surface, surface, 10)}
+  ${generateBoxVariant('leaderboard-table-wrapper', surface, surface, 10)}
   ${generateBoxVariant('table-wrap', surface, surface, 10)}
   ${generateBoxVariant('box', surface, surface, 10)}
   ${generateBoxVariant('log-box', borderColor || 'ffffff14', bgColor, 10)}

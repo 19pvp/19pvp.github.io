@@ -170,7 +170,9 @@
     .footer-actions .btn {
       flex: 1;
       min-width: 150px;
-      .admin-link {
+    }
+
+    .admin-link {
         color: var(--accent-color);
         font-weight: 600;
         text-decoration: none;
@@ -183,13 +185,13 @@
         border-radius: 8px;
         background: var(--accent-dim);
         transition: all 0.2s;
-      }
+    }
 
-      .admin-link:hover {
+    .admin-link:hover {
         background: rgba(255, 209, 95, 0.2);
         border-color: var(--accent-color);
         transform: translateY(-1px);
-      }
+    }
     .leaderboard-section {
       margin-bottom: 34px;
     }
@@ -205,6 +207,34 @@
       flex: 1;
       flex-direction: column;
       gap: 7px;
+      position: relative;
+    }
+
+    .leaderboard-controls select {
+      appearance: none;
+      width: 100%;
+      padding: 10px 36px 10px 12px;
+      background-color: var(--surface2) !important;
+      color: var(--text-primary) !important;
+      color-scheme: dark;
+    }
+
+    .leaderboard-controls label::after {
+      content: "";
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid var(--text-secondary);
+      border-bottom: 2px solid var(--text-secondary);
+      transform: rotate(45deg);
+      pointer-events: none;
+    }
+
+    .leaderboard-controls select option {
+      background-color: var(--surface2);
+      color: var(--text-primary);
     }
 
     .leaderboard-table-wrapper {
@@ -246,20 +276,16 @@
     }
 
     .leaderboard-pagination .btn {
-      width: auto;
-      min-width: 100px;
+      width: auto !important;
+      min-width: 0;
+      flex: 0 0 auto;
+      padding: 8px 14px;
+      font-size: 0.9rem;
     }
 
     .leaderboard-page-label {
       color: var(--text-secondary);
       text-align: center;
-    }
-
-    .leaderboard-average {
-      display: block;
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      font-weight: 400;
     }
 
     .leaderboard-empty,
@@ -333,6 +359,7 @@
                   <th>Player</th>
                   <th>Matches</th>
                   <th id="leaderboardValueHeading">Value</th>
+                  <th>Average / match</th>
                 </tr>
               </thead>
               <tbody id="leaderboardRows"></tbody>
@@ -579,14 +606,12 @@
                   <strong class="${classInfo?.key || ''}">${row.name}</strong>
                 </td>
                 <td>${formatLeaderboardValue(row.matches)}</td>
-                <td>
-                  ${formatLeaderboardValue(row.value)}
-                  <span class="leaderboard-average">avg ${formatLeaderboardValue(row.matches ? row.value / row.matches : 0)} / match</span>
-                </td>
+                <td>${formatLeaderboardValue(row.value)}</td>
+                <td>${formatLeaderboardValue(row.matches ? row.value / row.matches : 0)}</td>
               </tr>
             `
         }).join('')
-        : '<tr><td class="leaderboard-empty" colspan="4">No battleground data yet.</td></tr>'
+        : '<tr><td class="leaderboard-empty" colspan="5">No battleground data yet.</td></tr>'
       leaderboardPageLabel.textContent = pageCount ? `Page ${leaderboardPage + 1} of ${pageCount}` : ''
       leaderboardPrevious.disabled = leaderboardPage === 0
       leaderboardNext.disabled = pageCount === 0 || leaderboardPage >= pageCount - 1
