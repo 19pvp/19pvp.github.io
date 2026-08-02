@@ -229,6 +229,32 @@
       text-align: right;
     }
 
+    .leaderboard-class-icon {
+      display: inline-block;
+      width: 26px;
+      height: 26px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .leaderboard-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .leaderboard-pagination .btn {
+      width: auto;
+      min-width: 100px;
+    }
+
+    .leaderboard-page-label {
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
     .leaderboard-empty,
     .leaderboard-status {
       color: var(--text-secondary);
@@ -304,6 +330,11 @@
               </thead>
               <tbody id="leaderboardRows"></tbody>
             </table>
+          </div>
+          <div class="leaderboard-pagination">
+            <button id="leaderboardPrevious" class="btn btn-ghost" type="button">Previous</button>
+            <span id="leaderboardPageLabel" class="leaderboard-page-label"></span>
+            <button id="leaderboardNext" class="btn btn-ghost" type="button">Next</button>
           </div>
         </section>
 
@@ -417,6 +448,9 @@
     const leaderboardStatus = document.getElementById('leaderboardStatus')
     const leaderboardRows = document.getElementById('leaderboardRows')
     const leaderboardValueHeading = document.getElementById('leaderboardValueHeading')
+    const leaderboardPrevious = document.getElementById('leaderboardPrevious')
+    const leaderboardPageLabel = document.getElementById('leaderboardPageLabel')
+    const leaderboardNext = document.getElementById('leaderboardNext')
 
     const statPlayTime = document.getElementById('statPlayTime')
     const statGold = document.getElementById('statGold')
@@ -516,6 +550,37 @@
       maximumFractionDigits: 1,
     })
     const formatLeaderboardValue = (value) => compactNumber.format(Number(value) || 0)
+    const leaderboardPageSize = 20
+    let leaderboardData = []
+    let leaderboardPage = 0
+
+    const renderLeaderboardPage = () => {
+      const pageCount = Math.ceil(leaderboardData.length / leaderboardPageSize)
+      const start = leaderboardPage * leaderboardPageSize
+      const pageRows = leaderboardData.slice(start, start + leaderboardPageSize)
+      leaderboardRows.innerHTML = pageRows.length
+        ? pageRows.map((row) => {
+          const classInfo = classMap[row.class]
+          return `
+              <tr>
+                <td>${row.rank}</td>
+                <td>
+                  ${classInfo
+                    ? `<span class="class-icon leaderboard-class-icon ${classInfo.key}" role="img" aria-label="${classInfo.name}"
+                        title="${classInfo.name}"></span>`
+                    : ''}
+                  <strong class="${classInfo?.key || ''}">${row.name}</strong>
+                </td>
+                <td>${formatLeaderboardValue(row.matches)}</td>
+                <td>${formatLeaderboardValue(row.value)}</td>
+              </tr>
+            `
+        }).join('')
+        : '<tr><td class="leaderboard-empty" colspan="4">No battleground data yet.</td></tr>'
+      leaderboardPageLabel.textContent = pageCount ? `Page ${leaderboardPage + 1} of ${pageCount}` : ''
+      leaderboardPrevious.disabled = leaderboardPage === 0
+      leaderboardNext.disabled = pageCount === 0 || leaderboardPage >= pageCount - 1
+    }
 
     async function loadLeaderboard() {
       leaderboardStatus.textContent = 'Loading leaderboard…'
@@ -535,25 +600,32 @@
           leaderboardMetric.value = data.metric.key
         }
         leaderboardValueHeading.textContent = data.metric.label
-        leaderboardRows.innerHTML = data.rows.length
-          ? data.rows.map((row) => `
-              <tr>
-                <td>${row.rank}</td>
-                <td><strong>${row.name}</strong></td>
-                <td>${formatLeaderboardValue(row.matches)}</td>
-                <td>${formatLeaderboardValue(row.value)}</td>
-              </tr>
-            `).join('')
-          : '<tr><td class="leaderboard-empty" colspan="4">No battleground data yet.</td></tr>'
+        leaderboardData = data.rows
+        leaderboardPage = 0
+        renderLeaderboardPage()
         leaderboardStatus.textContent = `${data.metric.label} · ${data.period === 'all' ? 'All time' : data.period}`
       } catch (err) {
-        leaderboardRows.innerHTML = ''
+        leaderboardData = []
+        leaderboardPage = 0
+        renderLeaderboardPage()
         leaderboardStatus.textContent = err.message || 'Unable to load leaderboard.'
       }
     }
 
     leaderboardMetric.onchange = loadLeaderboard
     leaderboardPeriod.onchange = loadLeaderboard
+    leaderboardPrevious.onclick = () => {
+      if (leaderboardPage > 0) {
+        leaderboardPage--
+        renderLeaderboardPage()
+      }
+    }
+    leaderboardNext.onclick = () => {
+      if ((leaderboardPage + 1) * leaderboardPageSize < leaderboardData.length) {
+        leaderboardPage++
+        renderLeaderboardPage()
+      }
+    }
 
     accountForm.onsubmit = async (e) => {
       e.preventDefault()

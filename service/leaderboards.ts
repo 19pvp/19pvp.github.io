@@ -1,4 +1,4 @@
-import { auth, type SqlRow } from './db.ts'
+import { auth, characters, type SqlRow } from './db.ts'
 import { type WebEvent, wowEvents } from './wow-events.ts'
 import {
   isLeaderboardMetric,
@@ -51,6 +51,19 @@ const replay = async () => {
       cursor = Math.max(cursor, Number(event.id) || cursor)
     }
   }
+
+  const guids = [...store.players.keys()].filter((guid) => /^\d+$/.test(guid))
+  for (let offset = 0; offset < guids.length; offset += BATCH_SIZE) {
+    const classes = await characters.raw.sql`
+      SELECT guid, class FROM characters WHERE guid IN (${guids.slice(offset, offset + BATCH_SIZE).join(',')})
+    `
+    for (const row of classes) {
+      const player = store.players.get(String(row.guid))
+      const classId = Number(row.class)
+      if (player && Number.isInteger(classId) && classId > 0) player.class = classId
+    }
+  }
+
   replayedThrough = cursor
 }
 

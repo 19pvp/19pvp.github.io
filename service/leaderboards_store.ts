@@ -36,12 +36,14 @@ const metricIndex = new Map(LEADERBOARD_METRICS.map(([key], index) => [key, inde
 export type LeaderboardPlayer = {
   playerGuid: string
   name: string
+  class?: number
   value: number
   matches: number
 }
 
 type PlayerAggregate = {
   name: string
+  class?: number
   total: Float64Array
   today: Float64Array
   week: Float64Array
@@ -170,7 +172,7 @@ export class LeaderboardStore {
     this.synchronizeDay()
     const index = metricIndex.get(metric)!
     const values = period === 'all' ? 'total' : period === 'today' ? 'today' : period
-    const top = [] as Array<{ playerGuid: string; name: string; value: number; matches: number }>
+    const top = [] as Array<{ playerGuid: string; name: string; class?: number; value: number; matches: number }>
 
     for (const [playerGuid, player] of this.players) {
       const value = player[values][index]
@@ -189,7 +191,7 @@ export class LeaderboardStore {
       }
 
       if (top.length < 100 || start < top.length) {
-        top.splice(start, 0, { playerGuid, name, value, matches: player.matches })
+        top.splice(start, 0, { playerGuid, name, class: player.class, value, matches: player.matches })
         if (top.length > 100) top.pop()
       }
     }
