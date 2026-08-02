@@ -4,7 +4,6 @@ import {
   isLeaderboardMetric,
   isLeaderboardPeriod,
   LEADERBOARD_METRICS,
-  type LeaderboardMetric,
   type LeaderboardPeriod,
   LeaderboardStore,
 } from './leaderboards_store.ts'
@@ -84,13 +83,12 @@ export const getLeaderboards = async (metricParam: string, periodParam: string) 
   if (!isLeaderboardMetric(metricParam)) throw new Error('Unknown leaderboard metric')
   if (!isLeaderboardPeriod(periodParam)) throw new Error('Unknown leaderboard period')
 
-  const rows = store.getLeaderboard(metricParam as LeaderboardMetric, periodParam as LeaderboardPeriod)
-  const definition = LEADERBOARD_METRICS.find(([key]) => key === metricParam)
+  const definition = LEADERBOARD_METRICS.find(([key]) => key === metricParam)!
   return {
-    metric: { key: definition![0], label: definition![1] },
+    metric: { key: definition[0], label: definition[1] },
     period: periodParam,
     metrics: LEADERBOARD_METRICS.map(([key, label]) => ({ key, label })),
-    rows: rows.map((row, index) => ({ rank: index + 1, ...row })),
+    rows: store.getLeaderboardData(periodParam as LeaderboardPeriod),
   }
 }
 

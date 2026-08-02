@@ -19,6 +19,7 @@ export const LEADERBOARD_METRICS = [
   ['bonusHonor', 'Bonus honor'],
   ['damageDone', 'Damage done'],
   ['healingDone', 'Healing done'],
+  ['flagCaptures', 'Flag captures'],
   ['flagReturns', 'Flag returns'],
   ['deserted', 'Deserted battlegrounds'],
   ['timePlayed', 'Time played (seconds)'],
@@ -243,5 +244,30 @@ export class LeaderboardStore {
     }
 
     return top
+  }
+
+  getLeaderboardData(period: LeaderboardPeriod) {
+    this.synchronizeDay()
+    const values = period === 'all' ? 'total' : period === 'today' ? 'today' : period
+    const rows = []
+    for (const [playerGuid, player] of this.players) {
+      const stats: Record<string, number> = {}
+      for (const [key, index] of metricIndex) stats[key] = player[values][index]
+      rows.push({
+        playerGuid,
+        name: player.name || playerGuid,
+        class: player.class,
+        matches: period === 'all'
+          ? player.matches
+          : period === 'today'
+          ? player.todayMatches
+          : period === 'week'
+          ? player.weekMatches
+          : player.monthMatches,
+        timePlayed: stats.timePlayed,
+        stats,
+      })
+    }
+    return rows
   }
 }

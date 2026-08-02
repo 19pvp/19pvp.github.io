@@ -25,6 +25,8 @@ Deno.test('aggregates all-time and rolling periods by stable player guid', () =>
   if (store.getLeaderboard('damageDone', 'week')[0]?.value !== 150) throw Error('week aggregation failed')
   if (store.getLeaderboard('damageDone', 'month')[0]?.value !== 150) throw Error('month aggregation failed')
   if (store.getLeaderboard('deserted', 'all')[0]?.value !== 1) throw Error('deserted aggregation failed')
+  const data = store.getLeaderboardData('all').find((row) => row.playerGuid === '1')
+  if (data?.stats.damageDone !== 150 || data?.timePlayed !== 0) throw Error('client leaderboard data failed')
 })
 
 Deno.test('keeps the daily window bounded while retaining all-time totals', () => {
