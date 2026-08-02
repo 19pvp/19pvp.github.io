@@ -162,6 +162,11 @@ const navigationState = {
   href: '',
 }
 
+const navigationExcludedPaths = new Set([
+  '/auth/discord/login',
+  '/auth/discord/callback',
+])
+
 const pageHref = (url) => `${url.origin}${url.pathname.replace(/\/$/, '') || '/'}${url.search}`
 
 const setNavigationProgress = (progress) => {
@@ -309,7 +314,8 @@ const isNavigableLink = (event, link) => {
   ) return false
 
   const url = new URL(link.href)
-  return url.origin === location.origin && !url.hash && pageHref(url) !== pageHref(location)
+  return url.origin === location.origin && !url.hash && !navigationExcludedPaths.has(url.pathname) &&
+    pageHref(url) !== pageHref(location)
 }
 
 const navigateWithoutNavigationApi = (url) => {
@@ -328,7 +334,8 @@ const navigateWithoutNavigationApi = (url) => {
 
 const shouldInterceptNavigationEvent = (event) => {
   if (!event.canIntercept || event.downloadRequest || event.hashChange || event.formData) return false
-  return new URL(event.destination.url).origin === location.origin
+  const url = new URL(event.destination.url)
+  return url.origin === location.origin && !navigationExcludedPaths.has(url.pathname)
 }
 
 const setupSPAClientNavigation = () => {
