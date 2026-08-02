@@ -47,8 +47,29 @@ const DAY_MS = 86_400_000
 const DAY_BUCKETS = 31
 const WEEK_DAYS = 7
 const MONTH_DAYS = 30
-const metricIndex = new Map(LEADERBOARD_METRICS.map(([key], index) => [key, index]))
+const baseMetricIndex = new Map(LEADERBOARD_METRICS.map(([key], index) => [key, index]))
+const metricIndex = new Map(
+  [...LEADERBOARD_METRICS, ...LEADERBOARD_DERIVED_METRICS].map(([key], index) => [key, index]),
+)
 const timePlayedIndex = metricIndex.get('timePlayed')!
+const derivedMetricIndexes = {
+  healingDamageAbsorbs: metricIndex.get('healingDamageAbsorbs')!,
+  totalDispels: metricIndex.get('totalDispels')!,
+  killDeathRatio: metricIndex.get('killDeathRatio')!,
+  efcPressure: metricIndex.get('efcPressure')!,
+  flagEfficiency: metricIndex.get('flagEfficiency')!,
+  healingDone: metricIndex.get('healingDone')!,
+  damageDone: metricIndex.get('damageDone')!,
+  absorbsDone: metricIndex.get('absorbsDone')!,
+  dispelsOffensive: metricIndex.get('dispelsOffensive')!,
+  dispelsDefensive: metricIndex.get('dispelsDefensive')!,
+  deaths: metricIndex.get('deaths')!,
+  killingBlows: metricIndex.get('killingBlows')!,
+  damageOnEFC: metricIndex.get('damageOnEFC')!,
+  healsOnFC: metricIndex.get('healsOnFC')!,
+  flagCaptures: metricIndex.get('flagCaptures')!,
+  attemptsOnFlag: metricIndex.get('attemptsOnFlag')!,
+}
 
 export type LeaderboardPlayer = {
   playerGuid: string
@@ -62,7 +83,7 @@ export type LeaderboardPlayer = {
 type PlayerAggregate = {
   name: string
   class?: number
-  total: Float64Array
+  all: Float64Array
   allAverage: Float64Array
   today: Float64Array
   todayAverage: Float64Array
@@ -93,10 +114,45 @@ const numberValue = (value: unknown) => {
   return Number.isFinite(number) && number > 0 ? number : 0
 }
 
+const updateDerivedValues = (values: Float64Array) => {
+  values[derivedMetricIndexes.healingDamageAbsorbs] =
+    values[derivedMetricIndexes.healingDone] +
+    values[derivedMetricIndexes.damageDone] +
+    values[derivedMetricIndexes.absorbsDone]
+  values[derivedMetricIndexes.totalDispels] =
+    values[derivedMetricIndexes.dispelsOffensive] + values[derivedMetricIndexes.dispelsDefensive]
+  values[derivedMetricIndexes.killDeathRatio] = values[derivedMetricIndexes.deaths]
+    ? values[derivedMetricIndexes.killingBlows] / values[derivedMetricIndexes.deaths]
+    : values[derivedMetricIndexes.killingBlows]
+  values[derivedMetricIndexes.efcPressure] =
+    values[derivedMetricIndexes.damageOnEFC] + values[derivedMetricIndexes.healsOnFC]
+  values[derivedMetricIndexes.flagEfficiency] = values[derivedMetricIndexes.flagCaptures]
+    ? values[derivedMetricIndexes.attemptsOnFlag] / values[derivedMetricIndexes.flagCaptures]
+    : 0
+}
+
+const updatePlayerComputedValues = (player: PlayerAggregate) => {
+  updateDerivedValues(player.all)
+  updateDerivedValues(player.today)
+  updateDerivedValues(player.week)
+  updateDerivedValues(player.month)
+
+  const allTimePlayed = player.all[timePlayedIndex]
+  const todayTimePlayed = player.today[timePlayedIndex]
+  const weekTimePlayed = player.week[timePlayedIndex]
+  const monthTimePlayed = player.month[timePlayedIndex]
+  for (let metric = 0; metric < metricIndex.size; metric++) {
+    player.allAverage[metric] = player.all[metric] / (allTimePlayed || Infinity)
+    player.todayAverage[metric] = player.today[metric] / (todayTimePlayed || Infinity)
+    player.weekAverage[metric] = player.week[metric] / (weekTimePlayed || Infinity)
+    player.monthAverage[metric] = player.month[metric] / (monthTimePlayed || Infinity)
+  }
+}
+
 export const isLeaderboardMetric = (value: string): value is LeaderboardMetric =>
-  metricIndex.has(value as LeaderboardMetric)
+  baseMetricIndex.has(value as LeaderboardMetric)
 export const isLeaderboardSortMetric = (value: string): value is LeaderboardSortMetric =>
-  isLeaderboardMetric(value) || LEADERBOARD_DERIVED_METRICS.some(([key]) => key === value)
+  metricIndex.has(value as LeaderboardSortMetric)
 export const isLeaderboardPeriod = (value: string): value is LeaderboardPeriod =>
   value === 'today' || value === 'week' || value === 'month' || value === 'all'
 export const isLeaderboardValueMode = (value: string): value is LeaderboardValueMode =>
@@ -109,14 +165,14 @@ export class LeaderboardStore {
   private makePlayer() {
     const player: PlayerAggregate = {
       name: '',
-      total: new Float64Array(LEADERBOARD_METRICS.length),
-      allAverage: new Float64Array(LEADERBOARD_METRICS.length),
-      today: new Float64Array(LEADERBOARD_METRICS.length),
-      todayAverage: new Float64Array(LEADERBOARD_METRICS.length),
-      week: new Float64Array(LEADERBOARD_METRICS.length),
-      weekAverage: new Float64Array(LEADERBOARD_METRICS.length),
-      month: new Float64Array(LEADERBOARD_METRICS.length),
-      monthAverage: new Float64Array(LEADERBOARD_METRICS.length),
+      all: new Float64Array(metricIndex.size),
+      allAverage: new Float64Array(metricIndex.size),
+      today: new Float64Array(metricIndex.size),
+      todayAverage: new Float64Array(metricIndex.size),
+      week: new Float64Array(metricIndex.size),
+      weekAverage: new Float64Array(metricIndex.size),
+      month: new Float64Array(metricIndex.size),
+      monthAverage: new Float64Array(metricIndex.size),
       dayIds: new Int32Array(DAY_BUCKETS),
       days: new Float64Array(DAY_BUCKETS * LEADERBOARD_METRICS.length),
       dayMatches: new Uint32Array(DAY_BUCKETS),
@@ -169,12 +225,7 @@ export class LeaderboardStore {
         }
       }
 
-      for (let metric = 0; metric < LEADERBOARD_METRICS.length; metric++) {
-        player.todayAverage[metric] = player.today[metric] / (player.today[timePlayedIndex] || Infinity)
-        player.weekAverage[metric] = player.week[metric] / (player.week[timePlayedIndex] || Infinity)
-        player.monthAverage[metric] = player.month[metric] / (player.month[timePlayedIndex] || Infinity)
-        player.allAverage[metric] = player.total[metric] / (player.total[timePlayedIndex] || Infinity)
-      }
+      updatePlayerComputedValues(player)
     }
   }
 
@@ -216,8 +267,8 @@ export class LeaderboardStore {
 
       for (const [key] of LEADERBOARD_METRICS) {
         const value = numberValue(stats[key])
-        const index = metricIndex.get(key)!
-        player.total[index] += value
+        const index = baseMetricIndex.get(key)!
+        player.all[index] += value
         if (!includeDaily) continue
 
         player.days[dayBucket * LEADERBOARD_METRICS.length + index] += value
@@ -226,27 +277,13 @@ export class LeaderboardStore {
         if (day === this.currentDay) player.today[index] += value
       }
 
-      const totalTimePlayed = player.total[timePlayedIndex]
-      player.allAverage.fill(0)
-      for (let metric = 0; metric < LEADERBOARD_METRICS.length; metric++) {
-        player.allAverage[metric] = player.total[metric] / (totalTimePlayed || Infinity)
-      }
-      if (includeDaily) {
-        const todayTimePlayed = player.today[timePlayedIndex]
-        const weekTimePlayed = player.week[timePlayedIndex]
-        const monthTimePlayed = player.month[timePlayedIndex]
-        for (let metric = 0; metric < LEADERBOARD_METRICS.length; metric++) {
-          player.todayAverage[metric] = player.today[metric] / (todayTimePlayed || Infinity)
-          player.weekAverage[metric] = player.week[metric] / (weekTimePlayed || Infinity)
-          player.monthAverage[metric] = player.month[metric] / (monthTimePlayed || Infinity)
-        }
-      }
+      updatePlayerComputedValues(player)
     }
   }
 
   getLeaderboard(metric: LeaderboardSortMetric, period: LeaderboardPeriod, mode: LeaderboardValueMode = 'absolute') {
     this.synchronizeDay()
-    const values = period === 'all' ? 'total' : period
+    const values = period
     const avgKey = `${period}Average` as 'allAverage' | 'todayAverage' | 'weekAverage' | 'monthAverage'
     const top = [] as Array<{
       playerGuid: string
@@ -260,22 +297,7 @@ export class LeaderboardStore {
     for (const [playerGuid, player] of this.players) {
       const periodValues = player[values]
       const averageValues = player[avgKey]
-      const sortValues = mode === 'average' ? averageValues : periodValues
-      const index = metricIndex.get(metric as LeaderboardMetric)
-      let value = index === undefined ? 0 : sortValues[index]
-      if (index === undefined) {
-        const totalStats = periodValues
-        const totalValue = metric === 'healingDamageAbsorbs'
-          ? totalStats[metricIndex.get('healingDone')!] + totalStats[metricIndex.get('damageDone')!] + totalStats[metricIndex.get('absorbsDone')!]
-          : metric === 'totalDispels'
-          ? totalStats[metricIndex.get('dispelsOffensive')!] + totalStats[metricIndex.get('dispelsDefensive')!]
-          : metric === 'killDeathRatio'
-          ? totalStats[metricIndex.get('deaths')!] ? totalStats[metricIndex.get('killingBlows')!] / totalStats[metricIndex.get('deaths')!] : totalStats[metricIndex.get('killingBlows')!]
-          : metric === 'efcPressure'
-          ? totalStats[metricIndex.get('damageOnEFC')!] + totalStats[metricIndex.get('healsOnFC')!]
-          : totalStats[metricIndex.get('flagCaptures')!] ? totalStats[metricIndex.get('attemptsOnFlag')!] / totalStats[metricIndex.get('flagCaptures')!] : 0
-        value = mode === 'average' ? totalValue / (periodValues[timePlayedIndex] || Infinity) : totalValue
-      }
+      const value = (mode === 'average' ? averageValues : periodValues)[metricIndex.get(metric)!]
       if (value <= 0) continue
       const name = player.name || playerGuid
 
@@ -319,7 +341,7 @@ export class LeaderboardStore {
     metric: LeaderboardSortMetric = 'damageDone',
     mode: LeaderboardValueMode = 'absolute',
   ) {
-    const values = period === 'all' ? 'total' : period
+    const values = period
     const avgKey = `${period}Average` as 'allAverage' | 'todayAverage' | 'weekAverage' | 'monthAverage'
     const top = this.getLeaderboard(metric, period, mode)
     return top.map((row) => {
@@ -328,7 +350,7 @@ export class LeaderboardStore {
       const periodValues = player[values]
       const stats: Record<string, number> = {}
       const averages: Record<string, number> = {}
-      for (const [key, valueIndex] of metricIndex) {
+      for (const [key, valueIndex] of baseMetricIndex) {
         stats[key] = periodValues[valueIndex]
         averages[key] = averageValues[valueIndex]
       }

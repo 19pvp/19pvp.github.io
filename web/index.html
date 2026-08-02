@@ -844,7 +844,7 @@
       const start = leaderboardPage * leaderboardPageSize
       const pageRows = leaderboardData.slice(start, start + leaderboardPageSize)
       leaderboardHeaderRow.innerHTML = `
-        <th>Rank</th>
+        <th>#</th>
         <th>Player</th>
         ${group.keys.map((key) => {
           const label = leaderboardShortLabels[key] || key
