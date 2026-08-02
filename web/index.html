@@ -290,7 +290,9 @@
                     <tr>
                       <th><span class="badge badge-offline">Name</span></th>
                       <th><span class="badge badge-offline">Race</span></th>
-                      <th><span class="badge badge-offline">Class</span></th>
+                      <th><span class="badge badge-offline">Gold</span></th>
+                      <th><span class="badge badge-offline">Play Time</span></th>
+                      <th><span class="badge badge-offline">Last Login</span></th>
                       <th><span class="badge badge-offline">Status</span></th>
                     </tr>
                   </thead>
@@ -307,9 +309,11 @@
               <div class="hand-drawn-divider vertical"
                 style="height: 69px; --divider-color: var(--accent-border);"></div>
               <div class="stat-card">
-                <span>Last Time Online</span>
-                <strong id="statLastOnline">Never</strong>
+                <span>Total Gold</span>
+                <strong id="statGold">0<span class="money-dot money-dot-gold" aria-hidden="true"></span> 0<span class="money-dot money-dot-silver" aria-hidden="true"></span> 0<span class="money-dot money-dot-copper" aria-hidden="true"></span></strong>
               </div>
+              <div class="hand-drawn-divider vertical"
+                style="height: 69px; --divider-color: var(--accent-border);"></div>
             </div>
 
             <div class="footer-actions">
@@ -336,25 +340,25 @@
     const characterRows = document.getElementById('characterRows')
 
     const statPlayTime = document.getElementById('statPlayTime')
-    const statLastOnline = document.getElementById('statLastOnline')
+    const statGold = document.getElementById('statGold')
 
     const discordLoginBtn = document.getElementById('discordLoginBtn')
     const logoutBtn = document.getElementById('logoutBtn')
     const statusMsg = document.getElementById('statusMsg')
 
     const classMap = {
-      1: 'Warrior',
-      2: 'Paladin',
-      3: 'Hunter',
-      4: 'Rogue',
-      5: 'Priest',
-      6: 'Death Knight',
-      7: 'Shaman',
-      8: 'Mage',
-      9: 'Warlock',
-      10: 'Monk',
-      11: 'Druid',
-      12: 'Demon Hunter',
+      1: { name: 'Warrior', key: 'WARRIOR' },
+      2: { name: 'Paladin', key: 'PALADIN' },
+      3: { name: 'Hunter', key: 'HUNTER' },
+      4: { name: 'Rogue', key: 'ROGUE' },
+      5: { name: 'Priest', key: 'PRIEST' },
+      6: { name: 'Death Knight', key: 'DEATHKNIGHT' },
+      7: { name: 'Shaman', key: 'SHAMAN' },
+      8: { name: 'Mage', key: 'MAGE' },
+      9: { name: 'Warlock', key: 'WARLOCK' },
+      10: { name: 'Monk', key: 'MONK' },
+      11: { name: 'Druid', key: 'DRUID' },
+      12: { name: 'Demon Hunter', key: 'DEMONHUNTER' },
     }
 
     const raceMap = {
@@ -398,10 +402,29 @@
       return `${mins}m`
     }
 
+    const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
     const formatLastOnline = (timestamp) => {
       if (!timestamp) return 'Never'
-      const date = new Date(timestamp * 1000)
-      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      const units = [
+        [31536000, 'year'],
+        [2592000, 'month'],
+        [86400, 'day'],
+        [3600, 'hour'],
+        [60, 'minute'],
+        [1, 'second'],
+      ]
+      const delta = timestamp - Math.floor(Date.now() / 1000)
+      const [seconds, unit] = units.find(([size]) => Math.abs(delta) >= size) || units.at(-1)
+      const value = Math.round(delta / seconds)
+      return relativeTime.format(Math.abs(delta) < 60 ? 0 : value, unit)
+    }
+
+    const formatGold = (copper) => {
+      copper = Math.max(0, Math.floor(Number(copper) || 0))
+      const gold = Math.floor(copper / 10000)
+      const silver = Math.floor((copper % 10000) / 100)
+      const remainder = copper % 100
+      return `${gold}<span class="money-dot money-dot-gold" aria-hidden="true"></span> ${silver}<span class="money-dot money-dot-silver" aria-hidden="true"></span> ${remainder}<span class="money-dot money-dot-copper" aria-hidden="true"></span>`
     }
 
     accountForm.onsubmit = async (e) => {
@@ -461,16 +484,23 @@
 
           // Render stats
           statPlayTime.textContent = formatPlayTime(data.stats.totalPlayTime)
-          statLastOnline.textContent = formatLastOnline(data.stats.lastTimeOnline)
+          statGold.innerHTML = formatGold(data.stats.totalGold || 0)
 
           // Render characters list
           if (data.characters && data.characters.length > 0) {
             charactersSection.style.display = 'block'
             characterRows.innerHTML = data.characters.map((char) => `
               <tr>
-                <td><strong>${char.name}</strong></td>
+                <td>
+                  ${classMap[char.class]
+                    ? `<span class="class-icon character-list-icon ${classMap[char.class].key}" role="img" aria-label="${classMap[char.class].name}" title="${classMap[char.class].name}"></span>`
+                    : ''}
+                  <strong class="${classMap[char.class]?.key || ''}">${char.name}</strong>
+                </td>
                 <td>${raceMap[char.race] || 'Unknown'}</td>
-                <td>${classMap[char.class] || 'Unknown'}</td>
+                <td>${formatGold(char.gold)}</td>
+                <td>${formatPlayTime(char.totalTime)}</td>
+                <td>${char.online ? 'Online' : formatLastOnline(char.logoutTime)}</td>
                 <td>
                   <span class="badge ${char.online ? 'badge-online' : 'badge-offline'}">
                     ${char.online ? 'Online' : 'Offline'}

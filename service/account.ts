@@ -200,7 +200,7 @@ export const getAccountDetails = async (discordId: string) => {
     SELECT account_id FROM discord_account WHERE discord_id = ${BigInt(discordId)}
   `
   if (!link || !link.account_id) {
-    return { wowAccount: null, characters: [], stats: { totalPlayTime: 0, lastTimeOnline: 0 } }
+    return { wowAccount: null, characters: [], stats: { totalPlayTime: 0, totalGold: 0 } }
   }
 
   const accountId = Number(link.account_id)
@@ -208,22 +208,21 @@ export const getAccountDetails = async (discordId: string) => {
     SELECT username FROM account WHERE id = ${accountId}
   `
   if (!acc) {
-    return { wowAccount: null, characters: [], stats: { totalPlayTime: 0, lastTimeOnline: 0 } }
+    return { wowAccount: null, characters: [], stats: { totalPlayTime: 0, totalGold: 0 } }
   }
 
   const accountChars = await characters.sql`
-    SELECT guid, name, race, class, gender, level, totaltime, online, logout_time
+    SELECT guid, name, race, class, gender, money, totaltime, online, logout_time
     FROM characters
     WHERE account = ${accountId}
+    ORDER BY online DESC, logout_time DESC
   `
 
   let totalPlayTime = 0
-  let lastTimeOnline = 0
+  let totalGold = 0
   for (const char of accountChars) {
     totalPlayTime += Number(char.totaltime || 0)
-    if (Number(char.logout_time || 0) > lastTimeOnline) {
-      lastTimeOnline = Number(char.logout_time)
-    }
+    totalGold += Number(char.money || 0)
   }
 
   return {
@@ -237,14 +236,14 @@ export const getAccountDetails = async (discordId: string) => {
       race: Number(char.race),
       class: Number(char.class),
       gender: Number(char.gender),
-      level: Number(char.level),
+      gold: Number(char.money || 0),
       totalTime: Number(char.totaltime || 0),
       online: Boolean(char.online),
       logoutTime: Number(char.logout_time || 0),
     })),
     stats: {
       totalPlayTime,
-      lastTimeOnline,
+      totalGold,
     },
   }
 }
