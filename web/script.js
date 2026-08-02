@@ -167,7 +167,7 @@ const navigationExcludedPaths = new Set([
   '/auth/discord/callback',
 ])
 
-const pageHref = (url) => `${url.origin}${url.pathname.replace(/\/$/, '') || '/'}${url.search}`
+const pageHref = (url) => `${url.origin}${url.pathname.replace(/\/$/, '') || '/'}`
 
 const setNavigationProgress = (progress) => {
   const container = document.getElementById('topLoadingBarContainer')

@@ -1,10 +1,13 @@
 import { auth, characters, type SqlRow } from './db.ts'
 import { type WebEvent, wowEvents } from './wow-events.ts'
 import {
-  isLeaderboardMetric,
+  isLeaderboardSortMetric,
   isLeaderboardPeriod,
-  LEADERBOARD_METRICS,
+  isLeaderboardValueMode,
+  metricsByKey,
+  type LeaderboardSortMetric,
   type LeaderboardPeriod,
+  type LeaderboardValueMode,
   LeaderboardStore,
 } from './leaderboards_store.ts'
 import { env } from './env.ts'
@@ -84,17 +87,22 @@ wowEvents.on.PVP_BG_STATS(async (event) => {
   replayedThrough = Math.max(replayedThrough, Number(event.id) || replayedThrough)
 })
 
-export const getLeaderboards = async (metricParam: string, periodParam: string) => {
+export const getLeaderboards = async (metricParam: string, periodParam: string, modeParam = 'absolute') => {
   await leaderboardReady
-  if (!isLeaderboardMetric(metricParam)) throw new Error('Unknown leaderboard metric')
+  if (!isLeaderboardSortMetric(metricParam)) throw new Error('Unknown leaderboard metric')
   if (!isLeaderboardPeriod(periodParam)) throw new Error('Unknown leaderboard period')
+  if (!isLeaderboardValueMode(modeParam)) throw new Error('Unknown leaderboard mode')
 
-  const definition = LEADERBOARD_METRICS.find(([key]) => key === metricParam)!
+  const definition = metricsByKey[metricParam]
+  const rows = store.getLeaderboardData(
+    periodParam as LeaderboardPeriod,
+    metricParam as LeaderboardSortMetric,
+    modeParam as LeaderboardValueMode,
+  )
   return {
-    metric: { key: definition[0], label: definition[1] },
+    metric: definition,
     period: periodParam,
-    metrics: LEADERBOARD_METRICS.map(([key, label]) => ({ key, label })),
-    rows: store.getLeaderboardData(periodParam as LeaderboardPeriod),
+    rows,
   }
 }
 

@@ -314,8 +314,9 @@ export default {
         if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
         const metric = url.searchParams.get('metric') || 'damageDone'
         const period = url.searchParams.get('period') || 'all'
+        const mode = url.searchParams.get('mode') || 'absolute'
         try {
-          return json(await getLeaderboards(metric, period))
+          return json(await getLeaderboards(metric, period, mode))
         } catch (error) {
           if (error instanceof Error && error.message.startsWith('Unknown leaderboard')) {
             return json({ error: error.message }, { status: 400 })

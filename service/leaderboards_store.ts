@@ -25,14 +25,30 @@ export const LEADERBOARD_METRICS = [
   ['timePlayed', 'Time played'],
 ] as const
 
+export const LEADERBOARD_DERIVED_METRICS = [
+  ['healingDamageAbsorbs', 'Healing + damage + absorbs'],
+  ['totalDispels', 'Total dispels'],
+  ['killDeathRatio', 'Kill / death ratio'],
+  ['efcPressure', 'EFC damage + FC healing'],
+  ['flagEfficiency', 'Flag attempts / captures'],
+] as const
+
 export type LeaderboardMetric = typeof LEADERBOARD_METRICS[number][0]
+export type LeaderboardSortMetric = LeaderboardMetric | typeof LEADERBOARD_DERIVED_METRICS[number][0]
 export type LeaderboardPeriod = 'today' | 'week' | 'month' | 'all'
+export type LeaderboardValueMode = 'absolute' | 'average'
+export type LeaderboardMetricDefinition = { key: LeaderboardSortMetric; label: string }
+
+export const metricsByKey: Record<string, LeaderboardMetricDefinition> = Object.fromEntries(
+  [...LEADERBOARD_METRICS, ...LEADERBOARD_DERIVED_METRICS].map(([key, label]) => [key, { key, label }]),
+)
 
 const DAY_MS = 86_400_000
 const DAY_BUCKETS = 31
 const WEEK_DAYS = 7
 const MONTH_DAYS = 30
 const metricIndex = new Map(LEADERBOARD_METRICS.map(([key], index) => [key, index]))
+const timePlayedIndex = metricIndex.get('timePlayed')!
 
 export type LeaderboardPlayer = {
   playerGuid: string
@@ -47,9 +63,13 @@ type PlayerAggregate = {
   name: string
   class?: number
   total: Float64Array
+  allAverage: Float64Array
   today: Float64Array
+  todayAverage: Float64Array
   week: Float64Array
+  weekAverage: Float64Array
   month: Float64Array
+  monthAverage: Float64Array
   dayIds: Int32Array
   days: Float64Array
   dayMatches: Uint32Array
@@ -75,8 +95,12 @@ const numberValue = (value: unknown) => {
 
 export const isLeaderboardMetric = (value: string): value is LeaderboardMetric =>
   metricIndex.has(value as LeaderboardMetric)
+export const isLeaderboardSortMetric = (value: string): value is LeaderboardSortMetric =>
+  isLeaderboardMetric(value) || LEADERBOARD_DERIVED_METRICS.some(([key]) => key === value)
 export const isLeaderboardPeriod = (value: string): value is LeaderboardPeriod =>
   value === 'today' || value === 'week' || value === 'month' || value === 'all'
+export const isLeaderboardValueMode = (value: string): value is LeaderboardValueMode =>
+  value === 'absolute' || value === 'average'
 
 export class LeaderboardStore {
   readonly players = new Map<string, PlayerAggregate>()
@@ -86,9 +110,13 @@ export class LeaderboardStore {
     const player: PlayerAggregate = {
       name: '',
       total: new Float64Array(LEADERBOARD_METRICS.length),
+      allAverage: new Float64Array(LEADERBOARD_METRICS.length),
       today: new Float64Array(LEADERBOARD_METRICS.length),
+      todayAverage: new Float64Array(LEADERBOARD_METRICS.length),
       week: new Float64Array(LEADERBOARD_METRICS.length),
+      weekAverage: new Float64Array(LEADERBOARD_METRICS.length),
       month: new Float64Array(LEADERBOARD_METRICS.length),
+      monthAverage: new Float64Array(LEADERBOARD_METRICS.length),
       dayIds: new Int32Array(DAY_BUCKETS),
       days: new Float64Array(DAY_BUCKETS * LEADERBOARD_METRICS.length),
       dayMatches: new Uint32Array(DAY_BUCKETS),
@@ -140,6 +168,13 @@ export class LeaderboardStore {
           if (isToday) player.today[metric] += value
         }
       }
+
+      for (let metric = 0; metric < LEADERBOARD_METRICS.length; metric++) {
+        player.todayAverage[metric] = player.today[metric] / (player.today[timePlayedIndex] || Infinity)
+        player.weekAverage[metric] = player.week[metric] / (player.week[timePlayedIndex] || Infinity)
+        player.monthAverage[metric] = player.month[metric] / (player.month[timePlayedIndex] || Infinity)
+        player.allAverage[metric] = player.total[metric] / (player.total[timePlayedIndex] || Infinity)
+      }
     }
   }
 
@@ -190,14 +225,29 @@ export class LeaderboardStore {
         if (day >= this.currentDay - WEEK_DAYS + 1) player.week[index] += value
         if (day === this.currentDay) player.today[index] += value
       }
+
+      const totalTimePlayed = player.total[timePlayedIndex]
+      player.allAverage.fill(0)
+      for (let metric = 0; metric < LEADERBOARD_METRICS.length; metric++) {
+        player.allAverage[metric] = player.total[metric] / (totalTimePlayed || Infinity)
+      }
+      if (includeDaily) {
+        const todayTimePlayed = player.today[timePlayedIndex]
+        const weekTimePlayed = player.week[timePlayedIndex]
+        const monthTimePlayed = player.month[timePlayedIndex]
+        for (let metric = 0; metric < LEADERBOARD_METRICS.length; metric++) {
+          player.todayAverage[metric] = player.today[metric] / (todayTimePlayed || Infinity)
+          player.weekAverage[metric] = player.week[metric] / (weekTimePlayed || Infinity)
+          player.monthAverage[metric] = player.month[metric] / (monthTimePlayed || Infinity)
+        }
+      }
     }
   }
 
-  getLeaderboard(metric: LeaderboardMetric, period: LeaderboardPeriod) {
+  getLeaderboard(metric: LeaderboardSortMetric, period: LeaderboardPeriod, mode: LeaderboardValueMode = 'absolute') {
     this.synchronizeDay()
-    const index = metricIndex.get(metric)!
-    const values = period === 'all' ? 'total' : period === 'today' ? 'today' : period
-    const timePlayedIndex = metricIndex.get('timePlayed')!
+    const values = period === 'all' ? 'total' : period
+    const avgKey = `${period}Average` as 'allAverage' | 'todayAverage' | 'weekAverage' | 'monthAverage'
     const top = [] as Array<{
       playerGuid: string
       name: string
@@ -208,8 +258,25 @@ export class LeaderboardStore {
     }>
 
     for (const [playerGuid, player] of this.players) {
-      const value = player[values][index]
-      if (value < 1) continue
+      const periodValues = player[values]
+      const averageValues = player[avgKey]
+      const sortValues = mode === 'average' ? averageValues : periodValues
+      const index = metricIndex.get(metric as LeaderboardMetric)
+      let value = index === undefined ? 0 : sortValues[index]
+      if (index === undefined) {
+        const totalStats = periodValues
+        const totalValue = metric === 'healingDamageAbsorbs'
+          ? totalStats[metricIndex.get('healingDone')!] + totalStats[metricIndex.get('damageDone')!] + totalStats[metricIndex.get('absorbsDone')!]
+          : metric === 'totalDispels'
+          ? totalStats[metricIndex.get('dispelsOffensive')!] + totalStats[metricIndex.get('dispelsDefensive')!]
+          : metric === 'killDeathRatio'
+          ? totalStats[metricIndex.get('deaths')!] ? totalStats[metricIndex.get('killingBlows')!] / totalStats[metricIndex.get('deaths')!] : totalStats[metricIndex.get('killingBlows')!]
+          : metric === 'efcPressure'
+          ? totalStats[metricIndex.get('damageOnEFC')!] + totalStats[metricIndex.get('healsOnFC')!]
+          : totalStats[metricIndex.get('flagCaptures')!] ? totalStats[metricIndex.get('attemptsOnFlag')!] / totalStats[metricIndex.get('flagCaptures')!] : 0
+        value = mode === 'average' ? totalValue / (periodValues[timePlayedIndex] || Infinity) : totalValue
+      }
+      if (value <= 0) continue
       const name = player.name || playerGuid
 
       let start = 0
@@ -237,7 +304,7 @@ export class LeaderboardStore {
           class: player.class,
           value,
           matches,
-          timePlayed: player[values][timePlayedIndex],
+          timePlayed: periodValues[timePlayedIndex],
         })
         if (top.length > 100) top.pop()
       }
@@ -246,28 +313,26 @@ export class LeaderboardStore {
     return top
   }
 
-  getLeaderboardData(period: LeaderboardPeriod) {
-    this.synchronizeDay()
-    const values = period === 'all' ? 'total' : period === 'today' ? 'today' : period
-    const rows = []
-    for (const [playerGuid, player] of this.players) {
+
+  getLeaderboardData(
+    period: LeaderboardPeriod,
+    metric: LeaderboardSortMetric = 'damageDone',
+    mode: LeaderboardValueMode = 'absolute',
+  ) {
+    const values = period === 'all' ? 'total' : period
+    const avgKey = `${period}Average` as 'allAverage' | 'todayAverage' | 'weekAverage' | 'monthAverage'
+    const top = this.getLeaderboard(metric, period, mode)
+    return top.map((row) => {
+      const player = this.players.get(row.playerGuid)!
+      const averageValues = player[avgKey]
+      const periodValues = player[values]
       const stats: Record<string, number> = {}
-      for (const [key, index] of metricIndex) stats[key] = player[values][index]
-      rows.push({
-        playerGuid,
-        name: player.name || playerGuid,
-        class: player.class,
-        matches: period === 'all'
-          ? player.matches
-          : period === 'today'
-          ? player.todayMatches
-          : period === 'week'
-          ? player.weekMatches
-          : player.monthMatches,
-        timePlayed: stats.timePlayed,
-        stats,
-      })
-    }
-    return rows
+      const averages: Record<string, number> = {}
+      for (const [key, valueIndex] of metricIndex) {
+        stats[key] = periodValues[valueIndex]
+        averages[key] = averageValues[valueIndex]
+      }
+      return { ...row, stats, averages }
+    })
   }
 }

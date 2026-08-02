@@ -210,6 +210,48 @@
       position: relative;
     }
 
+    .leaderboard-average-toggle {
+      flex-direction: row !important;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .leaderboard-average-toggle input[type="checkbox"] {
+      appearance: none;
+      width: 34px;
+      height: 20px;
+      margin: 0;
+      border: 1px solid var(--border-light);
+      border-radius: 999px;
+      background: var(--surface2);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .leaderboard-average-toggle input[type="checkbox"]::before {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+      transition: transform .15s ease, background .15s ease;
+    }
+
+    .leaderboard-average-toggle input[type="checkbox"]:checked {
+      background: var(--accent-dim);
+      border-color: var(--accent-border);
+    }
+
+    .leaderboard-average-toggle input[type="checkbox"]:checked::before {
+      transform: translateX(14px);
+      background: var(--accent-color);
+    }
+
     .leaderboard-controls select {
       appearance: none;
       width: 100%;
@@ -354,11 +396,16 @@
                 <option value="all" selected>All time</option>
               </select>
             </label>
+            <label class="leaderboard-average-toggle">
+              <input id="leaderboardAverage" type="checkbox" role="switch" aria-label="Show average">
+              <span>Average</span>
+            </label>
             <label>
-              Value
-              <select id="leaderboardValueMode" aria-label="Leaderboard value mode">
-                <option value="total" selected>Total</option>
-                <option value="perHour">Per hour</option>
+              Unit
+              <select id="leaderboardAverageUnit" aria-label="Average unit">
+                <option value="hour" selected>Hour</option>
+                <option value="minute">Minute</option>
+                <option value="second">Second</option>
               </select>
             </label>
           </div>
@@ -369,7 +416,6 @@
                 <tr id="leaderboardHeaderRow">
                   <th>Rank</th>
                   <th>Player</th>
-                  <th>Matches</th>
                 </tr>
               </thead>
               <tbody id="leaderboardRows"></tbody>
@@ -488,7 +534,8 @@
 
     const leaderboardGroup = document.getElementById('leaderboardGroup')
     const leaderboardPeriod = document.getElementById('leaderboardPeriod')
-    const leaderboardValueMode = document.getElementById('leaderboardValueMode')
+    const leaderboardAverage = document.getElementById('leaderboardAverage')
+    const leaderboardAverageUnit = document.getElementById('leaderboardAverageUnit')
     const leaderboardStatus = document.getElementById('leaderboardStatus')
     const leaderboardRows = document.getElementById('leaderboardRows')
     const leaderboardHeaderRow = document.getElementById('leaderboardHeaderRow')
@@ -537,7 +584,7 @@
       {
         key: 'healingDamage',
         label: 'Healing and damage',
-        keys: ['healingDone', 'damageDone', 'damageTaken', 'absorbsDone', 'healingDamageAbsorbs'],
+        keys: ['healingDamageAbsorbs', 'healingDone', 'damageDone', 'damageTaken', 'absorbsDone'],
       },
       {
         key: 'skillPlays',
@@ -579,6 +626,70 @@
       killDeathRatio: 'Kill / death ratio',
       efcPressure: 'EFC damage + FC healing',
       flagEfficiency: 'Flag attempts / captures',
+    }
+
+    const leaderboardShortLabels = {
+      healingDamageAbsorbs: 'TOTAL',
+      healingDone: 'HEAL',
+      damageDone: 'DMG',
+      damageTaken: 'TANKED',
+      absorbsDone: 'ABSORB',
+      dispelsOffensive: 'O-DISP',
+      dispelsDefensive: 'D-DISP',
+      successfulInterrupts: 'KICK',
+      fakeCastInterrupts: 'FAKE',
+      hardCCDuration: 'CC',
+      softCCDuration: 'SNARE',
+      totalDispels: 'DISPEL',
+      killingBlows: 'KB',
+      deaths: 'DEATHS',
+      honorableKills: 'HK',
+      bonusHonor: 'HONOR',
+      deserted: 'LEFT',
+      killDeathRatio: 'K/D',
+      attemptsOnFlag: 'PICKUP',
+      flagReturns: 'RETURN',
+      flagCaptures: 'CAP',
+      flagCarryTime: 'CARRY',
+      damageOnEFC: 'DMG',
+      healsOnFC: 'HEAL',
+      efcPressure: 'PRESSURE',
+      flagEfficiency: 'RATE',
+    }
+
+    const leaderboardLongLabels = {
+      healingDamageAbsorbs: 'Total healing + damage + absorbs',
+      healingDone: 'Total healing done',
+      damageDone: 'Total damage done',
+      damageTaken: 'Total damage taken',
+      absorbsDone: 'Total absorbs done',
+    }
+
+    const leaderboardMetricLabels = {
+      dispelsOffensive: 'Offensive dispels',
+      dispelsDefensive: 'Defensive dispels',
+      successfulInterrupts: 'Successful interrupts',
+      fakeCastInterrupts: 'Fake-cast interrupts',
+      hardCCCount: 'Loss of control count',
+      hardCCDuration: 'Loss of control duration',
+      softCCCount: 'Movement impairing count',
+      softCCDuration: 'Movement impairing duration',
+      absorbsDone: 'Absorbs done',
+      healsOnFC: 'Healing on flag carriers',
+      flagCarryTime: 'Flag carry time',
+      attemptsOnFlag: 'Flag pickups',
+      damageOnEFC: 'Damage on enemy flag carriers',
+      damageTaken: 'Damage taken',
+      killingBlows: 'Killing blows',
+      deaths: 'Deaths',
+      honorableKills: 'Honorable kills',
+      bonusHonor: 'Bonus honor',
+      damageDone: 'Damage done',
+      healingDone: 'Healing done',
+      flagCaptures: 'Flag captures',
+      flagReturns: 'Flag returns',
+      deserted: 'Deserted battlegrounds',
+      timePlayed: 'Time played',
     }
 
     const leaderboardDerivedValues = {
@@ -677,42 +788,69 @@
     const leaderboardPageSize = 20
     let leaderboardData = []
     let leaderboardPage = 0
-    let leaderboardSortKey = ''
-    const leaderboardMetricLabels = new Map()
+    const leaderboardAverageUnits = {
+      hour: { label: 'hour', multiplier: 3600 },
+      minute: { label: 'minute', multiplier: 60 },
+      second: { label: 'second', multiplier: 1 },
+    }
+
+    const readLeaderboardState = () => {
+      const params = new URL(location.href).searchParams
+      const group = leaderboardGroups.find(({ key }) => key === params.get('leaderboard-group')) || leaderboardGroups[0]
+      const period = ['today', 'week', 'month', 'all'].includes(params.get('leaderboard-period'))
+        ? params.get('leaderboard-period')
+        : 'all'
+      const unit = leaderboardAverageUnits[params.get('leaderboard-unit')] ? params.get('leaderboard-unit') : 'hour'
+      return {
+        group,
+        sortKey: group.keys.includes(params.get('leaderboard-sort')) ? params.get('leaderboard-sort') : group.keys[0],
+        period,
+        mode: params.get('leaderboard-mode') === 'average' ? 'average' : 'absolute',
+        unit,
+      }
+    }
+
+    const syncLeaderboardControls = (state) => {
+      leaderboardGroup.value = state.group.key
+      leaderboardPeriod.value = state.period
+      leaderboardAverage.checked = state.mode === 'average'
+      leaderboardAverageUnit.value = state.unit
+    }
+
+    const updateLeaderboardUrl = (changes) => {
+      const url = new URL(location.href)
+      if (changes.group !== undefined) url.searchParams.set('leaderboard-group', changes.group)
+      if (changes.sort !== undefined) url.searchParams.set('leaderboard-sort', changes.sort)
+      if (changes.period !== undefined) url.searchParams.set('leaderboard-period', changes.period)
+      if (changes.unit !== undefined) url.searchParams.set('leaderboard-unit', changes.unit)
+      if (changes.mode !== undefined) url.searchParams.set('leaderboard-mode', changes.mode)
+      history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`)
+    }
+
+    const leaderboardValue = (row, key, mode, unit) => {
+      const total = leaderboardDerivedValues[key] ? leaderboardDerivedValues[key](row.stats) : row.stats[key]
+      const averageMultiplier = leaderboardAverageUnits[unit].multiplier
+      return mode === 'average'
+        ? leaderboardDerivedValues[key]
+          ? row.timePlayed ? total * averageMultiplier / row.timePlayed : 0
+          : row.averages[key] * averageMultiplier
+        : total
+    }
 
     const renderLeaderboardPage = () => {
-      const group = leaderboardGroups.find(({ key }) => key === leaderboardGroup.value) || leaderboardGroups[0]
-      const sortKey = leaderboardSortKey || group.keys[0]
-      const sortedRows = leaderboardData
-      .map((row) => {
-        const groupValues = {}
-        for (const key of group.keys) {
-          const total = leaderboardDerivedValues[key]
-            ? leaderboardDerivedValues[key](row.stats)
-            : row.stats[key]
-          groupValues[key] = {
-            total,
-            perHour: row.timePlayed ? total * 3600 / row.timePlayed : 0,
-          }
-        }
-        return { ...row, groupValues }
-      })
-        .filter((row) => row.groupValues[sortKey][leaderboardValueMode.value] > 0)
-        .sort((a, b) =>
-          b.groupValues[sortKey][leaderboardValueMode.value] - a.groupValues[sortKey][leaderboardValueMode.value] ||
-          a.name.localeCompare(b.name)
-        )
-        .slice(0, 100)
-      const pageCount = Math.ceil(sortedRows.length / leaderboardPageSize)
+      const state = readLeaderboardState()
+      const { group, sortKey, mode, unit } = state
+      const pageCount = Math.ceil(leaderboardData.length / leaderboardPageSize)
       const start = leaderboardPage * leaderboardPageSize
-      const pageRows = sortedRows.slice(start, start + leaderboardPageSize)
+      const pageRows = leaderboardData.slice(start, start + leaderboardPageSize)
       leaderboardHeaderRow.innerHTML = `
         <th>Rank</th>
         <th>Player</th>
-        <th>Matches</th>
         ${group.keys.map((key) => {
-          const label = leaderboardDerivedLabels[key] || leaderboardMetricLabels.get(key) || key
-          return `<th data-sort-key="${key}" title="Sort descending by ${label}"${key === sortKey ? ' aria-sort="descending"' : ''}>${label}</th>`
+          const label = leaderboardShortLabels[key] || key
+          const title = leaderboardLongLabels[key] || leaderboardDerivedLabels[key] || leaderboardMetricLabels[key] || key
+          const selected = key === sortKey
+          return `<th data-sort-key="${key}" title="${title}"${selected ? ' aria-sort="descending"' : ''}>${selected ? `<span class="badge badge-offline">${label}</span>` : label}</th>`
         }).join('')}
       `
       leaderboardRows.innerHTML = pageRows.length
@@ -726,34 +864,31 @@
                     ? `<span class="class-icon leaderboard-class-icon ${classInfo.key}" role="img" aria-label="${classInfo.name}"
                         title="${classInfo.name}"></span>`
                     : ''}
-                  <strong class="${classInfo?.key || ''}">${row.name}</strong>
+                  <strong class="${classInfo?.key || ''}" title="Played ${formatFullDuration(row.timePlayed)} over ${row.matches} battlegrounds">${row.name}</strong>
                 </td>
-                <td>${formatLeaderboardValue(row.matches)}</td>
                 ${group.keys.map((key) => {
-                  const selectedMode = leaderboardValueMode.value
-                  const otherMode = leaderboardValueMode.value === 'total' ? 'perHour' : 'total'
-                  const otherLabel = otherMode === 'total' ? 'Total' : 'Per hour'
+                  const selectedMode = mode
+                  const otherMode = mode === 'average' ? 'absolute' : 'average'
+                  const averageLabel = `Average / ${leaderboardAverageUnits[unit].label}`
+                  const otherLabel = otherMode ? averageLabel : 'Total'
                   const otherValue = durationMetrics.has(key)
-                    ? formatFullDuration(row.groupValues[key][otherMode])
-                    : formatLeaderboardValue(row.groupValues[key][otherMode], key)
+                    ? formatFullDuration(leaderboardValue(row, key, otherMode, unit))
+                    : formatLeaderboardValue(leaderboardValue(row, key, otherMode, unit), key)
                   let title = `${otherLabel}: ${otherValue}`
                   const countKey = durationCountKeys[key]
                   if (countKey) {
-                    const count = row.stats[countKey]
-                    const countValue = selectedMode === 'total'
-                      ? count
-                      : row.timePlayed ? count * 3600 / row.timePlayed : 0
+                    const countValue = leaderboardValue(row, countKey, selectedMode, unit)
                     const averageDuration = countValue
-                      ? row.groupValues[key][selectedMode] / countValue
+                      ? leaderboardValue(row, key, selectedMode, unit) / countValue
                       : 0
                     title += `; Count: ${formatLeaderboardValue(countValue)}; Average duration / count: ${formatDuration(averageDuration)}`
                   }
-                  return `<td title="${title}">${formatLeaderboardValue(row.groupValues[key][selectedMode], key)}</td>`
+                  return `<td title="${title}">${formatLeaderboardValue(leaderboardValue(row, key, selectedMode, unit), key)}</td>`
                 }).join('')}
               </tr>
             `
         }).join('')
-        : `<tr><td class="leaderboard-empty" colspan="${group.keys.length + 3}">No battleground data yet.</td></tr>`
+        : `<tr><td class="leaderboard-empty" colspan="${group.keys.length + 2}">No battleground data yet.</td></tr>`
       leaderboardPageLabel.textContent = pageCount ? `Page ${leaderboardPage + 1} of ${pageCount}` : ''
       leaderboardPrevious.disabled = leaderboardPage === 0
       leaderboardNext.disabled = pageCount === 0 || leaderboardPage >= pageCount - 1
@@ -762,25 +897,36 @@
     async function loadLeaderboard() {
       leaderboardStatus.textContent = 'Loading leaderboard…'
       try {
+        let state = readLeaderboardState()
+        updateLeaderboardUrl({
+          group: state.group.key,
+          sort: state.sortKey,
+          period: state.period,
+          mode: state.mode,
+          unit: state.unit,
+        })
+        state = readLeaderboardState()
+        syncLeaderboardControls(state)
         const params = new URLSearchParams({
-          period: leaderboardPeriod.value || 'all',
+          metric: state.sortKey,
+          period: state.period,
+          mode: state.mode,
         })
         const res = await fetch(`${api}/api/leaderboards?${params}`)
         const data = await res.json()
         if (!res.ok) throw Error(data.error || 'Unable to load leaderboard')
 
         if (leaderboardGroup.options.length === 0) {
-          for (const metric of data.metrics || []) leaderboardMetricLabels.set(metric.key, metric.label)
           for (const group of leaderboardGroups) {
             leaderboardGroup.add(new Option(group.label, group.key))
           }
-          leaderboardGroup.value = leaderboardGroups[0].key
-          leaderboardSortKey = leaderboardGroups[0].keys[0]
+          syncLeaderboardControls(state)
         }
         leaderboardData = data.rows || []
         leaderboardPage = 0
         renderLeaderboardPage()
-        leaderboardStatus.textContent = `${leaderboardGroup.selectedOptions[0]?.textContent} · ${leaderboardValueMode.selectedOptions[0].textContent} · ${data.period === 'all' ? 'All time' : data.period}`
+        const averageLabel = `Average / ${leaderboardAverageUnits[state.unit].label}`
+        leaderboardStatus.textContent = `${state.group.label} · ${state.mode === 'average' ? averageLabel : 'Total'} · ${data.period === 'all' ? 'All time' : data.period}`
       } catch (err) {
         leaderboardData = []
         leaderboardPage = 0
@@ -791,24 +937,29 @@
 
     leaderboardGroup.onchange = () => {
       const group = leaderboardGroups.find(({ key }) => key === leaderboardGroup.value) || leaderboardGroups[0]
-      leaderboardSortKey = group.keys[0]
-      leaderboardPage = 0
-      renderLeaderboardPage()
-      leaderboardStatus.textContent = `${group.label} · ${leaderboardValueMode.selectedOptions[0].textContent} · ${leaderboardPeriod.value === 'all' ? 'All time' : leaderboardPeriod.value}`
+      updateLeaderboardUrl({ group: group.key, sort: group.keys[0] })
+      loadLeaderboard()
     }
-    leaderboardValueMode.onchange = () => {
-      leaderboardPage = 0
-      renderLeaderboardPage()
-      const group = leaderboardGroups.find(({ key }) => key === leaderboardGroup.value) || leaderboardGroups[0]
-      leaderboardStatus.textContent = `${group.label} · ${leaderboardValueMode.selectedOptions[0].textContent} · ${leaderboardPeriod.value === 'all' ? 'All time' : leaderboardPeriod.value}`
+    leaderboardAverage.onchange = () => {
+      updateLeaderboardUrl({ mode: leaderboardAverage.checked ? 'average' : 'absolute' })
+      loadLeaderboard()
     }
-    leaderboardPeriod.onchange = loadLeaderboard
+    leaderboardAverageUnit.onchange = () => {
+      updateLeaderboardUrl({ unit: leaderboardAverageUnit.value })
+      renderLeaderboardPage()
+      const state = readLeaderboardState()
+      const averageLabel = `Average / ${leaderboardAverageUnits[state.unit].label}`
+      leaderboardStatus.textContent = `${state.group.label} · ${state.mode === 'average' ? averageLabel : 'Total'} · ${state.period === 'all' ? 'All time' : state.period}`
+    }
+    leaderboardPeriod.onchange = () => {
+      updateLeaderboardUrl({ period: leaderboardPeriod.value })
+      loadLeaderboard()
+    }
     leaderboardHeaderRow.onclick = (event) => {
       const header = event.target.closest?.('[data-sort-key]')
       if (!header) return
-      leaderboardSortKey = header.dataset.sortKey
-      leaderboardPage = 0
-      renderLeaderboardPage()
+      updateLeaderboardUrl({ sort: header.dataset.sortKey })
+      loadLeaderboard()
     }
     leaderboardPrevious.onclick = () => {
       if (leaderboardPage > 0) {

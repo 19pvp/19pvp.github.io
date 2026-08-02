@@ -45,3 +45,12 @@ Deno.test('sorts ties deterministically', () => {
   const rows = store.getLeaderboard('damageDone', 'all')
   if (rows[0]?.name !== 'Alice' || rows[1]?.name !== 'Bob') throw Error('tie sorting failed')
 })
+
+Deno.test('sorts by maintained averages', () => {
+  const store = new LeaderboardStore()
+  store.addMatch(match('1', 'Alice', { damageDone: 100, timePlayed: 100 }), Date.now())
+  store.addMatch(match('2', 'Bob', { damageDone: 200, timePlayed: 1_000 }), Date.now())
+
+  if (store.getLeaderboardData('all', 'damageDone')[0]?.name !== 'Bob') throw Error('total sorting failed')
+  if (store.getLeaderboardData('all', 'damageDone', 'average')[0]?.name !== 'Alice') throw Error('average sorting failed')
+})
