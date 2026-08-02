@@ -52,15 +52,21 @@ const replay = async () => {
   }
 
   const guids = [...store.players.keys()].filter((guid) => /^\d+$/.test(guid))
+  const existingGuids = new Set<string>()
   for (let offset = 0; offset < guids.length; offset += BATCH_SIZE) {
     const classes = await characters.raw.sql`
       SELECT guid, class FROM characters WHERE guid IN (${guids.slice(offset, offset + BATCH_SIZE).join(',')})
     `
     for (const row of classes) {
-      const player = store.players.get(String(row.guid))
+      const guid = String(row.guid)
+      existingGuids.add(guid)
+      const player = store.players.get(guid)
       const classId = Number(row.class)
       if (player && Number.isInteger(classId) && classId > 0) player.class = classId
     }
+  }
+  for (const guid of guids) {
+    if (!existingGuids.has(guid)) store.players.delete(guid)
   }
 
   replayedThrough = cursor

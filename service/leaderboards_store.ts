@@ -3,13 +3,13 @@ export const LEADERBOARD_METRICS = [
   ['dispelsDefensive', 'Defensive dispels'],
   ['successfulInterrupts', 'Successful interrupts'],
   ['fakeCastInterrupts', 'Fake-cast interrupts'],
-  ['hardCCCount', 'Hard CC count'],
-  ['hardCCDuration', 'Hard CC duration (seconds)'],
-  ['softCCCount', 'Soft CC count'],
-  ['softCCDuration', 'Soft CC duration (seconds)'],
+  ['hardCCCount', 'Loss of control count'],
+  ['hardCCDuration', 'Loss of control duration'],
+  ['softCCCount', 'Movement impairing count'],
+  ['softCCDuration', 'Movement impairing duration'],
   ['absorbsDone', 'Absorbs done'],
   ['healsOnFC', 'Healing on flag carriers'],
-  ['flagCarryTime', 'Flag carry time (seconds)'],
+  ['flagCarryTime', 'Flag carry time'],
   ['attemptsOnFlag', 'Flag pickups'],
   ['damageOnEFC', 'Damage on enemy flag carriers'],
   ['damageTaken', 'Damage taken'],
@@ -22,7 +22,7 @@ export const LEADERBOARD_METRICS = [
   ['flagCaptures', 'Flag captures'],
   ['flagReturns', 'Flag returns'],
   ['deserted', 'Deserted battlegrounds'],
-  ['timePlayed', 'Time played (seconds)'],
+  ['timePlayed', 'Time played'],
 ] as const
 
 export type LeaderboardMetric = typeof LEADERBOARD_METRICS[number][0]
