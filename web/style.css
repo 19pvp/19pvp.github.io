@@ -78,7 +78,7 @@ body.page-exit {
 }
 
 #topLoadingBarContainer {
-  opacity: 0;
+  opacity: 1;
   z-index: 30;
   transition: opacity 0.18s ease;
 }
