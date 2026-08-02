@@ -922,6 +922,8 @@
           }
           syncLeaderboardControls(state)
         }
+        state = readLeaderboardState()
+        syncLeaderboardControls(state)
         leaderboardData = data.rows || []
         leaderboardPage = 0
         renderLeaderboardPage()

@@ -335,7 +335,8 @@ const navigateWithoutNavigationApi = (url) => {
 const shouldInterceptNavigationEvent = (event) => {
   if (!event.canIntercept || event.downloadRequest || event.hashChange || event.formData) return false
   const url = new URL(event.destination.url)
-  return url.origin === location.origin && !navigationExcludedPaths.has(url.pathname)
+  return url.origin === location.origin && !navigationExcludedPaths.has(url.pathname) &&
+    pageHref(url) !== pageHref(location)
 }
 
 const setupSPAClientNavigation = () => {
@@ -347,7 +348,7 @@ const setupSPAClientNavigation = () => {
     navigationApi.addEventListener('navigate', (event) => {
       if (!shouldInterceptNavigationEvent(event)) return
       const url = new URL(event.destination.url)
-      if (pageHref(url) === pageHref(location) || navigationState.href === pageHref(url)) {
+      if (navigationState.href === pageHref(url)) {
         event.preventDefault()
         return
       }
