@@ -897,15 +897,7 @@
     async function loadLeaderboard() {
       leaderboardStatus.textContent = 'Loading leaderboard…'
       try {
-        let state = readLeaderboardState()
-        updateLeaderboardUrl({
-          group: state.group.key,
-          sort: state.sortKey,
-          period: state.period,
-          mode: state.mode,
-          unit: state.unit,
-        })
-        state = readLeaderboardState()
+        const state = readLeaderboardState()
         syncLeaderboardControls(state)
         const params = new URLSearchParams({
           metric: state.sortKey,
@@ -922,13 +914,13 @@
           }
           syncLeaderboardControls(state)
         }
-        state = readLeaderboardState()
-        syncLeaderboardControls(state)
+        const currentState = readLeaderboardState()
+        syncLeaderboardControls(currentState)
         leaderboardData = data.rows || []
         leaderboardPage = 0
         renderLeaderboardPage()
-        const averageLabel = `Average / ${leaderboardAverageUnits[state.unit].label}`
-        leaderboardStatus.textContent = `${state.group.label} · ${state.mode === 'average' ? averageLabel : 'Total'} · ${data.period === 'all' ? 'All time' : data.period}`
+        const averageLabel = `Average / ${leaderboardAverageUnits[currentState.unit].label}`
+        leaderboardStatus.textContent = `${currentState.group.label} · ${currentState.mode === 'average' ? averageLabel : 'Total'} · ${data.period === 'all' ? 'All time' : data.period}`
       } catch (err) {
         leaderboardData = []
         leaderboardPage = 0
