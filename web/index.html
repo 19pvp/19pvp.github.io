@@ -211,11 +211,15 @@
     }
 
     .leaderboard-average-toggle {
-      flex-direction: row !important;
-      align-items: center;
+      flex-direction: column !important;
+      align-items: flex-start;
       justify-content: flex-start;
-      gap: 8px;
+      gap: 7px;
       white-space: nowrap;
+    }
+
+    .leaderboard-group-control {
+      flex: 2;
     }
 
     .leaderboard-average-toggle input[type="checkbox"] {
@@ -255,23 +259,10 @@
     .leaderboard-controls select {
       appearance: none;
       width: 100%;
-      padding: 10px 36px 10px 12px;
+      padding: 10px 12px;
       background-color: var(--surface2) !important;
       color: var(--text-primary) !important;
       color-scheme: dark;
-    }
-
-    .leaderboard-controls label::after {
-      content: "";
-      position: absolute;
-      right: 14px;
-      bottom: 14px;
-      width: 7px;
-      height: 7px;
-      border-right: 2px solid var(--text-secondary);
-      border-bottom: 2px solid var(--text-secondary);
-      transform: rotate(45deg);
-      pointer-events: none;
     }
 
     .leaderboard-controls select option {
@@ -383,7 +374,7 @@
         <section id="leaderboardsSection" class="leaderboard-section">
           <div class="section-title">🏆 Battleground Leaderboards</div>
           <div class="leaderboard-controls">
-            <label>
+            <label class="leaderboard-group-control">
               Group
               <select id="leaderboardGroup" aria-label="Leaderboard metric group"></select>
             </label>
@@ -397,8 +388,8 @@
               </select>
             </label>
             <label class="leaderboard-average-toggle">
-              <input id="leaderboardAverage" type="checkbox" role="switch" aria-label="Show average">
               <span>Average</span>
+              <input id="leaderboardAverage" type="checkbox" role="switch" aria-label="Show average">
             </label>
             <label>
               Unit
