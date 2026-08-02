@@ -142,22 +142,14 @@
       text-align: left;
       font-size: 0.9rem;
     }
-
-    th,
-    td {
-      padding: 12px 16px;
-    }
-
+    th, td { padding: 2px; }
     th {
       color: var(--text-muted);
       font-size: 1rem;
       letter-spacing: 2px;
       font-family: var(--font-title);
     }
-    th span.badge {
-      display: flex;
-    }
-
+    th span.badge { display: flex; }
     .badge-online {
       --badge-bg: var(--success-bg);
       color: var(--success-color);
@@ -291,8 +283,8 @@
                       <th><span class="badge badge-offline">Name</span></th>
                       <th><span class="badge badge-offline">Race</span></th>
                       <th><span class="badge badge-offline">Gold</span></th>
-                      <th><span class="badge badge-offline">Play Time</span></th>
-                      <th><span class="badge badge-offline">Last Login</span></th>
+                      <th><span class="badge badge-offline">Played</span></th>
+                      <th><span class="badge badge-offline">Login</span></th>
                       <th><span class="badge badge-offline">Status</span></th>
                     </tr>
                   </thead>
@@ -310,10 +302,8 @@
                 style="height: 69px; --divider-color: var(--accent-border);"></div>
               <div class="stat-card">
                 <span>Total Gold</span>
-                <strong id="statGold">0<span class="money-dot money-dot-gold" aria-hidden="true"></span> 0<span class="money-dot money-dot-silver" aria-hidden="true"></span> 0<span class="money-dot money-dot-copper" aria-hidden="true"></span></strong>
+                <strong id="statGold">0</strong>
               </div>
-              <div class="hand-drawn-divider vertical"
-                style="height: 69px; --divider-color: var(--accent-border);"></div>
             </div>
 
             <div class="footer-actions">
@@ -424,7 +414,11 @@
       const gold = Math.floor(copper / 10000)
       const silver = Math.floor((copper % 10000) / 100)
       const remainder = copper % 100
-      return `${gold}<span class="money-dot money-dot-gold" aria-hidden="true"></span> ${silver}<span class="money-dot money-dot-silver" aria-hidden="true"></span> ${remainder}<span class="money-dot money-dot-copper" aria-hidden="true"></span>`
+      return [
+        gold && `${gold}<span class="money-dot money-dot-gold" aria-hidden="true"></span>`,
+        silver && `${silver}<span class="money-dot money-dot-silver" aria-hidden="true"></span>`,
+        remainder && `${remainder}<span class="money-dot money-dot-copper" aria-hidden="true"></span>`,
+      ].filter(Boolean).join(' ') || '0'
     }
 
     accountForm.onsubmit = async (e) => {
@@ -498,7 +492,7 @@
                   <strong class="${classMap[char.class]?.key || ''}">${char.name}</strong>
                 </td>
                 <td>${raceMap[char.race] || 'Unknown'}</td>
-                <td>${formatGold(char.gold)}</td>
+                <td class="character-gold">${formatGold(char.gold)}</td>
                 <td>${formatPlayTime(char.totalTime)}</td>
                 <td>${char.online ? 'Online' : formatLastOnline(char.logoutTime)}</td>
                 <td>
