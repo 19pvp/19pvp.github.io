@@ -359,7 +359,7 @@
                   <th>Player</th>
                   <th>Matches</th>
                   <th id="leaderboardValueHeading">Value</th>
-                  <th>Average / match</th>
+                  <th>Average / hour</th>
                 </tr>
               </thead>
               <tbody id="leaderboardRows"></tbody>
@@ -607,7 +607,7 @@
                 </td>
                 <td>${formatLeaderboardValue(row.matches)}</td>
                 <td>${formatLeaderboardValue(row.value)}</td>
-                <td>${formatLeaderboardValue(row.matches ? row.value / row.matches : 0)}</td>
+                <td>${formatLeaderboardValue(row.timePlayed ? row.value * 3600 / row.timePlayed : 0)}</td>
               </tr>
             `
         }).join('')

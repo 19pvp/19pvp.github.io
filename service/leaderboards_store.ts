@@ -39,6 +39,7 @@ export type LeaderboardPlayer = {
   class?: number
   value: number
   matches: number
+  timePlayed: number
 }
 
 type PlayerAggregate = {
@@ -195,7 +196,15 @@ export class LeaderboardStore {
     this.synchronizeDay()
     const index = metricIndex.get(metric)!
     const values = period === 'all' ? 'total' : period === 'today' ? 'today' : period
-    const top = [] as Array<{ playerGuid: string; name: string; class?: number; value: number; matches: number }>
+    const timePlayedIndex = metricIndex.get('timePlayed')!
+    const top = [] as Array<{
+      playerGuid: string
+      name: string
+      class?: number
+      value: number
+      matches: number
+      timePlayed: number
+    }>
 
     for (const [playerGuid, player] of this.players) {
       const value = player[values][index]
@@ -221,7 +230,14 @@ export class LeaderboardStore {
           : period === 'week'
           ? player.weekMatches
           : player.monthMatches
-        top.splice(start, 0, { playerGuid, name, class: player.class, value, matches })
+        top.splice(start, 0, {
+          playerGuid,
+          name,
+          class: player.class,
+          value,
+          matches,
+          timePlayed: player[values][timePlayedIndex],
+        })
         if (top.length > 100) top.pop()
       }
     }
