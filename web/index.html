@@ -255,6 +255,13 @@
       text-align: center;
     }
 
+    .leaderboard-average {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 400;
+    }
+
     .leaderboard-empty,
     .leaderboard-status {
       color: var(--text-secondary);
@@ -572,7 +579,10 @@
                   <strong class="${classInfo?.key || ''}">${row.name}</strong>
                 </td>
                 <td>${formatLeaderboardValue(row.matches)}</td>
-                <td>${formatLeaderboardValue(row.value)}</td>
+                <td>
+                  ${formatLeaderboardValue(row.value)}
+                  <span class="leaderboard-average">avg ${formatLeaderboardValue(row.matches ? row.value / row.matches : 0)} / match</span>
+                </td>
               </tr>
             `
         }).join('')

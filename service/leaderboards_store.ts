@@ -50,7 +50,11 @@ type PlayerAggregate = {
   month: Float64Array
   dayIds: Int32Array
   days: Float64Array
+  dayMatches: Uint32Array
   matches: number
+  todayMatches: number
+  weekMatches: number
+  monthMatches: number
 }
 
 const localDayNumber = (timestamp: number) => {
@@ -85,7 +89,11 @@ export class LeaderboardStore {
       month: new Float64Array(LEADERBOARD_METRICS.length),
       dayIds: new Int32Array(DAY_BUCKETS),
       days: new Float64Array(DAY_BUCKETS * LEADERBOARD_METRICS.length),
+      dayMatches: new Uint32Array(DAY_BUCKETS),
       matches: 0,
+      todayMatches: 0,
+      weekMatches: 0,
+      monthMatches: 0,
     }
     player.dayIds.fill(-1)
     return player
@@ -108,9 +116,17 @@ export class LeaderboardStore {
       player.today.fill(0)
       player.week.fill(0)
       player.month.fill(0)
+      player.todayMatches = 0
+      player.weekMatches = 0
+      player.monthMatches = 0
       for (let bucket = 0; bucket < DAY_BUCKETS; bucket++) {
         const bucketDay = player.dayIds[bucket]
         if (bucketDay < this.currentDay - MONTH_DAYS + 1 || bucketDay > this.currentDay) continue
+
+        const matches = player.dayMatches[bucket]
+        player.monthMatches += matches
+        if (bucketDay >= this.currentDay - WEEK_DAYS + 1) player.weekMatches += matches
+        if (bucketDay === this.currentDay) player.todayMatches += matches
 
         const sourceOffset = bucket * LEADERBOARD_METRICS.length
         const isToday = bucketDay === this.currentDay
@@ -152,6 +168,13 @@ export class LeaderboardStore {
       if (includeDaily && player.dayIds[dayBucket] !== day) {
         player.dayIds[dayBucket] = day
         player.days.fill(0, dayBucket * LEADERBOARD_METRICS.length, (dayBucket + 1) * LEADERBOARD_METRICS.length)
+        player.dayMatches[dayBucket] = 0
+      }
+      if (includeDaily) {
+        player.dayMatches[dayBucket]++
+        player.monthMatches++
+        if (day >= this.currentDay - WEEK_DAYS + 1) player.weekMatches++
+        if (day === this.currentDay) player.todayMatches++
       }
 
       for (const [key] of LEADERBOARD_METRICS) {
@@ -191,7 +214,14 @@ export class LeaderboardStore {
       }
 
       if (top.length < 100 || start < top.length) {
-        top.splice(start, 0, { playerGuid, name, class: player.class, value, matches: player.matches })
+        const matches = period === 'all'
+          ? player.matches
+          : period === 'today'
+          ? player.todayMatches
+          : period === 'week'
+          ? player.weekMatches
+          : player.monthMatches
+        top.splice(start, 0, { playerGuid, name, class: player.class, value, matches })
         if (top.length > 100) top.pop()
       }
     }
