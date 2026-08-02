@@ -8,11 +8,18 @@
     <title>19 PvP – Event Audit</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lacquer&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lacquer&display=swap"
+      rel="stylesheet">
     <link rel="stylesheet" href="/style.css?v=4">
-    <style>
-    /* Top bar & layout overrides for events audit table */
-    header {
+    <style data-page-style>
+    .events-page {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1;
+    }
+    .events-toolbar {
       position: sticky;
       top: 0;
       z-index: 20;
@@ -24,7 +31,7 @@
       gap: 12px;
       flex-wrap: wrap;
     }
-    header h1 {
+    .events-toolbar h2 {
       font-size: 1.3rem;
       font-weight: 400;
       white-space: nowrap;
@@ -32,13 +39,13 @@
       align-items: center;
       gap: 8px;
     }
-    header h1 img {
+    .events-toolbar h2 img {
       max-height: 24px;
       height: auto;
       max-width: 100%;
       width: auto;
     }
-    header h1 span {
+    .events-toolbar h2 span {
       color: var(--accent-color);
     }
     .controls {
@@ -109,7 +116,7 @@
     }
 
     /* ---- table ---- */
-    main {
+    .events-table {
       flex: 1;
       overflow: auto;
       padding: 16px;
@@ -208,7 +215,7 @@
     }
 
     /* ---- footer ---- */
-    footer {
+    .events-footer {
       position: sticky;
       bottom: 0;
       z-index: 20;
@@ -243,58 +250,70 @@
     .progress-bar-svg path {
       transition: stroke-dashoffset 0.1s linear;
     }
-
     </style>
   </head>
   <body>
-    <!-- Top Hand-Drawn Progress/Loading Bar -->
-    <div id="topLoadingBarContainer" style="position: absolute; top: 0; left: 0; right: 0; height: 12px; overflow: hidden; pointer-events: none; z-index: 9999;">
-      <svg style="display: none;">
-        <path id="handDrawnBorderPath" d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2" />
-      </svg>
-      <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;">
-        <defs>
-          <linearGradient id="progressGradTopBar" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="var(--discord-color)" />
-            <stop offset="100%" stop-color="var(--accent-color)" />
-          </linearGradient>
-        </defs>
-        <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" />
-        <use id="topLoadingPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTopBar)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="750" stroke-dashoffset="0" />
-      </svg>
-    </div>
-    <header>
-      <h1><img src="/logo.png" alt="19 PvP Logo"> 19PvP <span>Events</span></h1>
-      <div class="controls">
-        <div class="tab-row">
-          <button class="tab active" id="tabActive" onclick="switchTable('active')">Active</button>
-          <button class="tab" id="tabArchive" onclick="switchTable('archive')">Archive</button>
+    <div class="container events-shell">
+      <div id="topLoadingBarContainer"
+        style="position: absolute; top: 0; left: 0; right: 0; height: 12px; overflow: hidden; pointer-events: none;">
+        <svg style="display: none;">
+          <path id="handDrawnBorderPath"
+            d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2" />
+        </svg>
+        <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none"
+          style="width: 100%; height: 100%; display: block;">
+          <defs>
+            <linearGradient id="progressGradTopBar" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="var(--discord-color)" />
+              <stop offset="100%" stop-color="var(--accent-color)" />
+            </linearGradient>
+          </defs>
+          <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round"
+            stroke-linejoin="round" stroke-width="4" />
+          <use id="topLoadingPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTopBar)"
+            stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="750"
+            stroke-dashoffset="750" />
+        </svg>
+      </div>
+      <div class="header">
+        <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
+        <h1>19 PvP Server</h1>
+        <div class="subtitle">Level 19 Battleground Server Portal</div>
+      </div>
+      <main id="page-content" class="events-page" data-page="events">
+        <div class="events-toolbar">
+          <h2>Event Audit <span>Read-only</span></h2>
+          <div class="controls">
+            <div class="tab-row">
+              <button class="tab active" id="tabActive" onclick="switchTable('active')">Active</button>
+              <button class="tab" id="tabArchive" onclick="switchTable('archive')">Archive</button>
+            </div>
+            <select id="typeFilter" onchange="reload()">
+              <option value="">All types</option>
+            </select>
+            <input id="search" type="text" placeholder="Search data / type…" oninput="debounceReload()">
+            <span class="badge-count" id="totalCount">0 events</span>
+          </div>
+          <a href="/" class="btn btn-nav">← Home</a>
         </div>
-        <select id="typeFilter" onchange="reload()">
-          <option value="">All types</option>
-        </select>
-        <input id="search" type="text" placeholder="Search data / type…" oninput="debounceReload()">
-        <span class="badge-count" id="totalCount">0 events</span>
-      </div>
-      <a href="/admin" class="btn btn-nav">⚙ Admin</a>
-      <a href="/" class="btn btn-nav">← Home</a>
-    </header>
 
-    <main>
-      <div id="tableArea"></div>
-    </main>
+        <div class="events-table">
+          <div id="tableArea"></div>
+        </div>
 
-    <footer>
-      <div class="pagination">
-        <button class="btn btn-ghost" id="btnPrev" onclick="prevPage()">‹ Prev</button>
-        <span class="page-info" id="pageInfo">—</span>
-        <button class="btn btn-ghost" id="btnNext" onclick="nextPage()">Next ›</button>
-      </div>
-      <span class="ml-auto"
-        style="color:var(--muted);font-size:12px">Read-only — events are managed by the server</span>
-    </footer>
+        <footer class="events-footer">
+          <div class="pagination">
+            <button class="btn btn-ghost" id="btnPrev" onclick="prevPage()">‹ Prev</button>
+            <span class="page-info" id="pageInfo">—</span>
+            <button class="btn btn-ghost" id="btnNext" onclick="nextPage()">Next ›</button>
+          </div>
+          <span class="ml-auto"
+            style="color:var(--muted);font-size:12px">Read-only — events are managed by the server</span>
+        </footer>
+      </main>
+    </div>
 
-    <script type="module">
+    <script type="module" data-page-script>
     const api = location.origin
     const PAGE_SIZE = 50
 
@@ -471,36 +490,6 @@
     }
 
     reload()
-
-    document.addEventListener('click', (e) => {
-      const link = e.target.closest('a[href^="/"]')
-      if (!link || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
-      const targetUrl = new URL(link.href, location.origin)
-      if (targetUrl.origin !== location.origin) return
-
-      e.preventDefault()
-
-      const topPath = document.getElementById('topLoadingPath')
-      const master = document.getElementById('handDrawnBorderPath')
-
-      if (topPath && master) {
-        const length = master.getTotalLength() || 750
-        topPath.style.transition = 'none'
-        topPath.style.strokeDasharray = length
-        topPath.style.strokeDashoffset = length
-        topPath.getBoundingClientRect()
-        topPath.style.transition = 'stroke-dashoffset 0.3s ease-in-out'
-        topPath.style.strokeDashoffset = 0
-      }
-
-      setTimeout(() => {
-        location.href = targetUrl.href
-      }, 300)
-    })
-
-    requestAnimationFrame(() => {
-      document.body.classList.remove('page-entering')
-    })
     </script>
   </body>
 </html>

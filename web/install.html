@@ -8,10 +8,12 @@
     <title>19 PvP - Client Installer & Patcher</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lacquer&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lacquer&display=swap"
+      rel="stylesheet">
     <link rel="prefetch" href="/" as="document">
     <link rel="stylesheet" href="/style.css?v=4">
-    <style>
+    <style data-page-style>
     .step-item {
       display: flex;
       align-items: center;
@@ -56,38 +58,48 @@
       color: var(--success-text);
       margin-top: 10px;
     }
-
     </style>
   </head>
   <body>
     <div class="container">
       <!-- Top Hand-Drawn Progress/Loading Bar -->
-      <div id="topLoadingBarContainer" style="position: absolute; top: 0; left: 0; right: 0; height: 12px; overflow: hidden; pointer-events: none;">
-        <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;">
+      <div id="topLoadingBarContainer"
+        style="position: absolute; top: 0; left: 0; right: 0; height: 12px; overflow: hidden; pointer-events: none;">
+        <svg style="display: none;">
+          <path id="handDrawnBorderPath"
+            d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2" />
+        </svg>
+        <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none"
+          style="width: 100%; height: 100%; display: block;">
           <defs>
             <linearGradient id="progressGradTopBar" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stop-color="var(--discord-color)" />
               <stop offset="100%" stop-color="var(--accent-color)" />
             </linearGradient>
           </defs>
-          <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" />
-          <use id="topLoadingPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTopBar)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="750" stroke-dashoffset="0" />
+          <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round"
+            stroke-linejoin="round" stroke-width="4" />
+          <use id="topLoadingPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTopBar)"
+            stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="750"
+            stroke-dashoffset="0" />
         </svg>
-      </div>
-
-      <div style="display: flex; justify-content: flex-start; margin-bottom: 16px;">
-        <a href="/" class="hand-drawn-link">
-          ← Back to Dashboard
-        </a>
       </div>
 
       <div class="header">
         <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
-        <h1>Web Installer & Patcher</h1>
-        <div class="subtitle">WoW 3.3.5a Client Manager</div>
+        <h1>19 PvP Server</h1>
+        <div class="subtitle">Level 19 Battleground Server Portal</div>
       </div>
 
-      <div id="unsupportedAlert" class="status-banner status-error" style="display: none;">
+      <main id="page-content" data-page="install">
+        <div style="display: flex; justify-content: flex-start; margin-bottom: 16px;">
+          <a href="/" class="hand-drawn-link">← Back to Dashboard</a>
+        </div>
+
+        <h2 class="page-title">Web Installer &amp; Patcher</h2>
+        <p class="page-subtitle">WoW 3.3.5a Client Manager</p>
+
+        <div id="unsupportedAlert" class="status-banner status-error" style="display: none;">
         <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ Unsupported Browser Detected</strong>
         Your current browser does not support directory read/write access (File System Access API).<br>
         Please use a Chromium-based browser to manage or install your client:
@@ -98,64 +110,70 @@
         </div>
       </div>
 
-      <div class="box" style="padding: 8px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-          <div>
-            <strong style="font-size: 1.1rem;">Target Client Directory :</strong>
-            <span id="directoryPath"
-              style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No directory selected</span>
-          </div>
-          <button id="selectDirectoryBtn" class="btn btn-secondary">
+        <div class="box" style="padding: 8px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <strong style="font-size: 1.1rem;">Target Client Directory :</strong>
+              <span id="directoryPath"
+                style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No directory selected</span>
+            </div>
+            <button id="selectDirectoryBtn" class="btn btn-secondary">
             📁 Select Directory
           </button>
-        </div>
-
-        <div id="progressSection" style="display: none; flex-direction: column; gap: 14px; padding-top: 18px;">
-          <!-- Current File Progress Bar -->
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
-              <span id="fileStatusText">Preparing file...</span>
-              <span id="fileSpeedText">0%</span>
-            </div>
-            <div style="width: 100%; height: 18px; position: relative;">
-              <svg style="display: none;">
-                <path id="handDrawnBorderPath" d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2" />
-              </svg>
-              <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;">
-                <defs>
-                  <linearGradient id="progressGradFile" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="var(--discord-color)" />
-                    <stop offset="100%" stop-color="var(--accent-color)" />
-                  </linearGradient>
-                </defs>
-                <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" />
-                <use id="fileProgressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradFile)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0" stroke-dashoffset="0" />
-              </svg>
-              <div id="fileChunkTicks" class="chunk-ticks"></div>
-            </div>
           </div>
 
-          <!-- Total Download Progress Bar -->
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
-              <span id="totalStatusText">Total Progress</span>
-              <span id="totalSpeedText">0%</span>
+          <div id="progressSection" style="display: none; flex-direction: column; gap: 14px; padding-top: 18px;">
+            <!-- Current File Progress Bar -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div
+                style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+                <span id="fileStatusText">Preparing file...</span>
+                <span id="fileSpeedText">0%</span>
+              </div>
+              <div style="width: 100%; height: 18px; position: relative;">
+                <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none"
+                  style="width: 100%; height: 100%; display: block;">
+                  <defs>
+                    <linearGradient id="progressGradFile" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="var(--discord-color)" />
+                      <stop offset="100%" stop-color="var(--accent-color)" />
+                    </linearGradient>
+                  </defs>
+                  <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round"
+                    stroke-linejoin="round" stroke-width="4" />
+                  <use id="fileProgressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradFile)"
+                    stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0"
+                    stroke-dashoffset="0" />
+                </svg>
+                <div id="fileChunkTicks" class="chunk-ticks"></div>
+              </div>
             </div>
-            <div style="width: 100%; height: 18px; position: relative;">
-              <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block; transform: scale(1, -1);">
-                <defs>
-                  <linearGradient id="progressGradTotal" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="var(--discord-color)" />
-                    <stop offset="100%" stop-color="var(--accent-color)" />
-                  </linearGradient>
-                </defs>
-                <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" />
-                <use id="progressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTotal)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0" stroke-dashoffset="0" />
-              </svg>
+
+            <!-- Total Download Progress Bar -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div
+                style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+                <span id="totalStatusText">Total Progress</span>
+                <span id="totalSpeedText">0%</span>
+              </div>
+              <div style="width: 100%; height: 18px; position: relative;">
+                <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none"
+                  style="width: 100%; height: 100%; display: block; transform: scale(1, -1);">
+                  <defs>
+                    <linearGradient id="progressGradTotal" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="var(--discord-color)" />
+                      <stop offset="100%" stop-color="var(--accent-color)" />
+                    </linearGradient>
+                  </defs>
+                  <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round"
+                    stroke-linejoin="round" stroke-width="4" />
+                  <use id="progressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTotal)"
+                    stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0"
+                    stroke-dashoffset="0" />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
-
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
@@ -184,10 +202,11 @@
             <li>Start the game.</li>
           </ol>
         </div>
-      </div>
+        </div>
+      </main>
     </div>
 
-    <script type="module">
+    <script type="module" data-page-script>
     const api = location.origin
     const unsupportedAlert = document.getElementById('unsupportedAlert')
     const selectDirectoryBtn = document.getElementById('selectDirectoryBtn')
@@ -211,8 +230,8 @@
             progressPath.style.strokeDasharray = length
             progressPath.style.strokeDashoffset = length - (pct / 100) * length
           }
-        }
-      }
+        },
+      },
     }
     const fileProgressFill = {
       style: {
@@ -223,8 +242,8 @@
             fileProgressPath.style.strokeDasharray = length
             fileProgressPath.style.strokeDashoffset = length - (pct / 100) * length
           }
-        }
-      }
+        },
+      },
     }
     const stepClient = document.getElementById('stepClient')
     const stepPlatform = document.getElementById('stepPlatform')
@@ -244,9 +263,7 @@
     let MUST_REPORT_ERRORS = false
     let retryInstall = false
     const INSTALL_BUTTON_TEXT = '⚡ Verify & Install Client Updates'
-    const CLIENT_PLATFORM = /Mac/i.test(navigator.userAgentData?.platform || navigator.platform || '')
-      ? 'macos'
-      : 'windows'
+    const CLIENT_PLATFORM = /Mac/i.test(navigator.userAgentData?.platform || navigator.platform || '') ? 'macos' : 'windows'
     const CLIENT_PLATFORM_LABEL = CLIENT_PLATFORM === 'macos' ? 'macOS' : 'Windows'
     const CLIENT_ARCHIVE = `${CLIENT_PLATFORM}.zip`
     const CLIENT_ARCHIVE_MARKER = CLIENT_PLATFORM === 'macos' ? 'World of Warcraft.app' : 'Wow.exe'
@@ -355,8 +372,8 @@
       const browserError = error?.name ? `${error.name}: ` : ''
       return Error(
         `${browserError}${errorMessage(error)} [operation=${operation}; path=${JSON.stringify(String(path))}; ` +
-        `name=${JSON.stringify(name)}; parent=${JSON.stringify(parentName)}; ` +
-        `writePermission=${permission}; validation=${fileNameValidation(name)}]`,
+          `name=${JSON.stringify(name)}; parent=${JSON.stringify(parentName)}; ` +
+          `writePermission=${permission}; validation=${fileNameValidation(name)}]`,
       )
     }
 
@@ -368,7 +385,7 @@
 
     async function getDirectoryHandle(parent, path, create = false) {
       if (!path) return parent
-      const parts = String(path).replace(/\\/g, '/').split('/').map(p => p.trim()).filter(Boolean)
+      const parts = String(path).replace(/\\/g, '/').split('/').map((p) => p.trim()).filter(Boolean)
       let curr = parent
       for (const part of parts) {
         try {
@@ -385,7 +402,7 @@
 
     async function getFileHandle(parent, path, create = false) {
       if (!path) return null
-      const parts = String(path).replace(/\\/g, '/').split('/').map(p => p.trim()).filter(Boolean)
+      const parts = String(path).replace(/\\/g, '/').split('/').map((p) => p.trim()).filter(Boolean)
       if (parts.length === 0) return null
       const fileName = parts.pop()
       const parentDir = await getDirectoryHandle(parent, parts.join('/'), create)
@@ -518,7 +535,11 @@
               if (fileObj.size === expectedChunkSize) {
                 chunkComplete = true
                 totalLoadedAcrossChunks += expectedChunkSize
-                appendLog(`[Resume] Block ${i + 1}/${numChunks} of ${fileName} (${formatBytes(expectedChunkSize)}) is saved & complete on disk.`)
+                appendLog(
+                  `[Resume] Block ${i + 1}/${numChunks} of ${fileName} (${
+                    formatBytes(expectedChunkSize)
+                  }) is saved & complete on disk.`,
+                )
               }
             }
           }
@@ -565,7 +586,9 @@
             if (!chunkHandle) throw Error(`Missing block file: ${chunkFileName}`)
 
             const chunkFile = await chunkHandle.getFile()
-            appendLog(`[Background] Copying block ${i + 1}/${numChunks} (${chunkFileName}, ${formatBytes(chunkFile.size)})...`)
+            appendLog(
+              `[Background] Copying block ${i + 1}/${numChunks} (${chunkFileName}, ${formatBytes(chunkFile.size)})...`,
+            )
 
             let offset = 0
             while (offset < chunkFile.size) {
@@ -665,9 +688,7 @@
           const delayMs = Math.min(1000 * Math.pow(1.5, retryAttempt), 5000)
           reportError(`Network error on ${relativePath}`, err)
           appendLog(
-            `Retrying ${relativePath} in ${
-              Math.round(delayMs / 1000)
-            }s (Attempt ${retryAttempt}/${maxRetries})...`,
+            `Retrying ${relativePath} in ${Math.round(delayMs / 1000)}s (Attempt ${retryAttempt}/${maxRetries})...`,
           )
           await new Promise((r) => setTimeout(r, delayMs))
         }
@@ -842,7 +863,9 @@
                 const filePct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0
                 fileProgressFill.style.width = `${filePct}%`
 
-                const overallPct = fullProjectSize > 0 ? Math.min(100, Math.round((currentTotalBytes / fullProjectSize) * 100)) : 0
+                const overallPct = fullProjectSize > 0
+                  ? Math.min(100, Math.round((currentTotalBytes / fullProjectSize) * 100))
+                  : 0
                 progressFill.style.width = `${overallPct}%`
 
                 // Throttle text updates to every 0.5s
@@ -881,7 +904,11 @@
           }
 
           if (pendingStitchTasks.length > 0) {
-            appendLog(`Waiting for background file stitching to finalize (${pendingStitchTasks.length} task${pendingStitchTasks.length > 1 ? 's' : ''})...`)
+            appendLog(
+              `Waiting for background file stitching to finalize (${pendingStitchTasks.length} task${
+                pendingStitchTasks.length > 1 ? 's' : ''
+              })...`,
+            )
             await Promise.all(pendingStitchTasks)
           }
         }
@@ -1080,7 +1107,7 @@
             setStep(
               stepConfig,
               'done',
-              'Settings verified (TOS already accepted)'
+              'Settings verified (TOS already accepted)',
             )
           }
         } catch (configErr) {
@@ -1109,7 +1136,9 @@
               appendLog(`Using existing ${CLIENT_ARCHIVE}.`)
             }
             setStep(stepPlatform, 'done', `${CLIENT_ARCHIVE} downloaded (requires extraction)`)
-            appendLog(`Zip file ${CLIENT_ARCHIVE} is ready. Please extract its contents inside this directory before launching the game.`)
+            appendLog(
+              `Zip file ${CLIENT_ARCHIVE} is ready. Please extract its contents inside this directory before launching the game.`,
+            )
             readyNotice.innerHTML = `
               🎉 <strong>Client Ready!</strong>
               <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
@@ -1151,32 +1180,6 @@
         selectDirectoryBtn.disabled = false
       }
     }
-
-    document.addEventListener('click', (e) => {
-      const link = e.target.closest('a[href^="/"]')
-      if (!link || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
-      const targetUrl = new URL(link.href, location.origin)
-      if (targetUrl.origin !== location.origin) return
-
-      e.preventDefault()
-
-      const topPath = document.getElementById('topLoadingPath')
-      const master = document.getElementById('handDrawnBorderPath')
-
-      if (topPath && master) {
-        const length = master.getTotalLength() || 750
-        topPath.style.transition = 'none'
-        topPath.style.strokeDasharray = length
-        topPath.style.strokeDashoffset = length // Reset to empty (0% progress)
-        topPath.getBoundingClientRect() // Trigger reflow
-        topPath.style.transition = 'stroke-dashoffset 0.3s ease-in-out'
-        topPath.style.strokeDashoffset = 0 // Animate to full (100% progress)
-      }
-
-      setTimeout(() => {
-        location.href = targetUrl.href
-      }, 300)
-    })
     </script>
   </body>
 </html>

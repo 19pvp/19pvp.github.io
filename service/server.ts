@@ -79,7 +79,7 @@ try {
 const inlineAssets = (html: string) => {
   return html
     .replace(/<link rel="stylesheet" href="\/style\.css(\?v=\d+)?"\s*\/?>/, `<style>${styleCSSRaw}</style>`)
-    .replace('<script type="module">', `<script type="module">\n${scriptJSRaw}\n`)
+    .replace('</head>', `<script type="module">\n${scriptJSRaw}\n</script>\n</head>`)
 }
 
 const indexHTMLBytes = new TextEncoder().encode(inlineAssets(indexHTMLRaw))
@@ -90,6 +90,8 @@ const installHTMLBytes = new TextEncoder().encode(
     .replace('REALMLIST_PLACEHOLDER', JSON.stringify(launcherRealmlist)),
 )
 const styleCSSBytes = new TextEncoder().encode(styleCSSRaw)
+const respondText = (content: string | Uint8Array<ArrayBuffer>, type = 'text/html') =>
+  new Response(content, { headers: { 'content-type': `${type}; charset=utf-8` } })
 
 void watch()
 
@@ -98,24 +100,15 @@ export default {
     try {
       const url = new URL(req.url)
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
-      if (url.pathname === '/') {
-        return new Response(indexHTMLBytes, { headers: { 'content-type': 'text/html; charset=utf-8' } })
-      }
+      if (url.pathname === '/') return respondText(indexHTMLBytes, 'text/html')
       if (url.pathname === '/install') {
         const session = await getSession(req)
         if (!session) return new Response(null, { status: 302, headers: { location: '/' } })
-        return new Response(installHTMLBytes, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+        return respondText(installHTMLBytes, 'text/html')
       }
-      if (url.pathname === '/events') {
-        return new Response(eventsHTMLBytes, { headers: { 'content-type': 'text/html; charset=utf-8' } })
-      }
+      if (url.pathname === '/events') return respondText(eventsHTMLBytes, 'text/html')
       if (url.pathname === '/style.css') {
-        return new Response(styleCSSBytes, {
-          headers: {
-            /* 'cache-control': 'public, max-age=3600', */
-            'content-type': 'text/css; charset=utf-8',
-          },
-        })
+        return respondText(styleCSSBytes, 'text/css')
       }
       if (url.pathname === '/logo.png') {
         return new Response(logoPNG, {
