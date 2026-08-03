@@ -375,6 +375,11 @@ label {
   z-index: 1;
 }
 
+.badge {
+  padding: 0;
+  margin: 0;
+}
+
 .badge::before,
 .badge-count::before,
 .type-badge::before {

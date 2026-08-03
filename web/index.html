@@ -194,6 +194,8 @@
     }
     .leaderboard-section {
       margin-bottom: 34px;
+      user-select: none;
+      pointer: default;
     }
 
     .leaderboard-controls {
@@ -242,6 +244,18 @@
     .leaderboard-table th:nth-child(2),
     .leaderboard-table td:nth-child(2) {
       text-align: left;
+    }
+
+    .leaderboard-table th > .badge {
+      position: absolute;
+      inset: 0;
+      padding: 0;
+      pointer-events: none;
+    }
+
+    .leaderboard-table th > .leaderboard-sort-label {
+      position: relative;
+      z-index: 2;
     }
 
     .leaderboard-table tbody tr {
@@ -312,6 +326,14 @@
     .leaderboard-status {
       color: var(--text-secondary);
       padding: 15px 10px;
+    }
+
+    .leaderboard-status {
+      transition: opacity 150ms ease;
+    }
+
+    .leaderboard-status.is-changing {
+      opacity: 0;
     }
 
     @media (max-width: 600px) {
@@ -751,9 +773,11 @@
     }
     const formatLeaderboardValue = (value, key) =>
       durationMetrics.has(key) ? formatDuration(value) : compactNumber.format(Number(value) || 0)
-    const leaderboardPageSize = 20
+    const leaderboardPageSize = 10
     let leaderboardData = []
     let leaderboardPage = 0
+    let leaderboardStatusVersion = 0
+    let leaderboardStatusTransition
     const leaderboardValueUnits = {
       all: { label: 'total', multiplier: 1 },
       hour: { label: 'hour', multiplier: 3600 },
@@ -827,7 +851,7 @@
           const title = leaderboardLongLabels[key] || leaderboardDerivedLabels[key] || leaderboardMetricLabels[key] || key
           const sortCycle = key === 'totalDispels' ? leaderboardDispelSortKeys : null
           const selected = key === sortKey || sortCycle?.includes(sortKey)
-          return `<th${sortCycle ? ' colspan="3"' : ''} data-sort-key="${key}"${sortCycle ? ` data-sort-cycle="${sortCycle.join(',')}"` : ''} title="${title}"${selected ? ' aria-sort="descending"' : ''}>${selected ? `<span class="badge badge-offline">${label}</span>` : label}</th>`
+          return `<th${sortCycle ? ' colspan="3"' : ''} data-sort-key="${key}"${sortCycle ? ` data-sort-cycle="${sortCycle.join(',')}"` : ''} title="${title}"${selected ? ' aria-sort="descending"' : ''}>${selected ? `<span class="leaderboard-sort-label">${label}</span><span class="badge badge-offline" aria-hidden="true"></span>` : label}</th>`
         }).join('')}
       `
       const renderedRows = pageRows.map((row, index) => {
@@ -850,11 +874,12 @@
                   <strong class="${classInfo?.key || ''}" title="Played ${formatFullDuration(row.timePlayed)} over ${row.matches} battlegrounds">${row.name}</strong>
                 </td>
                 ${group.keys.map((key) => {
-                  const otherLabel = otherUnit === 'all' ? 'Total' : `Average / ${leaderboardValueUnits[otherUnit].label}`
+                  const headerTitle = leaderboardLongLabels[key] || leaderboardDerivedLabels[key] || leaderboardMetricLabels[key] || key
+                  const otherLabel = otherUnit === 'all' ? 'Total' : `Average per ${leaderboardValueUnits[otherUnit].label}`
                   const otherValue = durationMetrics.has(key)
                     ? formatFullDuration(leaderboardValue(row, key, otherUnit))
                     : formatLeaderboardValue(leaderboardValue(row, key, otherUnit), key)
-                  let title = `${otherLabel}: ${otherValue}`
+                  let title = `${headerTitle}: ${otherLabel} ${otherValue}`
                   const countKey = durationCountKeys[key]
                   if (countKey) {
                     const countValue = leaderboardValue(row, countKey, unit)
@@ -873,9 +898,9 @@
                     const total = leaderboardValue(row, 'totalDispels', unit)
                     const offensive = leaderboardValue(row, 'dispelsOffensive', unit)
                     const defensive = leaderboardValue(row, 'dispelsDefensive', unit)
-                    return `<td class="${sortKey === 'totalDispels' ? 'leaderboard-sort-active' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'totalDispels', otherUnit))}">${formatLeaderboardValue(total)}</td>
-                      <td class="leaderboard-dispel-offensive${sortKey === 'dispelsOffensive' ? ' leaderboard-sort-active' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'dispelsOffensive', otherUnit))}">${formatLeaderboardValue(offensive)}</td>
-                      <td class="leaderboard-dispel-defensive${sortKey === 'dispelsDefensive' ? ' leaderboard-sort-active' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'dispelsDefensive', otherUnit))}">${formatLeaderboardValue(defensive)}</td>`
+                    return `<td class="${sortKey === 'totalDispels' ? 'leaderboard-sort-active' : ''}" title="Total dispels: ${otherLabel} ${formatLeaderboardValue(leaderboardValue(row, 'totalDispels', otherUnit))}">${formatLeaderboardValue(total)}</td>
+                      <td class="leaderboard-dispel-offensive${sortKey === 'dispelsOffensive' ? ' leaderboard-sort-active' : ''}" title="Offensive dispels: ${otherLabel} ${formatLeaderboardValue(leaderboardValue(row, 'dispelsOffensive', otherUnit))}">${formatLeaderboardValue(offensive)}</td>
+                      <td class="leaderboard-dispel-defensive${sortKey === 'dispelsDefensive' ? ' leaderboard-sort-active' : ''}" title="Defensive dispels: ${otherLabel} ${formatLeaderboardValue(leaderboardValue(row, 'dispelsDefensive', otherUnit))}">${formatLeaderboardValue(defensive)}</td>`
                   }
                   return `<td class="${key === sortKey ? 'leaderboard-sort-active' : ''}" title="${title}">${formatLeaderboardValue(leaderboardValue(row, key, unit), key)}</td>`
                 }).join('')}
@@ -898,7 +923,13 @@
     }
 
     async function loadLeaderboard() {
-      leaderboardStatus.textContent = 'Loading leaderboard…'
+      const statusVersion = ++leaderboardStatusVersion
+      let nextStatus
+      if (leaderboardStatusTransition) {
+        leaderboardStatus.removeEventListener('transitionend', leaderboardStatusTransition)
+        leaderboardStatusTransition = undefined
+      }
+      leaderboardStatus.classList.remove('is-changing')
       try {
         const state = readLeaderboardState()
         syncLeaderboardControls(state)
@@ -922,14 +953,28 @@
         leaderboardData = data.rows || []
         leaderboardPage = 0
         renderLeaderboardPage()
-        const valueLabel = currentState.unit === 'all' ? 'Total' : `Average / ${leaderboardValueUnits[currentState.unit].label}`
-        leaderboardStatus.textContent = `${currentState.group.label} · ${valueLabel} · ${data.period === 'all' ? 'All time' : data.period}`
+        const valueLabel = currentState.unit === 'all' ? 'Total' : `Average per ${leaderboardValueUnits[currentState.unit].label}`
+        nextStatus = `${currentState.group.label} · ${valueLabel} · ${data.period === 'all' ? 'All time' : data.period}`
       } catch (err) {
         leaderboardData = []
         leaderboardPage = 0
         renderLeaderboardPage()
-        leaderboardStatus.textContent = err.message || 'Unable to load leaderboard.'
+        nextStatus = err.message || 'Unable to load leaderboard.'
       }
+      if (statusVersion !== leaderboardStatusVersion) return
+      if (nextStatus === leaderboardStatus.textContent) return
+      leaderboardStatusTransition = (event) => {
+        if (event.target !== leaderboardStatus || event.propertyName !== 'opacity') return
+        leaderboardStatus.removeEventListener('transitionend', leaderboardStatusTransition)
+        leaderboardStatusTransition = undefined
+        if (statusVersion !== leaderboardStatusVersion) return
+        leaderboardStatus.textContent = nextStatus
+        leaderboardStatus.classList.remove('is-changing')
+      }
+      leaderboardStatus.addEventListener('transitionend', leaderboardStatusTransition)
+      requestAnimationFrame(() => {
+        if (statusVersion === leaderboardStatusVersion) leaderboardStatus.classList.add('is-changing')
+      })
     }
 
     leaderboardGroup.onchange = () => {
