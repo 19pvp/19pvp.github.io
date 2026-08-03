@@ -254,11 +254,6 @@
       color: var(--text-muted);
     }
 
-    .leaderboard-table td:last-child,
-    .leaderboard-table th:last-child {
-      text-align: right;
-    }
-
     .leaderboard-class-icon {
       display: inline-block;
       width: 26px;
@@ -281,6 +276,12 @@
       flex: 0 0 auto;
       padding: 8px 14px;
       font-size: 0.9rem;
+    }
+
+    .leaderboard-pagination .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
     }
 
     .leaderboard-page-label {
@@ -804,9 +805,16 @@
       `
       const renderedRows = pageRows.map((row, index) => {
           const classInfo = classMap[row.class]
+          const rank = start + index + 1
           return `
               <tr>
-                <td>${start + index + 1}</td>
+                <td>${rank === 1
+                  ? '<span class="money-dot money-dot-gold" role="img" aria-label="1st place" title="1st place"></span>'
+                  : rank === 2
+                  ? '<span class="money-dot money-dot-silver" role="img" aria-label="2nd place" title="2nd place"></span>'
+                  : rank === 3
+                  ? '<span class="money-dot money-dot-copper" role="img" aria-label="3rd place" title="3rd place"></span>'
+                  : rank}</td>
                 <td>
                   ${classInfo
                     ? `<span class="class-icon leaderboard-class-icon ${classInfo.key}" role="img" aria-label="${classInfo.name}"
@@ -844,8 +852,8 @@
       }).join('')
       leaderboardRows.innerHTML = renderedRows + emptyRows
       leaderboardPageLabel.textContent = pageCount ? `Page ${leaderboardPage + 1} of ${pageCount}` : ''
-      leaderboardPrevious.disabled = leaderboardPage === 0
-      leaderboardNext.disabled = pageCount === 0 || leaderboardPage >= pageCount - 1
+      leaderboardPrevious.disabled = leaderboardPage <= 0
+      leaderboardNext.disabled = leaderboardPage + 1 >= pageCount
     }
 
     async function loadLeaderboard() {
