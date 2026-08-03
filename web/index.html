@@ -242,6 +242,20 @@
       height: 42px;
     }
 
+    .leaderboard-dispel-offensive {
+      color: var(--harmful);
+      background: var(--danger-bg);
+    }
+
+    .leaderboard-dispel-defensive {
+      color: var(--helpful);
+      background: var(--success-bg);
+    }
+
+    .leaderboard-dispel-sorted {
+      outline: 1px solid currentColor;
+    }
+
     .leaderboard-table th[data-sort-key] {
       cursor: pointer;
       user-select: none;
@@ -540,8 +554,6 @@
         key: 'skillPlays',
         label: 'Skill plays',
         keys: [
-          'dispelsOffensive',
-          'dispelsDefensive',
           'successfulInterrupts',
           'fakeCastInterrupts',
           'hardCCDuration',
@@ -603,6 +615,8 @@
       efcPressure: 'PRESSURE',
       flagEfficiency: 'RATE',
     }
+
+    const leaderboardDispelSortKeys = ['totalDispels', 'dispelsOffensive', 'dispelsDefensive']
 
     const leaderboardLongLabels = {
       healingDamageAbsorbs: 'Total healing + damage + absorbs',
@@ -751,9 +765,10 @@
         : 'all'
       const unit = leaderboardValueUnits[params.get('leaderboard-unit')] ? params.get('leaderboard-unit') : 'all'
       const sortParam = params.get('leaderboard-sort')
-      const sortKey = group.keys.includes(sortParam)
+      const sortKeys = group.keys.flatMap((key) => key === 'totalDispels' ? leaderboardDispelSortKeys : [key])
+      const sortKey = sortKeys.includes(sortParam)
         ? sortParam
-        : group.keys[Math.floor(Math.random() * group.keys.length)]
+        : sortKeys[Math.floor(Math.random() * sortKeys.length)]
       if (sortParam !== sortKey) {
         params.set('leaderboard-sort', sortKey)
         history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`)
@@ -805,8 +820,9 @@
         ${group.keys.map((key) => {
           const label = leaderboardShortLabels[key] || key
           const title = leaderboardLongLabels[key] || leaderboardDerivedLabels[key] || leaderboardMetricLabels[key] || key
-          const selected = key === sortKey
-          return `<th data-sort-key="${key}" title="${title}"${selected ? ' aria-sort="descending"' : ''}>${selected ? `<span class="badge badge-offline">${label}</span>` : label}</th>`
+          const sortCycle = key === 'totalDispels' ? leaderboardDispelSortKeys : null
+          const selected = key === sortKey || sortCycle?.includes(sortKey)
+          return `<th${sortCycle ? ' colspan="3"' : ''} data-sort-key="${key}"${sortCycle ? ` data-sort-cycle="${sortCycle.join(',')}"` : ''} title="${title}"${selected ? ' aria-sort="descending"' : ''}>${selected ? `<span class="badge badge-offline">${label}</span>` : label}</th>`
         }).join('')}
       `
       const renderedRows = pageRows.map((row, index) => {
@@ -848,6 +864,14 @@
                   if (key === 'efcPressure') {
                     title += `; Damage on EFC: ${formatLeaderboardValue(leaderboardValue(row, 'damageOnEFC', otherUnit))}; Healing on FC: ${formatLeaderboardValue(leaderboardValue(row, 'healsOnFC', otherUnit))}`
                   }
+                  if (key === 'totalDispels') {
+                    const total = leaderboardValue(row, 'totalDispels', unit)
+                    const offensive = leaderboardValue(row, 'dispelsOffensive', unit)
+                    const defensive = leaderboardValue(row, 'dispelsDefensive', unit)
+                    return `<td class="${sortKey === 'totalDispels' ? 'leaderboard-dispel-sorted' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'totalDispels', otherUnit))}">${formatLeaderboardValue(total)}</td>
+                      <td class="leaderboard-dispel-offensive${sortKey === 'dispelsOffensive' ? ' leaderboard-dispel-sorted' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'dispelsOffensive', otherUnit))}">${formatLeaderboardValue(offensive)}</td>
+                      <td class="leaderboard-dispel-defensive${sortKey === 'dispelsDefensive' ? ' leaderboard-dispel-sorted' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'dispelsDefensive', otherUnit))}">${formatLeaderboardValue(defensive)}</td>`
+                  }
                   return `<td title="${title}">${formatLeaderboardValue(leaderboardValue(row, key, unit), key)}</td>`
                 }).join('')}
               </tr>
@@ -859,7 +883,7 @@
           '<td>' + (start + pageRows.length + index + 1) + '</td>' +
           '<td' + (message ? ' class="leaderboard-empty"' : '') + '>' +
           (message ? 'No battleground data yet.' : '-') + '</td>' +
-          group.keys.map(() => '<td>-</td>').join('') +
+          group.keys.map((key) => key === 'totalDispels' ? '<td>-</td><td>-</td><td>-</td>' : '<td>-</td>').join('') +
           '</tr>'
       }).join('')
       leaderboardRows.innerHTML = renderedRows + emptyRows
@@ -922,7 +946,12 @@
     leaderboardHeaderRow.onclick = (event) => {
       const header = event.target.closest?.('[data-sort-key]')
       if (!header) return
-      updateLeaderboardUrl({ sort: header.dataset.sortKey })
+      const cycle = header.dataset.sortCycle?.split(',')
+      const currentSort = readLeaderboardState().sortKey
+      const sort = cycle
+        ? cycle[(cycle.indexOf(currentSort) + 1) % cycle.length]
+        : header.dataset.sortKey
+      updateLeaderboardUrl({ sort })
       loadLeaderboard()
     }
     leaderboardPrevious.onclick = () => {

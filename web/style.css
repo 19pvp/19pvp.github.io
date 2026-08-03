@@ -35,6 +35,9 @@
   --success-border: rgba(16, 185, 129, 0.2);
   --success-text: #6ee7b7;
 
+  --harmful: #f47b55;
+  --helpful: #45d6c0;
+
   --font-title: 'Lacquer', system-ui, cursive;
   --font-sans: 'Comic Neue', cursive, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
