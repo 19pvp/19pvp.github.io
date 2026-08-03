@@ -1,447 +1,447 @@
 <style data-page-style>
-    .events-page {
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      flex: 1;
-    }
-    .events-toolbar {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border-color);
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .events-toolbar h1 {
-      font-size: 1.3rem;
-      font-weight: 400;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .events-toolbar h1 img {
-      max-height: 24px;
-      height: auto;
-      max-width: 100%;
-      width: auto;
-    }
-    .events-toolbar h1 span {
-      color: var(--accent-color);
-    }
-    .controls {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      flex: 1;
-      align-items: center;
-    }
-    select,
-    input[type=text] {
-      height: 32px;
-      background: var(--surface2);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      border-radius: 6px;
-      padding: 0 10px;
-      font-size: 12px;
-      font-family: inherit;
-    }
-    select:focus,
-    input:focus {
-      outline: 2px solid var(--accent-color);
-      outline-offset: -1px;
-    }
-    #typeFilter {
-      min-width: 160px;
-    }
-    #search {
-      flex: 1;
-      min-width: 180px;
-    }
-    .badge-count {
-      --badge-bg: var(--accent-dim);
-      color: var(--accent-color);
-    }
+.events-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.events-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.events-toolbar h1 {
+  font-size: 1.3rem;
+  font-weight: 400;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.events-toolbar h1 img {
+  max-height: 24px;
+  height: auto;
+  max-width: 100%;
+  width: auto;
+}
+.events-toolbar h1 span {
+  color: var(--accent-color);
+}
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+  align-items: center;
+}
+select,
+input[type=text] {
+  height: 32px;
+  background: var(--surface2);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-family: inherit;
+}
+select:focus,
+input:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -1px;
+}
+#typeFilter {
+  min-width: 160px;
+}
+#search {
+  flex: 1;
+  min-width: 180px;
+}
+.badge-count {
+  --badge-bg: var(--accent-dim);
+  color: var(--accent-color);
+}
 
-    .btn {
-      height: 32px;
-      padding: 0 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      width: auto;
-    }
+.btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  width: auto;
+}
 
-    /* ---- tabs ---- */
-    .tab-row {
-      display: flex;
-      gap: 4px;
-    }
-    .tab {
-      padding: 5px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      background: transparent;
-      color: var(--text-muted);
-      transition: all .15s;
-    }
-    .tab.active {
-      background: var(--accent-dim);
-      color: var(--accent-color);
-    }
-    .tab:hover:not(.active) {
-      background: var(--surface2);
-      color: var(--text-primary);
-    }
+/* ---- tabs ---- */
+.tab-row {
+  display: flex;
+  gap: 4px;
+}
+.tab {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all .15s;
+}
+.tab.active {
+  background: var(--accent-dim);
+  color: var(--accent-color);
+}
+.tab:hover:not(.active) {
+  background: var(--surface2);
+  color: var(--text-primary);
+}
 
-    /* ---- table ---- */
-    .events-table {
-      flex: 1;
-      overflow: auto;
-      padding: 16px;
-      width: 100%;
-    }
-    .table-wrap {
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-    }
-    thead th {
-      padding: 9px 12px;
-      text-align: left;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      color: var(--text-muted);
-      user-select: none;
-      white-space: nowrap;
-    }
-    thead th.sortable {
-      cursor: pointer;
-    }
-    thead th.sortable:hover {
-      color: var(--text-primary);
-    }
-    thead th.sort-asc::after {
-      content: ' ▲';
-      font-size: 9px;
-    }
-    thead th.sort-desc::after {
-      content: ' ▼';
-      font-size: 9px;
-    }
-    tbody tr {
-      transition: background .1s;
-    }
-    tbody tr:hover {
-      background: rgba(255, 255, 255, 0.025);
-    }
-    td {
-      padding: 8px 12px;
-      vertical-align: top;
-    }
+/* ---- table ---- */
+.events-table {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  width: 100%;
+}
+.table-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+}
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+thead th {
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-muted);
+  user-select: none;
+  white-space: nowrap;
+}
+thead th.sortable {
+  cursor: pointer;
+}
+thead th.sortable:hover {
+  color: var(--text-primary);
+}
+thead th.sort-asc::after {
+  content: ' ▲';
+  font-size: 9px;
+}
+thead th.sort-desc::after {
+  content: ' ▼';
+  font-size: 9px;
+}
+tbody tr {
+  transition: background .1s;
+}
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+td {
+  padding: 8px 12px;
+  vertical-align: top;
+}
 
-    .type-badge {
-      font-family: var(--font-mono);
-      font-size: 10px;
-    }
+.type-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
 
-    .data-cell {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-muted);
-      max-width: 360px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: pointer;
-    }
-    .data-cell:hover {
-      color: var(--text-primary);
-    }
-    .data-cell.expanded {
-      white-space: pre-wrap;
-      overflow: visible;
-      text-overflow: unset;
-      max-width: none;
-    }
+.data-cell {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 360px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.data-cell:hover {
+  color: var(--text-primary);
+}
+.data-cell.expanded {
+  white-space: pre-wrap;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: none;
+}
 
-    .ts {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-    .ts strong {
-      color: var(--text-primary);
-      font-weight: 500;
-    }
+.ts {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.ts strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
 
-    .empty-state {
-      text-align: center;
-      color: var(--text-muted);
-      padding: 60px 20px;
-      font-size: 14px;
-    }
-    .empty-state .icon {
-      font-size: 40px;
-      margin-bottom: 12px;
-    }
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 60px 20px;
+  font-size: 14px;
+}
+.empty-state .icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
 
-    /* ---- footer ---- */
-    .events-footer {
-      position: sticky;
-      bottom: 0;
-      z-index: 20;
-      background: var(--surface);
-      border-top: 1px solid var(--border-color);
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      width: 100%;
-    }
-    .pagination {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-    .page-info {
-      color: var(--text-muted);
-      font-size: 12px;
-    }
-    .ml-auto {
-      margin-left: auto;
-    }
+/* ---- footer ---- */
+.events-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-top: 1px solid var(--border-color);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.pagination {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.page-info {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.ml-auto {
+  margin-left: auto;
+}
 
-    .progress-bar-svg {
-      width: 100%;
-      height: 12px;
-      display: block;
-    }
+.progress-bar-svg {
+  width: 100%;
+  height: 12px;
+  display: block;
+}
 
-    .progress-bar-svg path {
-      transition: stroke-dashoffset 0.1s linear;
-    }
-    </style>
+.progress-bar-svg path {
+  transition: stroke-dashoffset 0.1s linear;
+}
+</style>
 <main id="page-content" class="events-page" data-page="events">
-        <div class="events-toolbar">
-          <h1>Event Audit <span>Read-only</span></h1>
-          <div class="controls">
-            <div class="tab-row">
-              <button class="tab active" id="tabActive" onclick="switchTable('active')">Active</button>
-              <button class="tab" id="tabArchive" onclick="switchTable('archive')">Archive</button>
-            </div>
-            <select id="typeFilter" onchange="reload()">
-              <option value="">All types</option>
-            </select>
-            <input id="search" type="text" placeholder="Search data / type…" oninput="debounceReload()">
-            <span class="badge-count" id="totalCount">0 events</span>
-          </div>
-        </div>
+  <div class="events-toolbar">
+    <h1>Event Audit <span>Read-only</span></h1>
+    <div class="controls">
+      <div class="tab-row">
+        <button class="tab active" id="tabActive" onclick="switchTable('active')">Active</button>
+        <button class="tab" id="tabArchive" onclick="switchTable('archive')">Archive</button>
+      </div>
+      <select id="typeFilter" onchange="reload()">
+        <option value="">All types</option>
+      </select>
+      <input id="search" type="text" placeholder="Search data / type…" oninput="debounceReload()">
+      <span class="badge-count" id="totalCount">0 events</span>
+    </div>
+  </div>
 
-        <div class="events-table">
-          <div id="tableArea"></div>
-        </div>
+  <div class="events-table">
+    <div id="tableArea"></div>
+  </div>
 
-        <footer class="events-footer">
-          <div class="pagination">
-            <button class="btn btn-ghost" id="btnPrev" onclick="prevPage()">‹ Prev</button>
-            <span class="page-info" id="pageInfo">—</span>
-            <button class="btn btn-ghost" id="btnNext" onclick="nextPage()">Next ›</button>
-          </div>
-          <span class="ml-auto"
-            style="color:var(--muted);font-size:12px">Read-only — events are managed by the server</span>
-        </footer>
-      </main>
+  <footer class="events-footer">
+    <div class="pagination">
+      <button class="btn btn-ghost" id="btnPrev" onclick="prevPage()">‹ Prev</button>
+      <span class="page-info" id="pageInfo">—</span>
+      <button class="btn btn-ghost" id="btnNext" onclick="nextPage()">Next ›</button>
+    </div>
+    <span class="ml-auto"
+      style="color:var(--muted);font-size:12px">Read-only — events are managed by the server</span>
+  </footer>
+</main>
 <script type="module" data-page-script>
-    const api = location.origin
-    const PAGE_SIZE = 50
+const api = location.origin
+const PAGE_SIZE = 50
 
-    let tableMode = 'active'
-    let page = 0
-    let total = 0
-    let allEvents = []
-    let sortCol = 'id'
-    let sortDir = 'desc'
-    let searchTimer = null
+let tableMode = 'active'
+let page = 0
+let total = 0
+let allEvents = []
+let sortCol = 'id'
+let sortDir = 'desc'
+let searchTimer = null
 
-    const typeColors = {
-      LOGIN: ['#86efac', '#14532d'],
-      LOGOUT: ['#6ee7b7', '#064e3b'],
-      STARTUP: ['#93c5fd', '#1e3a5f'],
-      SHUTDOWN: ['#f9a8d4', '#500724'],
-      COMMAND: ['#fde68a', '#4d3700'],
-      BATTLEGROUND_JOIN: ['#c4b5fd', '#2e1065'],
-      BATTLEGROUND_LEAVE: ['#d8b4fe', '#3b0764'],
-      BATTLEGROUND_START: ['#a78bfa', '#2e1065'],
-      BATTLEGROUND_END: ['#7c3aed', '#1e0048'],
-      PVP_KILL: ['#f87171', '#450a0a'],
-      QUEUE_STATE: ['#fb923c', '#431407'],
-      PLAYER_LOCATION: ['#94a3b8', '#1e293b'],
-      LUCKY_FISHING_HAT_OBTAINED: ['#fbbf24', '#451a03'],
-      ARENA_GRAND_MASTER_OBTAINED: ['#f59e0b', '#451a03'],
-      GENERAL_CHANNEL_MESSAGE: ['#67e8f9', '#164e63'],
-    }
+const typeColors = {
+  LOGIN: ['#86efac', '#14532d'],
+  LOGOUT: ['#6ee7b7', '#064e3b'],
+  STARTUP: ['#93c5fd', '#1e3a5f'],
+  SHUTDOWN: ['#f9a8d4', '#500724'],
+  COMMAND: ['#fde68a', '#4d3700'],
+  BATTLEGROUND_JOIN: ['#c4b5fd', '#2e1065'],
+  BATTLEGROUND_LEAVE: ['#d8b4fe', '#3b0764'],
+  BATTLEGROUND_START: ['#a78bfa', '#2e1065'],
+  BATTLEGROUND_END: ['#7c3aed', '#1e0048'],
+  PVP_KILL: ['#f87171', '#450a0a'],
+  QUEUE_STATE: ['#fb923c', '#431407'],
+  PLAYER_LOCATION: ['#94a3b8', '#1e293b'],
+  LUCKY_FISHING_HAT_OBTAINED: ['#fbbf24', '#451a03'],
+  ARENA_GRAND_MASTER_OBTAINED: ['#f59e0b', '#451a03'],
+  GENERAL_CHANNEL_MESSAGE: ['#67e8f9', '#164e63'],
+}
 
-    const typeBadge = (type) => {
-      const [fg, bg] = typeColors[type] || ['#d1d5db', '#1f2937']
-      return `<span class="type-badge" style="color:${fg}; --badge-bg:${bg}20">${type}</span>`
-    }
+const typeBadge = (type) => {
+  const [fg, bg] = typeColors[type] || ['#d1d5db', '#1f2937']
+  return `<span class="type-badge" style="color:${fg}; --badge-bg:${bg}20">${type}</span>`
+}
 
-    const fmtDate = (ts) => {
-      if (!ts) return '<span style="color:var(--muted)">—</span>'
-      const d = new Date(ts)
-      const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-      const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-      return `<span class="ts"><strong>${time}</strong> ${date}</span>`
-    }
+const fmtDate = (ts) => {
+  if (!ts) return '<span style="color:var(--muted)">—</span>'
+  const d = new Date(ts)
+  const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  return `<span class="ts"><strong>${time}</strong> ${date}</span>`
+}
 
-    window.switchTable = (mode) => {
-      tableMode = mode
-      page = 0
-      document.getElementById('tabActive').className = `tab${mode === 'active' ? ' active' : ''}`
-      document.getElementById('tabArchive').className = `tab${mode === 'archive' ? ' active' : ''}`
-      reload()
-    }
+window.switchTable = (mode) => {
+  tableMode = mode
+  page = 0
+  document.getElementById('tabActive').className = `tab${mode === 'active' ? ' active' : ''}`
+  document.getElementById('tabArchive').className = `tab${mode === 'archive' ? ' active' : ''}`
+  reload()
+}
 
-    window.prevPage = () => {
-      if (page > 0) {
-        page--
-        reload()
-      }
-    }
-    window.nextPage = () => {
-      if ((page + 1) * PAGE_SIZE < total) {
-        page++
-        reload()
-      }
-    }
-
-    window.debounceReload = () => {
-      clearTimeout(searchTimer)
-      searchTimer = setTimeout(reload, 300)
-    }
-
-    window.toggleData = (id) => {
-      const el = document.getElementById(`data-${id}`)
-      if (el) el.classList.toggle('expanded')
-    }
-
-    function sortBy(col) {
-      if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc'
-      else {
-        sortCol = col
-        sortDir = col === 'id' ? 'desc' : 'asc'
-      }
-      reload()
-    }
-
-    function th(col, label) {
-      const cls = sortCol === col ? ` sortable sort-${sortDir}` : ' sortable'
-      return `<th class="${cls.trim()}" onclick="sortBy('${col}')">${label}</th>`
-    }
-
-    function renderTable() {
-      const area = document.getElementById('tableArea')
-
-      if (allEvents.length === 0) {
-        area.innerHTML = `<div class="empty-state"><div class="icon">📭</div>No events found</div>`
-        return
-      }
-
-      let html = `<div class="table-wrap"><table>
-        <thead><tr>
-          ${th('id', 'ID')}
-          ${th('type', 'Type')}
-          ${th('at', 'Time')}
-          <th>Data</th>
-          ${th('end', 'Ended')}
-        </tr></thead>
-        <tbody>`
-
-      for (const ev of allEvents) {
-        html += `<tr>
-          <td class="ts">#${ev.id}</td>
-          <td>${typeBadge(ev.type)}</td>
-          <td>${fmtDate(ev.at)}</td>
-          <td><div id="data-${ev.id}" class="data-cell" onclick="toggleData(${ev.id})">${
-          ev.data ? JSON.stringify(ev.data) : '<span style="color:var(--muted)">null</span>'
-        }</div></td>
-          <td>${fmtDate(ev.end)}</td>
-        </tr>`
-      }
-
-      html += '</tbody></table></div>'
-      area.innerHTML = html
-    }
-
-    async function reload() {
-      const type = document.getElementById('typeFilter').value
-      const search = document.getElementById('search').value
-      const table = tableMode === 'archive' ? 'archive' : 'active'
-
-      const params = new URLSearchParams({
-        table,
-        offset: page * PAGE_SIZE,
-        limit: PAGE_SIZE,
-        sort: sortCol,
-        dir: sortDir,
-        ...(type ? { type } : {}),
-        ...(search ? { search } : {}),
-      })
-
-      try {
-        const res = await fetch(`${api}/api/events?${params}`, { credentials: 'include' })
-        if (res.status === 401) {
-          location.href = '/'
-          return
-        }
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-
-        allEvents = data.events
-        total = data.total
-
-        // populate type filter on first load
-        if (document.getElementById('typeFilter').options.length <= 1) {
-          const types = data.types || []
-          const sel = document.getElementById('typeFilter')
-          types.forEach((t) => {
-            const o = document.createElement('option')
-            o.value = t
-            o.textContent = t
-            sel.appendChild(o)
-          })
-        }
-
-        document.getElementById('totalCount').textContent = `${total.toLocaleString()} event${total !== 1 ? 's' : ''}`
-
-        const from = total === 0 ? 0 : page * PAGE_SIZE + 1
-        const to = Math.min((page + 1) * PAGE_SIZE, total)
-        document.getElementById('pageInfo').textContent = total === 0 ? 'No results' : `${from}–${to} of ${total}`
-        document.getElementById('btnPrev').disabled = page === 0
-        document.getElementById('btnNext').disabled = (page + 1) * PAGE_SIZE >= total
-
-        renderTable()
-      } catch (err) {
-        document.getElementById('tableArea').innerHTML =
-          `<div class="empty-state"><div class="icon">⚠️</div>${err.message}</div>`
-      }
-    }
-
+window.prevPage = () => {
+  if (page > 0) {
+    page--
     reload()
-    </script>
+  }
+}
+window.nextPage = () => {
+  if ((page + 1) * PAGE_SIZE < total) {
+    page++
+    reload()
+  }
+}
+
+window.debounceReload = () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(reload, 300)
+}
+
+window.toggleData = (id) => {
+  const el = document.getElementById(`data-${id}`)
+  if (el) el.classList.toggle('expanded')
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc'
+  else {
+    sortCol = col
+    sortDir = col === 'id' ? 'desc' : 'asc'
+  }
+  reload()
+}
+
+function th(col, label) {
+  const cls = sortCol === col ? ` sortable sort-${sortDir}` : ' sortable'
+  return `<th class="${cls.trim()}" onclick="sortBy('${col}')">${label}</th>`
+}
+
+function renderTable() {
+  const area = document.getElementById('tableArea')
+
+  if (allEvents.length === 0) {
+    area.innerHTML = `<div class="empty-state"><div class="icon">📭</div>No events found</div>`
+    return
+  }
+
+  let html = `<div class="table-wrap"><table>
+    <thead><tr>
+      ${th('id', 'ID')}
+      ${th('type', 'Type')}
+      ${th('at', 'Time')}
+      <th>Data</th>
+      ${th('end', 'Ended')}
+    </tr></thead>
+    <tbody>`
+
+  for (const ev of allEvents) {
+    html += `<tr>
+      <td class="ts">#${ev.id}</td>
+      <td>${typeBadge(ev.type)}</td>
+      <td>${fmtDate(ev.at)}</td>
+      <td><div id="data-${ev.id}" class="data-cell" onclick="toggleData(${ev.id})">${
+      ev.data ? JSON.stringify(ev.data) : '<span style="color:var(--muted)">null</span>'
+    }</div></td>
+      <td>${fmtDate(ev.end)}</td>
+    </tr>`
+  }
+
+  html += '</tbody></table></div>'
+  area.innerHTML = html
+}
+
+async function reload() {
+  const type = document.getElementById('typeFilter').value
+  const search = document.getElementById('search').value
+  const table = tableMode === 'archive' ? 'archive' : 'active'
+
+  const params = new URLSearchParams({
+    table,
+    offset: page * PAGE_SIZE,
+    limit: PAGE_SIZE,
+    sort: sortCol,
+    dir: sortDir,
+    ...(type ? { type } : {}),
+    ...(search ? { search } : {}),
+  })
+
+  try {
+    const res = await fetch(`${api}/api/events?${params}`, { credentials: 'include' })
+    if (res.status === 401) {
+      location.href = '/'
+      return
+    }
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error)
+
+    allEvents = data.events
+    total = data.total
+
+    // populate type filter on first load
+    if (document.getElementById('typeFilter').options.length <= 1) {
+      const types = data.types || []
+      const sel = document.getElementById('typeFilter')
+      types.forEach((t) => {
+        const o = document.createElement('option')
+        o.value = t
+        o.textContent = t
+        sel.appendChild(o)
+      })
+    }
+
+    document.getElementById('totalCount').textContent = `${total.toLocaleString()} event${total !== 1 ? 's' : ''}`
+
+    const from = total === 0 ? 0 : page * PAGE_SIZE + 1
+    const to = Math.min((page + 1) * PAGE_SIZE, total)
+    document.getElementById('pageInfo').textContent = total === 0 ? 'No results' : `${from}–${to} of ${total}`
+    document.getElementById('btnPrev').disabled = page === 0
+    document.getElementById('btnNext').disabled = (page + 1) * PAGE_SIZE >= total
+
+    renderTable()
+  } catch (err) {
+    document.getElementById('tableArea').innerHTML =
+      `<div class="empty-state"><div class="icon">⚠️</div>${err.message}</div>`
+  }
+}
+
+reload()
+</script>

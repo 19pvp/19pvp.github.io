@@ -1,258 +1,582 @@
 <style data-page-style>
-    .leaderboard-section { margin-bottom: 34px; user-select: none; }
-    .leaderboard-controls { display: flex; gap: 12px; margin-bottom: 15px; }
-    .leaderboard-controls label { display: flex; flex: 1; flex-direction: column; gap: 7px; position: relative; }
-    .leaderboard-controls label.leaderboard-group-control { flex: 2; }
-    .leaderboard-controls select {
-      appearance: none;
-      width: 100%;
-      padding: 10px 12px;
-      background-color: var(--surface2) !important;
-      color: var(--text-primary) !important;
-      color-scheme: dark;
-    }
-    .leaderboard-controls select option { background-color: var(--surface2); color: var(--text-primary); }
-    .leaderboard-table-wrapper { overflow-x: auto; background: rgba(0, 0, 0, 0.1); }
-    .leaderboard-table th, .leaderboard-table td { padding: 8px 10px; text-align: center; }
-    .leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { text-align: left; }
-    .leaderboard-table th > .badge { position: absolute; inset: 0; padding: 0; pointer-events: none; }
-    .leaderboard-table th > .leaderboard-sort-label { position: relative; z-index: 2; }
-    .leaderboard-table tbody tr { height: 42px; }
-    .leaderboard-dispel-offensive { color: var(--harmful); }
-    .leaderboard-dispel-defensive { color: var(--helpful); }
-    .leaderboard-sort-active { color: var(--accent-color); --divider-color: var(--accent-color); }
-    .leaderboard-table th[data-sort-key] { cursor: pointer; user-select: none; }
-    .leaderboard-table th:first-child, .leaderboard-table td:first-child { width: 1%; text-align: center; color: var(--text-muted); }
-    .leaderboard-class-icon { display: inline-block; width: 26px; height: 26px; margin-right: 6px; vertical-align: middle; }
-    .leaderboard-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 15px; }
-    .leaderboard-pagination .btn { width: auto !important; min-width: 0; flex: 0 0 auto; padding: 8px 14px; font-size: 0.9rem; }
-    .leaderboard-pagination .btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
-    .leaderboard-page-label { color: var(--text-secondary); text-align: center; }
-    .leaderboard-empty, .leaderboard-status { color: var(--text-secondary); padding: 15px 10px; }
-    .leaderboard-status { transition: opacity 150ms ease; }
-    .leaderboard-status.is-changing { opacity: 0; }
-    @media (max-width: 600px) { .leaderboard-controls { flex-direction: column; } }
-    </style>
+.leaderboard-section {
+  margin-bottom: 34px;
+  user-select: none;
+}
+.leaderboard-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+.leaderboard-controls label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  position: relative;
+}
+.leaderboard-controls label.leaderboard-group-control {
+  flex: 2;
+}
+.leaderboard-controls select {
+  appearance: none;
+  width: 100%;
+  padding: 10px 12px;
+  background-color: var(--surface2) !important;
+  color: var(--text-primary) !important;
+  color-scheme: dark;
+}
+.leaderboard-controls select option {
+  background-color: var(--surface2);
+  color: var(--text-primary);
+}
+.leaderboard-table-wrapper {
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.1);
+}
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 8px 10px;
+  text-align: center;
+}
+.leaderboard-table th:nth-child(2),
+.leaderboard-table td:nth-child(2) {
+  text-align: left;
+}
+.leaderboard-table th > .badge {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  pointer-events: none;
+}
+.leaderboard-table th > .leaderboard-sort-label {
+  position: relative;
+  z-index: 2;
+}
+.leaderboard-table tbody tr {
+  height: 42px;
+}
+.leaderboard-dispel-offensive {
+  color: var(--harmful);
+}
+.leaderboard-dispel-defensive {
+  color: var(--helpful);
+}
+.leaderboard-sort-active {
+  color: var(--accent-color);
+  --divider-color: var(--accent-color);
+}
+.leaderboard-table th[data-sort-key] {
+  cursor: pointer;
+  user-select: none;
+}
+.leaderboard-table th:first-child,
+.leaderboard-table td:first-child {
+  width: 1%;
+  text-align: center;
+  color: var(--text-muted);
+}
+.leaderboard-class-icon {
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.leaderboard-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 15px;
+}
+.leaderboard-pagination .btn {
+  width: auto !important;
+  min-width: 0;
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+}
+.leaderboard-pagination .btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.leaderboard-page-label {
+  color: var(--text-secondary);
+  text-align: center;
+}
+.leaderboard-empty,
+.leaderboard-status {
+  color: var(--text-secondary);
+  padding: 15px 10px;
+}
+.leaderboard-status {
+  transition: opacity 150ms ease;
+}
+.leaderboard-status.is-changing {
+  opacity: 0;
+}
+@media (max-width: 600px) {
+  .leaderboard-controls {
+    flex-direction: column;
+  }
+}
+</style>
 <main id="page-content" data-page="leaderboards">
-        <h1 class="page-title">Leaderboards</h1>
-        <section class="leaderboard-section">
-          <h2 class="section-title">🏆 Battleground Leaderboards</h2>
-          <div class="leaderboard-controls">
-            <label class="leaderboard-group-control">Group<select id="leaderboardGroup" aria-label="Leaderboard metric group"></select></label>
-            <label>Period<select id="leaderboardPeriod" aria-label="Leaderboard period"><option value="today">Today</option><option value="week">Week</option><option value="month">Month</option><option value="all" selected>All time</option></select></label>
-            <label>Unit<select id="leaderboardAverageUnit" aria-label="Average unit"><option value="all" selected>Total</option><option value="hour">Per hour</option><option value="minute">Per minute</option><option value="second">Per second</option></select></label>
-          </div>
-          <div id="leaderboardStatus" class="leaderboard-status" role="status">Loading leaderboard…</div>
-          <div class="leaderboard-table-wrapper">
-            <table class="leaderboard-table"><thead><tr id="leaderboardHeaderRow"><th>Rank</th><th>Player</th></tr></thead><tbody id="leaderboardRows"></tbody></table>
-          </div>
-          <div class="leaderboard-pagination"><button id="leaderboardPrevious" class="btn btn-ghost" type="button">Previous</button><span id="leaderboardPageLabel" class="leaderboard-page-label"></span><button id="leaderboardNext" class="btn btn-ghost" type="button">Next</button></div>
-        </section>
-        <section class="leaderboard-section">
-          <h2 class="section-title">⚔️ Arena Leaderboards</h2>
-          <div class="leaderboard-table-wrapper">
-            <table class="leaderboard-table leaderboard-placeholder-table">
-              <thead><tr><th>#</th><th>Player</th></tr></thead>
-              <tbody>
-                <tr><td>1</td><td>-</td></tr>
-                <tr><td>2</td><td>-</td></tr>
-                <tr><td>3</td><td>-</td></tr>
-                <tr><td>4</td><td>-</td></tr>
-                <tr><td>5</td><td>-</td></tr>
-                <tr><td>6</td><td>-</td></tr>
-                <tr><td>7</td><td>-</td></tr>
-                <tr><td>8</td><td>-</td></tr>
-                <tr><td>9</td><td>-</td></tr>
-                <tr><td>10</td><td>-</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
+  <h1 class="page-title">Leaderboards</h1>
+  <section class="leaderboard-section">
+    <h2 class="section-title">🏆 Battleground Leaderboards</h2>
+    <div class="leaderboard-controls">
+      <label
+        class="leaderboard-group-control">Group<select id="leaderboardGroup" aria-label="Leaderboard metric group"></select></label>
+      <label>Period<select id="leaderboardPeriod" aria-label="Leaderboard period"><option value="today">Today</option><option value="week">Week</option><option value="month">Month</option><option value="all" selected>All time</option></select></label>
+      <label>Unit<select id="leaderboardAverageUnit" aria-label="Average unit"><option value="all" selected>Total</option><option value="hour">Per hour</option><option value="minute">Per minute</option><option value="second">Per second</option></select></label>
+    </div>
+    <div id="leaderboardStatus" class="leaderboard-status" role="status">Loading leaderboard…</div>
+    <div class="leaderboard-table-wrapper">
+      <table class="leaderboard-table">
+        <thead>
+          <tr id="leaderboardHeaderRow">
+            <th>#</th>
+            <th>PLAYER</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardRows"></tbody>
+      </table>
+    </div>
+    <div
+      class="leaderboard-pagination"><button id="leaderboardPrevious" class="btn btn-ghost" type="button">Previous</button><span id="leaderboardPageLabel" class="leaderboard-page-label"></span><button id="leaderboardNext" class="btn btn-ghost" type="button">Next</button></div>
+  </section>
+  <section class="leaderboard-section">
+    <h2 class="section-title">⚔️ Arena Leaderboards</h2>
+    <div class="leaderboard-table-wrapper">
+      <table class="leaderboard-table leaderboard-placeholder-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>PLAYER</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>-</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
 <script type="module" data-page-script>
-    const api = location.origin
-    const leaderboardGroup = document.getElementById('leaderboardGroup')
-    const leaderboardPeriod = document.getElementById('leaderboardPeriod')
-    const leaderboardAverageUnit = document.getElementById('leaderboardAverageUnit')
-    const leaderboardStatus = document.getElementById('leaderboardStatus')
-    const leaderboardRows = document.getElementById('leaderboardRows')
-    const leaderboardHeaderRow = document.getElementById('leaderboardHeaderRow')
-    const leaderboardPrevious = document.getElementById('leaderboardPrevious')
-    const leaderboardPageLabel = document.getElementById('leaderboardPageLabel')
-    const leaderboardNext = document.getElementById('leaderboardNext')
+const api = location.origin
+const leaderboardGroup = document.getElementById('leaderboardGroup')
+const leaderboardPeriod = document.getElementById('leaderboardPeriod')
+const leaderboardAverageUnit = document.getElementById('leaderboardAverageUnit')
+const leaderboardStatus = document.getElementById('leaderboardStatus')
+const leaderboardRows = document.getElementById('leaderboardRows')
+const leaderboardHeaderRow = document.getElementById('leaderboardHeaderRow')
+const leaderboardPrevious = document.getElementById('leaderboardPrevious')
+const leaderboardPageLabel = document.getElementById('leaderboardPageLabel')
+const leaderboardNext = document.getElementById('leaderboardNext')
 
-    const classMap = {
-      1: { name: 'Warrior', key: 'WARRIOR' }, 2: { name: 'Paladin', key: 'PALADIN' }, 3: { name: 'Hunter', key: 'HUNTER' },
-      4: { name: 'Rogue', key: 'ROGUE' }, 5: { name: 'Priest', key: 'PRIEST' }, 6: { name: 'Death Knight', key: 'DEATHKNIGHT' },
-      7: { name: 'Shaman', key: 'SHAMAN' }, 8: { name: 'Mage', key: 'MAGE' }, 9: { name: 'Warlock', key: 'WARLOCK' },
-      10: { name: 'Monk', key: 'MONK' }, 11: { name: 'Druid', key: 'DRUID' }, 12: { name: 'Demon Hunter', key: 'DEMONHUNTER' },
-    }
-    const leaderboardGroups = [
-      { key: 'healingDamage', label: 'Healing and damage', keys: ['healingDamageAbsorbs', 'healingDone', 'damageDone', 'damageTaken', 'absorbsDone'] },
-      { key: 'skillPlays', label: 'Skill plays', keys: ['successfulInterrupts', 'fakeCastInterrupts', 'hardCCDuration', 'softCCDuration', 'totalDispels'] },
-      { key: 'killsHonor', label: 'Kills and honor', keys: ['killingBlows', 'deaths', 'honorableKills', 'bonusHonor', 'deserted', 'killDeathRatio'] },
-      { key: 'objectivePlays', label: 'Objective plays', keys: ['flagCaptures', 'flagReturns', 'flagCarryTime', 'efcPressure', 'flagEfficiency'] },
-    ]
-    const leaderboardDerivedLabels = {
-      healingDamageAbsorbs: 'Healing + damage + absorbs', totalDispels: 'Total dispels', killDeathRatio: 'Kill / death ratio',
-      efcPressure: 'EFC damage + FC healing', flagEfficiency: 'Flag pickup rate',
-    }
-    const leaderboardShortLabels = {
-      healingDamageAbsorbs: 'TOTAL', healingDone: 'HEAL', damageDone: 'DMG', damageTaken: 'TANKED', absorbsDone: 'ABSORB',
-      dispelsOffensive: 'O-DISP', dispelsDefensive: 'D-DISP', successfulInterrupts: 'KICK', fakeCastInterrupts: 'FAKE',
-      hardCCDuration: 'CC', softCCDuration: 'SNARE', totalDispels: 'DISPEL', killingBlows: 'KB', deaths: 'DEATHS', honorableKills: 'HK',
-      bonusHonor: 'HONOR', deserted: 'LEFT', killDeathRatio: 'K/D', flagReturns: 'RETURN', flagCaptures: 'CAP', flagCarryTime: 'CARRY',
-      efcPressure: 'PRESSURE', flagEfficiency: 'RATE',
-    }
-    const leaderboardDispelSortKeys = ['totalDispels', 'dispelsOffensive', 'dispelsDefensive']
-    const leaderboardLongLabels = {
-      healingDamageAbsorbs: 'Total healing + damage + absorbs', healingDone: 'Total healing done', damageDone: 'Total damage done',
-      damageTaken: 'Total damage taken', absorbsDone: 'Total absorbs done',
-    }
-    const leaderboardMetricLabels = {
-      dispelsOffensive: 'Offensive dispels', dispelsDefensive: 'Defensive dispels', successfulInterrupts: 'Successful interrupts',
-      fakeCastInterrupts: 'Fake-cast interrupts', hardCCDuration: 'Loss of control duration', softCCDuration: 'Movement impairing duration',
-      absorbsDone: 'Absorbs done', killingBlows: 'Killing blows', deaths: 'Deaths', honorableKills: 'Honorable kills', bonusHonor: 'Bonus honor',
-      damageDone: 'Damage done', healingDone: 'Healing done', flagCaptures: 'Flag captures', flagReturns: 'Flag returns', deserted: 'Deserted battlegrounds',
-      flagCarryTime: 'Flag carry time', damageTaken: 'Damage taken',
-    }
-    const leaderboardDerivedValues = {
-      healingDamageAbsorbs: (stats) => stats.healingDone + stats.damageDone + stats.absorbsDone,
-      totalDispels: (stats) => stats.dispelsOffensive + stats.dispelsDefensive,
-      killDeathRatio: (stats) => stats.deaths ? stats.killingBlows / stats.deaths : stats.killingBlows,
-      efcPressure: (stats) => stats.damageOnEFC + stats.healsOnFC,
-      flagEfficiency: (stats) => stats.flagCaptures ? stats.attemptsOnFlag / stats.flagCaptures : 0,
-    }
-    const durationCountKeys = { hardCCDuration: 'hardCCCount', softCCDuration: 'softCCCount' }
-    const compactNumber = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 })
-    const durationMetrics = new Set(['hardCCDuration', 'softCCDuration', 'flagCarryTime', 'timePlayed'])
-    const formatDuration = (value) => {
-      const seconds = Math.max(0, Number(value) || 0)
-      if (seconds >= 86400) return `${Math.round(seconds / 8640) / 10}d`
-      if (seconds >= 3600) return `${Math.round(seconds / 360) / 10}h`
-      if (seconds >= 60) return `${Math.round(seconds / 6) / 10}m`
-      return `${Math.round(seconds)}s`
-    }
-    const fullDuration = new Intl.DurationFormat(undefined, { style: 'long' })
-    const formatFullDuration = (value) => {
-      let seconds = Math.max(0, Math.floor(Number(value) || 0))
-      const days = Math.floor(seconds / 86400); seconds %= 86400
-      const hours = Math.floor(seconds / 3600); seconds %= 3600
-      const minutes = Math.floor(seconds / 60); seconds %= 60
-      return fullDuration.format({ days, hours, minutes, seconds })
-    }
-    const formatLeaderboardValue = (value, key) => durationMetrics.has(key) ? formatDuration(value) : compactNumber.format(Number(value) || 0)
-    const leaderboardPageSize = 10
-    let leaderboardData = []
-    let leaderboardPage = 0
-    let leaderboardStatusVersion = 0
-    let leaderboardStatusTransition
-    const leaderboardValueUnits = {
-      all: { label: 'total', multiplier: 1 }, hour: { label: 'hour', multiplier: 3600 }, minute: { label: 'minute', multiplier: 60 }, second: { label: 'second', multiplier: 1 },
-    }
-    const readLeaderboardState = () => {
-      const url = new URL(location.href)
-      const params = url.searchParams
-      const group = leaderboardGroups.find(({ key }) => key === params.get('leaderboard-group')) || leaderboardGroups[0]
-      const period = ['today', 'week', 'month', 'all'].includes(params.get('leaderboard-period')) ? params.get('leaderboard-period') : 'all'
-      const unit = leaderboardValueUnits[params.get('leaderboard-unit')] ? params.get('leaderboard-unit') : 'all'
-      const sortParam = params.get('leaderboard-sort')
-      const sortKeys = group.keys.flatMap((key) => key === 'totalDispels' ? leaderboardDispelSortKeys : [key])
-      const sortKey = sortKeys.includes(sortParam) ? sortParam : sortKeys[Math.floor(Math.random() * sortKeys.length)]
-      if (sortParam !== sortKey) { params.set('leaderboard-sort', sortKey); history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`) }
-      return { group, sortKey, period, unit }
-    }
-    const syncLeaderboardControls = (state) => {
-      leaderboardGroup.value = state.group.key; leaderboardPeriod.value = state.period; leaderboardAverageUnit.value = state.unit
-    }
-    const updateLeaderboardUrl = (changes) => {
-      const url = new URL(location.href)
-      if (changes.group !== undefined) url.searchParams.set('leaderboard-group', changes.group)
-      if (changes.sort !== undefined) url.searchParams.set('leaderboard-sort', changes.sort)
-      if (changes.period !== undefined) url.searchParams.set('leaderboard-period', changes.period)
-      if (changes.unit !== undefined) url.searchParams.set('leaderboard-unit', changes.unit)
-      history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`)
-    }
-    const leaderboardValue = (row, key, unit) => {
-      const total = leaderboardDerivedValues[key] ? leaderboardDerivedValues[key](row.stats) : row.stats[key]
-      if (unit === 'all') return total
-      const multiplier = leaderboardValueUnits[unit].multiplier
-      return leaderboardDerivedValues[key] ? row.timePlayed ? total * multiplier / row.timePlayed : 0 : row.averages[key] * multiplier
-    }
-    const renderLeaderboardPage = () => {
-      const { group, sortKey, unit } = readLeaderboardState()
-      const otherUnit = unit === 'all' ? 'hour' : 'all'
-      const pageCount = Math.ceil(leaderboardData.length / leaderboardPageSize)
-      const start = leaderboardPage * leaderboardPageSize
-      const pageRows = leaderboardData.slice(start, start + leaderboardPageSize)
-      leaderboardHeaderRow.innerHTML = `<th>#</th><th>Player</th>${group.keys.map((key) => {
-        const label = leaderboardShortLabels[key] || key
-        const title = leaderboardLongLabels[key] || leaderboardDerivedLabels[key] || leaderboardMetricLabels[key] || key
-        const sortCycle = key === 'totalDispels' ? leaderboardDispelSortKeys : null
-        const selected = key === sortKey || sortCycle?.includes(sortKey)
-        return `<th${sortCycle ? ' colspan="3"' : ''} data-sort-key="${key}"${sortCycle ? ` data-sort-cycle="${sortCycle.join(',')}"` : ''} title="${title}"${selected ? ' aria-sort="descending"' : ''}>${selected ? `<span class="leaderboard-sort-label">${label}</span><span class="badge badge-offline" aria-hidden="true"></span>` : label}</th>`
-      }).join('')}`
-      const renderedRows = pageRows.map((row, index) => {
-        const classInfo = classMap[row.class]
-        const rank = start + index + 1
-        return `<tr><td>${rank === 1 ? '<span class="money-dot money-dot-gold" role="img" aria-label="1st place" title="1st place"></span>' : rank === 2 ? '<span class="money-dot money-dot-silver" role="img" aria-label="2nd place" title="2nd place"></span>' : rank === 3 ? '<span class="money-dot money-dot-copper" role="img" aria-label="3rd place" title="3rd place"></span>' : rank}</td><td>${classInfo ? `<span class="class-icon leaderboard-class-icon ${classInfo.key}" role="img" aria-label="${classInfo.name}" title="${classInfo.name}"></span>` : ''}<strong class="${classInfo?.key || ''}" title="Played ${formatFullDuration(row.timePlayed)} over ${row.matches} battlegrounds">${row.name}</strong></td>${group.keys.map((key) => {
-          const headerTitle = leaderboardLongLabels[key] || leaderboardDerivedLabels[key] || leaderboardMetricLabels[key] || key
-          const otherLabel = otherUnit === 'all' ? 'Total' : `Average per ${leaderboardValueUnits[otherUnit].label}`
-          const otherValue = durationMetrics.has(key) ? formatFullDuration(leaderboardValue(row, key, otherUnit)) : formatLeaderboardValue(leaderboardValue(row, key, otherUnit), key)
-          let title = `${headerTitle}: ${otherLabel} ${otherValue}`
-          const countKey = durationCountKeys[key]
-          if (countKey) { const countValue = leaderboardValue(row, countKey, unit); title += `; Count: ${formatLeaderboardValue(countValue)}; Average duration / count: ${formatDuration(countValue ? leaderboardValue(row, key, unit) / countValue : 0)}` }
-          if (key === 'flagEfficiency' && unit !== 'all') title += `; Total pickups: ${formatLeaderboardValue(leaderboardValue(row, 'attemptsOnFlag', 'all'))}`
-          if (key === 'efcPressure') title += `; Damage on EFC: ${formatLeaderboardValue(leaderboardValue(row, 'damageOnEFC', otherUnit))}; Healing on FC: ${formatLeaderboardValue(leaderboardValue(row, 'healsOnFC', otherUnit))}`
-          if (key === 'totalDispels') {
-            const total = leaderboardValue(row, 'totalDispels', unit), offensive = leaderboardValue(row, 'dispelsOffensive', unit), defensive = leaderboardValue(row, 'dispelsDefensive', unit)
-            return `<td class="${sortKey === 'totalDispels' ? 'leaderboard-sort-active' : ''}" title="Total dispels: ${otherLabel} ${formatLeaderboardValue(leaderboardValue(row, 'totalDispels', otherUnit))}">${formatLeaderboardValue(total)}</td><td class="leaderboard-dispel-offensive${sortKey === 'dispelsOffensive' ? ' leaderboard-sort-active' : ''}" title="Offensive dispels: ${otherLabel} ${formatLeaderboardValue(leaderboardValue(row, 'dispelsOffensive', otherUnit))}">${formatLeaderboardValue(offensive)}</td><td class="leaderboard-dispel-defensive${sortKey === 'dispelsDefensive' ? ' leaderboard-sort-active' : ''}" title="Defensive dispels: ${otherLabel} ${formatLeaderboardValue(leaderboardValue(row, 'dispelsDefensive', otherUnit))}">${formatLeaderboardValue(defensive)}</td>`
-          }
-          return `<td class="${key === sortKey ? 'leaderboard-sort-active' : ''}" title="${title}">${formatLeaderboardValue(leaderboardValue(row, key, unit), key)}</td>`
-        }).join('')}</tr>`
+const classMap = {
+  1: { name: 'Warrior', key: 'WARRIOR' },
+  2: { name: 'Paladin', key: 'PALADIN' },
+  3: { name: 'Hunter', key: 'HUNTER' },
+  4: { name: 'Rogue', key: 'ROGUE' },
+  5: { name: 'Priest', key: 'PRIEST' },
+  6: { name: 'Death Knight', key: 'DEATHKNIGHT' },
+  7: { name: 'Shaman', key: 'SHAMAN' },
+  8: { name: 'Mage', key: 'MAGE' },
+  9: { name: 'Warlock', key: 'WARLOCK' },
+  10: { name: 'Monk', key: 'MONK' },
+  11: { name: 'Druid', key: 'DRUID' },
+  12: { name: 'Demon Hunter', key: 'DEMONHUNTER' },
+}
+const leaderboardGroups = [
+  {
+    key: 'healingDamage',
+    label: 'Healing and damage',
+    keys: ['healingDamageAbsorbs', 'healingDone', 'damageDone', 'damageTaken', 'absorbsDone'],
+  },
+  {
+    key: 'skillPlays',
+    label: 'Skill plays',
+    keys: ['successfulInterrupts', 'fakeCastInterrupts', 'hardCCDuration', 'softCCDuration', 'totalDispels'],
+  },
+  {
+    key: 'killsHonor',
+    label: 'Kills and honor',
+    keys: ['killingBlows', 'deaths', 'honorableKills', 'bonusHonor', 'deserted', 'killDeathRatio'],
+  },
+  {
+    key: 'objectivePlays',
+    label: 'Objective plays',
+    keys: ['flagCaptures', 'flagReturns', 'flagCarryTime', 'efcPressure', 'flagEfficiency'],
+  },
+]
+const leaderboardDerivedLabels = {
+  healingDamageAbsorbs: 'Healing + damage + absorbs',
+  totalDispels: 'Total dispels',
+  killDeathRatio: 'Kill / death ratio',
+  efcPressure: 'EFC damage + FC healing',
+  flagEfficiency: 'Flag pickup rate',
+}
+const leaderboardShortLabels = {
+  healingDamageAbsorbs: 'TOTAL',
+  healingDone: 'HEAL',
+  damageDone: 'DMG',
+  damageTaken: 'TANKED',
+  absorbsDone: 'ABSORB',
+  dispelsOffensive: 'O-DISP',
+  dispelsDefensive: 'D-DISP',
+  successfulInterrupts: 'KICK',
+  fakeCastInterrupts: 'FAKE',
+  hardCCDuration: 'CC',
+  softCCDuration: 'SNARE',
+  totalDispels: 'DISPEL',
+  killingBlows: 'KB',
+  deaths: 'DEATHS',
+  honorableKills: 'HK',
+  bonusHonor: 'HONOR',
+  deserted: 'LEFT',
+  killDeathRatio: 'K/D',
+  flagReturns: 'RETURN',
+  flagCaptures: 'CAP',
+  flagCarryTime: 'CARRY',
+  efcPressure: 'PRESSURE',
+  flagEfficiency: 'RATE',
+}
+const leaderboardDispelSortKeys = ['totalDispels', 'dispelsOffensive', 'dispelsDefensive']
+const leaderboardLongLabels = {
+  healingDamageAbsorbs: 'Total healing + damage + absorbs',
+  healingDone: 'Total healing done',
+  damageDone: 'Total damage done',
+  damageTaken: 'Total damage taken',
+  absorbsDone: 'Total absorbs done',
+}
+const leaderboardMetricLabels = {
+  dispelsOffensive: 'Offensive dispels',
+  dispelsDefensive: 'Defensive dispels',
+  successfulInterrupts: 'Successful interrupts',
+  fakeCastInterrupts: 'Fake-cast interrupts',
+  hardCCDuration: 'Loss of control duration',
+  softCCDuration: 'Movement impairing duration',
+  absorbsDone: 'Absorbs done',
+  killingBlows: 'Killing blows',
+  deaths: 'Deaths',
+  honorableKills: 'Honorable kills',
+  bonusHonor: 'Bonus honor',
+  damageDone: 'Damage done',
+  healingDone: 'Healing done',
+  flagCaptures: 'Flag captures',
+  flagReturns: 'Flag returns',
+  deserted: 'Deserted battlegrounds',
+  flagCarryTime: 'Flag carry time',
+  damageTaken: 'Damage taken',
+}
+const leaderboardDerivedValues = {
+  healingDamageAbsorbs: (stats) => stats.healingDone + stats.damageDone + stats.absorbsDone,
+  totalDispels: (stats) => stats.dispelsOffensive + stats.dispelsDefensive,
+  killDeathRatio: (stats) => stats.deaths ? stats.killingBlows / stats.deaths : stats.killingBlows,
+  efcPressure: (stats) => stats.damageOnEFC + stats.healsOnFC,
+  flagEfficiency: (stats) => stats.flagCaptures ? stats.attemptsOnFlag / stats.flagCaptures : 0,
+}
+const durationCountKeys = { hardCCDuration: 'hardCCCount', softCCDuration: 'softCCCount' }
+const compactNumber = new Intl.NumberFormat(undefined, {
+  notation: 'compact',
+  compactDisplay: 'short',
+  maximumFractionDigits: 1,
+})
+const durationMetrics = new Set(['hardCCDuration', 'softCCDuration', 'flagCarryTime', 'timePlayed'])
+const formatDuration = (value) => {
+  const seconds = Math.max(0, Number(value) || 0)
+  if (seconds >= 86400) return `${Math.round(seconds / 8640) / 10}d`
+  if (seconds >= 3600) return `${Math.round(seconds / 360) / 10}h`
+  if (seconds >= 60) return `${Math.round(seconds / 6) / 10}m`
+  return `${Math.round(seconds)}s`
+}
+const fullDuration = new Intl.DurationFormat(undefined, { style: 'long' })
+const formatFullDuration = (value) => {
+  let seconds = Math.max(0, Math.floor(Number(value) || 0))
+  const days = Math.floor(seconds / 86400)
+  seconds %= 86400
+  const hours = Math.floor(seconds / 3600)
+  seconds %= 3600
+  const minutes = Math.floor(seconds / 60)
+  seconds %= 60
+  return fullDuration.format({ days, hours, minutes, seconds })
+}
+const formatLeaderboardValue = (value, key) =>
+  durationMetrics.has(key) ? formatDuration(value) : compactNumber.format(Number(value) || 0)
+const leaderboardPageSize = 10
+let leaderboardData = []
+let leaderboardPage = 0
+let leaderboardStatusVersion = 0
+let leaderboardStatusTransition
+const leaderboardValueUnits = {
+  all: { label: 'total', multiplier: 1 },
+  hour: { label: 'hour', multiplier: 3600 },
+  minute: { label: 'minute', multiplier: 60 },
+  second: { label: 'second', multiplier: 1 },
+}
+const readLeaderboardState = () => {
+  const url = new URL(location.href)
+  const params = url.searchParams
+  const group = leaderboardGroups.find(({ key }) => key === params.get('leaderboard-group')) || leaderboardGroups[0]
+  const period = ['today', 'week', 'month', 'all'].includes(params.get('leaderboard-period'))
+    ? params.get('leaderboard-period')
+    : 'all'
+  const unit = leaderboardValueUnits[params.get('leaderboard-unit')] ? params.get('leaderboard-unit') : 'all'
+  const sortParam = params.get('leaderboard-sort')
+  const sortKeys = group.keys.flatMap((key) => key === 'totalDispels' ? leaderboardDispelSortKeys : [key])
+  const sortKey = sortKeys.includes(sortParam) ? sortParam : sortKeys[Math.floor(Math.random() * sortKeys.length)]
+  if (sortParam !== sortKey) {
+    params.set('leaderboard-sort', sortKey)
+    history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+  return { group, sortKey, period, unit }
+}
+const syncLeaderboardControls = (state) => {
+  leaderboardGroup.value = state.group.key
+  leaderboardPeriod.value = state.period
+  leaderboardAverageUnit.value = state.unit
+}
+const updateLeaderboardUrl = (changes) => {
+  const url = new URL(location.href)
+  if (changes.group !== undefined) url.searchParams.set('leaderboard-group', changes.group)
+  if (changes.sort !== undefined) url.searchParams.set('leaderboard-sort', changes.sort)
+  if (changes.period !== undefined) url.searchParams.set('leaderboard-period', changes.period)
+  if (changes.unit !== undefined) url.searchParams.set('leaderboard-unit', changes.unit)
+  history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`)
+}
+const leaderboardValue = (row, key, unit) => {
+  const total = leaderboardDerivedValues[key] ? leaderboardDerivedValues[key](row.stats) : row.stats[key]
+  if (unit === 'all') return total
+  const multiplier = leaderboardValueUnits[unit].multiplier
+  return leaderboardDerivedValues[key]
+    ? row.timePlayed ? total * multiplier / row.timePlayed : 0
+    : row.averages[key] * multiplier
+}
+const renderLeaderboardPage = () => {
+  const { group, sortKey, unit } = readLeaderboardState()
+  const otherUnit = unit === 'all' ? 'hour' : 'all'
+  const pageCount = Math.ceil(leaderboardData.length / leaderboardPageSize)
+  const start = leaderboardPage * leaderboardPageSize
+  const pageRows = leaderboardData.slice(start, start + leaderboardPageSize)
+  leaderboardHeaderRow.innerHTML = `<th>#</th><th>Player</th>${
+    group.keys.map((key) => {
+      const label = leaderboardShortLabels[key] || key
+      const title = leaderboardLongLabels[key] || leaderboardDerivedLabels[key] || leaderboardMetricLabels[key] || key
+      const sortCycle = key === 'totalDispels' ? leaderboardDispelSortKeys : null
+      const selected = key === sortKey || sortCycle?.includes(sortKey)
+      return `<th${sortCycle ? ' colspan="3"' : ''} data-sort-key="${key}"${
+        sortCycle ? ` data-sort-cycle="${sortCycle.join(',')}"` : ''
+      } title="${title}"${selected ? ' aria-sort="descending"' : ''}>${
+        selected
+          ? `<span class="leaderboard-sort-label">${label}</span><span class="badge badge-offline" aria-hidden="true"></span>`
+          : label
+      }</th>`
+    }).join('')
+  }`
+  const renderedRows = pageRows.map((row, index) => {
+    const classInfo = classMap[row.class]
+    const rank = start + index + 1
+    return `<tr><td>${
+      rank === 1
+        ? '<span class="money-dot money-dot-gold" role="img" aria-label="1st place" title="1st place"></span>'
+        : rank === 2
+        ? '<span class="money-dot money-dot-silver" role="img" aria-label="2nd place" title="2nd place"></span>'
+        : rank === 3
+        ? '<span class="money-dot money-dot-copper" role="img" aria-label="3rd place" title="3rd place"></span>'
+        : rank
+    }</td><td>${
+      classInfo
+        ? `<span class="class-icon leaderboard-class-icon ${classInfo.key}" role="img" aria-label="${classInfo.name}" title="${classInfo.name}"></span>`
+        : ''
+    }<strong class="${classInfo?.key || ''}" title="Played ${
+      formatFullDuration(row.timePlayed)
+    } over ${row.matches} battlegrounds">${row.name}</strong></td>${
+      group.keys.map((key) => {
+        const headerTitle = leaderboardLongLabels[key] || leaderboardDerivedLabels[key] ||
+          leaderboardMetricLabels[key] || key
+        const otherLabel = otherUnit === 'all' ? 'Total' : `Average per ${leaderboardValueUnits[otherUnit].label}`
+        const otherValue = durationMetrics.has(key)
+          ? formatFullDuration(leaderboardValue(row, key, otherUnit))
+          : formatLeaderboardValue(leaderboardValue(row, key, otherUnit), key)
+        let title = `${headerTitle}: ${otherLabel} ${otherValue}`
+        const countKey = durationCountKeys[key]
+        if (countKey) {
+          const countValue = leaderboardValue(row, countKey, unit)
+          title += `; Count: ${formatLeaderboardValue(countValue)}; Average duration / count: ${
+            formatDuration(countValue ? leaderboardValue(row, key, unit) / countValue : 0)
+          }`
+        }
+        if (key === 'flagEfficiency' && unit !== 'all') {
+          title += `; Total pickups: ${formatLeaderboardValue(leaderboardValue(row, 'attemptsOnFlag', 'all'))}`
+        }
+        if (key === 'efcPressure') {
+          title += `; Damage on EFC: ${
+            formatLeaderboardValue(leaderboardValue(row, 'damageOnEFC', otherUnit))
+          }; Healing on FC: ${formatLeaderboardValue(leaderboardValue(row, 'healsOnFC', otherUnit))}`
+        }
+        if (key === 'totalDispels') {
+          const total = leaderboardValue(row, 'totalDispels', unit),
+            offensive = leaderboardValue(row, 'dispelsOffensive', unit),
+            defensive = leaderboardValue(row, 'dispelsDefensive', unit)
+          return `<td class="${
+            sortKey === 'totalDispels' ? 'leaderboard-sort-active' : ''
+          }" title="Total dispels: ${otherLabel} ${
+            formatLeaderboardValue(leaderboardValue(row, 'totalDispels', otherUnit))
+          }">${formatLeaderboardValue(total)}</td><td class="leaderboard-dispel-offensive${
+            sortKey === 'dispelsOffensive' ? ' leaderboard-sort-active' : ''
+          }" title="Offensive dispels: ${otherLabel} ${
+            formatLeaderboardValue(leaderboardValue(row, 'dispelsOffensive', otherUnit))
+          }">${formatLeaderboardValue(offensive)}</td><td class="leaderboard-dispel-defensive${
+            sortKey === 'dispelsDefensive' ? ' leaderboard-sort-active' : ''
+          }" title="Defensive dispels: ${otherLabel} ${
+            formatLeaderboardValue(leaderboardValue(row, 'dispelsDefensive', otherUnit))
+          }">${formatLeaderboardValue(defensive)}</td>`
+        }
+        return `<td class="${key === sortKey ? 'leaderboard-sort-active' : ''}" title="${title}">${
+          formatLeaderboardValue(leaderboardValue(row, key, unit), key)
+        }</td>`
       }).join('')
-      const emptyRows = Array.from({ length: leaderboardPageSize - pageRows.length }, (_, index) => {
-        const message = !pageRows.length && index === 0
-        return '<tr><td>' + (start + pageRows.length + index + 1) + '</td><td' + (message ? ' class="leaderboard-empty"' : '') + '>' + (message ? 'No battleground data yet.' : '-') + '</td>' + group.keys.map((key) => key === 'totalDispels' ? '<td>-</td><td>-</td><td>-</td>' : '<td>-</td>').join('') + '</tr>'
-      }).join('')
-      leaderboardRows.innerHTML = renderedRows + emptyRows
-      leaderboardPageLabel.textContent = pageCount ? `Page ${leaderboardPage + 1} of ${pageCount}` : ''
-      leaderboardPrevious.disabled = leaderboardPage <= 0
-      leaderboardNext.disabled = leaderboardPage + 1 >= pageCount
+    }</tr>`
+  }).join('')
+  const emptyRows = Array.from({ length: leaderboardPageSize - pageRows.length }, (_, index) => {
+    const message = !pageRows.length && index === 0
+    return '<tr><td>' + (start + pageRows.length + index + 1) + '</td><td' +
+      (message ? ' class="leaderboard-empty"' : '') + '>' + (message ? 'No battleground data yet.' : '-') + '</td>' +
+      group.keys.map((key) => key === 'totalDispels' ? '<td>-</td><td>-</td><td>-</td>' : '<td>-</td>').join('') +
+      '</tr>'
+  }).join('')
+  leaderboardRows.innerHTML = renderedRows + emptyRows
+  leaderboardPageLabel.textContent = pageCount ? `Page ${leaderboardPage + 1} of ${pageCount}` : ''
+  leaderboardPrevious.disabled = leaderboardPage <= 0
+  leaderboardNext.disabled = leaderboardPage + 1 >= pageCount
+}
+async function loadLeaderboard() {
+  const statusVersion = ++leaderboardStatusVersion
+  let nextStatus
+  if (leaderboardStatusTransition) {
+    leaderboardStatus.removeEventListener('transitionend', leaderboardStatusTransition)
+    leaderboardStatusTransition = undefined
+  }
+  leaderboardStatus.classList.remove('is-changing')
+  try {
+    const state = readLeaderboardState()
+    syncLeaderboardControls(state)
+    const params = new URLSearchParams({
+      metric: state.sortKey,
+      period: state.period,
+      mode: state.unit === 'all' ? 'absolute' : 'average',
+    })
+    const res = await fetch(`${api}/api/leaderboards?${params}`)
+    const data = await res.json()
+    if (!res.ok) throw Error(data.error || 'Unable to load leaderboard')
+    if (leaderboardGroup.options.length === 0) {
+      for (const group of leaderboardGroups) leaderboardGroup.add(new Option(group.label, group.key))
     }
-    async function loadLeaderboard() {
-      const statusVersion = ++leaderboardStatusVersion
-      let nextStatus
-      if (leaderboardStatusTransition) { leaderboardStatus.removeEventListener('transitionend', leaderboardStatusTransition); leaderboardStatusTransition = undefined }
-      leaderboardStatus.classList.remove('is-changing')
-      try {
-        const state = readLeaderboardState(); syncLeaderboardControls(state)
-        const params = new URLSearchParams({ metric: state.sortKey, period: state.period, mode: state.unit === 'all' ? 'absolute' : 'average' })
-        const res = await fetch(`${api}/api/leaderboards?${params}`); const data = await res.json()
-        if (!res.ok) throw Error(data.error || 'Unable to load leaderboard')
-        if (leaderboardGroup.options.length === 0) for (const group of leaderboardGroups) leaderboardGroup.add(new Option(group.label, group.key))
-        const currentState = readLeaderboardState(); syncLeaderboardControls(currentState); leaderboardData = data.rows || []; leaderboardPage = 0; renderLeaderboardPage()
-        nextStatus = `${currentState.group.label} · ${currentState.unit === 'all' ? 'Total' : `Average per ${leaderboardValueUnits[currentState.unit].label}`} · ${data.period === 'all' ? 'All time' : data.period}`
-      } catch (err) { leaderboardData = []; leaderboardPage = 0; renderLeaderboardPage(); nextStatus = err.message || 'Unable to load leaderboard.' }
-      if (statusVersion !== leaderboardStatusVersion || nextStatus === leaderboardStatus.textContent) return
-      leaderboardStatusTransition = (event) => {
-        if (event.target !== leaderboardStatus || event.propertyName !== 'opacity') return
-        leaderboardStatus.removeEventListener('transitionend', leaderboardStatusTransition); leaderboardStatusTransition = undefined
-        if (statusVersion !== leaderboardStatusVersion) return
-        leaderboardStatus.textContent = nextStatus; leaderboardStatus.classList.remove('is-changing')
-      }
-      leaderboardStatus.addEventListener('transitionend', leaderboardStatusTransition)
-      requestAnimationFrame(() => { if (statusVersion === leaderboardStatusVersion) leaderboardStatus.classList.add('is-changing') })
-    }
-    leaderboardGroup.onchange = () => { const group = leaderboardGroups.find(({ key }) => key === leaderboardGroup.value) || leaderboardGroups[0]; updateLeaderboardUrl({ group: group.key, sort: group.keys[Math.floor(Math.random() * group.keys.length)] }); loadLeaderboard() }
-    leaderboardAverageUnit.onchange = () => { updateLeaderboardUrl({ unit: leaderboardAverageUnit.value }); loadLeaderboard() }
-    leaderboardPeriod.onchange = () => { updateLeaderboardUrl({ period: leaderboardPeriod.value }); loadLeaderboard() }
-    leaderboardHeaderRow.onclick = (event) => {
-      const header = event.target.closest?.('[data-sort-key]'); if (!header) return
-      const cycle = header.dataset.sortCycle?.split(','); const currentSort = readLeaderboardState().sortKey
-      updateLeaderboardUrl({ sort: cycle ? cycle[(cycle.indexOf(currentSort) + 1) % cycle.length] : header.dataset.sortKey }); loadLeaderboard()
-    }
-    leaderboardPrevious.onclick = () => { if (leaderboardPage > 0) { leaderboardPage--; renderLeaderboardPage() } }
-    leaderboardNext.onclick = () => { if ((leaderboardPage + 1) * leaderboardPageSize < leaderboardData.length) { leaderboardPage++; renderLeaderboardPage() } }
-    loadLeaderboard()
-    </script>
+    const currentState = readLeaderboardState()
+    syncLeaderboardControls(currentState)
+    leaderboardData = data.rows || []
+    leaderboardPage = 0
+    renderLeaderboardPage()
+    nextStatus = `${currentState.group.label} · ${
+      currentState.unit === 'all' ? 'Total' : `Average per ${leaderboardValueUnits[currentState.unit].label}`
+    } · ${data.period === 'all' ? 'All time' : data.period}`
+  } catch (err) {
+    leaderboardData = []
+    leaderboardPage = 0
+    renderLeaderboardPage()
+    nextStatus = err.message || 'Unable to load leaderboard.'
+  }
+  if (statusVersion !== leaderboardStatusVersion || nextStatus === leaderboardStatus.textContent) return
+  leaderboardStatusTransition = (event) => {
+    if (event.target !== leaderboardStatus || event.propertyName !== 'opacity') return
+    leaderboardStatus.removeEventListener('transitionend', leaderboardStatusTransition)
+    leaderboardStatusTransition = undefined
+    if (statusVersion !== leaderboardStatusVersion) return
+    leaderboardStatus.textContent = nextStatus
+    leaderboardStatus.classList.remove('is-changing')
+  }
+  leaderboardStatus.addEventListener('transitionend', leaderboardStatusTransition)
+  requestAnimationFrame(() => {
+    if (statusVersion === leaderboardStatusVersion) leaderboardStatus.classList.add('is-changing')
+  })
+}
+leaderboardGroup.onchange = () => {
+  const group = leaderboardGroups.find(({ key }) => key === leaderboardGroup.value) || leaderboardGroups[0]
+  updateLeaderboardUrl({ group: group.key, sort: group.keys[Math.floor(Math.random() * group.keys.length)] })
+  loadLeaderboard()
+}
+leaderboardAverageUnit.onchange = () => {
+  updateLeaderboardUrl({ unit: leaderboardAverageUnit.value })
+  loadLeaderboard()
+}
+leaderboardPeriod.onchange = () => {
+  updateLeaderboardUrl({ period: leaderboardPeriod.value })
+  loadLeaderboard()
+}
+leaderboardHeaderRow.onclick = (event) => {
+  const header = event.target.closest?.('[data-sort-key]')
+  if (!header) return
+  const cycle = header.dataset.sortCycle?.split(',')
+  const currentSort = readLeaderboardState().sortKey
+  updateLeaderboardUrl({
+    sort: cycle ? cycle[(cycle.indexOf(currentSort) + 1) % cycle.length] : header.dataset.sortKey,
+  })
+  loadLeaderboard()
+}
+leaderboardPrevious.onclick = () => {
+  if (leaderboardPage > 0) {
+    leaderboardPage--
+    renderLeaderboardPage()
+  }
+}
+leaderboardNext.onclick = () => {
+  if ((leaderboardPage + 1) * leaderboardPageSize < leaderboardData.length) {
+    leaderboardPage++
+    renderLeaderboardPage()
+  }
+}
+loadLeaderboard()
+</script>

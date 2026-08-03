@@ -67,8 +67,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   overflow-x: hidden;
+  overflow-y: scroll;
   background-image:
     radial-gradient(circle at 10% 20%, rgba(88, 101, 242, 0.08) 0%, transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(255, 209, 95, 0.06) 0%, transparent 40%);
@@ -129,6 +129,7 @@ body.page-exit {
 .page-subtitle {
   color: var(--text-secondary);
   margin-bottom: 24px;
+  text-align: center;
 }
 
 .events-shell {
@@ -139,7 +140,7 @@ body.page-exit {
   flex-direction: column;
 }
 
-header {
+body:has(.events-shell) > header {
   padding: 40px 40px 24px;
   margin-bottom: 0;
 }
@@ -208,11 +209,17 @@ header {
 .site-navigation a {
   color: var(--text-secondary);
   text-decoration: none;
+  font-family: var(--font-title);
 }
 
 .site-navigation a:hover,
 .site-navigation a.active {
   color: var(--accent-color);
+}
+
+.site-navigation a.active {
+  pointer-events: none;
+  cursor: default;
 }
 
 .site-nav-account {
@@ -247,12 +254,18 @@ header {
 }
 
 .site-footer {
-  margin-top: 28px;
+  width: 100%;
+  max-width: 800px;
+  margin: 36px 0 8px;
   padding: 14px 0 4px;
   color: var(--text-muted);
   text-align: center;
   font-size: 0.8rem;
   user-select: none;
+}
+
+thead tr {
+  font-family: var(--font-title);
 }
 
 .logo-icon {
@@ -496,7 +509,8 @@ tbody tr td::after {
 }
 
 /* Table row hand-drawn divider lines */
-tbody tr td, th {
+tbody tr td,
+th {
   position: relative;
   white-space: nowrap;
 }
@@ -527,9 +541,17 @@ tbody tr:last-child td::after {
   vertical-align: 0.05em;
 }
 
-.money-dot-gold { background: #f8c84e; }
-.money-dot-silver { background: #c7d0d8; transform: rotate(90deg); }
-.money-dot-copper { background: #b87333; transform: rotate(180deg); }
+.money-dot-gold {
+  background: #f8c84e;
+}
+.money-dot-silver {
+  background: #c7d0d8;
+  transform: rotate(90deg);
+}
+.money-dot-copper {
+  background: #b87333;
+  transform: rotate(180deg);
+}
 
 .character-gold {
   white-space: nowrap;
@@ -554,20 +576,71 @@ tbody tr:last-child td::after {
   vertical-align: middle;
 }
 
-.class-icon.WARRIOR, .class-icon.DRUID, .class-icon.MONK, .class-icon.MAGE { background-position-y: 0% }
-.class-icon.PALADIN, .class-icon.HUNTER, .class-icon.ROGUE, .class-icon.PRIEST { background-position-y: 50% }
-.class-icon.DEATHKNIGHT, .class-icon.SHAMAN, .class-icon.WARLOCK, .class-icon.DEMONHUNTER { background-position-y: 100% }
-.class-icon.WARRIOR, .class-icon.DEATHKNIGHT, .class-icon.PALADIN { background-position-x: 0% }
-.class-icon.DRUID, .class-icon.HUNTER, .class-icon.SHAMAN { background-position-x: 33.333333% }
-.class-icon.WARLOCK, .class-icon.MONK, .class-icon.ROGUE { background-position-x: 66.666667% }
-.class-icon.MAGE, .class-icon.PRIEST, .class-icon.DEMONHUNTER { background-position-x: 100% }
-.DRUID { color: #ff7c0a } /* Orange */
-.HUNTER { color: #aad372 } /* Pistachio */
-.MAGE { color: #3fc7eb } /* LightBlue */
-.PALADIN { color: #f48cba } /* Pink */
-.PRIEST { color: #ffffff } /* White* */
-.ROGUE { color: #fff468 } /* Yellow* */
-.SHAMAN { color: #0070dd } /* Blue */
-.WARLOCK { color: #8788ee } /* Purple */
-.WARRIOR { color: #c69b6d } /* Tan */
-.DEATHKNIGHT { color: #c41e3a } /* Red */
+.class-icon.WARRIOR,
+.class-icon.DRUID,
+.class-icon.MONK,
+.class-icon.MAGE {
+  background-position-y: 0%;
+}
+.class-icon.PALADIN,
+.class-icon.HUNTER,
+.class-icon.ROGUE,
+.class-icon.PRIEST {
+  background-position-y: 50%;
+}
+.class-icon.DEATHKNIGHT,
+.class-icon.SHAMAN,
+.class-icon.WARLOCK,
+.class-icon.DEMONHUNTER {
+  background-position-y: 100%;
+}
+.class-icon.WARRIOR,
+.class-icon.DEATHKNIGHT,
+.class-icon.PALADIN {
+  background-position-x: 0%;
+}
+.class-icon.DRUID,
+.class-icon.HUNTER,
+.class-icon.SHAMAN {
+  background-position-x: 33.333333%;
+}
+.class-icon.WARLOCK,
+.class-icon.MONK,
+.class-icon.ROGUE {
+  background-position-x: 66.666667%;
+}
+.class-icon.MAGE,
+.class-icon.PRIEST,
+.class-icon.DEMONHUNTER {
+  background-position-x: 100%;
+}
+.DRUID {
+  color: #ff7c0a;
+} /* Orange */
+.HUNTER {
+  color: #aad372;
+} /* Pistachio */
+.MAGE {
+  color: #3fc7eb;
+} /* LightBlue */
+.PALADIN {
+  color: #f48cba;
+} /* Pink */
+.PRIEST {
+  color: #ffffff;
+} /* White* */
+.ROGUE {
+  color: #fff468;
+} /* Yellow* */
+.SHAMAN {
+  color: #0070dd;
+} /* Blue */
+.WARLOCK {
+  color: #8788ee;
+} /* Purple */
+.WARRIOR {
+  color: #c69b6d;
+} /* Tan */
+.DEATHKNIGHT {
+  color: #c41e3a;
+} /* Red */

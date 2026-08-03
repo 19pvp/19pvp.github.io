@@ -132,7 +132,7 @@ styleEl.innerHTML = `
     '00000033',
     8,
   )
-  }
+}
 
   /* Leaderboard selects */
   ${generateBoxVariantMulti('.leaderboard-controls select', borderColor || 'ffffff14', surface2, 8)}
@@ -163,9 +163,9 @@ const navigationState = {
 }
 
 const navigationPage = (url) => {
-  if (url.pathname === '/account.html') return 'account'
-  if (url.pathname === '/install' || url.pathname === '/install.html') return 'install'
-  if (url.pathname === '/leaderboards.html' || url.pathname === '/') return 'leaderboards'
+  if (url.pathname === '/account') return 'account'
+  if (url.pathname === '/install') return 'install'
+  if (url.pathname === '/leaderboards' || url.pathname === '/') return 'leaderboards'
   return ''
 }
 
@@ -183,14 +183,14 @@ const setupSiteNavigation = () => {
   const navigation = document.getElementById('siteNavigation')
   if (!navigation) return
   navigation.innerHTML = `
-    <a class="site-nav-account" data-nav-page="account" href="/account.html">
+    <a class="site-nav-account" data-nav-page="account" href="/account">
       <img id="siteNavAccountAvatar" class="avatar site-nav-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Account avatar">
       <span id="siteNavAccountName">Account</span>
     </a>
     <span class="site-nav-separator" aria-hidden="true">|</span>
-    <a data-nav-page="leaderboards" href="/leaderboards.html">Leaderboards</a>
+    <a data-nav-page="leaderboards" href="/leaderboards">Leaderboards</a>
     <span class="site-nav-separator" aria-hidden="true">|</span>
-    <a data-nav-page="install" href="/install.html">Installer &amp; Patcher</a>
+    <a data-nav-page="install" href="/install">Installer &amp; Patcher</a>
   `
   updateSiteNavigation()
 

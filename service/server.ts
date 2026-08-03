@@ -88,24 +88,32 @@ const inlineAssets = (html: string) => {
 
 const composePage = (content: string, title: string, prefetch = '', containerClass = '') => {
   return templateHTMLRaw
-    .replace('{{TITLE}}', title)
-    .replace('{{PREFETCH}}', prefetch)
-    .replace('{{CONTAINER_CLASS}}', containerClass)
-    .replace('{{PAGE_CONTENT}}', content.match(/<main [\s\S]*?<\/main>/)?.[0] || '')
-    .replace('{{PAGE_STYLE}}', content.match(/<style data-page-style>([\s\S]*?)<\/style>/)?.[1] || '')
-    .replace('{{PAGE_SCRIPT}}', content.match(/<script type="module" data-page-script>([\s\S]*?)<\/script>/)?.[1] || '')
+    .replace('<!--@TITLE@-->', title)
+    .replace('<!--@PREFETCH@-->', prefetch)
+    .replace('<!--@CONTAINER_CLASS@-->', containerClass)
+    .replace('<!--@PAGE_CONTENT@-->', content.match(/<main [\s\S]*?<\/main>/)?.[0] || '')
+    .replace(
+      '<!--@PAGE_STYLE@-->',
+      `<style data-page-style>${content.match(/<style data-page-style>([\s\S]*?)<\/style>/)?.[1] || ''}</style>`,
+    )
+    .replace(
+      '<!--@PAGE_SCRIPT@-->',
+      `<script type="module" data-page-script>${
+        content.match(/<script type="module" data-page-script>([\s\S]*?)<\/script>/)?.[1] || ''
+      }</script>`,
+    )
 }
 
 const indexHTMLBytes = new TextEncoder().encode(inlineAssets(indexHTMLRaw))
 const leaderboardsHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
   leaderboardsHTMLRaw,
   '19 PvP - Leaderboards',
-  '<link rel="prefetch" href="/install.html" as="document">',
+  '<link rel="prefetch" href="/install" as="document">',
 )))
 const accountHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
   accountHTMLRaw,
   '19 PvP - Account',
-  '<link rel="prefetch" href="/leaderboards.html" as="document">',
+  '<link rel="prefetch" href="/leaderboards" as="document">',
 )))
 const eventsHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
   eventsHTMLRaw,
@@ -114,13 +122,15 @@ const eventsHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
   ' events-shell',
 )))
 const installHTMLBytes = new TextEncoder().encode(
-  inlineAssets(composePage(
-    installHTMLRaw,
-    '19 PvP - Client Installer & Patcher',
-    '<link rel="prefetch" href="/leaderboards.html" as="document">',
-  )
-    .replace('MANIFEST_PLACEHOLDER', JSON.stringify(manifestJSON))
-    .replace('REALMLIST_PLACEHOLDER', JSON.stringify(launcherRealmlist))),
+  inlineAssets(
+    composePage(
+      installHTMLRaw,
+      '19 PvP - Client Installer & Patcher',
+      '<link rel="prefetch" href="/leaderboards" as="document">',
+    )
+      .replace('MANIFEST_PLACEHOLDER', JSON.stringify(manifestJSON))
+      .replace('REALMLIST_PLACEHOLDER', JSON.stringify(launcherRealmlist)),
+  ),
 )
 const styleCSSBytes = new TextEncoder().encode(styleCSSRaw)
 const respondText = (content: string | Uint8Array<ArrayBuffer>, type = 'text/html') =>
@@ -134,9 +144,9 @@ export default {
       const url = new URL(req.url)
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
       if (url.pathname === '/') return respondText(indexHTMLBytes, 'text/html')
-      if (url.pathname === '/leaderboards.html') return respondText(leaderboardsHTMLBytes, 'text/html')
-      if (url.pathname === '/account.html') return respondText(accountHTMLBytes, 'text/html')
-      if (url.pathname === '/install' || url.pathname === '/install.html') {
+      if (url.pathname === '/leaderboards') return respondText(leaderboardsHTMLBytes, 'text/html')
+      if (url.pathname === '/account') return respondText(accountHTMLBytes, 'text/html')
+      if (url.pathname === '/install') {
         const session = await getSession(req)
         if (!session) return new Response(null, { status: 302, headers: { location: '/' } })
         return respondText(installHTMLBytes, 'text/html')
@@ -417,7 +427,9 @@ export default {
 
       const logResponse = await handleLog(req, url)
       if (logResponse) return logResponse
-
+      if (url.pathname.endsWith('.html')) {
+        return new Response(null, { status: 308, headers: { location: url.pathname.slice(0, -5) } })
+      }
       return json({ error: 'Not found' }, { status: 404 })
     } catch (err) {
       console.error(err)

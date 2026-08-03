@@ -1,54 +1,54 @@
 <style data-page-style>
-    .step-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-    }
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
 
-    .progress-bar-svg {
-      width: 100%;
-      height: 18px;
-      display: block;
-    }
+.progress-bar-svg {
+  width: 100%;
+  height: 18px;
+  display: block;
+}
 
-    .progress-bar-svg path {
-      transition: stroke-dashoffset 0.1s linear;
-    }
+.progress-bar-svg path {
+  transition: stroke-dashoffset 0.1s linear;
+}
 
-    .chunk-ticks {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      pointer-events: none;
-      display: flex;
-    }
+.chunk-ticks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  display: flex;
+}
 
-    .chunk-tick {
-      height: 100%;
-      border-right: 3px solid var(--surface);
-      box-sizing: border-box;
-    }
+.chunk-tick {
+  height: 100%;
+  border-right: 3px solid var(--surface);
+  box-sizing: border-box;
+}
 
-    .log-box {
-      font-family: var(--font-mono);
-      font-size: 0.82rem;
-      padding: 12px;
-      height: 240px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      color: var(--success-text);
-      margin-top: 10px;
-    }
-    </style>
+.log-box {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: 12px;
+  height: 240px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  color: var(--success-text);
+  margin-top: 10px;
+}
+</style>
 <main id="page-content" data-page="install">
-        <h1 class="page-title">Web Installer &amp; Patcher</h1>
-        <p class="page-subtitle">WoW 3.3.5a Client Manager</p>
+  <h1 class="page-title">Web Installer &amp; Patcher</h1>
+  <p class="page-subtitle">WoW 3.3.5a Client Manager</p>
 
-        <div id="unsupportedAlert" class="status-banner status-error" style="display: none;">
+  <div id="unsupportedAlert" class="status-banner status-error" style="display: none;">
         <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ Unsupported Browser Detected</strong>
         Your current browser does not support directory read/write access (File System Access API).<br>
         Please use a Chromium-based browser to manage or install your client:
@@ -59,1072 +59,1072 @@
         </div>
       </div>
 
-        <div class="box" style="padding: 8px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-            <div>
-              <strong style="font-size: 1.1rem;">Target Client Directory :</strong>
-              <span id="directoryPath"
-                style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No directory selected</span>
-            </div>
-            <button id="selectDirectoryBtn" class="btn btn-secondary">
+  <div class="box" style="padding: 8px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <strong style="font-size: 1.1rem;">Target Client Directory :</strong>
+        <span id="directoryPath"
+          style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No directory selected</span>
+      </div>
+      <button id="selectDirectoryBtn" class="btn btn-secondary">
             📁 Select Directory
           </button>
-          </div>
+    </div>
 
-          <div id="progressSection" style="display: none; flex-direction: column; gap: 14px; padding-top: 18px;">
-            <!-- Current File Progress Bar -->
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div
-                style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
-                <span id="fileStatusText">Preparing file...</span>
-                <span id="fileSpeedText">0%</span>
-              </div>
-              <div style="width: 100%; height: 18px; position: relative;">
-                <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none"
-                  style="width: 100%; height: 100%; display: block;">
-                  <defs>
-                    <linearGradient id="progressGradFile" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="var(--discord-color)" />
-                      <stop offset="100%" stop-color="var(--accent-color)" />
-                    </linearGradient>
-                  </defs>
-                  <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round"
-                    stroke-linejoin="round" stroke-width="4" />
-                  <use id="fileProgressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradFile)"
-                    stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0"
-                    stroke-dashoffset="0" />
-                </svg>
-                <div id="fileChunkTicks" class="chunk-ticks"></div>
-              </div>
-            </div>
-
-            <!-- Total Download Progress Bar -->
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div
-                style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
-                <span id="totalStatusText">Total Progress</span>
-                <span id="totalSpeedText">0%</span>
-              </div>
-              <div style="width: 100%; height: 18px; position: relative;">
-                <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none"
-                  style="width: 100%; height: 100%; display: block; transform: scale(1, -1);">
-                  <defs>
-                    <linearGradient id="progressGradTotal" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="var(--discord-color)" />
-                      <stop offset="100%" stop-color="var(--accent-color)" />
-                    </linearGradient>
-                  </defs>
-                  <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round"
-                    stroke-linejoin="round" stroke-width="4" />
-                  <use id="progressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTotal)"
-                    stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0"
-                    stroke-dashoffset="0" />
-                </svg>
-              </div>
-            </div>
-          </div>
+    <div id="progressSection" style="display: none; flex-direction: column; gap: 14px; padding-top: 18px;">
+      <!-- Current File Progress Bar -->
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div
+          style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+          <span id="fileStatusText">Preparing file...</span>
+          <span id="fileSpeedText">0%</span>
         </div>
-
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-          <div id="stepClient" class="step-item"><span>⚪</span> <span>Game Files</span></div>
-          <div id="stepPatch" class="step-item"><span>⚪</span> <span>19PvP Game Patch</span></div>
-          <div id="stepAddon" class="step-item"><span>⚪</span> <span>19PvP Addon</span></div>
-          <div id="stepRealmlist" class="step-item"><span>⚪</span> <span>Server Connection</span></div>
-          <div id="stepConfig" class="step-item"><span>⚪</span> <span>Game Settings</span></div>
-          <div id="stepPlatform" class="step-item"><span>⚪</span> <span>Client Binaries</span></div>
+        <div style="width: 100%; height: 18px; position: relative;">
+          <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none"
+            style="width: 100%; height: 100%; display: block;">
+            <defs>
+              <linearGradient id="progressGradFile" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="var(--discord-color)" />
+                <stop offset="100%" stop-color="var(--accent-color)" />
+              </linearGradient>
+            </defs>
+            <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round"
+              stroke-linejoin="round" stroke-width="4" />
+            <use id="fileProgressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradFile)"
+              stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0"
+              stroke-dashoffset="0" />
+          </svg>
+          <div id="fileChunkTicks" class="chunk-ticks"></div>
         </div>
+      </div>
 
-        <hr class="hand-drawn-rule" aria-hidden="true">
+      <!-- Total Download Progress Bar -->
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div
+          style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+          <span id="totalStatusText">Total Progress</span>
+          <span id="totalSpeedText">0%</span>
+        </div>
+        <div style="width: 100%; height: 18px; position: relative;">
+          <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none"
+            style="width: 100%; height: 100%; display: block; transform: scale(1, -1);">
+            <defs>
+              <linearGradient id="progressGradTotal" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="var(--discord-color)" />
+                <stop offset="100%" stop-color="var(--accent-color)" />
+              </linearGradient>
+            </defs>
+            <use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round"
+              stroke-linejoin="round" stroke-width="4" />
+            <use id="progressPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTotal)"
+              stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="0"
+              stroke-dashoffset="0" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        <details style="margin-top: 10px; padding-top: 10px;">
-          <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; user-select: none;">
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+    <div id="stepClient" class="step-item"><span>⚪</span> <span>Game Files</span></div>
+    <div id="stepPatch" class="step-item"><span>⚪</span> <span>19PvP Game Patch</span></div>
+    <div id="stepAddon" class="step-item"><span>⚪</span> <span>19PvP Addon</span></div>
+    <div id="stepRealmlist" class="step-item"><span>⚪</span> <span>Server Connection</span></div>
+    <div id="stepConfig" class="step-item"><span>⚪</span> <span>Game Settings</span></div>
+    <div id="stepPlatform" class="step-item"><span>⚪</span> <span>Client Binaries</span></div>
+  </div>
+
+  <hr class="hand-drawn-rule" aria-hidden="true">
+
+  <details style="margin-top: 10px; padding-top: 10px;">
+    <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; user-select: none;">
             📋 Show Technical Logs
           </summary>
-          <div id="logBox" class="log-box"></div>
-        </details>
+    <div id="logBox" class="log-box"></div>
+  </details>
 
-        <div id="readyNotice" class="status-banner status-success"
-          style="display: none; text-align: center; margin-bottom: 0;">
+  <div id="readyNotice" class="status-banner status-success"
+    style="display: none; text-align: center; margin-bottom: 0;">
           🎉 <strong>Client Ready!</strong>
           <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
             <li>Open the client directory you selected.</li>
             <li>Start the game.</li>
           </ol>
         </div>
-        </div>
-      </main>
+  </div>
+</main>
 <script type="module" data-page-script>
-    const api = location.origin
-    const unsupportedAlert = document.getElementById('unsupportedAlert')
-    const selectDirectoryBtn = document.getElementById('selectDirectoryBtn')
-    const directoryPath = document.getElementById('directoryPath')
-    const syncBtn = document.getElementById('syncBtn')
-    const progressSection = document.getElementById('progressSection')
-    const fileStatusText = document.getElementById('fileStatusText')
-    const fileSpeedText = document.getElementById('fileSpeedText')
-    const totalStatusText = document.getElementById('totalStatusText')
-    const totalSpeedText = document.getElementById('totalSpeedText')
-    const progressPath = document.getElementById('progressPath')
-    const fileProgressPath = document.getElementById('fileProgressPath')
-    const handDrawnBorderPath = document.getElementById('handDrawnBorderPath')
+const api = location.origin
+const unsupportedAlert = document.getElementById('unsupportedAlert')
+const selectDirectoryBtn = document.getElementById('selectDirectoryBtn')
+const directoryPath = document.getElementById('directoryPath')
+const syncBtn = document.getElementById('syncBtn')
+const progressSection = document.getElementById('progressSection')
+const fileStatusText = document.getElementById('fileStatusText')
+const fileSpeedText = document.getElementById('fileSpeedText')
+const totalStatusText = document.getElementById('totalStatusText')
+const totalSpeedText = document.getElementById('totalSpeedText')
+const progressPath = document.getElementById('progressPath')
+const fileProgressPath = document.getElementById('fileProgressPath')
+const handDrawnBorderPath = document.getElementById('handDrawnBorderPath')
 
-    const progressFill = {
-      style: {
-        set width(val) {
-          if (progressPath && handDrawnBorderPath) {
-            const pct = parseFloat(val) || 0
-            const length = handDrawnBorderPath.getTotalLength() || 750
-            progressPath.style.strokeDasharray = length
-            progressPath.style.strokeDashoffset = length - (pct / 100) * length
-          }
-        },
-      },
-    }
-    const fileProgressFill = {
-      style: {
-        set width(val) {
-          if (fileProgressPath && handDrawnBorderPath) {
-            const pct = parseFloat(val) || 0
-            const length = handDrawnBorderPath.getTotalLength() || 750
-            fileProgressPath.style.strokeDasharray = length
-            fileProgressPath.style.strokeDashoffset = length - (pct / 100) * length
-          }
-        },
-      },
-    }
-    const stepClient = document.getElementById('stepClient')
-    const stepPlatform = document.getElementById('stepPlatform')
-    const stepPatch = document.getElementById('stepPatch')
-    const stepAddon = document.getElementById('stepAddon')
-    const stepRealmlist = document.getElementById('stepRealmlist')
-    const stepConfig = document.getElementById('stepConfig')
-    const logBox = document.getElementById('logBox')
-    const readyNotice = document.getElementById('readyNotice')
+const progressFill = {
+  style: {
+    set width(val) {
+      if (progressPath && handDrawnBorderPath) {
+        const pct = parseFloat(val) || 0
+        const length = handDrawnBorderPath.getTotalLength() || 750
+        progressPath.style.strokeDasharray = length
+        progressPath.style.strokeDashoffset = length - (pct / 100) * length
+      }
+    },
+  },
+}
+const fileProgressFill = {
+  style: {
+    set width(val) {
+      if (fileProgressPath && handDrawnBorderPath) {
+        const pct = parseFloat(val) || 0
+        const length = handDrawnBorderPath.getTotalLength() || 750
+        fileProgressPath.style.strokeDasharray = length
+        fileProgressPath.style.strokeDashoffset = length - (pct / 100) * length
+      }
+    },
+  },
+}
+const stepClient = document.getElementById('stepClient')
+const stepPlatform = document.getElementById('stepPlatform')
+const stepPatch = document.getElementById('stepPatch')
+const stepAddon = document.getElementById('stepAddon')
+const stepRealmlist = document.getElementById('stepRealmlist')
+const stepConfig = document.getElementById('stepConfig')
+const logBox = document.getElementById('logBox')
+const readyNotice = document.getElementById('readyNotice')
 
-    // Embedded static client manifest & environment
-    const EMBEDDED_MANIFEST = MANIFEST_PLACEHOLDER
-    const EMBEDDED_REALMLIST = REALMLIST_PLACEHOLDER
+// Embedded static client manifest & environment
+const EMBEDDED_MANIFEST = MANIFEST_PLACEHOLDER
+const EMBEDDED_REALMLIST = REALMLIST_PLACEHOLDER
 
-    let dirHandle = null
-    // Set for any install failure; logs are uploaded once, after the install flow finishes.
-    let MUST_REPORT_ERRORS = false
-    let retryInstall = false
-    const INSTALL_BUTTON_TEXT = '⚡ Verify & Install Client Updates'
-    const CLIENT_PLATFORM = /Mac/i.test(navigator.userAgentData?.platform || navigator.platform || '') ? 'macos' : 'windows'
-    const CLIENT_PLATFORM_LABEL = CLIENT_PLATFORM === 'macos' ? 'macOS' : 'Windows'
-    const CLIENT_ARCHIVE = `${CLIENT_PLATFORM}.zip`
-    const CLIENT_ARCHIVE_MARKER = CLIENT_PLATFORM === 'macos' ? 'World of Warcraft.app' : 'Wow.exe'
-    const CLIENT_LAUNCH_TARGET = CLIENT_PLATFORM === 'macos' ? 'World of Warcraft.app' : 'Wow.exe'
+let dirHandle = null
+// Set for any install failure; logs are uploaded once, after the install flow finishes.
+let MUST_REPORT_ERRORS = false
+let retryInstall = false
+const INSTALL_BUTTON_TEXT = '⚡ Verify & Install Client Updates'
+const CLIENT_PLATFORM = /Mac/i.test(navigator.userAgentData?.platform || navigator.platform || '') ? 'macos' : 'windows'
+const CLIENT_PLATFORM_LABEL = CLIENT_PLATFORM === 'macos' ? 'macOS' : 'Windows'
+const CLIENT_ARCHIVE = `${CLIENT_PLATFORM}.zip`
+const CLIENT_ARCHIVE_MARKER = CLIENT_PLATFORM === 'macos' ? 'World of Warcraft.app' : 'Wow.exe'
+const CLIENT_LAUNCH_TARGET = CLIENT_PLATFORM === 'macos' ? 'World of Warcraft.app' : 'Wow.exe'
 
-    readyNotice.innerHTML = `
-      🎉 <strong>Client Ready!</strong>
-      <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
-        <li>Open the client directory you selected.</li>
-        <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
-      </ol>
+readyNotice.innerHTML = `
+  🎉 <strong>Client Ready!</strong>
+  <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
+    <li>Open the client directory you selected.</li>
+    <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
+  </ol>
+`
+const REQUEST_TIMEOUT_MS = 30_000
+
+const hasFS = typeof window.showDirectoryPicker === 'function'
+const isSecure = window.isSecureContext
+
+if (!hasFS) {
+  unsupportedAlert.style.display = 'block'
+  if (!isSecure && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    unsupportedAlert.innerHTML = `
+      <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ HTTPS Required</strong>
+      The File System Access API is disabled by your browser because this site is loaded over HTTP without SSL.<br>
+      Please access this page via <strong>https://</strong> or on <strong>localhost</strong>.
     `
-    const REQUEST_TIMEOUT_MS = 30_000
+  } else {
+    unsupportedAlert.innerHTML = `
+      <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ File System Access Disabled or Unsupported</strong>
+      Your browser environment does not expose <code>showDirectoryPicker</code>.<br>
+      If you are using <strong>Brave</strong>, make sure <i>File System Access API</i> is allowed in your Shield / Site Settings, or use Chrome/Edge over HTTPS:
+      <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+        <a href="https://www.google.com/chrome/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Google Chrome ↗</a>
+        <a href="https://brave.com/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Brave Browser ↗</a>
+        <a href="https://www.microsoft.com/edge" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Microsoft Edge ↗</a>
+      </div>
+    `
+  }
+  selectDirectoryBtn.disabled = true
+  selectDirectoryBtn.style.opacity = '0.5'
+  selectDirectoryBtn.style.cursor = 'not-allowed'
+}
 
-    const hasFS = typeof window.showDirectoryPicker === 'function'
-    const isSecure = window.isSecureContext
+function appendLog(msg) {
+  logBox.style.display = 'block'
+  const shouldScroll = logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 16
+  logBox.textContent += `[${(Date.now() / 1000).toFixed(3)}] ${msg}\n`
+  if (shouldScroll) {
+    logBox.scrollTop = logBox.scrollHeight
+  }
+}
 
-    if (!hasFS) {
-      unsupportedAlert.style.display = 'block'
-      if (!isSecure && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-        unsupportedAlert.innerHTML = `
-          <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ HTTPS Required</strong>
-          The File System Access API is disabled by your browser because this site is loaded over HTTP without SSL.<br>
-          Please access this page via <strong>https://</strong> or on <strong>localhost</strong>.
-        `
-      } else {
-        unsupportedAlert.innerHTML = `
-          <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ File System Access Disabled or Unsupported</strong>
-          Your browser environment does not expose <code>showDirectoryPicker</code>.<br>
-          If you are using <strong>Brave</strong>, make sure <i>File System Access API</i> is allowed in your Shield / Site Settings, or use Chrome/Edge over HTTPS:
-          <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
-            <a href="https://www.google.com/chrome/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Google Chrome ↗</a>
-            <a href="https://brave.com/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Brave Browser ↗</a>
-            <a href="https://www.microsoft.com/edge" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Microsoft Edge ↗</a>
-          </div>
-        `
+function errorMessage(error) {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function reportError(context, error) {
+  MUST_REPORT_ERRORS = true
+  const message = `${context}: ${errorMessage(error)}`
+  console.error(message, error)
+  appendLog(`ERROR: ${message}`)
+}
+
+async function fetchWithTimeout(input, init = {}, timeout = REQUEST_TIMEOUT_MS) {
+  try {
+    return await fetch(input, { ...init })
+  } catch (error) {
+    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      throw Error(`Timed out after ${Math.ceil(timeout / 1000)}s: ${typeof input === 'string' ? input : 'request'}`)
+    }
+    throw error
+  }
+}
+
+function setStep(elem, state, text) {
+  if (state === 'done') {
+    elem.style.color = '#60a5fa'
+    elem.children[0].textContent = '✅'
+  } else if (state === 'active') {
+    elem.style.color = '#facc15'
+    elem.children[0].textContent = '⏳'
+  } else if (state === 'error') {
+    elem.style.color = '#ef4444'
+    elem.children[0].textContent = '❌'
+  } else {
+    elem.style.color = 'var(--text-secondary)'
+    elem.children[0].textContent = '⚪'
+  }
+  if (text) elem.children[1].textContent = text
+}
+
+function fileNameValidation(name) {
+  if (!name) return 'empty name'
+  if (name === '.' || name === '..') return 'dot path segment'
+  if (/[\\/\0\u0000-\u001f<>:"|?*]/.test(name)) return 'contains a filesystem-forbidden character'
+  if (/[ .]$/.test(name)) return 'ends with a space or dot'
+  if (/^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(?:\..*)?$/i.test(name)) return 'reserved Windows device name'
+  return 'valid-looking filename'
+}
+
+async function explainFileSystemError(error, parent, path, name, operation) {
+  let permission = 'unknown'
+  try {
+    permission = await parent.queryPermission({ mode: 'readwrite' })
+  } catch {}
+  const parentName = parent?.name || '(unknown directory)'
+  const browserError = error?.name ? `${error.name}: ` : ''
+  return Error(
+    `${browserError}${errorMessage(error)} [operation=${operation}; path=${JSON.stringify(String(path))}; ` +
+      `name=${JSON.stringify(name)}; parent=${JSON.stringify(parentName)}; ` +
+      `writePermission=${permission}; validation=${fileNameValidation(name)}]`,
+  )
+}
+
+async function hasClientMarker(parent) {
+  return CLIENT_PLATFORM === 'macos'
+    ? Boolean(await getDirectoryHandle(parent, CLIENT_ARCHIVE_MARKER, false))
+    : Boolean(await getFileHandle(parent, CLIENT_ARCHIVE_MARKER, false))
+}
+
+async function getDirectoryHandle(parent, path, create = false) {
+  if (!path) return parent
+  const parts = String(path).replace(/\\/g, '/').split('/').map((p) => p.trim()).filter(Boolean)
+  let curr = parent
+  for (const part of parts) {
+    try {
+      curr = await curr.getDirectoryHandle(part, { create })
+    } catch (error) {
+      if (!create && (error.name === 'NotFoundError' || error.name === 'TypeMismatchError')) {
+        return null
       }
-      selectDirectoryBtn.disabled = true
-      selectDirectoryBtn.style.opacity = '0.5'
-      selectDirectoryBtn.style.cursor = 'not-allowed'
+      throw await explainFileSystemError(error, curr, path, part, 'getDirectoryHandle')
     }
+  }
+  return curr
+}
 
-    function appendLog(msg) {
-      logBox.style.display = 'block'
-      const shouldScroll = logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 16
-      logBox.textContent += `[${(Date.now() / 1000).toFixed(3)}] ${msg}\n`
-      if (shouldScroll) {
-        logBox.scrollTop = logBox.scrollHeight
-      }
+async function getFileHandle(parent, path, create = false) {
+  if (!path) return null
+  const parts = String(path).replace(/\\/g, '/').split('/').map((p) => p.trim()).filter(Boolean)
+  if (parts.length === 0) return null
+  const fileName = parts.pop()
+  const parentDir = await getDirectoryHandle(parent, parts.join('/'), create)
+  if (!parentDir) return null
+
+  try {
+    return await parentDir.getFileHandle(fileName, { create })
+  } catch (error) {
+    if (!create && (error.name === 'NotFoundError' || error.name === 'TypeMismatchError')) {
+      return null
     }
+    throw await explainFileSystemError(error, parentDir, path, fileName, 'getFileHandle')
+  }
+}
 
-    function errorMessage(error) {
-      return error instanceof Error ? error.message : String(error)
+async function computeFileMerkleHash(file) {
+  const CHUNK_SIZE = 2 * 1024 * 1024 // 2MB blocks
+  const blockHashes = []
+  let offset = 0
+
+  while (offset < file.size) {
+    const chunk = file.slice(offset, offset + CHUNK_SIZE)
+    const arrayBuf = await chunk.arrayBuffer()
+    const blockHash = new Uint8Array(await crypto.subtle.digest('SHA-256', arrayBuf))
+    blockHashes.push(blockHash)
+    offset += CHUNK_SIZE
+  }
+
+  const totalLength = blockHashes.reduce((acc, h) => acc + h.length, 0)
+  const combined = new Uint8Array(totalLength)
+  let pos = 0
+  for (const h of blockHashes) {
+    combined.set(h, pos)
+    pos += h.length
+  }
+  const rootBuffer = await crypto.subtle.digest('SHA-256', combined)
+  return Array.from(new Uint8Array(rootBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function writeFile(parent, relativePath, content) {
+  const fileHandle = await getFileHandle(parent, relativePath, true)
+  const writable = await fileHandle.createWritable()
+  try {
+    if (content instanceof ReadableStream) {
+      await content.pipeTo(writable)
+    } else {
+      await writable.write(content)
     }
-
-    function reportError(context, error) {
-      MUST_REPORT_ERRORS = true
-      const message = `${context}: ${errorMessage(error)}`
-      console.error(message, error)
-      appendLog(`ERROR: ${message}`)
+  } finally {
+    try {
+      await writable.close()
+    } catch (error) {
+      reportError(`Failed to close ${relativePath}`, error)
     }
+  }
+}
 
-    async function fetchWithTimeout(input, init = {}, timeout = REQUEST_TIMEOUT_MS) {
-      try {
-        return await fetch(input, { ...init })
-      } catch (error) {
-        if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
-          throw Error(`Timed out after ${Math.ceil(timeout / 1000)}s: ${typeof input === 'string' ? input : 'request'}`)
-        }
-        throw error
-      }
-    }
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return '0 B'
+  const units = ['B', 'KiB', 'MiB', 'GiB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i]
+}
 
-    function setStep(elem, state, text) {
-      if (state === 'done') {
-        elem.style.color = '#60a5fa'
-        elem.children[0].textContent = '✅'
-      } else if (state === 'active') {
-        elem.style.color = '#facc15'
-        elem.children[0].textContent = '⏳'
-      } else if (state === 'error') {
-        elem.style.color = '#ef4444'
-        elem.children[0].textContent = '❌'
-      } else {
-        elem.style.color = 'var(--text-secondary)'
-        elem.children[0].textContent = '⚪'
-      }
-      if (text) elem.children[1].textContent = text
-    }
+function formatETA(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return 'calculating...'
+  if (seconds < 60) return `${Math.ceil(seconds)}s`
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.ceil(seconds % 60)
+  return `${mins}m ${secs}s`
+}
 
-    function fileNameValidation(name) {
-      if (!name) return 'empty name'
-      if (name === '.' || name === '..') return 'dot path segment'
-      if (/[\\/\0\u0000-\u001f<>:"|?*]/.test(name)) return 'contains a filesystem-forbidden character'
-      if (/[ .]$/.test(name)) return 'ends with a space or dot'
-      if (/^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(?:\..*)?$/i.test(name)) return 'reserved Windows device name'
-      return 'valid-looking filename'
-    }
+const CHUNK_SIZE = 100 * 1024 * 1024 // 100MB per chunk block
 
-    async function explainFileSystemError(error, parent, path, name, operation) {
-      let permission = 'unknown'
-      try {
-        permission = await parent.queryPermission({ mode: 'readwrite' })
-      } catch {}
-      const parentName = parent?.name || '(unknown directory)'
-      const browserError = error?.name ? `${error.name}: ` : ''
-      return Error(
-        `${browserError}${errorMessage(error)} [operation=${operation}; path=${JSON.stringify(String(path))}; ` +
-          `name=${JSON.stringify(name)}; parent=${JSON.stringify(parentName)}; ` +
-          `writePermission=${permission}; validation=${fileNameValidation(name)}]`,
-      )
-    }
+function renderChunkTicks(numChunks) {
+  fileChunkTicks.innerHTML = ''
+  if (!numChunks || numChunks <= 1) return
+  const fragment = document.createDocumentFragment()
+  for (let i = 0; i < numChunks - 1; i++) {
+    const tick = document.createElement('div')
+    tick.className = 'chunk-tick'
+    tick.style.width = `${100 / numChunks}%`
+    fragment.appendChild(tick)
+  }
+  fileChunkTicks.appendChild(fragment)
+}
 
-    async function hasClientMarker(parent) {
-      return CLIENT_PLATFORM === 'macos'
-        ? Boolean(await getDirectoryHandle(parent, CLIENT_ARCHIVE_MARKER, false))
-        : Boolean(await getFileHandle(parent, CLIENT_ARCHIVE_MARKER, false))
-    }
+async function downloadToPath(url, parent, relativePath, onProgress) {
+  // 1. HEAD request to determine file size and Range support
+  const headRes = await fetchWithTimeout(url, { method: 'HEAD', credentials: 'include' })
+  if (!headRes.ok) throw Error(`HTTP ${headRes.status} HEAD ${url}`)
 
-    async function getDirectoryHandle(parent, path, create = false) {
-      if (!path) return parent
-      const parts = String(path).replace(/\\/g, '/').split('/').map((p) => p.trim()).filter(Boolean)
-      let curr = parent
-      for (const part of parts) {
-        try {
-          curr = await curr.getDirectoryHandle(part, { create })
-        } catch (error) {
-          if (!create && (error.name === 'NotFoundError' || error.name === 'TypeMismatchError')) {
-            return null
+  const totalSize = Number(headRes.headers.get('content-length') || 0)
+  const acceptRanges = headRes.headers.get('accept-ranges') === 'bytes'
+
+  // If server does not support Range or file fits in 1 block, download directly
+  if (!acceptRanges || !totalSize || totalSize <= CHUNK_SIZE) {
+    renderChunkTicks(0)
+    await downloadSingleFile(url, parent, relativePath, onProgress)
+    return null // No background stitching required
+  }
+
+  // 2. Download in 100MB block files (0_fileName, 1_fileName, etc.)
+  const numChunks = Math.ceil(totalSize / CHUNK_SIZE)
+  renderChunkTicks(numChunks)
+
+  const fileName = relativePath.split('/').pop()
+  const dirPath = relativePath.includes('/') ? relativePath.substring(0, relativePath.lastIndexOf('/')) : ''
+
+  const chunkPaths = []
+  let totalLoadedAcrossChunks = 0
+
+  for (let i = 0; i < numChunks; i++) {
+    const chunkFileName = `${i}_${fileName}`
+    const chunkRelativePath = dirPath ? `${dirPath}/${chunkFileName}` : chunkFileName
+    chunkPaths.push(chunkRelativePath)
+
+    const startByte = i * CHUNK_SIZE
+    const endByte = Math.min(totalSize - 1, (i + 1) * CHUNK_SIZE - 1)
+    const expectedChunkSize = endByte - startByte + 1
+
+    // Check if block file is already complete on disk
+    let chunkComplete = false
+    try {
+      const freshDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
+      if (freshDir) {
+        const existingChunkHandle = await getFileHandle(freshDir, chunkFileName, false)
+        if (existingChunkHandle) {
+          const fileObj = await existingChunkHandle.getFile()
+          if (fileObj.size === expectedChunkSize) {
+            chunkComplete = true
+            totalLoadedAcrossChunks += expectedChunkSize
+            appendLog(
+              `[Resume] Block ${i + 1}/${numChunks} of ${fileName} (${
+                formatBytes(expectedChunkSize)
+              }) is saved & complete on disk.`,
+            )
           }
-          throw await explainFileSystemError(error, curr, path, part, 'getDirectoryHandle')
         }
       }
-      return curr
+    } catch {}
+
+    if (!chunkComplete) {
+      appendLog(`Downloading block ${i + 1}/${numChunks} (${formatBytes(expectedChunkSize)}) for ${fileName}...`)
+      let chunkLoaded = 0
+
+      const targetDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
+      await downloadSingleFile(
+        url,
+        targetDir,
+        chunkFileName,
+        (loaded, total, speed) => {
+          const delta = loaded - chunkLoaded
+          chunkLoaded = loaded
+          totalLoadedAcrossChunks += delta
+          if (onProgress) {
+            onProgress(totalLoadedAcrossChunks, totalSize, speed)
+          }
+        },
+        { 'Range': `bytes=${startByte}-${endByte}` },
+      )
+    } else if (onProgress) {
+      onProgress(totalLoadedAcrossChunks, totalSize, 0)
     }
+  }
 
-    async function getFileHandle(parent, path, create = false) {
-      if (!path) return null
-      const parts = String(path).replace(/\\/g, '/').split('/').map((p) => p.trim()).filter(Boolean)
-      if (parts.length === 0) return null
-      const fileName = parts.pop()
-      const parentDir = await getDirectoryHandle(parent, parts.join('/'), create)
-      if (!parentDir) return null
+  // 3. Launch background stitching immediately and return an object with the active promise { stitch: promise }
+  const stitchPromise = (async () => {
+    try {
+      appendLog(`[Background] Stitching ${numChunks} block files into ${relativePath}...`)
+      const finalDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
+      const finalFileHandle = await getFileHandle(finalDir, fileName, true)
+      const writable = await finalFileHandle.createWritable()
 
-      try {
-        return await parentDir.getFileHandle(fileName, { create })
-      } catch (error) {
-        if (!create && (error.name === 'NotFoundError' || error.name === 'TypeMismatchError')) {
-          return null
-        }
-        throw await explainFileSystemError(error, parentDir, path, fileName, 'getFileHandle')
-      }
-    }
-
-    async function computeFileMerkleHash(file) {
-      const CHUNK_SIZE = 2 * 1024 * 1024 // 2MB blocks
-      const blockHashes = []
-      let offset = 0
-
-      while (offset < file.size) {
-        const chunk = file.slice(offset, offset + CHUNK_SIZE)
-        const arrayBuf = await chunk.arrayBuffer()
-        const blockHash = new Uint8Array(await crypto.subtle.digest('SHA-256', arrayBuf))
-        blockHashes.push(blockHash)
-        offset += CHUNK_SIZE
-      }
-
-      const totalLength = blockHashes.reduce((acc, h) => acc + h.length, 0)
-      const combined = new Uint8Array(totalLength)
-      let pos = 0
-      for (const h of blockHashes) {
-        combined.set(h, pos)
-        pos += h.length
-      }
-      const rootBuffer = await crypto.subtle.digest('SHA-256', combined)
-      return Array.from(new Uint8Array(rootBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
-    }
-
-    async function writeFile(parent, relativePath, content) {
-      const fileHandle = await getFileHandle(parent, relativePath, true)
-      const writable = await fileHandle.createWritable()
-      try {
-        if (content instanceof ReadableStream) {
-          await content.pipeTo(writable)
-        } else {
-          await writable.write(content)
-        }
-      } finally {
-        try {
-          await writable.close()
-        } catch (error) {
-          reportError(`Failed to close ${relativePath}`, error)
-        }
-      }
-    }
-
-    function formatBytes(bytes) {
-      if (!bytes || bytes <= 0) return '0 B'
-      const units = ['B', 'KiB', 'MiB', 'GiB']
-      const i = Math.floor(Math.log(bytes) / Math.log(1024))
-      return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i]
-    }
-
-    function formatETA(seconds) {
-      if (!Number.isFinite(seconds) || seconds <= 0) return 'calculating...'
-      if (seconds < 60) return `${Math.ceil(seconds)}s`
-      const mins = Math.floor(seconds / 60)
-      const secs = Math.ceil(seconds % 60)
-      return `${mins}m ${secs}s`
-    }
-
-    const CHUNK_SIZE = 100 * 1024 * 1024 // 100MB per chunk block
-
-    function renderChunkTicks(numChunks) {
-      fileChunkTicks.innerHTML = ''
-      if (!numChunks || numChunks <= 1) return
-      const fragment = document.createDocumentFragment()
-      for (let i = 0; i < numChunks - 1; i++) {
-        const tick = document.createElement('div')
-        tick.className = 'chunk-tick'
-        tick.style.width = `${100 / numChunks}%`
-        fragment.appendChild(tick)
-      }
-      fileChunkTicks.appendChild(fragment)
-    }
-
-    async function downloadToPath(url, parent, relativePath, onProgress) {
-      // 1. HEAD request to determine file size and Range support
-      const headRes = await fetchWithTimeout(url, { method: 'HEAD', credentials: 'include' })
-      if (!headRes.ok) throw Error(`HTTP ${headRes.status} HEAD ${url}`)
-
-      const totalSize = Number(headRes.headers.get('content-length') || 0)
-      const acceptRanges = headRes.headers.get('accept-ranges') === 'bytes'
-
-      // If server does not support Range or file fits in 1 block, download directly
-      if (!acceptRanges || !totalSize || totalSize <= CHUNK_SIZE) {
-        renderChunkTicks(0)
-        await downloadSingleFile(url, parent, relativePath, onProgress)
-        return null // No background stitching required
-      }
-
-      // 2. Download in 100MB block files (0_fileName, 1_fileName, etc.)
-      const numChunks = Math.ceil(totalSize / CHUNK_SIZE)
-      renderChunkTicks(numChunks)
-
-      const fileName = relativePath.split('/').pop()
-      const dirPath = relativePath.includes('/') ? relativePath.substring(0, relativePath.lastIndexOf('/')) : ''
-
-      const chunkPaths = []
-      let totalLoadedAcrossChunks = 0
+      const SLICE_SIZE = 32 * 1024 * 1024 // 32MB fast memory slices
 
       for (let i = 0; i < numChunks; i++) {
         const chunkFileName = `${i}_${fileName}`
-        const chunkRelativePath = dirPath ? `${dirPath}/${chunkFileName}` : chunkFileName
-        chunkPaths.push(chunkRelativePath)
-
-        const startByte = i * CHUNK_SIZE
-        const endByte = Math.min(totalSize - 1, (i + 1) * CHUNK_SIZE - 1)
-        const expectedChunkSize = endByte - startByte + 1
-
-        // Check if block file is already complete on disk
-        let chunkComplete = false
-        try {
-          const freshDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
-          if (freshDir) {
-            const existingChunkHandle = await getFileHandle(freshDir, chunkFileName, false)
-            if (existingChunkHandle) {
-              const fileObj = await existingChunkHandle.getFile()
-              if (fileObj.size === expectedChunkSize) {
-                chunkComplete = true
-                totalLoadedAcrossChunks += expectedChunkSize
-                appendLog(
-                  `[Resume] Block ${i + 1}/${numChunks} of ${fileName} (${
-                    formatBytes(expectedChunkSize)
-                  }) is saved & complete on disk.`,
-                )
-              }
-            }
-          }
-        } catch {}
-
-        if (!chunkComplete) {
-          appendLog(`Downloading block ${i + 1}/${numChunks} (${formatBytes(expectedChunkSize)}) for ${fileName}...`)
-          let chunkLoaded = 0
-
-          const targetDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
-          await downloadSingleFile(
-            url,
-            targetDir,
-            chunkFileName,
-            (loaded, total, speed) => {
-              const delta = loaded - chunkLoaded
-              chunkLoaded = loaded
-              totalLoadedAcrossChunks += delta
-              if (onProgress) {
-                onProgress(totalLoadedAcrossChunks, totalSize, speed)
-              }
-            },
-            { 'Range': `bytes=${startByte}-${endByte}` },
-          )
-        } else if (onProgress) {
-          onProgress(totalLoadedAcrossChunks, totalSize, 0)
-        }
-      }
-
-      // 3. Launch background stitching immediately and return an object with the active promise { stitch: promise }
-      const stitchPromise = (async () => {
-        try {
-          appendLog(`[Background] Stitching ${numChunks} block files into ${relativePath}...`)
-          const finalDir = dirPath ? await getDirectoryHandle(parent, dirPath, true) : parent
-          const finalFileHandle = await getFileHandle(finalDir, fileName, true)
-          const writable = await finalFileHandle.createWritable()
-
-          const SLICE_SIZE = 32 * 1024 * 1024 // 32MB fast memory slices
-
-          for (let i = 0; i < numChunks; i++) {
-            const chunkFileName = `${i}_${fileName}`
-            const freshDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
-            const chunkHandle = await getFileHandle(freshDir, chunkFileName, false)
-            if (!chunkHandle) throw Error(`Missing block file: ${chunkFileName}`)
-
-            const chunkFile = await chunkHandle.getFile()
-            appendLog(
-              `[Background] Copying block ${i + 1}/${numChunks} (${chunkFileName}, ${formatBytes(chunkFile.size)})...`,
-            )
-
-            let offset = 0
-            while (offset < chunkFile.size) {
-              const slice = chunkFile.slice(offset, offset + SLICE_SIZE)
-              const buf = await slice.arrayBuffer()
-              await writable.write(buf)
-              offset += SLICE_SIZE
-            }
-            appendLog(`[Background] Finished block ${i + 1}/${numChunks} (${chunkFileName}).`)
-          }
-          await writable.close()
-
-          // Clean up temporary 100MB block files after stitching completes
-          const cleanupDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
-          if (cleanupDir) {
-            for (let i = 0; i < numChunks; i++) {
-              try {
-                await cleanupDir.removeEntry(`${i}_${fileName}`)
-              } catch {}
-            }
-          }
-
-          appendLog(`[Background] Successfully stitched ${relativePath} (${formatBytes(totalSize)}) [OK].`)
-        } catch (err) {
-          reportError(`Background stitching failed for ${relativePath}`, err)
-        }
-      })()
-
-      return { stitch: stitchPromise }
-    }
-
-    async function downloadSingleFile(url, parent, relativePath, onProgress, extraHeaders = {}) {
-      const maxRetries = 5
-      let retryAttempt = 0
-
-      while (true) {
-        let writable
-        try {
-          const res = await fetchWithTimeout(url, { credentials: 'include', headers: extraHeaders })
-          if (!res.ok && res.status !== 206) {
-            throw Error(`HTTP ${res.status} when fetching ${url}`)
-          }
-
-          const fileHandle = await getFileHandle(parent, relativePath, true)
-          writable = await fileHandle.createWritable()
-
-          const total = Number(res.headers.get('content-length') || 0)
-          let loaded = 0
-
-          const startTime = performance.now()
-          let lastTime = startTime
-          let lastLoaded = 0
-          let currentSpeed = 0
-
-          if (res.body) {
-            const reader = res.body.getReader()
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
-              await writable.write(value)
-              loaded += value.byteLength
-
-              const now = performance.now()
-              const elapsedSinceLast = (now - lastTime) / 1000
-              if (elapsedSinceLast >= 0.3) {
-                currentSpeed = (loaded - lastLoaded) / elapsedSinceLast
-                lastTime = now
-                lastLoaded = loaded
-              }
-
-              if (onProgress) {
-                const remainingBytes = total > loaded ? total - loaded : 0
-                const etaSeconds = currentSpeed > 0 ? remainingBytes / currentSpeed : 0
-                onProgress(loaded, total, currentSpeed, etaSeconds)
-              }
-            }
-            await writable.close()
-            return
-          } else {
-            const buf = await res.arrayBuffer()
-            await writable.write(buf)
-            await writable.close()
-            if (onProgress) onProgress(buf.byteLength, buf.byteLength, 0, 0)
-            return
-          }
-        } catch (err) {
-          if (writable) {
-            try {
-              await writable.close()
-            } catch {}
-          }
-          retryAttempt++
-          if (retryAttempt > maxRetries) {
-            reportError(`Failed downloading ${relativePath}`, err)
-            throw err
-          }
-          const delayMs = Math.min(1000 * Math.pow(1.5, retryAttempt), 5000)
-          reportError(`Network error on ${relativePath}`, err)
-          appendLog(
-            `Retrying ${relativePath} in ${Math.round(delayMs / 1000)}s (Attempt ${retryAttempt}/${maxRetries})...`,
-          )
-          await new Promise((r) => setTimeout(r, delayMs))
-        }
-      }
-    }
-
-    async function uploadLogs() {
-      try {
-        const logs = logBox.textContent || ''
-        if (!logs) return
-        const compressed = await new Response(
-          new Blob([logs]).stream().pipeThrough(new CompressionStream('gzip')),
-        ).arrayBuffer()
-        const digest = await crypto.subtle.digest('SHA-1', compressed)
-        const sha1 = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('')
-        const response = await fetch(`${api}/logs/${sha1}`, {
-          method: 'POST',
-          headers: { 'content-encoding': 'gzip', 'content-type': 'text/plain' },
-          body: compressed,
-        })
-        if (!response.ok) throw Error(`Upload failed: ${response.status}`)
-        appendLog('Installation logs uploaded.')
-      } catch (error) {
-        // Do not call reportError here: this is the final reporting attempt and must not recurse.
-        console.error('Log upload error', error)
-        appendLog(`ERROR: Log upload failed: ${errorMessage(error)}`)
-      }
-    }
-
-    const SAVED_DIRECTORY_KEY = '19pvp_wow_directory_name'
-
-    const savedDirectoryName = localStorage.getItem(SAVED_DIRECTORY_KEY)
-    if (savedDirectoryName) {
-      directoryPath.textContent = savedDirectoryName + ' (Re-select to grant permission)'
-    }
-
-    selectDirectoryBtn.onclick = async () => {
-      if (!hasFS) return
-      try {
-        dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
-        const permission = await dirHandle.requestPermission({ mode: 'readwrite' })
-        if (permission !== 'granted') throw Error(`Write permission was not granted (${permission})`)
-        directoryPath.textContent = dirHandle.name
-        localStorage.setItem(SAVED_DIRECTORY_KEY, dirHandle.name)
-        readyNotice.style.display = 'none'
-        appendLog(`Selected directory: ${dirHandle.name}`)
-
-        // Automatically start verification & installation process
-        startInstallation()
-      } catch (err) {
-        if (err?.name !== 'AbortError') {
-          reportError('Error selecting directory', err)
-        }
-      }
-    }
-
-    async function startInstallation() {
-      if (!dirHandle) return
-      if (retryInstall) {
-        logBox.textContent = ''
-        logBox.style.display = 'none'
-        retryInstall = false
-      }
-      MUST_REPORT_ERRORS = false
-      selectDirectoryBtn.disabled = true
-      progressSection.style.display = 'flex'
-      readyNotice.style.display = 'none'
-
-      try {
-        const targetRealmlist = EMBEDDED_REALMLIST || '19pvp.devazuka.com'
-        let manifestFiles = EMBEDDED_MANIFEST && Array.isArray(EMBEDDED_MANIFEST.files) ? EMBEDDED_MANIFEST.files : []
-
-        // 1. Verify Client Files with SHA-1
-        setStep(stepClient, 'active')
-        setStep(stepPlatform, 'pending')
-        appendLog('Verifying client base installation files via WebCrypto SHA-1...')
-
-        if (manifestFiles.length === 0) {
-          // Fallback default list if manifest is not pre-populated
-          manifestFiles = [
-            { path: 'Data/common.MPQ' },
-            { path: 'Data/common-2.MPQ' },
-            { path: 'Data/expansion.MPQ' },
-            { path: 'Data/lichking.MPQ' },
-          ]
-        }
-
-        // Calculate absolute project size and local verified bytes
-        let fullProjectSize = 0
-        let alreadyVerifiedBytes = 0
-        let remainingBytesToDownload = 0
-        const filesToDownload = []
-        const executableFilesToExtract = []
-        const isExecutable = (path) => /\.(?:dll|exe)$/i.test(path)
-
-        for (let i = 0; i < manifestFiles.length; i++) {
-          const item = manifestFiles[i]
-          const relativePath = item.path
-          const expectedSize = item.size || 0
-          fullProjectSize += expectedSize
-
-          const handle = await getFileHandle(dirHandle, relativePath, false)
-          if (!handle) {
-            appendLog(`Missing file: ${relativePath}`)
-            if (isExecutable(relativePath)) {
-              executableFilesToExtract.push(relativePath)
-            } else {
-              filesToDownload.push({ item, index: i, expectedSize })
-              remainingBytesToDownload += expectedSize
-            }
-          } else {
-            const fileObj = await handle.getFile()
-            if (expectedSize && fileObj.size !== expectedSize) {
-              appendLog(
-                `Size mismatch for ${relativePath} (local: ${formatBytes(fileObj.size)}, expected: ${
-                  formatBytes(expectedSize)
-                })`,
-              )
-              if (isExecutable(relativePath)) {
-                executableFilesToExtract.push(relativePath)
-              } else {
-                filesToDownload.push({ item, index: i, expectedSize })
-                remainingBytesToDownload += expectedSize
-              }
-            } else {
-              alreadyVerifiedBytes += expectedSize
-              appendLog(`Verified ${relativePath} [OK - ${formatBytes(fileObj.size)}]`)
-            }
-          }
-        }
-
-        let currentTotalBytes = alreadyVerifiedBytes
-        if (executableFilesToExtract.length === 0) {
-          if (!await hasClientMarker(dirHandle)) executableFilesToExtract.push(`${CLIENT_PLATFORM_LABEL} client binaries`)
-        }
-        let executableArchiveRequired = executableFilesToExtract.length > 0
-        const initialPct = fullProjectSize > 0 ? Math.round((alreadyVerifiedBytes / fullProjectSize) * 100) : 0
-        progressFill.style.width = `${initialPct}%`
-
-        if (filesToDownload.length > 0) {
-          appendLog(
-            `Client status: ${formatBytes(alreadyVerifiedBytes)} / ${
-              formatBytes(fullProjectSize)
-            } verified (${initialPct}% ready). Downloading ${formatBytes(remainingBytesToDownload)} missing data...`,
-          )
-          const totalStartTime = performance.now()
-          let completedCount = 0
-          let lastUIUpdate = 0
-
-          const pendingStitchTasks = []
-
-          for (const { item } of filesToDownload) {
-            const relativePath = item.path
-            const fileUrl = `${api}/client-file/${encodeURIComponent(relativePath)}`
-            const fileIndexStr = `${completedCount + 1} of ${filesToDownload.length}`
-
-            appendLog(`Downloading ${relativePath}...`)
-            let previousLoadedForFile = 0
-
-            // Initial UI state for new file
-            fileStatusText.textContent = `${relativePath} (${fileIndexStr})`
-            fileSpeedText.textContent = `0%`
-            fileProgressFill.style.width = `0%`
-
-            try {
-              const res = await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total, speed, fileEta) => {
-                const now = performance.now()
-                const deltaLoaded = loaded - previousLoadedForFile
-                previousLoadedForFile = loaded
-                currentTotalBytes += deltaLoaded
-
-                const filePct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0
-                fileProgressFill.style.width = `${filePct}%`
-
-                const overallPct = fullProjectSize > 0
-                  ? Math.min(100, Math.round((currentTotalBytes / fullProjectSize) * 100))
-                  : 0
-                progressFill.style.width = `${overallPct}%`
-
-                // Throttle text updates to every 0.5s
-                if (now - lastUIUpdate >= 500 || loaded === total) {
-                  lastUIUpdate = now
-
-                  // Current file: 25% . show file (3 of 75)
-                  fileStatusText.textContent = `${relativePath} (${fileIndexStr})`
-                  fileSpeedText.textContent = `${filePct}%`
-
-                  // Big total: 54% . 20m 45s remaining
-                  const elapsedSecs = (now - totalStartTime) / 1000
-                  const downloadedSoFar = currentTotalBytes - alreadyVerifiedBytes
-                  const overallSpeed = (elapsedSecs > 0.5 && downloadedSoFar > 0) ? (downloadedSoFar / elapsedSecs) : 0
-                  const bytesLeft = Math.max(0, fullProjectSize - currentTotalBytes)
-                  const totalEta = overallSpeed > 0 ? bytesLeft / overallSpeed : 0
-
-                  totalStatusText.textContent = `Total Progress (${overallPct}%)`
-                  totalSpeedText.textContent = overallSpeed > 0
-                    ? `${formatBytes(overallSpeed)}/s • ${formatETA(totalEta)} remaining`
-                    : `${overallPct}%`
-                }
-              })
-              if (res && res.stitch) {
-                pendingStitchTasks.push(res.stitch)
-              }
-            } catch (error) {
-              reportError(`Failed to download ${relativePath}`, error)
-              throw error
-            }
-
-            completedCount++
-            fileProgressFill.style.width = `100%`
-            fileSpeedText.textContent = `100%`
-            appendLog(`Finished downloading ${relativePath} (${completedCount}/${filesToDownload.length})`)
-          }
-
-          if (pendingStitchTasks.length > 0) {
-            appendLog(
-              `Waiting for background file stitching to finalize (${pendingStitchTasks.length} task${
-                pendingStitchTasks.length > 1 ? 's' : ''
-              })...`,
-            )
-            await Promise.all(pendingStitchTasks)
-          }
-        }
-
-        progressFill.style.width = '100%'
-        fileProgressFill.style.width = '100%'
-        totalSpeedText.textContent = `${formatBytes(fullProjectSize)} / ${formatBytes(fullProjectSize)} (100%)`
-        setStep(stepClient, 'done', 'Base client files verified & complete')
-
-        // 2. Realmlist Update
-        setStep(stepRealmlist, 'active')
-        totalStatusText.textContent = 'Setting realmlist...'
-        progressFill.style.width = '25%'
-        appendLog(`Setting Data/enUS/realmlist.wtf to "set realmlist ${targetRealmlist}"`)
-
-        const realmlistContent = `set realmlist ${targetRealmlist.toLowerCase()}\n`
-        let realmlistFile = await getFileHandle(dirHandle, 'Data/enUS/realmlist.wtf', false) ||
-          await getFileHandle(dirHandle, 'Data/enGB/realmlist.wtf', false) ||
-          await getFileHandle(dirHandle, 'realmlist.wtf', false)
-
-        if (!realmlistFile) {
-          await writeFile(dirHandle, 'Data/enUS/realmlist.wtf', realmlistContent)
-        } else {
-          const fileObj = await realmlistFile.getFile()
-          const currentContent = await fileObj.text()
-          if (currentContent.trim().toLowerCase() !== realmlistContent.trim()) {
-            const writable = await realmlistFile.createWritable()
-            try {
-              await writable.write(realmlistContent)
-            } finally {
-              try {
-                await writable.close()
-              } catch (closeError) {
-                reportError('Failed to close realmlist.wtf', closeError)
-              }
-            }
-          }
-        }
-        setStep(stepRealmlist, 'done', `Realmlist set to ${targetRealmlist}`)
-
-        // 3. PvP19 Addon
-        setStep(stepAddon, 'active')
-        totalStatusText.textContent = 'Installing PvP19 Addon...'
-        progressFill.style.width = '50%'
-
-        const addonLuaRes = await fetchWithTimeout(`${api}/addons/PvP19.lua`)
-        if (addonLuaRes.ok) {
-          const addonLua = await addonLuaRes.text()
-          const addonVer = addonLuaRes.headers.get('x-addon-version') || '1.0.0'
-          const tocContent = `## Interface: 30300\n## Title: PvP19\n## Version: ${addonVer}\n\nPvP19.lua\n`
-
-          await writeFile(dirHandle, 'Interface/AddOns/PvP19/PvP19.toc', tocContent)
-          await writeFile(dirHandle, 'Interface/AddOns/PvP19/PvP19.lua', addonLua)
-          appendLog(`Installed PvP19 Addon (v${addonVer})`)
-          setStep(stepAddon, 'done', `PvP19 Addon v${addonVer} installed`)
-        } else {
-          reportError('Failed to download PvP19 Addon', Error(`HTTP ${addonLuaRes.status}`))
-          setStep(stepAddon, 'error', 'Failed to download PvP19 Addon')
-        }
-
-        // 4. Server Patch File (patch-S.mpq)
-        setStep(stepPatch, 'active')
-        totalStatusText.textContent = 'Verifying 19PvP patch (patch-S.mpq)...'
-        progressFill.style.width = '75%'
-
-        try {
-          // Check if local patch-S.mpq exists and matches server Merkle root ETag
-          let patchUpToDate = false
-          const localPatchHandle = await getFileHandle(dirHandle, 'Data/patch-S.mpq', false)
-          if (localPatchHandle) {
-            const localFile = await localPatchHandle.getFile()
-            const localHash = await computeFileMerkleHash(localFile)
-            const headRes = await fetchWithTimeout(`${api}/patch-S.mpq`, { method: 'HEAD', credentials: 'include' })
-            if (!headRes.ok) throw Error(`HTTP ${headRes.status} when checking patch-S.mpq`)
-            const serverETag = headRes.headers.get('etag')?.replace(/"/g, '')
-            if (serverETag && localHash === serverETag) {
-              patchUpToDate = true
-              appendLog(`Local Data/patch-S.mpq is up to date [Merkle OK]`)
-            }
-          }
-
-          if (!patchUpToDate) {
-            appendLog('Downloading server patch Data/patch-S.mpq...')
-            await downloadToPath(
-              `${api}/patch-S.mpq`,
-              dirHandle,
-              'Data/patch-S.mpq',
-              (loaded, total) => {
-                if (total) {
-                  const pct = Math.round((loaded / total) * 100)
-                  progressFill.style.width = `${75 + (pct * 0.25)}%`
-                }
-              },
-            )
-          }
-          setStep(stepPatch, 'done', '19PvP Patch (patch-S.mpq) verified')
-        } catch (patchErr) {
-          reportError('Failed to update patch-S.mpq', patchErr)
-          setStep(stepPatch, 'error', 'Failed to update 19PvP Patch')
-        }
-
-        // 5. Client Config.wtf Auto-Patching
-        setStep(stepConfig, 'active')
-        totalStatusText.textContent = 'Patching WoW client settings...'
-
-        try {
-          // Fetch account username if available
-          let accountName = ''
-          try {
-            const accRes = await fetchWithTimeout(`${api}/api/account`, { credentials: 'include' })
-            if (accRes.ok) {
-              const accData = await accRes.json()
-              if (accData.wowAccount && accData.wowAccount.username) {
-                accountName = accData.wowAccount.username
-              }
-            } else {
-              reportError('Failed to fetch account details', Error(`HTTP ${accRes.status}`))
-            }
-          } catch (accountErr) {
-            reportError('Failed to fetch account details', accountErr)
-          }
-
-          const screenWidth = window.screen.width || 1920
-          const screenHeight = window.screen.height || 1080
-
-          const refreshRate = await new Promise((resolve) => {
-            let repaint = 0
-            const start = performance.now()
-            const withRepaint = () => {
-              requestAnimationFrame(() => {
-                if (performance.now() - start < 1000) {
-                  repaint += 1
-                  withRepaint()
-                } else {
-                  resolve(Math.max(60, repaint))
-                }
-              })
-            }
-            withRepaint()
-          })
-
-          const configEntries = {
-            'SET realmName': '"19PvP"',
-            'SET realmList': `"${targetRealmlist}"`,
-            'SET gxResolution': `"${screenWidth}x${screenHeight}"`,
-            'SET gxRefresh': `"${refreshRate}"`,
-            'SET gxWindow': '"1"',
-            'SET gxMaximize': '"1"',
-            'SET movie': '"0"',
-            'SET gameTip': '"0"',
-            'SET showGameTips': '"0"',
-            'SET Sound_EnableErrorSpeech': '"0"',
-            'SET readTOS': '"1"',
-            'SET readEULA': '"1"',
-            'SET readTerminationWithoutNotice': '"1"',
-            'SET showToolsUI': '"1"',
-            'SET accounttype': '"LK"',
-          }
-
-          if (accountName) {
-            configEntries['SET accountName'] = `"${accountName}"`
-          }
-
-          // Read existing Config.wtf if present to preserve custom settings
-          let configText = ''
-          const configHandle = await getFileHandle(dirHandle, 'WTF/Config.wtf', false)
-          let needsWrite = false
-          if (configHandle) {
-            const fileObj = await configHandle.getFile()
-            configText = await fileObj.text()
-            needsWrite = configText.includes('SET readTOS "1"')
-          } else {
-            needsWrite = true
-          }
-
-          if (needsWrite) {
-            configText = Object.entries(configEntries)
-              .map(([k, v]) => `${k} ${v}`)
-              .join('\n') + '\n'
-
-            await writeFile(dirHandle, 'WTF/Config.wtf', configText)
-            appendLog(
-              `Configured WTF/Config.wtf with resolution ${screenWidth}x${screenHeight}, accepted EULA/TOS${
-                accountName ? `, account: ${accountName}` : ''
-              }`,
-            )
-            setStep(
-              stepConfig,
-              'done',
-              `Settings configured (${screenWidth}x${screenHeight}, EULA Accepted${
-                accountName ? `, Account: ${accountName}` : ''
-              })`,
-            )
-          } else {
-            appendLog('WTF/Config.wtf already exists and TOS are accepted.')
-            setStep(
-              stepConfig,
-              'done',
-              'Settings verified (TOS already accepted)',
-            )
-          }
-        } catch (configErr) {
-          reportError('Failed to patch Config.wtf', configErr)
-          setStep(stepConfig, 'done', 'Configured default settings')
-        }
-
-        // 6. Platform / Client Binaries Check
-        setStep(stepPlatform, 'active')
-        if (executableArchiveRequired) {
-          setStep(stepPlatform, 'active', `Checking ${CLIENT_PLATFORM_LABEL} client binaries...`)
-          try {
-            const archiveHandle = await getFileHandle(dirHandle, CLIENT_ARCHIVE, false)
-            if (!archiveHandle) {
-              setStep(stepPlatform, 'active', `Downloading ${CLIENT_ARCHIVE}...`)
-              appendLog(`Downloading ${CLIENT_ARCHIVE} containing the protected ${CLIENT_PLATFORM_LABEL} client files...`)
-              fileStatusText.textContent = `Downloading ${CLIENT_ARCHIVE}`
-              fileSpeedText.textContent = `0%`
-              fileProgressFill.style.width = `0%`
-              await downloadToPath(`${api}/client-file/${CLIENT_ARCHIVE}`, dirHandle, CLIENT_ARCHIVE, (loaded, total) => {
-                const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0
-                fileProgressFill.style.width = `${pct}%`
-                fileSpeedText.textContent = `${pct}%`
-              })
-            } else {
-              appendLog(`Using existing ${CLIENT_ARCHIVE}.`)
-            }
-            setStep(stepPlatform, 'done', `${CLIENT_ARCHIVE} downloaded (requires extraction)`)
-            appendLog(
-              `Zip file ${CLIENT_ARCHIVE} is ready. Please extract its contents inside this directory before launching the game.`,
-            )
-            readyNotice.innerHTML = `
-              🎉 <strong>Client Ready!</strong>
-              <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
-                <li>Open the client directory you selected.</li>
-                <li>Extract <code>${CLIENT_ARCHIVE}</code> into the directory.</li>
-                <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
-              </ol>
-            `
-          } catch (error) {
-            setStep(stepPlatform, 'error', `Failed to download ${CLIENT_ARCHIVE}`)
-            throw error
-          }
-        } else {
-          setStep(stepPlatform, 'done', `${CLIENT_PLATFORM_LABEL} client binaries verified`)
-          readyNotice.innerHTML = `
-            🎉 <strong>Client Ready!</strong>
-            <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
-              <li>Open the client directory you selected.</li>
-              <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
-            </ol>
-          `
-        }
-
-        progressFill.style.width = '100%'
-        totalStatusText.textContent = MUST_REPORT_ERRORS ? 'Installation complete with errors.' : 'Installation complete!'
-        readyNotice.style.display = 'block'
+        const freshDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
+        const chunkHandle = await getFileHandle(freshDir, chunkFileName, false)
+        if (!chunkHandle) throw Error(`Missing block file: ${chunkFileName}`)
+
+        const chunkFile = await chunkHandle.getFile()
         appendLog(
-          MUST_REPORT_ERRORS
-            ? 'Installation completed with errors; logs will be uploaded.'
-            : 'All installation steps completed successfully!',
+          `[Background] Copying block ${i + 1}/${numChunks} (${chunkFileName}, ${formatBytes(chunkFile.size)})...`,
         )
-      } catch (err) {
-        reportError('Installation failed', err)
-        totalStatusText.textContent = 'Error: ' + errorMessage(err)
-      } finally {
-        if (MUST_REPORT_ERRORS) await uploadLogs()
-        syncBtn.textContent = MUST_REPORT_ERRORS || retryInstall ? '↻ Retry installation' : INSTALL_BUTTON_TEXT
-        syncBtn.disabled = false
-        selectDirectoryBtn.disabled = false
+
+        let offset = 0
+        while (offset < chunkFile.size) {
+          const slice = chunkFile.slice(offset, offset + SLICE_SIZE)
+          const buf = await slice.arrayBuffer()
+          await writable.write(buf)
+          offset += SLICE_SIZE
+        }
+        appendLog(`[Background] Finished block ${i + 1}/${numChunks} (${chunkFileName}).`)
+      }
+      await writable.close()
+
+      // Clean up temporary 100MB block files after stitching completes
+      const cleanupDir = dirPath ? await getDirectoryHandle(parent, dirPath, false) : parent
+      if (cleanupDir) {
+        for (let i = 0; i < numChunks; i++) {
+          try {
+            await cleanupDir.removeEntry(`${i}_${fileName}`)
+          } catch {}
+        }
+      }
+
+      appendLog(`[Background] Successfully stitched ${relativePath} (${formatBytes(totalSize)}) [OK].`)
+    } catch (err) {
+      reportError(`Background stitching failed for ${relativePath}`, err)
+    }
+  })()
+
+  return { stitch: stitchPromise }
+}
+
+async function downloadSingleFile(url, parent, relativePath, onProgress, extraHeaders = {}) {
+  const maxRetries = 5
+  let retryAttempt = 0
+
+  while (true) {
+    let writable
+    try {
+      const res = await fetchWithTimeout(url, { credentials: 'include', headers: extraHeaders })
+      if (!res.ok && res.status !== 206) {
+        throw Error(`HTTP ${res.status} when fetching ${url}`)
+      }
+
+      const fileHandle = await getFileHandle(parent, relativePath, true)
+      writable = await fileHandle.createWritable()
+
+      const total = Number(res.headers.get('content-length') || 0)
+      let loaded = 0
+
+      const startTime = performance.now()
+      let lastTime = startTime
+      let lastLoaded = 0
+      let currentSpeed = 0
+
+      if (res.body) {
+        const reader = res.body.getReader()
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          await writable.write(value)
+          loaded += value.byteLength
+
+          const now = performance.now()
+          const elapsedSinceLast = (now - lastTime) / 1000
+          if (elapsedSinceLast >= 0.3) {
+            currentSpeed = (loaded - lastLoaded) / elapsedSinceLast
+            lastTime = now
+            lastLoaded = loaded
+          }
+
+          if (onProgress) {
+            const remainingBytes = total > loaded ? total - loaded : 0
+            const etaSeconds = currentSpeed > 0 ? remainingBytes / currentSpeed : 0
+            onProgress(loaded, total, currentSpeed, etaSeconds)
+          }
+        }
+        await writable.close()
+        return
+      } else {
+        const buf = await res.arrayBuffer()
+        await writable.write(buf)
+        await writable.close()
+        if (onProgress) onProgress(buf.byteLength, buf.byteLength, 0, 0)
+        return
+      }
+    } catch (err) {
+      if (writable) {
+        try {
+          await writable.close()
+        } catch {}
+      }
+      retryAttempt++
+      if (retryAttempt > maxRetries) {
+        reportError(`Failed downloading ${relativePath}`, err)
+        throw err
+      }
+      const delayMs = Math.min(1000 * Math.pow(1.5, retryAttempt), 5000)
+      reportError(`Network error on ${relativePath}`, err)
+      appendLog(
+        `Retrying ${relativePath} in ${Math.round(delayMs / 1000)}s (Attempt ${retryAttempt}/${maxRetries})...`,
+      )
+      await new Promise((r) => setTimeout(r, delayMs))
+    }
+  }
+}
+
+async function uploadLogs() {
+  try {
+    const logs = logBox.textContent || ''
+    if (!logs) return
+    const compressed = await new Response(
+      new Blob([logs]).stream().pipeThrough(new CompressionStream('gzip')),
+    ).arrayBuffer()
+    const digest = await crypto.subtle.digest('SHA-1', compressed)
+    const sha1 = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('')
+    const response = await fetch(`${api}/logs/${sha1}`, {
+      method: 'POST',
+      headers: { 'content-encoding': 'gzip', 'content-type': 'text/plain' },
+      body: compressed,
+    })
+    if (!response.ok) throw Error(`Upload failed: ${response.status}`)
+    appendLog('Installation logs uploaded.')
+  } catch (error) {
+    // Do not call reportError here: this is the final reporting attempt and must not recurse.
+    console.error('Log upload error', error)
+    appendLog(`ERROR: Log upload failed: ${errorMessage(error)}`)
+  }
+}
+
+const SAVED_DIRECTORY_KEY = '19pvp_wow_directory_name'
+
+const savedDirectoryName = localStorage.getItem(SAVED_DIRECTORY_KEY)
+if (savedDirectoryName) {
+  directoryPath.textContent = savedDirectoryName + ' (Re-select to grant permission)'
+}
+
+selectDirectoryBtn.onclick = async () => {
+  if (!hasFS) return
+  try {
+    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
+    const permission = await dirHandle.requestPermission({ mode: 'readwrite' })
+    if (permission !== 'granted') throw Error(`Write permission was not granted (${permission})`)
+    directoryPath.textContent = dirHandle.name
+    localStorage.setItem(SAVED_DIRECTORY_KEY, dirHandle.name)
+    readyNotice.style.display = 'none'
+    appendLog(`Selected directory: ${dirHandle.name}`)
+
+    // Automatically start verification & installation process
+    startInstallation()
+  } catch (err) {
+    if (err?.name !== 'AbortError') {
+      reportError('Error selecting directory', err)
+    }
+  }
+}
+
+async function startInstallation() {
+  if (!dirHandle) return
+  if (retryInstall) {
+    logBox.textContent = ''
+    logBox.style.display = 'none'
+    retryInstall = false
+  }
+  MUST_REPORT_ERRORS = false
+  selectDirectoryBtn.disabled = true
+  progressSection.style.display = 'flex'
+  readyNotice.style.display = 'none'
+
+  try {
+    const targetRealmlist = EMBEDDED_REALMLIST || '19pvp.devazuka.com'
+    let manifestFiles = EMBEDDED_MANIFEST && Array.isArray(EMBEDDED_MANIFEST.files) ? EMBEDDED_MANIFEST.files : []
+
+    // 1. Verify Client Files with SHA-1
+    setStep(stepClient, 'active')
+    setStep(stepPlatform, 'pending')
+    appendLog('Verifying client base installation files via WebCrypto SHA-1...')
+
+    if (manifestFiles.length === 0) {
+      // Fallback default list if manifest is not pre-populated
+      manifestFiles = [
+        { path: 'Data/common.MPQ' },
+        { path: 'Data/common-2.MPQ' },
+        { path: 'Data/expansion.MPQ' },
+        { path: 'Data/lichking.MPQ' },
+      ]
+    }
+
+    // Calculate absolute project size and local verified bytes
+    let fullProjectSize = 0
+    let alreadyVerifiedBytes = 0
+    let remainingBytesToDownload = 0
+    const filesToDownload = []
+    const executableFilesToExtract = []
+    const isExecutable = (path) => /\.(?:dll|exe)$/i.test(path)
+
+    for (let i = 0; i < manifestFiles.length; i++) {
+      const item = manifestFiles[i]
+      const relativePath = item.path
+      const expectedSize = item.size || 0
+      fullProjectSize += expectedSize
+
+      const handle = await getFileHandle(dirHandle, relativePath, false)
+      if (!handle) {
+        appendLog(`Missing file: ${relativePath}`)
+        if (isExecutable(relativePath)) {
+          executableFilesToExtract.push(relativePath)
+        } else {
+          filesToDownload.push({ item, index: i, expectedSize })
+          remainingBytesToDownload += expectedSize
+        }
+      } else {
+        const fileObj = await handle.getFile()
+        if (expectedSize && fileObj.size !== expectedSize) {
+          appendLog(
+            `Size mismatch for ${relativePath} (local: ${formatBytes(fileObj.size)}, expected: ${
+              formatBytes(expectedSize)
+            })`,
+          )
+          if (isExecutable(relativePath)) {
+            executableFilesToExtract.push(relativePath)
+          } else {
+            filesToDownload.push({ item, index: i, expectedSize })
+            remainingBytesToDownload += expectedSize
+          }
+        } else {
+          alreadyVerifiedBytes += expectedSize
+          appendLog(`Verified ${relativePath} [OK - ${formatBytes(fileObj.size)}]`)
+        }
       }
     }
-    </script>
+
+    let currentTotalBytes = alreadyVerifiedBytes
+    if (executableFilesToExtract.length === 0) {
+      if (!await hasClientMarker(dirHandle)) executableFilesToExtract.push(`${CLIENT_PLATFORM_LABEL} client binaries`)
+    }
+    let executableArchiveRequired = executableFilesToExtract.length > 0
+    const initialPct = fullProjectSize > 0 ? Math.round((alreadyVerifiedBytes / fullProjectSize) * 100) : 0
+    progressFill.style.width = `${initialPct}%`
+
+    if (filesToDownload.length > 0) {
+      appendLog(
+        `Client status: ${formatBytes(alreadyVerifiedBytes)} / ${
+          formatBytes(fullProjectSize)
+        } verified (${initialPct}% ready). Downloading ${formatBytes(remainingBytesToDownload)} missing data...`,
+      )
+      const totalStartTime = performance.now()
+      let completedCount = 0
+      let lastUIUpdate = 0
+
+      const pendingStitchTasks = []
+
+      for (const { item } of filesToDownload) {
+        const relativePath = item.path
+        const fileUrl = `${api}/client-file/${encodeURIComponent(relativePath)}`
+        const fileIndexStr = `${completedCount + 1} of ${filesToDownload.length}`
+
+        appendLog(`Downloading ${relativePath}...`)
+        let previousLoadedForFile = 0
+
+        // Initial UI state for new file
+        fileStatusText.textContent = `${relativePath} (${fileIndexStr})`
+        fileSpeedText.textContent = `0%`
+        fileProgressFill.style.width = `0%`
+
+        try {
+          const res = await downloadToPath(fileUrl, dirHandle, relativePath, (loaded, total, speed, fileEta) => {
+            const now = performance.now()
+            const deltaLoaded = loaded - previousLoadedForFile
+            previousLoadedForFile = loaded
+            currentTotalBytes += deltaLoaded
+
+            const filePct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0
+            fileProgressFill.style.width = `${filePct}%`
+
+            const overallPct = fullProjectSize > 0
+              ? Math.min(100, Math.round((currentTotalBytes / fullProjectSize) * 100))
+              : 0
+            progressFill.style.width = `${overallPct}%`
+
+            // Throttle text updates to every 0.5s
+            if (now - lastUIUpdate >= 500 || loaded === total) {
+              lastUIUpdate = now
+
+              // Current file: 25% . show file (3 of 75)
+              fileStatusText.textContent = `${relativePath} (${fileIndexStr})`
+              fileSpeedText.textContent = `${filePct}%`
+
+              // Big total: 54% . 20m 45s remaining
+              const elapsedSecs = (now - totalStartTime) / 1000
+              const downloadedSoFar = currentTotalBytes - alreadyVerifiedBytes
+              const overallSpeed = (elapsedSecs > 0.5 && downloadedSoFar > 0) ? (downloadedSoFar / elapsedSecs) : 0
+              const bytesLeft = Math.max(0, fullProjectSize - currentTotalBytes)
+              const totalEta = overallSpeed > 0 ? bytesLeft / overallSpeed : 0
+
+              totalStatusText.textContent = `Total Progress (${overallPct}%)`
+              totalSpeedText.textContent = overallSpeed > 0
+                ? `${formatBytes(overallSpeed)}/s • ${formatETA(totalEta)} remaining`
+                : `${overallPct}%`
+            }
+          })
+          if (res && res.stitch) {
+            pendingStitchTasks.push(res.stitch)
+          }
+        } catch (error) {
+          reportError(`Failed to download ${relativePath}`, error)
+          throw error
+        }
+
+        completedCount++
+        fileProgressFill.style.width = `100%`
+        fileSpeedText.textContent = `100%`
+        appendLog(`Finished downloading ${relativePath} (${completedCount}/${filesToDownload.length})`)
+      }
+
+      if (pendingStitchTasks.length > 0) {
+        appendLog(
+          `Waiting for background file stitching to finalize (${pendingStitchTasks.length} task${
+            pendingStitchTasks.length > 1 ? 's' : ''
+          })...`,
+        )
+        await Promise.all(pendingStitchTasks)
+      }
+    }
+
+    progressFill.style.width = '100%'
+    fileProgressFill.style.width = '100%'
+    totalSpeedText.textContent = `${formatBytes(fullProjectSize)} / ${formatBytes(fullProjectSize)} (100%)`
+    setStep(stepClient, 'done', 'Base client files verified & complete')
+
+    // 2. Realmlist Update
+    setStep(stepRealmlist, 'active')
+    totalStatusText.textContent = 'Setting realmlist...'
+    progressFill.style.width = '25%'
+    appendLog(`Setting Data/enUS/realmlist.wtf to "set realmlist ${targetRealmlist}"`)
+
+    const realmlistContent = `set realmlist ${targetRealmlist.toLowerCase()}\n`
+    let realmlistFile = await getFileHandle(dirHandle, 'Data/enUS/realmlist.wtf', false) ||
+      await getFileHandle(dirHandle, 'Data/enGB/realmlist.wtf', false) ||
+      await getFileHandle(dirHandle, 'realmlist.wtf', false)
+
+    if (!realmlistFile) {
+      await writeFile(dirHandle, 'Data/enUS/realmlist.wtf', realmlistContent)
+    } else {
+      const fileObj = await realmlistFile.getFile()
+      const currentContent = await fileObj.text()
+      if (currentContent.trim().toLowerCase() !== realmlistContent.trim()) {
+        const writable = await realmlistFile.createWritable()
+        try {
+          await writable.write(realmlistContent)
+        } finally {
+          try {
+            await writable.close()
+          } catch (closeError) {
+            reportError('Failed to close realmlist.wtf', closeError)
+          }
+        }
+      }
+    }
+    setStep(stepRealmlist, 'done', `Realmlist set to ${targetRealmlist}`)
+
+    // 3. PvP19 Addon
+    setStep(stepAddon, 'active')
+    totalStatusText.textContent = 'Installing PvP19 Addon...'
+    progressFill.style.width = '50%'
+
+    const addonLuaRes = await fetchWithTimeout(`${api}/addons/PvP19.lua`)
+    if (addonLuaRes.ok) {
+      const addonLua = await addonLuaRes.text()
+      const addonVer = addonLuaRes.headers.get('x-addon-version') || '1.0.0'
+      const tocContent = `## Interface: 30300\n## Title: PvP19\n## Version: ${addonVer}\n\nPvP19.lua\n`
+
+      await writeFile(dirHandle, 'Interface/AddOns/PvP19/PvP19.toc', tocContent)
+      await writeFile(dirHandle, 'Interface/AddOns/PvP19/PvP19.lua', addonLua)
+      appendLog(`Installed PvP19 Addon (v${addonVer})`)
+      setStep(stepAddon, 'done', `PvP19 Addon v${addonVer} installed`)
+    } else {
+      reportError('Failed to download PvP19 Addon', Error(`HTTP ${addonLuaRes.status}`))
+      setStep(stepAddon, 'error', 'Failed to download PvP19 Addon')
+    }
+
+    // 4. Server Patch File (patch-S.mpq)
+    setStep(stepPatch, 'active')
+    totalStatusText.textContent = 'Verifying 19PvP patch (patch-S.mpq)...'
+    progressFill.style.width = '75%'
+
+    try {
+      // Check if local patch-S.mpq exists and matches server Merkle root ETag
+      let patchUpToDate = false
+      const localPatchHandle = await getFileHandle(dirHandle, 'Data/patch-S.mpq', false)
+      if (localPatchHandle) {
+        const localFile = await localPatchHandle.getFile()
+        const localHash = await computeFileMerkleHash(localFile)
+        const headRes = await fetchWithTimeout(`${api}/patch-S.mpq`, { method: 'HEAD', credentials: 'include' })
+        if (!headRes.ok) throw Error(`HTTP ${headRes.status} when checking patch-S.mpq`)
+        const serverETag = headRes.headers.get('etag')?.replace(/"/g, '')
+        if (serverETag && localHash === serverETag) {
+          patchUpToDate = true
+          appendLog(`Local Data/patch-S.mpq is up to date [Merkle OK]`)
+        }
+      }
+
+      if (!patchUpToDate) {
+        appendLog('Downloading server patch Data/patch-S.mpq...')
+        await downloadToPath(
+          `${api}/patch-S.mpq`,
+          dirHandle,
+          'Data/patch-S.mpq',
+          (loaded, total) => {
+            if (total) {
+              const pct = Math.round((loaded / total) * 100)
+              progressFill.style.width = `${75 + (pct * 0.25)}%`
+            }
+          },
+        )
+      }
+      setStep(stepPatch, 'done', '19PvP Patch (patch-S.mpq) verified')
+    } catch (patchErr) {
+      reportError('Failed to update patch-S.mpq', patchErr)
+      setStep(stepPatch, 'error', 'Failed to update 19PvP Patch')
+    }
+
+    // 5. Client Config.wtf Auto-Patching
+    setStep(stepConfig, 'active')
+    totalStatusText.textContent = 'Patching WoW client settings...'
+
+    try {
+      // Fetch account username if available
+      let accountName = ''
+      try {
+        const accRes = await fetchWithTimeout(`${api}/api/account`, { credentials: 'include' })
+        if (accRes.ok) {
+          const accData = await accRes.json()
+          if (accData.wowAccount && accData.wowAccount.username) {
+            accountName = accData.wowAccount.username
+          }
+        } else {
+          reportError('Failed to fetch account details', Error(`HTTP ${accRes.status}`))
+        }
+      } catch (accountErr) {
+        reportError('Failed to fetch account details', accountErr)
+      }
+
+      const screenWidth = window.screen.width || 1920
+      const screenHeight = window.screen.height || 1080
+
+      const refreshRate = await new Promise((resolve) => {
+        let repaint = 0
+        const start = performance.now()
+        const withRepaint = () => {
+          requestAnimationFrame(() => {
+            if (performance.now() - start < 1000) {
+              repaint += 1
+              withRepaint()
+            } else {
+              resolve(Math.max(60, repaint))
+            }
+          })
+        }
+        withRepaint()
+      })
+
+      const configEntries = {
+        'SET realmName': '"19PvP"',
+        'SET realmList': `"${targetRealmlist}"`,
+        'SET gxResolution': `"${screenWidth}x${screenHeight}"`,
+        'SET gxRefresh': `"${refreshRate}"`,
+        'SET gxWindow': '"1"',
+        'SET gxMaximize': '"1"',
+        'SET movie': '"0"',
+        'SET gameTip': '"0"',
+        'SET showGameTips': '"0"',
+        'SET Sound_EnableErrorSpeech': '"0"',
+        'SET readTOS': '"1"',
+        'SET readEULA': '"1"',
+        'SET readTerminationWithoutNotice': '"1"',
+        'SET showToolsUI': '"1"',
+        'SET accounttype': '"LK"',
+      }
+
+      if (accountName) {
+        configEntries['SET accountName'] = `"${accountName}"`
+      }
+
+      // Read existing Config.wtf if present to preserve custom settings
+      let configText = ''
+      const configHandle = await getFileHandle(dirHandle, 'WTF/Config.wtf', false)
+      let needsWrite = false
+      if (configHandle) {
+        const fileObj = await configHandle.getFile()
+        configText = await fileObj.text()
+        needsWrite = configText.includes('SET readTOS "1"')
+      } else {
+        needsWrite = true
+      }
+
+      if (needsWrite) {
+        configText = Object.entries(configEntries)
+          .map(([k, v]) => `${k} ${v}`)
+          .join('\n') + '\n'
+
+        await writeFile(dirHandle, 'WTF/Config.wtf', configText)
+        appendLog(
+          `Configured WTF/Config.wtf with resolution ${screenWidth}x${screenHeight}, accepted EULA/TOS${
+            accountName ? `, account: ${accountName}` : ''
+          }`,
+        )
+        setStep(
+          stepConfig,
+          'done',
+          `Settings configured (${screenWidth}x${screenHeight}, EULA Accepted${
+            accountName ? `, Account: ${accountName}` : ''
+          })`,
+        )
+      } else {
+        appendLog('WTF/Config.wtf already exists and TOS are accepted.')
+        setStep(
+          stepConfig,
+          'done',
+          'Settings verified (TOS already accepted)',
+        )
+      }
+    } catch (configErr) {
+      reportError('Failed to patch Config.wtf', configErr)
+      setStep(stepConfig, 'done', 'Configured default settings')
+    }
+
+    // 6. Platform / Client Binaries Check
+    setStep(stepPlatform, 'active')
+    if (executableArchiveRequired) {
+      setStep(stepPlatform, 'active', `Checking ${CLIENT_PLATFORM_LABEL} client binaries...`)
+      try {
+        const archiveHandle = await getFileHandle(dirHandle, CLIENT_ARCHIVE, false)
+        if (!archiveHandle) {
+          setStep(stepPlatform, 'active', `Downloading ${CLIENT_ARCHIVE}...`)
+          appendLog(`Downloading ${CLIENT_ARCHIVE} containing the protected ${CLIENT_PLATFORM_LABEL} client files...`)
+          fileStatusText.textContent = `Downloading ${CLIENT_ARCHIVE}`
+          fileSpeedText.textContent = `0%`
+          fileProgressFill.style.width = `0%`
+          await downloadToPath(`${api}/client-file/${CLIENT_ARCHIVE}`, dirHandle, CLIENT_ARCHIVE, (loaded, total) => {
+            const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0
+            fileProgressFill.style.width = `${pct}%`
+            fileSpeedText.textContent = `${pct}%`
+          })
+        } else {
+          appendLog(`Using existing ${CLIENT_ARCHIVE}.`)
+        }
+        setStep(stepPlatform, 'done', `${CLIENT_ARCHIVE} downloaded (requires extraction)`)
+        appendLog(
+          `Zip file ${CLIENT_ARCHIVE} is ready. Please extract its contents inside this directory before launching the game.`,
+        )
+        readyNotice.innerHTML = `
+          🎉 <strong>Client Ready!</strong>
+          <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
+            <li>Open the client directory you selected.</li>
+            <li>Extract <code>${CLIENT_ARCHIVE}</code> into the directory.</li>
+            <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
+          </ol>
+        `
+      } catch (error) {
+        setStep(stepPlatform, 'error', `Failed to download ${CLIENT_ARCHIVE}`)
+        throw error
+      }
+    } else {
+      setStep(stepPlatform, 'done', `${CLIENT_PLATFORM_LABEL} client binaries verified`)
+      readyNotice.innerHTML = `
+        🎉 <strong>Client Ready!</strong>
+        <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
+          <li>Open the client directory you selected.</li>
+          <li>Double-click <code>${CLIENT_LAUNCH_TARGET}</code> to start the game.</li>
+        </ol>
+      `
+    }
+
+    progressFill.style.width = '100%'
+    totalStatusText.textContent = MUST_REPORT_ERRORS ? 'Installation complete with errors.' : 'Installation complete!'
+    readyNotice.style.display = 'block'
+    appendLog(
+      MUST_REPORT_ERRORS
+        ? 'Installation completed with errors; logs will be uploaded.'
+        : 'All installation steps completed successfully!',
+    )
+  } catch (err) {
+    reportError('Installation failed', err)
+    totalStatusText.textContent = 'Error: ' + errorMessage(err)
+  } finally {
+    if (MUST_REPORT_ERRORS) await uploadLogs()
+    syncBtn.textContent = MUST_REPORT_ERRORS || retryInstall ? '↻ Retry installation' : INSTALL_BUTTON_TEXT
+    syncBtn.disabled = false
+    selectDirectoryBtn.disabled = false
+  }
+}
+</script>

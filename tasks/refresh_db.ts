@@ -222,7 +222,6 @@ const satchelAlwaysDropItemIds = [
   32782, // Time lost figurine
   35275, // orb-of-the-sindorei
 ]
-const appliedItemSpells = [{ itemId: 19969, spellId: 23990 }] as const
 
 const itemQualityByName = {
   common: 1,
@@ -2285,29 +2284,12 @@ const generateItemPropsSql = (itemUpdates: Map<number, ItemProps>) => {
     .sort(([a], [b]) => a - b)
     .map(([itemId, props]) => itemUpdateSql(itemId, props))
     .join('\n\n')
-  const appliedItemSpellRows = appliedItemSpells
-    .map(
-      ({ itemId, spellId }) =>
-        `UPDATE \`item_template\`
-SET \`spellid_1\` = ${spellId},
-    \`spelltrigger_1\` = 1,
-    \`spellcharges_1\` = 0,
-    \`spellppmRate_1\` = 0,
-    \`spellcooldown_1\` = -1,
-    \`spellcategory_1\` = 0,
-    \`spellcategorycooldown_1\` = -1
-WHERE \`entry\` = ${itemId};`,
-    )
-    .join('\n\n')
 
   return `${generatedHeader}
 
 USE \`${worldDb}\`;
 
 ${itemUpdateRows || '-- No item prop updates.'}
-
--- Apply permanent item spells without making them on-use effects.
-${appliedItemSpellRows || '-- No applied item spells.'}
 `
 }
 
