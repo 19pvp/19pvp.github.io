@@ -1,0 +1,120 @@
+<style data-page-style>
+    .login-section { display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
+    .login-desc { color: var(--text-secondary); font-size: 0.95rem; max-width: 320px; line-height: 1.5; }
+    .dashboard { display: flex; flex-direction: column; gap: 30px; }
+    .user-profile { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; }
+    .user-info { display: flex; align-items: center; gap: 15px; }
+    .avatar { width: 80px; height: 80px; object-fit: cover; background-color: var(--surface2); mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 71.2 32.5' preserveAspectRatio='none'%3E%3Cpath d='M2 31 0 21Q-1 8 2 3q5-4 32-1l13-1 3 1 8-1q13-4 13 9l-1 11-2 5-1 4c-1 1-10 3-10 1L7 32q-4 2-5-1' fill='black'/%3E%3C/svg%3E"); mask-size: 100% 100%; mask-repeat: no-repeat; transform: rotate(-3deg); }
+    .user-details h3 { font-size: 1.15rem; font-weight: 600; }
+    .user-details span { color: var(--text-secondary); font-size: 0.85rem; display: block; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+    .input-group { display: flex; flex-direction: column; gap: 8px; }
+    .stats-container { display: flex; align-items: center; justify-content: space-around; gap: 20px; margin: 15px 0; }
+    .stat-card { background: transparent !important; border: none !important; padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; flex: 1; }
+    .stat-card span { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+    .stat-card strong { font-size: 1.8rem; font-weight: 700; color: var(--accent-color); }
+    .section-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .char-table-wrapper { overflow: hidden; background: rgba(0, 0, 0, 0.1); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th, td { padding: 2px; }
+    th { color: var(--text-muted); font-size: 1rem; letter-spacing: 2px; font-family: var(--font-title); }
+    th span.badge { display: flex; }
+    .badge-online { --badge-bg: var(--success-bg); color: var(--success-color); }
+    .badge-offline { --badge-bg: rgba(255, 255, 255, 0.08); color: var(--text-secondary); }
+    .footer-actions { display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
+    .footer-actions .btn { flex: 1; min-width: 150px; }
+    </style>
+<main id="page-content" data-page="account">
+        <div id="guestView" style="display: none;"><div class="login-section">
+          <button id="discordLoginBtn" class="btn btn-discord"><svg style="width: 20px; height: 20px; fill: currentColor;" viewBox="0 0 127.14 96.36"><path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.88-.65,1.72-1.34,2.51-2a75.58,75.58,0,0,0,73,0c.8.67,1.63,1.36,2.51,2a68.43,68.43,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31-18.83C129.07,50.12,122.81,27.35,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/></svg>Play Now</button>
+          <div class="login-desc">Connect or Create an account with Discord.<br>You will automatically be invited to our discord server.</div>
+        </div></div>
+        <div id="memberView"><div class="dashboard">
+          <div class="user-profile"><div class="user-info"><img id="userAvatar" class="avatar" src="" alt="Discord Avatar"><div class="user-details"><h3 id="discordName">Username</h3><span>Discord Member</span></div></div></div>
+          <div class="hand-drawn-divider horizontal"></div>
+          <div id="statusMsg" class="status-banner"></div>
+          <div><div class="section-title">🛡️ WoW Game Account</div><form id="accountForm"><div class="form-grid">
+            <div class="input-group"><label for="wowUsername">Account Username</label><input type="text" id="wowUsername" placeholder="CHOOSE A USERNAME" required minlength="3" maxlength="16" pattern="^[a-zA-Z0-9]+$" title="Only alphanumeric characters allowed"></div>
+            <div class="input-group"><label for="wowPassword">Account Password</label><input type="password" id="wowPassword" placeholder="••••••••••••" required minlength="4"></div>
+          </div><button type="submit" class="btn btn-primary" style="margin-top: 20px;">Save Account Credentials</button></form></div>
+          <div id="charactersSection"><div class="section-title">⚔️ Your Characters</div><div class="char-table-wrapper"><table><thead><tr><th><span class="badge badge-offline">Name</span></th><th><span class="badge badge-offline">Race</span></th><th><span class="badge badge-offline">Gold</span></th><th><span class="badge badge-offline">Played</span></th><th><span class="badge badge-offline">Login</span></th></tr></thead><tbody id="characterRows"></tbody></table></div></div>
+          <div class="stats-container"><div class="stat-card"><span>Total Play Time</span><strong id="statPlayTime">0h</strong></div><div class="hand-drawn-divider vertical" style="height: 69px; --divider-color: var(--accent-border);"></div><div class="stat-card"><span>Total Gold</span><strong id="statGold">0</strong></div></div>
+          <div class="footer-actions"><button id="logoutBtn" class="btn btn-danger">Disconnect</button></div>
+        </div></div>
+      </main>
+<script type="module" data-page-script>
+    const api = location.origin
+    const guestView = document.getElementById('guestView')
+    const memberView = document.getElementById('memberView')
+    const userAvatar = document.getElementById('userAvatar')
+    const discordName = document.getElementById('discordName')
+    const wowUsername = document.getElementById('wowUsername')
+    const wowPassword = document.getElementById('wowPassword')
+    const accountForm = document.getElementById('accountForm')
+    const charactersSection = document.getElementById('charactersSection')
+    const characterRows = document.getElementById('characterRows')
+    const statPlayTime = document.getElementById('statPlayTime')
+    const statGold = document.getElementById('statGold')
+    const discordLoginBtn = document.getElementById('discordLoginBtn')
+    const logoutBtn = document.getElementById('logoutBtn')
+    const statusMsg = document.getElementById('statusMsg')
+    const classMap = {
+      1: { name: 'Warrior', key: 'WARRIOR' }, 2: { name: 'Paladin', key: 'PALADIN' }, 3: { name: 'Hunter', key: 'HUNTER' },
+      4: { name: 'Rogue', key: 'ROGUE' }, 5: { name: 'Priest', key: 'PRIEST' }, 6: { name: 'Death Knight', key: 'DEATHKNIGHT' },
+      7: { name: 'Shaman', key: 'SHAMAN' }, 8: { name: 'Mage', key: 'MAGE' }, 9: { name: 'Warlock', key: 'WARLOCK' },
+      10: { name: 'Monk', key: 'MONK' }, 11: { name: 'Druid', key: 'DRUID' }, 12: { name: 'Demon Hunter', key: 'DEMONHUNTER' },
+    }
+    const raceMap = { 1: 'Human', 2: 'Orc', 3: 'Dwarf', 4: 'Night Elf', 5: 'Undead', 6: 'Tauren', 7: 'Gnome', 8: 'Troll', 9: 'Goblin', 10: 'Blood Elf', 11: 'Draenei', 22: 'Worgen' }
+    const showStatus = (text, isError = false) => {
+      statusMsg.textContent = text; statusMsg.className = `status-banner ${isError ? 'status-error' : 'status-success'}`; statusMsg.style.display = 'block'
+      setTimeout(() => { statusMsg.style.display = 'none' }, 6000)
+    }
+    const formatPlayTime = (seconds) => {
+      if (!seconds) return '0h'
+      const hours = Math.floor(seconds / 3600), mins = Math.floor((seconds % 3600) / 60)
+      return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
+    }
+    const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+    const formatLastOnline = (timestamp) => {
+      if (!timestamp) return 'Never'
+      const units = [[31536000, 'year'], [2592000, 'month'], [86400, 'day'], [3600, 'hour'], [60, 'minute'], [1, 'second']]
+      const delta = timestamp - Math.floor(Date.now() / 1000)
+      const [seconds, unit] = units.find(([size]) => Math.abs(delta) >= size) || units.at(-1)
+      const value = Math.round(delta / seconds)
+      return relativeTime.format(Math.abs(delta) < 60 ? 0 : value, unit)
+    }
+    const formatGold = (copper) => {
+      copper = Math.max(0, Math.floor(Number(copper) || 0))
+      const gold = Math.floor(copper / 10000), silver = Math.floor((copper % 10000) / 100), remainder = copper % 100
+      return [gold && `${gold}<span class="money-dot money-dot-gold" aria-hidden="true"></span>`, silver && `${silver}<span class="money-dot money-dot-silver" aria-hidden="true"></span>`, remainder && `${remainder}<span class="money-dot money-dot-copper" aria-hidden="true"></span>`].filter(Boolean).join(' ') || '0'
+    }
+    discordLoginBtn.onclick = () => { location.href = `${api}/auth/discord/login` }
+    logoutBtn.onclick = async () => { await fetch(`${api}/auth/logout`, { method: 'POST', credentials: 'include' }); location.reload() }
+    accountForm.onsubmit = async (event) => {
+      event.preventDefault()
+      try {
+        const res = await fetch(`${api}/api/account`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: wowUsername.value, password: wowPassword.value }), credentials: 'include' })
+        const data = await res.json()
+        if (res.ok) { showStatus('WoW account credentials updated successfully!'); loadDashboard() }
+        else showStatus(data.error || 'Failed to update WoW account credentials.', true)
+      } catch { showStatus('Error communicating with the server.', true) }
+    }
+    async function loadDashboard() {
+      try {
+        const res = await fetch(`${api}/api/account`, { credentials: 'include' }); const data = await res.json()
+        if (!data.authenticated) { guestView.style.display = 'block'; memberView.style.display = 'none'; return }
+        guestView.style.display = 'none'; memberView.style.display = 'block'
+        userAvatar.src = data.user.avatar ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png'
+        discordName.textContent = data.user.global_name || data.user.username
+        if (data.wowAccount) { wowUsername.value = data.wowAccount.username; wowPassword.placeholder = '•••••••••••• (Type to change)'; wowPassword.required = false }
+        else { wowUsername.value = ''; wowPassword.placeholder = '••••••••••••'; wowPassword.required = true }
+        statPlayTime.textContent = formatPlayTime(data.stats.totalPlayTime); statGold.innerHTML = formatGold(data.stats.totalGold || 0)
+        if (!data.characters?.length) { charactersSection.style.display = 'none'; return }
+        charactersSection.style.display = 'block'
+        characterRows.innerHTML = data.characters.map((char) => `<tr><td>${classMap[char.class] ? `<span class="class-icon character-list-icon ${classMap[char.class].key}" role="img" aria-label="${classMap[char.class].name}" title="${classMap[char.class].name}"></span>` : ''}<strong class="${classMap[char.class]?.key || ''}">${char.name}</strong></td><td>${raceMap[char.race] || 'Unknown'}</td><td class="character-gold">${formatGold(char.gold)}</td><td>${formatPlayTime(char.totalTime)}</td><td>${char.online ? '<span class="badge badge-online">Online</span>' : formatLastOnline(char.logoutTime)}</td></tr>`).join('')
+      } catch { guestView.style.display = 'block'; memberView.style.display = 'none' }
+    }
+    loadDashboard()
+    </script>
+

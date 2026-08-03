@@ -162,6 +162,58 @@ const navigationState = {
   href: '',
 }
 
+const navigationPage = (url) => {
+  if (url.pathname === '/account.html') return 'account'
+  if (url.pathname === '/install' || url.pathname === '/install.html') return 'install'
+  if (url.pathname === '/leaderboards.html' || url.pathname === '/') return 'leaderboards'
+  return ''
+}
+
+const updateSiteNavigation = (url = new URL(location.href)) => {
+  const page = navigationPage(url)
+  for (const link of document.querySelectorAll('#siteNavigation [data-nav-page]')) {
+    const active = link.dataset.navPage === page
+    link.classList.toggle('active', active)
+    if (active) link.setAttribute('aria-current', 'page')
+    else link.removeAttribute('aria-current')
+  }
+}
+
+const setupSiteNavigation = () => {
+  const navigation = document.getElementById('siteNavigation')
+  if (!navigation) return
+  navigation.innerHTML = `
+    <a class="site-nav-account" data-nav-page="account" href="/account.html">
+      <span id="siteNavAccountIcon" class="site-nav-account-icon" aria-hidden="true">👤</span>
+      <img id="siteNavAccountAvatar" class="site-nav-avatar" alt="" hidden>
+      <span id="siteNavAccountName">Account</span>
+    </a>
+    <span class="site-nav-separator" aria-hidden="true">|</span>
+    <a data-nav-page="leaderboards" href="/leaderboards.html">Leaderboards</a>
+    <span class="site-nav-separator" aria-hidden="true">|</span>
+    <a data-nav-page="install" href="/install.html">Installer &amp; Patcher</a>
+  `
+  updateSiteNavigation()
+
+  fetch('/api/account', { credentials: 'include' })
+    .then((response) => response.json())
+    .then((data) => {
+      if (!data.authenticated) return
+      const name = data.user.global_name || data.user.username
+      const icon = document.getElementById('siteNavAccountIcon')
+      const avatar = document.getElementById('siteNavAccountAvatar')
+      const nameElement = document.getElementById('siteNavAccountName')
+      nameElement.textContent = name
+      if (data.user.avatar) {
+        avatar.src = `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
+        avatar.alt = `${name} avatar`
+        avatar.hidden = false
+        icon.hidden = true
+      }
+    })
+    .catch(() => {})
+}
+
 const navigationExcludedPaths = new Set([
   '/auth/discord/login',
   '/auth/discord/callback',
@@ -271,6 +323,7 @@ const swapPageContent = (doc) => {
   current.innerHTML = next.innerHTML
   current.scrollTop = 0
   globalThis.scrollTo(0, 0)
+  updateSiteNavigation(new URL(location.href))
   current.classList.add('navigation-enter')
   requestAnimationFrame(() => current.classList.remove('navigation-enter'))
   runPageScript(doc)
@@ -323,6 +376,7 @@ const navigateWithoutNavigationApi = (url) => {
   navigationState.controller = new AbortController()
   navigationState.href = pageHref(url)
   history.pushState({}, '', url.href)
+  updateSiteNavigation(url)
   loadPage(url, navigationState.controller.signal)
     .catch(() => {
       if (!navigationState.controller?.signal.aborted) location.href = url.href
@@ -353,6 +407,7 @@ const setupSPAClientNavigation = () => {
         return
       }
 
+      updateSiteNavigation(url)
       event.intercept({
         async handler() {
           navigationState.href = pageHref(url)
@@ -379,8 +434,12 @@ const setupSPAClientNavigation = () => {
   globalThis.addEventListener('popstate', () => {
     navigationState.controller?.abort()
     navigationState.controller = new AbortController()
+    updateSiteNavigation(new URL(location.href))
     loadPage(new URL(location.href), navigationState.controller.signal).catch(() => location.reload())
   })
 }
 
-document.addEventListener('DOMContentLoaded', setupSPAClientNavigation, { once: true })
+document.addEventListener('DOMContentLoaded', () => {
+  setupSiteNavigation()
+  setupSPAClientNavigation()
+}, { once: true })

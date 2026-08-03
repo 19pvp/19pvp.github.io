@@ -29,6 +29,9 @@ import { handleLog } from './logs.ts'
 import { getLeaderboards } from './leaderboards.ts'
 
 import indexHTMLRaw from '../web/index.html' with { type: 'text' }
+import templateHTMLRaw from '../web/template.html' with { type: 'text' }
+import leaderboardsHTMLRaw from '../web/leaderboards.html' with { type: 'text' }
+import accountHTMLRaw from '../web/account.html' with { type: 'text' }
 import installHTMLRaw from '../web/install.html' with { type: 'text' }
 import eventsHTMLRaw from '../web/events.html' with { type: 'text' }
 import styleCSSRaw from '../web/style.css' with { type: 'text' }
@@ -83,12 +86,41 @@ const inlineAssets = (html: string) => {
     .replace('</head>', `<script type="module">\n${scriptJSRaw}\n</script>\n</head>`)
 }
 
+const composePage = (content: string, title: string, prefetch = '', containerClass = '') => {
+  return templateHTMLRaw
+    .replace('{{TITLE}}', title)
+    .replace('{{PREFETCH}}', prefetch)
+    .replace('{{CONTAINER_CLASS}}', containerClass)
+    .replace('{{PAGE_CONTENT}}', content.match(/<main [\s\S]*?<\/main>/)?.[0] || '')
+    .replace('{{PAGE_STYLE}}', content.match(/<style data-page-style>([\s\S]*?)<\/style>/)?.[1] || '')
+    .replace('{{PAGE_SCRIPT}}', content.match(/<script type="module" data-page-script>([\s\S]*?)<\/script>/)?.[1] || '')
+}
+
 const indexHTMLBytes = new TextEncoder().encode(inlineAssets(indexHTMLRaw))
-const eventsHTMLBytes = new TextEncoder().encode(inlineAssets(eventsHTMLRaw))
+const leaderboardsHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
+  leaderboardsHTMLRaw,
+  '19 PvP - Leaderboards',
+  '<link rel="prefetch" href="/install.html" as="document">',
+)))
+const accountHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
+  accountHTMLRaw,
+  '19 PvP - Account',
+  '<link rel="prefetch" href="/leaderboards.html" as="document">',
+)))
+const eventsHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
+  eventsHTMLRaw,
+  '19 PvP – Event Audit',
+  '',
+  ' events-shell',
+)))
 const installHTMLBytes = new TextEncoder().encode(
-  inlineAssets(installHTMLRaw)
+  inlineAssets(composePage(
+    installHTMLRaw,
+    '19 PvP - Client Installer & Patcher',
+    '<link rel="prefetch" href="/leaderboards.html" as="document">',
+  )
     .replace('MANIFEST_PLACEHOLDER', JSON.stringify(manifestJSON))
-    .replace('REALMLIST_PLACEHOLDER', JSON.stringify(launcherRealmlist)),
+    .replace('REALMLIST_PLACEHOLDER', JSON.stringify(launcherRealmlist))),
 )
 const styleCSSBytes = new TextEncoder().encode(styleCSSRaw)
 const respondText = (content: string | Uint8Array<ArrayBuffer>, type = 'text/html') =>
@@ -102,7 +134,9 @@ export default {
       const url = new URL(req.url)
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
       if (url.pathname === '/') return respondText(indexHTMLBytes, 'text/html')
-      if (url.pathname === '/install') {
+      if (url.pathname === '/leaderboards.html') return respondText(leaderboardsHTMLBytes, 'text/html')
+      if (url.pathname === '/account.html') return respondText(accountHTMLBytes, 'text/html')
+      if (url.pathname === '/install' || url.pathname === '/install.html') {
         const session = await getSession(req)
         if (!session) return new Response(null, { status: 302, headers: { location: '/' } })
         return respondText(installHTMLBytes, 'text/html')
