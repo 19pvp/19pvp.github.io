@@ -236,6 +236,12 @@
     .leaderboard-table th,
     .leaderboard-table td {
       padding: 8px 10px;
+      text-align: center;
+    }
+
+    .leaderboard-table th:nth-child(2),
+    .leaderboard-table td:nth-child(2) {
+      text-align: left;
     }
 
     .leaderboard-table tbody tr {
@@ -252,7 +258,7 @@
 
     .leaderboard-sort-active {
       color: var(--accent-color);
-      background: var(--accent-dim);
+      --divider-color: var(--accent-color);
     }
 
     .leaderboard-table th[data-sort-key] {

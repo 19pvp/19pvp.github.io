@@ -38,6 +38,29 @@ export type LeaderboardSortMetric = LeaderboardMetric | typeof LEADERBOARD_DERIV
 export type LeaderboardPeriod = 'today' | 'week' | 'month' | 'all'
 export type LeaderboardValueMode = 'absolute' | 'average'
 export type LeaderboardMetricDefinition = { key: LeaderboardSortMetric; label: string }
+const LEADERBOARD_SCORE_PRECISION = 100_000
+
+const leaderboardMetricGroups: Record<string, LeaderboardSortMetric[]> = {
+  healingDamage: ['healingDamageAbsorbs', 'healingDone', 'damageDone', 'damageTaken', 'absorbsDone'],
+  skillPlays: [
+    'successfulInterrupts',
+    'fakeCastInterrupts',
+    'hardCCDuration',
+    'softCCDuration',
+    'totalDispels',
+    'dispelsOffensive',
+    'dispelsDefensive',
+  ],
+  killsHonor: ['killingBlows', 'deaths', 'honorableKills', 'bonusHonor', 'deserted', 'killDeathRatio'],
+  objectivePlays: [
+    'flagCaptures',
+    'flagReturns',
+    'flagCarryTime',
+    'efcPressure',
+    'flagEfficiency',
+    'attemptsOnFlag',
+  ],
+}
 
 export const metricsByKey: Record<string, LeaderboardMetricDefinition> = Object.fromEntries(
   [...LEADERBOARD_METRICS, ...LEADERBOARD_DERIVED_METRICS].map(([key, label]) => [key, { key, label }]),
@@ -285,6 +308,8 @@ export class LeaderboardStore {
     this.synchronizeDay()
     const values = period
     const avgKey = `${period}Average` as 'allAverage' | 'todayAverage' | 'weekAverage' | 'monthAverage'
+    const group = Object.values(leaderboardMetricGroups).find((metrics) => metrics.includes(metric)) || [metric]
+    const sortMetrics = [metric, ...group.filter((key) => key !== metric)]
     const top = [] as Array<{
       playerGuid: string
       name: string
@@ -297,8 +322,14 @@ export class LeaderboardStore {
     for (const [playerGuid, player] of this.players) {
       const periodValues = player[values]
       const averageValues = player[avgKey]
-      const value = (mode === 'average' ? averageValues : periodValues)[metricIndex.get(metric)!]
-      if (value <= 0) continue
+      const sortValues = mode === 'average' ? averageValues : periodValues
+      const rawValues = sortMetrics.map((key) => sortValues[metricIndex.get(key)!])
+      if (!rawValues.some((entry) => entry > 0)) continue
+      let value = Math.round(Math.log1p(rawValues[0]) * LEADERBOARD_SCORE_PRECISION)
+      for (let index = 1; index < rawValues.length; index++) {
+        const logarithm = Math.log1p(rawValues[index])
+        value += (logarithm / (1 + logarithm)) / (2 ** index)
+      }
       const name = player.name || playerGuid
 
       let start = 0

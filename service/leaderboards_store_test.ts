@@ -19,13 +19,13 @@ Deno.test('aggregates all-time and rolling periods by stable player guid', () =>
   store.addMatch(match('2', 'Bob', { damageDone: 120 }), dateAt(2026, 7, 1))
 
   const all = store.getLeaderboard('damageDone', 'all')
-  if (all[0]?.name !== 'Alice Renamed' || all[0]?.value !== 150 || all[0]?.matches !== 2) {
+  if (all[0]?.name !== 'Alice Renamed' || Math.floor(all[0]?.value || 0) !== Math.round(Math.log1p(150) * 100_000) || all[0]?.matches !== 2) {
     throw Error(`unexpected all-time result: ${JSON.stringify(all)}`)
   }
-  if (store.getLeaderboard('damageDone', 'week')[0]?.value !== 150) throw Error('week aggregation failed')
-  if (store.getLeaderboard('damageDone', 'month')[0]?.value !== 150) throw Error('month aggregation failed')
-  if (store.getLeaderboard('deserted', 'all')[0]?.value !== 1) throw Error('deserted aggregation failed')
-  if (store.getLeaderboard('healingDamageAbsorbs', 'all')[0]?.value !== 150) throw Error('derived aggregation failed')
+  if (Math.floor(store.getLeaderboard('damageDone', 'week')[0]?.value || 0) !== Math.round(Math.log1p(150) * 100_000)) throw Error('week aggregation failed')
+  if (Math.floor(store.getLeaderboard('damageDone', 'month')[0]?.value || 0) !== Math.round(Math.log1p(150) * 100_000)) throw Error('month aggregation failed')
+  if (Math.floor(store.getLeaderboard('deserted', 'all')[0]?.value || 0) !== Math.round(Math.log1p(1) * 100_000)) throw Error('deserted aggregation failed')
+  if (Math.floor(store.getLeaderboard('healingDamageAbsorbs', 'all')[0]?.value || 0) !== Math.round(Math.log1p(150) * 100_000)) throw Error('derived aggregation failed')
   const data = store.getLeaderboardData('all').find((row) => row.playerGuid === '1')
   if (data?.stats.damageDone !== 150 || data?.timePlayed !== 0) throw Error('client leaderboard data failed')
 })
@@ -35,8 +35,8 @@ Deno.test('keeps the daily window bounded while retaining all-time totals', () =
   store.addMatch(match('1', 'Alice', { damageDone: 10 }), dateAt(2026, 7, 1))
   store.addMatch(match('1', 'Alice', { damageDone: 20 }), dateAt(2026, 8, 2))
 
-  if (store.getLeaderboard('damageDone', 'all')[0]?.value !== 30) throw Error('all-time total was lost')
-  if (store.getLeaderboard('damageDone', 'month')[0]?.value !== 20) throw Error('old daily bucket was retained')
+  if (Math.floor(store.getLeaderboard('damageDone', 'all')[0]?.value || 0) !== Math.round(Math.log1p(30) * 100_000)) throw Error('all-time total was lost')
+  if (Math.floor(store.getLeaderboard('damageDone', 'month')[0]?.value || 0) !== Math.round(Math.log1p(20) * 100_000)) throw Error('old daily bucket was retained')
 })
 
 Deno.test('sorts ties deterministically', () => {
@@ -54,4 +54,28 @@ Deno.test('sorts by maintained averages', () => {
 
   if (store.getLeaderboardData('all', 'damageDone')[0]?.name !== 'Bob') throw Error('total sorting failed')
   if (store.getLeaderboardData('all', 'damageDone', 'average')[0]?.name !== 'Alice') throw Error('average sorting failed')
+})
+
+Deno.test('falls back to the next metric in the selected group', () => {
+  const store = new LeaderboardStore()
+  store.addMatch(match('1', 'Alice', { successfulInterrupts: 0, fakeCastInterrupts: 5 }), Date.now())
+  store.addMatch(match('2', 'Bob', { successfulInterrupts: 2 }), Date.now())
+  store.addMatch(match('3', 'Cara', { successfulInterrupts: 0, fakeCastInterrupts: 0 }), Date.now())
+
+  const rows = store.getLeaderboard('successfulInterrupts', 'all')
+  if (rows.length !== 2 || rows[0]?.name !== 'Bob' || rows[1]?.name !== 'Alice' || rows[1]?.value <= 0 || rows[1]?.value >= 1) {
+    throw Error(`group fallback sorting failed: ${JSON.stringify(rows)}`)
+  }
+})
+
+Deno.test('keeps the other dispel type when the selected type is empty', () => {
+  const store = new LeaderboardStore()
+  store.addMatch(match('1', 'Offensive', { dispelsOffensive: 5 }), Date.now())
+  store.addMatch(match('2', 'Defensive', { dispelsDefensive: 5 }), Date.now())
+
+  const offensiveRows = store.getLeaderboard('dispelsOffensive', 'all')
+  const defensiveRows = store.getLeaderboard('dispelsDefensive', 'all')
+  if (!offensiveRows.some(({ name }) => name === 'Defensive') || !defensiveRows.some(({ name }) => name === 'Offensive')) {
+    throw Error('dispel fallback sorting failed')
+  }
 })
