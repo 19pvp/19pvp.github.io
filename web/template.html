@@ -13,17 +13,15 @@
     <style data-page-style>{{PAGE_STYLE}}</style>
   </head>
   <body>
+    <header>
+      <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
+      <nav id="siteNavigation" class="site-navigation" aria-label="Primary navigation"></nav>
+    </header>
     <div class="container{{CONTAINER_CLASS}}">
       <div id="topLoadingBarContainer" style="position: absolute; top: 0; left: 0; right: 0; height: 12px; overflow: hidden; pointer-events: none;">
         <svg style="display: none;"><path id="handDrawnBorderPath" d="M1.7 2.7q7.5-.2 34 .4a1197 1197 0 0 0 58.9.5l24.2.1a1168 1168 0 0 0 45-.6q6 0 17.3-.6 11.5-.4 16-.4t13 .7 29.1.2 30.3-.1 31.8.3a3411 3411 0 0 0 69.6-.7q10-.3 24.2-.1t52.1 0h54.5q16.5 0 38.5-.4t33.7-.4 29.9.7a416 416 0 0 0 36.6.2" /></svg>
         <svg class="progress-bar-svg" viewBox="-1 0 644.1 5.4" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;"><defs><linearGradient id="progressGradTopBar" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="var(--discord-color)" /><stop offset="100%" stop-color="var(--accent-color)" /></linearGradient></defs><use href="#handDrawnBorderPath" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" /><use id="topLoadingPath" href="#handDrawnBorderPath" fill="none" stroke="url(#progressGradTopBar)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke-dasharray="750" stroke-dashoffset="0" /></svg>
       </div>
-      <div class="header">
-        <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
-        <h1>19 PvP Server</h1>
-        <div class="subtitle">Level 19 Battleground Server Portal</div>
-      </div>
-      <nav id="siteNavigation" class="site-navigation" aria-label="Primary navigation"></nav>
       {{PAGE_CONTENT}}
       <footer class="site-footer">19 PvP · Level 19 Battleground Server</footer>
     </div>

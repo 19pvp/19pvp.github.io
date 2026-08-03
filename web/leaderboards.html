@@ -34,8 +34,9 @@
     @media (max-width: 600px) { .leaderboard-controls { flex-direction: column; } }
     </style>
 <main id="page-content" data-page="leaderboards">
+        <h1 class="page-title">Leaderboards</h1>
         <section class="leaderboard-section">
-          <div class="section-title">🏆 Battleground Leaderboards</div>
+          <h2 class="section-title">🏆 Battleground Leaderboards</h2>
           <div class="leaderboard-controls">
             <label class="leaderboard-group-control">Group<select id="leaderboardGroup" aria-label="Leaderboard metric group"></select></label>
             <label>Period<select id="leaderboardPeriod" aria-label="Leaderboard period"><option value="today">Today</option><option value="week">Week</option><option value="month">Month</option><option value="all" selected>All time</option></select></label>
@@ -46,6 +47,26 @@
             <table class="leaderboard-table"><thead><tr id="leaderboardHeaderRow"><th>Rank</th><th>Player</th></tr></thead><tbody id="leaderboardRows"></tbody></table>
           </div>
           <div class="leaderboard-pagination"><button id="leaderboardPrevious" class="btn btn-ghost" type="button">Previous</button><span id="leaderboardPageLabel" class="leaderboard-page-label"></span><button id="leaderboardNext" class="btn btn-ghost" type="button">Next</button></div>
+        </section>
+        <section class="leaderboard-section">
+          <h2 class="section-title">⚔️ Arena Leaderboards</h2>
+          <div class="leaderboard-table-wrapper">
+            <table class="leaderboard-table leaderboard-placeholder-table">
+              <thead><tr><th>#</th><th>Player</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>-</td></tr>
+                <tr><td>2</td><td>-</td></tr>
+                <tr><td>3</td><td>-</td></tr>
+                <tr><td>4</td><td>-</td></tr>
+                <tr><td>5</td><td>-</td></tr>
+                <tr><td>6</td><td>-</td></tr>
+                <tr><td>7</td><td>-</td></tr>
+                <tr><td>8</td><td>-</td></tr>
+                <tr><td>9</td><td>-</td></tr>
+                <tr><td>10</td><td>-</td></tr>
+              </tbody>
+            </table>
+          </div>
         </section>
       </main>
 <script type="module" data-page-script>
@@ -235,4 +256,3 @@
     leaderboardNext.onclick = () => { if ((leaderboardPage + 1) * leaderboardPageSize < leaderboardData.length) { leaderboardPage++; renderLeaderboardPage() } }
     loadLeaderboard()
     </script>
-

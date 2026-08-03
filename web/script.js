@@ -184,8 +184,7 @@ const setupSiteNavigation = () => {
   if (!navigation) return
   navigation.innerHTML = `
     <a class="site-nav-account" data-nav-page="account" href="/account.html">
-      <span id="siteNavAccountIcon" class="site-nav-account-icon" aria-hidden="true">👤</span>
-      <img id="siteNavAccountAvatar" class="site-nav-avatar" alt="" hidden>
+      <img id="siteNavAccountAvatar" class="avatar site-nav-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Account avatar">
       <span id="siteNavAccountName">Account</span>
     </a>
     <span class="site-nav-separator" aria-hidden="true">|</span>
@@ -200,16 +199,13 @@ const setupSiteNavigation = () => {
     .then((data) => {
       if (!data.authenticated) return
       const name = data.user.global_name || data.user.username
-      const icon = document.getElementById('siteNavAccountIcon')
       const avatar = document.getElementById('siteNavAccountAvatar')
       const nameElement = document.getElementById('siteNavAccountName')
       nameElement.textContent = name
-      if (data.user.avatar) {
-        avatar.src = `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
-        avatar.alt = `${name} avatar`
-        avatar.hidden = false
-        icon.hidden = true
-      }
+      avatar.src = data.user.avatar
+        ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
+        : 'https://cdn.discordapp.com/embed/avatars/0.png'
+      avatar.alt = `${name} avatar`
     })
     .catch(() => {})
 }

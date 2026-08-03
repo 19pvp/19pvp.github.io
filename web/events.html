@@ -17,7 +17,7 @@
       gap: 12px;
       flex-wrap: wrap;
     }
-    .events-toolbar h2 {
+    .events-toolbar h1 {
       font-size: 1.3rem;
       font-weight: 400;
       white-space: nowrap;
@@ -25,13 +25,13 @@
       align-items: center;
       gap: 8px;
     }
-    .events-toolbar h2 img {
+    .events-toolbar h1 img {
       max-height: 24px;
       height: auto;
       max-width: 100%;
       width: auto;
     }
-    .events-toolbar h2 span {
+    .events-toolbar h1 span {
       color: var(--accent-color);
     }
     .controls {
@@ -239,7 +239,7 @@
     </style>
 <main id="page-content" class="events-page" data-page="events">
         <div class="events-toolbar">
-          <h2>Event Audit <span>Read-only</span></h2>
+          <h1>Event Audit <span>Read-only</span></h1>
           <div class="controls">
             <div class="tab-row">
               <button class="tab active" id="tabActive" onclick="switchTable('active')">Active</button>
@@ -445,4 +445,3 @@
 
     reload()
     </script>
-
