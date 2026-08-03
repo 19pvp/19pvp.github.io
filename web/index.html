@@ -250,7 +250,7 @@
     .leaderboard-table th:first-child,
     .leaderboard-table td:first-child {
       width: 1%;
-      text-align: right;
+      text-align: center;
       color: var(--text-muted);
     }
 
@@ -558,12 +558,9 @@
         key: 'objectivePlays',
         label: 'Objective plays',
         keys: [
-          'attemptsOnFlag',
-          'flagReturns',
           'flagCaptures',
+          'flagReturns',
           'flagCarryTime',
-          'damageOnEFC',
-          'healsOnFC',
           'efcPressure',
           'flagEfficiency',
         ],
@@ -575,7 +572,7 @@
       totalDispels: 'Total dispels',
       killDeathRatio: 'Kill / death ratio',
       efcPressure: 'EFC damage + FC healing',
-      flagEfficiency: 'Flag attempts / captures',
+      flagEfficiency: 'Flag pickup rate',
     }
 
     const leaderboardShortLabels = {
@@ -746,15 +743,24 @@
     }
 
     const readLeaderboardState = () => {
-      const params = new URL(location.href).searchParams
+      const url = new URL(location.href)
+      const params = url.searchParams
       const group = leaderboardGroups.find(({ key }) => key === params.get('leaderboard-group')) || leaderboardGroups[0]
       const period = ['today', 'week', 'month', 'all'].includes(params.get('leaderboard-period'))
         ? params.get('leaderboard-period')
         : 'all'
       const unit = leaderboardValueUnits[params.get('leaderboard-unit')] ? params.get('leaderboard-unit') : 'all'
+      const sortParam = params.get('leaderboard-sort')
+      const sortKey = group.keys.includes(sortParam)
+        ? sortParam
+        : group.keys[Math.floor(Math.random() * group.keys.length)]
+      if (sortParam !== sortKey) {
+        params.set('leaderboard-sort', sortKey)
+        history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`)
+      }
       return {
         group,
-        sortKey: group.keys.includes(params.get('leaderboard-sort')) ? params.get('leaderboard-sort') : group.keys[0],
+        sortKey,
         period,
         unit,
       }
@@ -836,6 +842,12 @@
                       : 0
                     title += `; Count: ${formatLeaderboardValue(countValue)}; Average duration / count: ${formatDuration(averageDuration)}`
                   }
+                  if (key === 'flagEfficiency' && unit !== 'all') {
+                    title += `; Total pickups: ${formatLeaderboardValue(leaderboardValue(row, 'attemptsOnFlag', 'all'))}`
+                  }
+                  if (key === 'efcPressure') {
+                    title += `; Damage on EFC: ${formatLeaderboardValue(leaderboardValue(row, 'damageOnEFC', otherUnit))}; Healing on FC: ${formatLeaderboardValue(leaderboardValue(row, 'healsOnFC', otherUnit))}`
+                  }
                   return `<td title="${title}">${formatLeaderboardValue(leaderboardValue(row, key, unit), key)}</td>`
                 }).join('')}
               </tr>
@@ -893,7 +905,10 @@
 
     leaderboardGroup.onchange = () => {
       const group = leaderboardGroups.find(({ key }) => key === leaderboardGroup.value) || leaderboardGroups[0]
-      updateLeaderboardUrl({ group: group.key, sort: group.keys[0] })
+      updateLeaderboardUrl({
+        group: group.key,
+        sort: group.keys[Math.floor(Math.random() * group.keys.length)],
+      })
       loadLeaderboard()
     }
     leaderboardAverageUnit.onchange = () => {
