@@ -96,7 +96,6 @@ td {
   padding: 2px;
 }
 th {
-  color: var(--text-muted);
   font-size: 1rem;
   letter-spacing: 2px;
   font-family: var(--font-title);
@@ -112,15 +111,8 @@ th span.badge {
   --badge-bg: rgba(255, 255, 255, 0.08);
   color: var(--text-secondary);
 }
-.footer-actions {
-  display: flex;
-  gap: 15px;
-  margin-top: 15px;
-  flex-wrap: wrap;
-}
-.footer-actions .btn {
-  flex: 1;
-  min-width: 150px;
+.character-list-icon {
+  margin-right: 4px;
 }
 </style>
 <main id="page-content" data-page="account">
@@ -138,6 +130,7 @@ th span.badge {
       <div class="user-profile">
         <div
           class="user-info"><img id="userAvatar" class="avatar account-avatar" src="" alt="Discord Avatar"><div class="user-details"><h3 id="discordName">Username</h3><span>Discord Member</span></div></div>
+        <button id="logoutBtn" class="btn btn-danger" style="width: unset;">Disconnect</button>
       </div>
       <div class="hand-drawn-divider horizontal"></div>
       <div id="statusMsg" class="status-banner"></div>
@@ -154,11 +147,11 @@ th span.badge {
           <table>
             <thead>
               <tr>
-                <th><span class="badge badge-offline">Name</span></th>
-                <th><span class="badge badge-offline">Race</span></th>
-                <th><span class="badge badge-offline">Gold</span></th>
-                <th><span class="badge badge-offline">Played</span></th>
-                <th><span class="badge badge-offline">Login</span></th>
+                <th> </th>
+                <th> </th>
+                <th> </th>
+                <th>Played</th>
+                <th>Login</th>
               </tr>
             </thead>
             <tbody id="characterRows"></tbody>
@@ -170,7 +163,6 @@ th span.badge {
         <div class="hand-drawn-divider vertical" style="height: 69px; --divider-color: var(--accent-border);"></div>
         <div class="stat-card"><span>Total Gold</span><strong id="statGold">0</strong></div>
       </div>
-      <div class="footer-actions"><button id="logoutBtn" class="btn btn-danger">Disconnect</button></div>
     </div>
   </div>
 </main>

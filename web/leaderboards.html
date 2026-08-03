@@ -56,6 +56,24 @@
 .leaderboard-table tbody tr {
   height: 42px;
 }
+.leaderboard-table td:first-child .money-dot {
+  margin: 0;
+}
+.leaderboard-table tbody tr.leaderboard-rank-1 td:not(:first-child),
+.leaderboard-placeholder-table tbody tr:nth-child(1) td:not(:first-child) {
+  font-size: 1.6em;
+  line-height: 1em;
+}
+.leaderboard-table tbody tr.leaderboard-rank-2 td:not(:first-child),
+.leaderboard-placeholder-table tbody tr:nth-child(2) td:not(:first-child) {
+  font-size: 1.4em;
+  line-height: 1em;
+}
+.leaderboard-table tbody tr.leaderboard-rank-3 td:not(:first-child),
+.leaderboard-placeholder-table tbody tr:nth-child(3) td:not(:first-child) {
+  font-size: 1.2em;
+  line-height: 1em;
+}
 .leaderboard-dispel-offensive {
   color: var(--harmful);
 }
@@ -122,11 +140,19 @@
     flex-direction: column;
   }
 }
+.hand-drawn-divider.horizontal {
+  margin: 18px;
+}
 </style>
 <main id="page-content" data-page="leaderboards">
   <h1 class="page-title">Leaderboards</h1>
+  <section class="mvp-section">
+    <h2 class="section-title">🎖️ MVP's 🏅</h2>
+    <p>Work in progress</p>
+  </section>
+  <div class="hand-drawn-divider horizontal"></div>
   <section class="leaderboard-section">
-    <h2 class="section-title">🏆 Battleground Leaderboards</h2>
+    <h2 class="section-title"><span style="filter: hue-rotate(227deg);transform: scale(-1, 1);">🚩</span> Battleground 🚩</h2>
     <div class="leaderboard-controls">
       <label
         class="leaderboard-group-control">Group<select id="leaderboardGroup" aria-label="Leaderboard metric group"></select></label>
@@ -148,8 +174,9 @@
     <div
       class="leaderboard-pagination"><button id="leaderboardPrevious" class="btn btn-ghost" type="button">Previous</button><span id="leaderboardPageLabel" class="leaderboard-page-label"></span><button id="leaderboardNext" class="btn btn-ghost" type="button">Next</button></div>
   </section>
+  <div class="hand-drawn-divider horizontal"></div>
   <section class="leaderboard-section">
-    <h2 class="section-title">⚔️ Arena Leaderboards</h2>
+    <h2 class="section-title">⚔️ Arena ⚔️</h2>
     <div class="leaderboard-table-wrapper">
       <table class="leaderboard-table leaderboard-placeholder-table">
         <thead>
@@ -419,7 +446,7 @@ const renderLeaderboardPage = () => {
   const renderedRows = pageRows.map((row, index) => {
     const classInfo = classMap[row.class]
     const rank = start + index + 1
-    return `<tr><td>${
+    return `<tr class="${rank <= 3 ? `leaderboard-rank-${rank}` : ''}"><td>${
       rank === 1
         ? '<span class="money-dot money-dot-gold" role="img" aria-label="1st place" title="1st place"></span>'
         : rank === 2
