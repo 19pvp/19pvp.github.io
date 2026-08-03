@@ -20,6 +20,11 @@ local WSG_FLAG_AURAS = {
     [HORDE_FLAG] = "HORDE",
     [ALLIANCE_FLAG] = "ALLIANCE",
 }
+local NO_FAKE_CAST_CLASSES = {
+    [1] = true, -- Warrior
+    [3] = true, -- Hunter
+    [4] = true, -- Rogue
+}
 
 local function isFlagCarrier(player)
     return player:HasAura(HORDE_FLAG) or player:HasAura(ALLIANCE_FLAG)
@@ -314,9 +319,10 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_INTERRUPT_CAST, function(event, interrupter,
         interrupterStats.successfulInterrupts = interrupterStats.successfulInterrupts + 1
     end
 
-    -- A fake interrupt is credited to the player who was targeted while idle.
+    -- A fake interrupt is credited only for real casters targeted by a real player.
+    if targetWasCasting or interrupter:IsBot() or NO_FAKE_CAST_CLASSES[target:GetClass()] then return end
     local targetStats = GetStats(target)
-    if not targetWasCasting and targetStats then
+    if targetStats then
         targetStats.fakeCastInterrupts = targetStats.fakeCastInterrupts + 1
     end
 end)
