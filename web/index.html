@@ -244,16 +244,15 @@
 
     .leaderboard-dispel-offensive {
       color: var(--harmful);
-      background: var(--danger-bg);
     }
 
     .leaderboard-dispel-defensive {
       color: var(--helpful);
-      background: var(--success-bg);
     }
 
-    .leaderboard-dispel-sorted {
-      outline: 1px solid currentColor;
+    .leaderboard-sort-active {
+      color: var(--accent-color);
+      background: var(--accent-dim);
     }
 
     .leaderboard-table th[data-sort-key] {
@@ -868,11 +867,11 @@
                     const total = leaderboardValue(row, 'totalDispels', unit)
                     const offensive = leaderboardValue(row, 'dispelsOffensive', unit)
                     const defensive = leaderboardValue(row, 'dispelsDefensive', unit)
-                    return `<td class="${sortKey === 'totalDispels' ? 'leaderboard-dispel-sorted' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'totalDispels', otherUnit))}">${formatLeaderboardValue(total)}</td>
-                      <td class="leaderboard-dispel-offensive${sortKey === 'dispelsOffensive' ? ' leaderboard-dispel-sorted' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'dispelsOffensive', otherUnit))}">${formatLeaderboardValue(offensive)}</td>
-                      <td class="leaderboard-dispel-defensive${sortKey === 'dispelsDefensive' ? ' leaderboard-dispel-sorted' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'dispelsDefensive', otherUnit))}">${formatLeaderboardValue(defensive)}</td>`
+                    return `<td class="${sortKey === 'totalDispels' ? 'leaderboard-sort-active' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'totalDispels', otherUnit))}">${formatLeaderboardValue(total)}</td>
+                      <td class="leaderboard-dispel-offensive${sortKey === 'dispelsOffensive' ? ' leaderboard-sort-active' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'dispelsOffensive', otherUnit))}">${formatLeaderboardValue(offensive)}</td>
+                      <td class="leaderboard-dispel-defensive${sortKey === 'dispelsDefensive' ? ' leaderboard-sort-active' : ''}" title="${otherLabel}: ${formatLeaderboardValue(leaderboardValue(row, 'dispelsDefensive', otherUnit))}">${formatLeaderboardValue(defensive)}</td>`
                   }
-                  return `<td title="${title}">${formatLeaderboardValue(leaderboardValue(row, key, unit), key)}</td>`
+                  return `<td class="${key === sortKey ? 'leaderboard-sort-active' : ''}" title="${title}">${formatLeaderboardValue(leaderboardValue(row, key, unit), key)}</td>`
                 }).join('')}
               </tr>
             `
