@@ -11,6 +11,14 @@ WEEK            = DAY*7
 MONTH           = DAY*30
 YEAR            = MONTH*12
 IN_MILLISECONDS = 1000
+
+-- BATTLEGROUND STATUS
+STATUS_NONE        = 0
+STATUS_WAIT_QUEUE  = 1
+STATUS_WAIT_JOIN   = 2
+STATUS_IN_PROGRESS = 3
+STATUS_WAIT_LEAVE  = 4
+
 -- LOCALE CONSTANTS
 LOCALE_enUS   = 0
 LOCALE_koKR   = 1
@@ -1228,6 +1236,7 @@ PLAYER_EVENT_ON_LEAVE_BG               = 7002 -- (event, player, mapId, instance
 PLAYER_EVENT_ON_BG_QUEUE_LEAVE         = 7003 -- (event, player)
 PLAYER_EVENT_ON_WHO_REQUEST            = 7004 -- (event, requesterPlayer, targetPlayer)
 PLAYER_EVENT_ON_INTERRUPT_CAST         = 7005 -- (event, interrupter, target, targetWasCasting, successful)
+PLAYER_EVENT_ON_BG_INVITE              = 7006 -- (event, player, mapId, instanceId, bg, teamId)
 
 
 -- RegisterMapEvent

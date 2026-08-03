@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..4e4cadd 100644
+index d8886ce..fed8ff2 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -40,7 +40,19 @@ index d8886ce..4e4cadd 100644
      void OnBattlegroundStart(Battleground* bg) override
      {
          sALE->OnBGStart(bg, bg->GetBgTypeID(), bg->GetInstanceID());
-@@ -362,6 +375,11 @@ public:
+@@ -353,6 +366,11 @@ public:
+         sALE->OnBGEnd(bg, bg->GetBgTypeID(), bg->GetInstanceID(), winnerTeam);
+     }
+ 
++    void OnBattlegroundInvite(Battleground* bg, Player* player, TeamId teamId) override
++    {
++        sALE->OnBGInvite(bg, player, teamId);
++    }
++
+     void OnBattlegroundDestroy(Battleground* bg) override
+     {
+         sALE->OnBGDestroy(bg, bg->GetBgTypeID(), bg->GetInstanceID());
+@@ -362,6 +380,11 @@ public:
      {
          sALE->OnBGCreate(bg, bg->GetBgTypeID(), bg->GetInstanceID());
      }
@@ -52,7 +64,7 @@ index d8886ce..4e4cadd 100644
  };
  
  class ALE_CommandSC : public CommandSC
-@@ -617,7 +635,10 @@ public:
+@@ -617,7 +640,10 @@ public:
          PLAYERHOOK_ON_EMOTE,
          PLAYERHOOK_ON_TEXT_EMOTE,
          PLAYERHOOK_ON_SPELL_CAST,
@@ -63,7 +75,7 @@ index d8886ce..4e4cadd 100644
          PLAYERHOOK_ON_LOGOUT,
          PLAYERHOOK_ON_CREATE,
          PLAYERHOOK_ON_SAVE,
-@@ -737,9 +758,31 @@ public:
+@@ -737,9 +763,31 @@ public:
          sALE->OnQuestAbandon(player, questId);
      }
  
@@ -95,7 +107,7 @@ index d8886ce..4e4cadd 100644
      }
  
      void OnPlayerGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action) override
-@@ -827,13 +870,37 @@ public:
+@@ -827,13 +875,37 @@ public:
          sALE->OnPlayerSpellCast(player, spell, skipCheck);
      }
  
@@ -133,7 +145,7 @@ index d8886ce..4e4cadd 100644
          sALE->OnLogout(player);
      }
  
-@@ -1340,6 +1407,37 @@ public:
+@@ -1340,6 +1412,37 @@ public:
      }
  };
  
@@ -171,7 +183,7 @@ index d8886ce..4e4cadd 100644
  // Group all custom scripts
  void AddSC_ALE()
  {
-@@ -1365,4 +1463,5 @@ void AddSC_ALE()
+@@ -1365,4 +1468,5 @@ void AddSC_ALE()
      new ALE_WorldObjectScript();
      new ALE_WorldScript();
      new ALE_UnitScript();
@@ -210,10 +222,10 @@ index a8d6fc4..55ca5d2 100644
              lua_pushnil(L);
              return 1;
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
-index f83dd99..0b5682b 100644
+index f83dd99..06da017 100644
 --- a/src/LuaEngine/Hooks.h
 +++ b/src/LuaEngine/Hooks.h
-@@ -238,8 +238,14 @@ namespace Hooks
+@@ -238,8 +238,15 @@ namespace Hooks
          PLAYER_EVENT_ON_MODIFY_HEAL_RECEIVED                =     71,       // (event, player, target, heal, spellInfo) - Can return new heal amount
          PLAYER_EVENT_ON_DEAL_DAMAGE                         =     72,       // (event, player, target, damage, damagetype) - Can return new damage amount
          PLAYER_EVENT_ON_RELEASED_GHOST                      =     73,       // (event, player)
@@ -225,12 +237,13 @@ index f83dd99..0b5682b 100644
 +        PLAYER_EVENT_ON_BG_QUEUE_LEAVE                      =   7003,       // (event, player)
 +        PLAYER_EVENT_ON_WHO_REQUEST                         =   7004,       // (event, requesterPlayer, targetPlayer)
 +        PLAYER_EVENT_ON_INTERRUPT_CAST                      =   7005,       // (event, interrupter, target, targetWasCasting, successful)
++        PLAYER_EVENT_ON_BG_INVITE                           =   7006,       // (event, player, mapId, instanceId, bg, teamId)
 +
-+        PLAYER_EVENT_COUNT                                  =   7006
++        PLAYER_EVENT_COUNT                                  =   7007
      };
  
      enum GuildEvents
-@@ -378,6 +384,11 @@ namespace Hooks
+@@ -378,6 +385,11 @@ namespace Hooks
          BG_EVENT_ON_END                                 = 2,    // (event, bg, bgId, instanceId, winner) - Needs to be added to TC
          BG_EVENT_ON_CREATE                              = 3,    // (event, bg, bgId, instanceId) - Needs to be added to TC
          BG_EVENT_ON_PRE_DESTROY                         = 4,    // (event, bg, bgId, instanceId) - Needs to be added to TC
@@ -243,7 +256,7 @@ index f83dd99..0b5682b 100644
      };
  
 diff --git a/src/LuaEngine/LuaEngine.h b/src/LuaEngine/LuaEngine.h
-index a21640d..846554e 100644
+index a21640d..99b4a36 100644
 --- a/src/LuaEngine/LuaEngine.h
 +++ b/src/LuaEngine/LuaEngine.h
 @@ -38,12 +38,14 @@ extern "C"
@@ -275,8 +288,11 @@ index a21640d..846554e 100644
      void OnLogout(Player* pPlayer);
      void OnCreate(Player* pPlayer);
      void OnDelete(uint32 guid);
-@@ -591,6 +599,13 @@ public:
+@@ -589,8 +597,16 @@ public:
+     /* Battle Ground */
+     void OnBGStart(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
      void OnBGEnd(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId, TeamId winner);
++    void OnBGInvite(BattleGround* bg, Player* player, TeamId teamId);
      void OnBGCreate(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
      void OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
 +    bool OnBGQueueDistribution(BattlegroundQueue* queue, BattleGround* bg, BattlegroundBracketId bracketId, std::map<ObjectGuid, uint32>& distribution);
@@ -522,7 +538,7 @@ index ec70cf5..390424d 100644
 +    CallAllFunctions(BGEventBindings, key);
 +}
 diff --git a/src/LuaEngine/hooks/PlayerHooks.cpp b/src/LuaEngine/hooks/PlayerHooks.cpp
-index 7649274..9333be8 100644
+index 7649274..07a48ae 100644
 --- a/src/LuaEngine/hooks/PlayerHooks.cpp
 +++ b/src/LuaEngine/hooks/PlayerHooks.cpp
 @@ -337,6 +337,16 @@ void ALE::OnPlayerSpellCast(Player* pPlayer, Spell* pSpell, bool skipCheck)
@@ -542,7 +558,7 @@ index 7649274..9333be8 100644
  void ALE::OnLogin(Player* pPlayer)
  {
      START_HOOK(PLAYER_EVENT_ON_LOGIN);
-@@ -344,6 +354,48 @@ void ALE::OnLogin(Player* pPlayer)
+@@ -344,6 +354,59 @@ void ALE::OnLogin(Player* pPlayer)
      CallAllFunctions(PlayerEventBindings, key);
  }
  
@@ -550,6 +566,17 @@ index 7649274..9333be8 100644
 +{
 +    START_HOOK(PLAYER_EVENT_ON_BG_QUEUE_ENTER);
 +    Push(pPlayer);
++    CallAllFunctions(PlayerEventBindings, key);
++}
++
++void ALE::OnBGInvite(BattleGround* bg, Player* player, TeamId teamId)
++{
++    START_HOOK(PLAYER_EVENT_ON_BG_INVITE);
++    Push(player);
++    Push(bg ? bg->GetMapId() : 0);
++    Push(bg ? bg->GetInstanceID() : 0);
++    Push(bg);
++    Push(teamId);
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
 +

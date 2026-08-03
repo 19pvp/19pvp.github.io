@@ -1,30 +1,25 @@
-print("[WSG Metrics] Loading wsg-metrics.lua script...")
+print("[Metrics] Loading metrics.lua script...")
 
--- Global storage for active match statistics partitioned by instanceId
--- instanceId -> (playerGuidString -> statsTable)
-local matchStats = {}
+-- Global storage for active match state partitioned by the globally unique
+-- server instanceId. Each entry contains kind and players.
+local matches = {}
+local arenaInvites = {}
 -- aura pointer string -> { stats, type = "HARD"|"SOFT", startTime = ms }
 local activeCCs = {}
 -- aura pointer string -> { stats, effectIndex, initialAmount }
 local activeAbsorbs = {}
 -- playerGuidString -> flagCarryStartTime
 local flagCarryStartTimes = {}
--- instanceId -> matchStartTime
-local matchStartTimes = {}
 local WSG_MAP_ID = 489
 local WSG_BG_TYPE_ID = 2
 local PREPARATION_AURA = 44521
 local HORDE_FLAG = 23333
 local ALLIANCE_FLAG = 23335
-local WSG_FLAG_AURAS = {
-    [HORDE_FLAG] = "HORDE",
-    [ALLIANCE_FLAG] = "ALLIANCE",
-}
-local NO_FAKE_CAST_CLASSES = {
-    [1] = true, -- Warrior
-    [3] = true, -- Hunter
-    [4] = true, -- Rogue
-}
+local ARENA_PREPARATION_AURA = 32727
+local WINNER_ARENA_POINTS = 10
+local LOSER_ARENA_POINTS = 5
+local WSG_FLAG_AURAS = { [HORDE_FLAG] = true, [ALLIANCE_FLAG] = true }
+local NO_FAKE_CAST_CLASSES = { [WARRIOR] = true, [HUNTER] = true, [ROGUE] = true }
 
 local function isFlagCarrier(player)
     return player:HasAura(HORDE_FLAG) or player:HasAura(ALLIANCE_FLAG)
@@ -42,6 +37,14 @@ local function getWSGInstanceId(player)
     local instanceId = player:GetBattlegroundId()
     if not instanceId or instanceId == 0 then return nil end
     return instanceId
+end
+
+local function getOrCreateMatch(kind, instanceId)
+    local match = matches[instanceId]
+    if match then return match.kind == kind and match or nil end
+    match = { kind = kind, instanceId = instanceId, players = {}, createdAt = GetCurrTime() }
+    matches[instanceId] = match
+    return match
 end
 
 -- 1. Dispel / Protective Spells definition (filtered to level 19 starting spells)
@@ -68,38 +71,6 @@ local SPELL_AURA_SCHOOL_ABSORB = 69
 -- 3. Crowd control mechanics
 -- These values are the core Mechanics enum values. SpellInfo exposes them as
 -- a bit mask, so every rank and every player spell is handled automatically.
-local MECHANIC_CHARM = 1
-local MECHANIC_DISORIENTED = 2
-local MECHANIC_DISARM = 3
-local MECHANIC_DISTRACT = 4
-local MECHANIC_FEAR = 5
-local MECHANIC_GRIP = 6
-local MECHANIC_SILENCE = 9
-local MECHANIC_SLEEP = 10
-local MECHANIC_STUN = 12
-local MECHANIC_FREEZE = 13
-local MECHANIC_KNOCKOUT = 14
-local MECHANIC_POLYMORPH = 17
-local MECHANIC_BANISH = 18
-local MECHANIC_SHACKLE = 20
-local MECHANIC_HORROR = 24
-local MECHANIC_SAPPED = 30
-local MECHANIC_ROOT = 7
-local MECHANIC_SLOW_ATTACK = 8
-local MECHANIC_SNARE = 11
-local MECHANIC_BLEED = 15
-local MECHANIC_BANDAGE = 16
-local MECHANIC_SHIELD = 19
-local MECHANIC_MOUNT = 21
-local MECHANIC_INFECTED = 22
-local MECHANIC_TURN = 23
-local MECHANIC_INVULNERABILITY = 25
-local MECHANIC_INTERRUPT = 26
-local MECHANIC_DAZE = 27
-local MECHANIC_DISCOVERY = 28
-local MECHANIC_IMMUNE_SHIELD = 29
-local MECHANIC_ENRAGED = 31
-
 local HARD_CC_MECHANICS = {
     [MECHANIC_CHARM] = true,
     [MECHANIC_DISORIENTED] = true,
@@ -123,45 +94,74 @@ local SOFT_CC_MECHANICS = {
     [MECHANIC_DAZE] = true,
 }
 
-local function mechanicMaskToNumber(mechanicMask)
-    if not mechanicMask then return nil end
-    if type(mechanicMask) == "number" then return mechanicMask end
-    return tonumber(tostring(mechanicMask))
+local function newMetricStats(player, kind)
+    local guid = tostring(player:GetGUID())
+    local stats = {
+        name = player:GetName(),
+        playerGuid = guid,
+        dispelsOffensive = 0,
+        dispelsDefensive = 0,
+        successfulInterrupts = 0,
+        fakeCastInterrupts = 0,
+        hardCCCount = 0,
+        hardCCDuration = 0,
+        softCCCount = 0,
+        softCCDuration = 0,
+        absorbsDone = 0,
+        damageTaken = 0,
+        killingBlows = 0,
+        deaths = 0,
+        honorableKills = 0,
+        bonusHonor = 0,
+        damageDone = 0,
+        healingDone = 0,
+        deserted = false,
+        timePlayed = 0,
+        _kind = kind,
+        _updateTime = GetCurrTime(),
+    }
+    if kind == "WSG" then
+        stats.healsOnFC = 0
+        stats.flagCarryTime = 0
+        stats.attemptsOnFlag = 0
+        stats.damageOnEFC = 0
+        stats.flagCaptures = 0
+        stats.flagReturns = 0
+    end
+    return stats
 end
 
-local function hasMechanic(mechanicMask, mechanic)
-    local numericMask = mechanicMaskToNumber(mechanicMask)
-    return numericMask and math.floor(numericMask / (2 ^ mechanic)) % 2 == 1
+local function updateMetricTime(stats, now, matchStarted)
+    if matchStarted and stats._updateTime then
+        stats.timePlayed = stats.timePlayed + (now - stats._updateTime)
+    end
+    stats._updateTime = now
 end
 
-local function getAbsorbEffectIndex(spellId)
-    local spellInfo = GetSpellInfo(spellId)
-    if not spellInfo then return nil end
-
-    for effectIndex = 0, 2 do
-        if spellInfo:GetEffectApplyAuraName(effectIndex) == SPELL_AURA_SCHOOL_ABSORB then
-            return effectIndex
-        end
+local function updateScoreMetrics(stats, score)
+    stats.killingBlows = score.killingBlows or 0
+    stats.deaths = score.deaths or 0
+    stats.honorableKills = score.honorableKills or 0
+    stats.bonusHonor = score.bonusHonor or 0
+    stats.damageDone = score.damageDone or 0
+    stats.healingDone = score.healingDone or 0
+    if stats._kind == "WSG" then
+        stats.flagCaptures = score.flagCaptures or 0
+        stats.flagReturns = score.flagReturns or 0
     end
-    return nil
 end
 
-local function getCCType(spellId)
-    local spellInfo = GetSpellInfo(spellId)
-    if not spellInfo then return nil end
-
-    local mechanicMask = mechanicMaskToNumber(spellInfo:GetAllEffectsMechanicMask())
-    for mechanic in pairs(HARD_CC_MECHANICS) do
-        if hasMechanic(mechanicMask, mechanic) then return "HARD" end
-    end
-    for mechanic in pairs(SOFT_CC_MECHANICS) do
-        if hasMechanic(mechanicMask, mechanic) then return "SOFT" end
-    end
-    return nil
+local function finalizeMetricStats(stats)
+    stats.hardCCDuration = math.floor(stats.hardCCDuration / 1000)
+    stats.softCCDuration = math.floor(stats.softCCDuration / 1000)
+    stats.timePlayed = math.floor(stats.timePlayed / 1000)
+    stats._kind = nil
+    stats._instanceId = nil
+    stats._updateTime = nil
 end
 
 -- Helper to get/initialize stats for a player, partitioned by instanceId
-local function GetStats(player, instanceId)
+local function getWSGStats(player, instanceId)
     if player:IsBot() then return nil end
 
     if not instanceId or instanceId == 0 then
@@ -171,76 +171,17 @@ local function GetStats(player, instanceId)
     end
     if not instanceId or instanceId == 0 then return nil end
 
-    if not matchStats[instanceId] then
-        matchStats[instanceId] = {}
-    end
-
-    -- Set match start time if not already initialized
-    if not matchStartTimes[instanceId] then
-        matchStartTimes[instanceId] = GetCurrTime()
-    end
+    local match = getOrCreateMatch("WSG", instanceId)
+    if not match then return nil end
+    if not match.startedAt then match.startedAt = GetCurrTime() end
 
     local guid = tostring(player:GetGUID())
-    if not matchStats[instanceId][guid] then
-        matchStats[instanceId][guid] = {
-            -- Display identity used by the payload and debug command.
-            name = player:GetName(),
-            playerGuid = guid,
-            -- Dispelled enemy buffs or friendly debuffs.
-            dispelsOffensive = 0,
-            -- Dispelled friendly buffs or debuffs.
-            dispelsDefensive = 0,
-            -- Interruptible player casts successfully stopped by this player.
-            successfulInterrupts = 0,
-            -- Interrupt attempts received while this player was not casting.
-            fakeCastInterrupts = 0,
-            -- Number of hard crowd-control effects applied by this player.
-            hardCCCount = 0,
-            -- Total duration in milliseconds of hard crowd control applied.
-            hardCCDuration = 0,
-            -- Number of soft crowd-control effects applied by this player.
-            softCCCount = 0,
-            -- Total duration in milliseconds of soft crowd control applied.
-            softCCDuration = 0,
-            -- Amount of damage absorbed by this player's shields.
-            absorbsDone = 0,
-            -- Effective healing done to friendly flag carriers.
-            healsOnFC = 0,
-            -- Total time spent carrying a Warsong flag, in milliseconds.
-            flagCarryTime = 0,
-            -- Number of successful flag pickups by this player.
-            attemptsOnFlag = 0,
-            -- Damage dealt to enemy flag carriers.
-            damageOnEFC = 0,
-            -- Damage received by this player, including absorbed damage.
-            damageTaken = 0,
-            -- Native battleground killing-blow score.
-            killingBlows = 0,
-            -- Native battleground death score.
-            deaths = 0,
-            -- Native battleground honorable-kill score.
-            honorableKills = 0,
-            -- Native battleground bonus-honor score.
-            bonusHonor = 0,
-            -- Native battleground damage score.
-            damageDone = 0,
-            -- Native battleground effective-healing score.
-            healingDone = 0,
-            -- Native battleground flag-capture score.
-            flagCaptures = 0,
-            -- Native battleground flag-return score.
-            flagReturns = 0,
-            -- Whether the player left before the battleground ended.
-            deserted = false,
-            -- Internal match partition for state lookups; omitted from payload.
-            _instanceId = instanceId,
-            -- Internal millisecond cursor for incremental play-time updates.
-            _updateTime = GetCurrTime(),
-            -- Total active time in the battleground, in milliseconds.
-            timePlayed = 0,
-        }
+    if not match.players[guid] then
+        local stats = newMetricStats(player, "WSG")
+        stats._instanceId = instanceId
+        match.players[guid] = stats
     end
-    return matchStats[instanceId][guid]
+    return match.players[guid]
 end
 
 -- Cache native battleground scores while Player userdata is still valid.
@@ -249,21 +190,19 @@ local function snapshotPlayerScore(player, instanceId)
 
     if not isMatchStarted(player) then
         local guid = tostring(player:GetGUID())
-        local stats = instanceId and matchStats[instanceId] and matchStats[instanceId][guid]
+        local match = instanceId and matches[instanceId]
+        local stats = match and match.players[guid]
         if stats then
-            stats._updateTime = GetCurrTime()
+            updateMetricTime(stats, GetCurrTime(), false)
         end
         return
     end
 
-    local stats = GetStats(player, instanceId)
+    local stats = getWSGStats(player, instanceId)
     if not stats then return end
 
     local now = GetCurrTime()
-    if stats._updateTime then
-        stats.timePlayed = stats.timePlayed + (now - stats._updateTime)
-    end
-    stats._updateTime = now
+    updateMetricTime(stats, now, true)
 
     local bg = GetBattleground(instanceId, WSG_BG_TYPE_ID)
     if not bg then return end
@@ -271,31 +210,115 @@ local function snapshotPlayerScore(player, instanceId)
     local score = bg:GetPlayerScore(player)
     if not score then return end
 
-    stats.killingBlows = score.killingBlows or 0
-    stats.deaths = score.deaths or 0
-    stats.honorableKills = score.honorableKills or 0
-    stats.bonusHonor = score.bonusHonor or 0
-    stats.damageDone = score.damageDone or 0
-    stats.healingDone = score.healingDone or 0
-    stats.flagCaptures = score.flagCaptures or 0
-    stats.flagReturns = score.flagReturns or 0
+    updateScoreMetrics(stats, score)
 end
 
--- Score snapshots are intentionally numeric; no Player userdata is retained.
-CreateLuaEvent(function()
-    for _, player in ipairs(GetPlayersInWorld()) do
-        if not player:IsBot() and player:InBattleground() and player:GetMapId() == WSG_MAP_ID then
-            local instanceId = player:GetBattlegroundId()
-            if instanceId then
-                snapshotPlayerScore(player, instanceId)
-            end
-        end
+-- Hook: Healing on friendly flag carriers
+RegisterPlayerEvent(PLAYER_EVENT_ON_HEAL, function(event, player, target, heal)
+    local stats = getWSGStats(player)
+    if not stats then return end
+    local targetPlayer = target and target:ToPlayer()
+    if not targetPlayer then return end
+    -- If friendly target has either flag, track it as healing on friendly flag carrier
+    if isFlagCarrier(targetPlayer) then
+        stats.healsOnFC = stats.healsOnFC + heal
     end
-end, 500, 0)
+end)
 
--- Hook: Spell casting (for dispels / protective spells)
+-- Hook: Track player desertion and total play time when leaving
+RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
+    local stats = getWSGStats(player, instanceId)
+    if not stats then return end
+    -- Record play time up to the point they left
+    local now = GetCurrTime()
+    local match = matches[stats._instanceId]
+    local matchStart = match and match.startedAt or stats._updateTime or now
+    updateMetricTime(stats, now, true)
+    if not bg then return end
+    local status = bg:GetStatus()
+    if status >= STATUS_WAIT_LEAVE then return end
+    -- Store the exact second of the match when they deserted
+    stats.deserted = math.floor((now - matchStart) / 1000)
+end)
+
+-- Hook: Send aggregated stats as web event at the end of the BG match
+RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
+    local match = matches[instanceId]
+    if not match or match.kind ~= "WSG" then return end
+    local currentMatchStats = match.players
+
+    -- Format flag carrying time (convert ms to seconds) and CC duration
+    for _, stats in pairs(currentMatchStats) do
+        stats.flagCarryTime = math.floor(stats.flagCarryTime / 1000)
+        finalizeMetricStats(stats)
+    end
+
+    print("[WSG Metrics] Closing match instance -> " .. inspect({ instanceId = instanceId, winner = winner }))
+    SendWebEvent('PVP_BG_STATS', nil, {
+        instanceId = instanceId,
+        winner = winner,
+        players = currentMatchStats,
+    })
+
+    -- Clear stats only for this specific match instance
+    matches[instanceId] = nil
+end)
+
+local function getMatch(player, instanceId, allowInvite)
+    if not allowInvite and not player:InArena() then return nil end
+
+    instanceId = instanceId or player:GetBattlegroundId()
+    if not instanceId or instanceId == 0 then return nil end
+
+    local match = getOrCreateMatch("ARENA", instanceId)
+    if not match then return nil end
+    return match
+end
+
+local function addParticipant(player, instanceId, allowInvite, teamId)
+    local match = getMatch(player, instanceId, allowInvite)
+    if not match then return nil end
+
+    local guid = tostring(player:GetGUID())
+    local stats = match.players[guid]
+    if not stats then
+        stats = newMetricStats(player, "ARENA")
+        stats._guidLow = player:GetGUIDLow()
+        stats.team = teamId or player:GetBgTeamId()
+        -- Set by PLAYER_EVENT_ON_LEAVE_BG after the original queue group is restored.
+        stats.queuedWithGroup = false
+        stats.left = false
+        match.players[guid] = stats
+    elseif teamId then
+        stats.team = teamId
+    end
+    return match, stats
+end
+
+local function snapshotArenaScore(player, instanceId, bg)
+    local match, stats = addParticipant(player, instanceId)
+    if not match then return end
+
+    bg = bg or GetBattleground(instanceId, player:GetBattlegroundTypeId())
+    if not bg then return end
+
+    local score = bg:GetPlayerScore(player)
+    if not score then return end
+
+    updateMetricTime(stats, GetCurrTime(), match.startedAt ~= nil)
+    updateScoreMetrics(stats, score)
+end
+
+local function getMetricStats(player, instanceId)
+    local stats = getWSGStats(player, instanceId)
+    if stats then return stats end
+    local _, arenaStats = addParticipant(player, instanceId)
+    return arenaStats
+end
+
+-- Common combat metrics for every supported battleground type.
 RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, skipCheck)
-    local stats = GetStats(player)
+    local stats = getMetricStats(player)
     if not stats then return end
 
     local spellId = spell:GetEntry()
@@ -310,95 +333,106 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, s
     end
 end)
 
--- Hook: Interrupt attempts resolved by the core
 RegisterPlayerEvent(PLAYER_EVENT_ON_INTERRUPT_CAST, function(event, interrupter, target, targetWasCasting, successful)
-    local interrupterStats = GetStats(interrupter)
-
-    -- A successful interrupt is credited to the player who interrupted.
+    local interrupterStats = getMetricStats(interrupter)
     if successful and interrupterStats then
         interrupterStats.successfulInterrupts = interrupterStats.successfulInterrupts + 1
     end
 
-    -- A fake interrupt is credited only for real casters targeted by a real player.
-    if targetWasCasting or interrupter:IsBot() or NO_FAKE_CAST_CLASSES[target:GetClass()] then return end
-    local targetStats = GetStats(target)
+    if not target or targetWasCasting or interrupter:IsBot() or NO_FAKE_CAST_CLASSES[target:GetClass()] then return end
+    local targetStats = getMetricStats(target)
     if targetStats then
         targetStats.fakeCastInterrupts = targetStats.fakeCastInterrupts + 1
     end
 end)
 
--- Hook: Aura application (for CC duration start, flag carrying, and shield absorbs)
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
-    local playerStats = GetStats(player)
+    local playerStats = getMetricStats(player)
     local spellId = aura:GetAuraId()
     if not spellId then return end
+
     if WSG_FLAG_AURAS[spellId] then
-        if playerStats then
-            local guid = tostring(player:GetGUID())
-            if not flagCarryStartTimes[guid] then
-                playerStats.attemptsOnFlag = playerStats.attemptsOnFlag + 1
-                flagCarryStartTimes[guid] = GetCurrTime()
-            end
+        if not playerStats or playerStats._kind ~= "WSG" then return end
+        local guid = tostring(player:GetGUID())
+        if not flagCarryStartTimes[guid] then
+            playerStats.attemptsOnFlag = playerStats.attemptsOnFlag + 1
+            flagCarryStartTimes[guid] = GetCurrTime()
         end
         return
     end
 
     local caster = aura:GetCaster()
     local casterPlayer = caster and caster:ToPlayer()
-
-    -- Resolve owner if the caster is a pet/totem/summon
     if caster and not casterPlayer then
         local owner = caster:GetOwner()
         if owner then casterPlayer = owner:ToPlayer() end
     end
     if not casterPlayer then return end
-    local casterStats = GetStats(casterPlayer)
+
+    local casterStats = getMetricStats(casterPlayer)
     if not casterStats then return end
-    local ccType = getCCType(spellId)
-    local absorbEffectIndex = getAbsorbEffectIndex(spellId)
-    local absorbAmount = absorbEffectIndex and aura:GetEffectAmount(absorbEffectIndex)
-    if ccType then
-        -- Reapplying an existing aura refreshes it and fires OnAuraApply again
-        -- without an intervening OnAuraRemove. Keep the original start time.
-        local auraKey = tostring(aura)
-        if not activeCCs[auraKey] then
-            activeCCs[auraKey] = {
-                stats = casterStats,
-                type = ccType,
-                startTime = GetCurrTime(),
-            }
+
+    local spellInfo = GetSpellInfo(spellId)
+    if not spellInfo then return end
+
+    local mechanicMask = spellInfo:GetAllEffectsMechanicMask()
+    mechanicMask = type(mechanicMask) == "number" and mechanicMask or tonumber(tostring(mechanicMask))
+    local ccType
+    for mechanic in pairs(HARD_CC_MECHANICS) do
+        if mechanicMask and math.floor(mechanicMask / (2 ^ mechanic)) % 2 == 1 then
+            ccType = "HARD"
+            break
+        end
+    end
+    if not ccType then
+        for mechanic in pairs(SOFT_CC_MECHANICS) do
+            if mechanicMask and math.floor(mechanicMask / (2 ^ mechanic)) % 2 == 1 then
+                ccType = "SOFT"
+                break
+            end
         end
     end
 
-    -- Track the full absorb amount; credit only the consumed amount on remove.
-    if absorbEffectIndex and absorbAmount and absorbAmount > 0 then
-        local auraKey = tostring(aura)
-        if not activeAbsorbs[auraKey] then
-            activeAbsorbs[auraKey] = {
-                stats = casterStats,
-                effectIndex = absorbEffectIndex,
-                initialAmount = absorbAmount,
-            }
+    local absorbEffectIndex
+    for effectIndex = 0, 2 do
+        if spellInfo:GetEffectApplyAuraName(effectIndex) == SPELL_AURA_SCHOOL_ABSORB then
+            absorbEffectIndex = effectIndex
+            break
         end
+    end
+    local absorbAmount = absorbEffectIndex and aura:GetEffectAmount(absorbEffectIndex)
+    local auraKey = tostring(aura)
+    if ccType and not activeCCs[auraKey] then
+        activeCCs[auraKey] = {
+            stats = casterStats,
+            type = ccType,
+            startTime = GetCurrTime(),
+        }
+    end
+    if absorbEffectIndex and absorbAmount and absorbAmount > 0 and not activeAbsorbs[auraKey] then
+        activeAbsorbs[auraKey] = {
+            stats = casterStats,
+            effectIndex = absorbEffectIndex,
+            initialAmount = absorbAmount,
+        }
     end
 end)
 
--- Hook: Aura removal (for calculating CC duration and flag carrying elapsed time)
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, remove_mode)
-    local playerStats = GetStats(player)
-
+    local playerStats = getMetricStats(player)
     local auraKey = tostring(aura)
-    local entry = activeCCs[auraKey]
     local now = GetCurrTime()
-    if entry then
-        local duration = now - entry.startTime
+
+    local ccEntry = activeCCs[auraKey]
+    if ccEntry then
+        local duration = now - ccEntry.startTime
         if duration > 0 then
-            if entry.type == "HARD" then
-                entry.stats.hardCCCount = entry.stats.hardCCCount + 1
-                entry.stats.hardCCDuration = entry.stats.hardCCDuration + duration
-            elseif entry.type == "SOFT" then
-                entry.stats.softCCCount = entry.stats.softCCCount + 1
-                entry.stats.softCCDuration = entry.stats.softCCDuration + duration
+            if ccEntry.type == "HARD" then
+                ccEntry.stats.hardCCCount = ccEntry.stats.hardCCCount + 1
+                ccEntry.stats.hardCCDuration = ccEntry.stats.hardCCDuration + duration
+            elseif ccEntry.type == "SOFT" then
+                ccEntry.stats.softCCCount = ccEntry.stats.softCCCount + 1
+                ccEntry.stats.softCCDuration = ccEntry.stats.softCCDuration + duration
             end
         end
         activeCCs[auraKey] = nil
@@ -410,7 +444,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
         local absorbedAmount = math.max(absorbEntry.initialAmount - remainingAmount, 0)
         if absorbedAmount > 0 then
             absorbEntry.stats.absorbsDone = absorbEntry.stats.absorbsDone + absorbedAmount
-
             if playerStats then
                 playerStats.damageTaken = playerStats.damageTaken + absorbedAmount
             end
@@ -419,12 +452,12 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
     end
 
     local spellId = aura:GetAuraId()
-    if spellId and WSG_FLAG_AURAS[spellId] then
+    if playerStats and playerStats._kind == "WSG" and spellId and WSG_FLAG_AURAS[spellId] then
         local guid = tostring(player:GetGUID())
         local startTime = flagCarryStartTimes[guid]
         if startTime then
             local elapsed = now - startTime
-            if elapsed > 0 and playerStats then
+            if elapsed > 0 then
                 playerStats.flagCarryTime = playerStats.flagCarryTime + elapsed
             end
             flagCarryStartTimes[guid] = nil
@@ -432,86 +465,182 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
     end
 end)
 
--- Hook: Healing on friendly flag carriers
-RegisterPlayerEvent(PLAYER_EVENT_ON_HEAL, function(event, player, target, heal)
-    local stats = GetStats(player)
-    if not stats then return end
-    local targetPlayer = target and target:ToPlayer()
-    if not targetPlayer then return end
-    -- If friendly target has either flag, track it as healing on friendly flag carrier
-    if isFlagCarrier(targetPlayer) then
-        stats.healsOnFC = stats.healsOnFC + heal
-    end
-end)
-
--- Hook: Damage dealt & damage taken tracking
 RegisterPlayerEvent(PLAYER_EVENT_ON_DAMAGE, function(event, player, target, damage)
     local targetPlayer = target and target:ToPlayer()
     if not targetPlayer then return end
 
-    -- Track damage taken by the victim, including bot victims.
-    local victimStats = GetStats(targetPlayer)
+    local victimStats = getMetricStats(targetPlayer)
     if victimStats then
         victimStats.damageTaken = victimStats.damageTaken + damage
     end
 
-    -- Track damage done specifically to EFC by the attacker.
-    local stats = GetStats(player)
-    if not stats then return end
-    if isFlagCarrier(targetPlayer) then
-        stats.damageOnEFC = stats.damageOnEFC + damage
+    local attackerStats = getWSGStats(player)
+    if attackerStats and isFlagCarrier(targetPlayer) then
+        attackerStats.damageOnEFC = attackerStats.damageOnEFC + damage
     end
 end)
 
--- Hook: Track player desertion and total play time when leaving
+-- Score objects are deleted when a player leaves, so keep the last native
+-- scoreboard values while the player is still in either match type.
+CreateLuaEvent(function()
+    for _, player in ipairs(GetPlayersInWorld()) do
+        if player:InBattleground() and player:GetMapId() == WSG_MAP_ID then
+            local instanceId = player:GetBattlegroundId()
+            if instanceId then snapshotPlayerScore(player, instanceId) end
+        elseif player:InArena() then
+            snapshotArenaScore(player)
+        end
+    end
+end, 500, 0)
+
+local function recordQueueGroup(match, player, stats)
+    local group = player:GetGroup()
+    if not group then
+        stats.queuedWithGroup = false
+        return
+    end
+
+    local groupId = tostring(group:GetGUID())
+    stats.queuedWithGroup = true
+    stats.queueGroupId = groupId
+
+    -- Mark every participant from the same original group, including players
+    -- who have not left the arena yet.
+    for _, member in ipairs(group:GetMembers()) do
+        if member then
+            local memberStats = match.players[tostring(member:GetGUID())]
+            if memberStats then
+                memberStats.queuedWithGroup = true
+                memberStats.queueGroupId = groupId
+            end
+        end
+    end
+end
+
+-- The invitation is the participation boundary. Players who refuse or time
+-- out are kept in match.players even though they never enter the arena.
+RegisterPlayerEvent(PLAYER_EVENT_ON_BG_INVITE, function(event, player, mapId, instanceId, bg, teamId)
+    local match, stats = addParticipant(player, instanceId, true, teamId)
+    if match and stats then
+        arenaInvites[tostring(player:GetGUID())] = instanceId
+    end
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
+    addParticipant(player, instanceId)
+    arenaInvites[tostring(player:GetGUID())] = nil
+end)
+
+-- The preparation aura is removed when the arena actually begins. This keeps
+-- duration independent of the time spent waiting in the arena instance.
+RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura)
+    if not player:InArena() or aura:GetAuraId() ~= ARENA_PREPARATION_AURA then return end
+
+    local match = getMatch(player)
+    if match and not match.startedAt then
+        local now = GetCurrTime()
+        match.startedAt = now
+        for _, stats in pairs(match.players) do
+            updateMetricTime(stats, now, false)
+        end
+    end
+end)
+
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
-    local stats = GetStats(player, instanceId)
+    local match = matches[instanceId]
+    if not match or match.kind ~= "ARENA" then return end
+
+    local stats = match.players[tostring(player:GetGUID())]
     if not stats then return end
-    -- Record play time up to the point they left
     local now = GetCurrTime()
-    local matchStart = matchStartTimes[stats._instanceId] or stats._updateTime or now
-    if stats._updateTime then
-        stats.timePlayed = stats.timePlayed + (now - stats._updateTime)
-        stats._updateTime = nil
+    updateMetricTime(stats, now, match.startedAt ~= nil)
+    stats.left = true
+    if bg and bg:GetStatus() < STATUS_WAIT_LEAVE and match.startedAt then
+        stats.deserted = math.floor((now - match.startedAt) / 1000)
     end
-    if not bg then return end
-    local status = bg:GetStatus()
-    if status >= 4 then return end -- STATUS_WAIT_LEAVE is 4
-    -- Store the exact second of the match when they deserted
-    stats.deserted = math.floor((now - matchStart) / 1000)
+    recordQueueGroup(match, player, stats)
 end)
 
--- Hook: Send aggregated stats as web event at the end of the BG match
+RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player)
+    local guid = tostring(player:GetGUID())
+    local instanceId = arenaInvites[guid]
+    if not instanceId then return end
+    arenaInvites[guid] = nil
+
+    local match = matches[instanceId]
+    if not match or match.kind ~= "ARENA" then return end
+
+    local stats = match.players[guid]
+    if not stats then return end
+    stats.left = true
+    stats.deserted = 0
+    recordQueueGroup(match, player, stats)
+end)
+
 RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
-    local currentMatchStats = matchStats[instanceId]
-    if not currentMatchStats then return end
+    local match = matches[instanceId]
+    if not match or match.kind ~= "ARENA" then return end
 
-    -- Format flag carrying time (convert ms to seconds) and CC duration
-    for guid, stats in pairs(currentMatchStats) do
-        stats.flagCarryTime = math.floor(stats.flagCarryTime / 1000)
-        stats.hardCCDuration = math.floor(stats.hardCCDuration / 1000)
-        stats.softCCDuration = math.floor(stats.softCCDuration / 1000)
-
-        -- Active players are updated by the 500 ms snapshot loop; leavers are
-        -- finalized by PLAYER_EVENT_ON_LEAVE_BG.
-        stats.timePlayed = math.floor(stats.timePlayed / 1000)
-
-        -- Clean up internal helper fields before sending
-        stats._instanceId = nil
-        stats._updateTime = nil
-
+    local map = GetMapById(bg:GetMapId(), instanceId)
+    if map then
+        for _, player in ipairs(map:GetPlayers()) do
+            snapshotArenaScore(player, instanceId, bg)
+        end
     end
 
-    print("[WSG Metrics] Closing match instance -> " .. inspect({ instanceId = instanceId, winner = winner }))
-    SendWebEvent('PVP_BG_STATS', nil, {
-        instanceId = instanceId,
-        winner = winner,
-        players = currentMatchStats,
-    })
+    match.endedAt = GetCurrTime()
+    match.winner = winner
+    match.bgId = bgId
+end)
 
-    -- Clear stats only for this specific match instance
-    matchStats[instanceId] = nil
-    matchStartTimes[instanceId] = nil
+-- By PRE_DESTROY all players have gone through the leave hook, so queue-group
+-- information is available even for players who stayed until the match ended.
+RegisterBGEvent(BG_EVENT_ON_PRE_DESTROY, function(event, bg, bgId, instanceId)
+    local match = matches[instanceId]
+    if not match or match.kind ~= "ARENA" or not match.endedAt then return end
+
+    local endedAt = match.endedAt
+    local startedAt = match.startedAt or match.createdAt
+    local duration = math.max(0, math.floor((endedAt - startedAt) / 1000))
+
+    for _, stats in pairs(match.players) do
+        local points = stats.team == match.winner and WINNER_ARENA_POINTS or LOSER_ARENA_POINTS
+        local player = GetPlayerByGUID(stats._guidLow)
+        if player then
+            player:ModifyArenaPoints(points)
+        else
+            -- A player can disconnect after leaving the arena. Keep the reward
+            -- durable in that case; the online path applies the normal core cap.
+            local result = CharDBQuery("SELECT arenaPoints FROM characters WHERE guid = " .. tostring(stats._guidLow))
+            if result then
+                local current = result:GetUInt32(0)
+                local maximum = tonumber(GetConfigValue("MaxArenaPoints")) or 10000
+                local updated = math.min(current + points, maximum)
+                CharDBExecute("UPDATE characters SET arenaPoints = " .. tostring(updated) .. " WHERE guid = " .. tostring(stats._guidLow))
+            end
+        end
+        stats.arenaPoints = points
+    end
+
+    for _, stats in pairs(match.players) do
+        finalizeMetricStats(stats)
+        arenaInvites[stats.playerGuid] = nil
+        stats._guidLow = nil
+    end
+
+    print("[Arena Metrics] Closing match instance -> " .. inspect({
+        instanceId = instanceId,
+        duration = duration,
+        winner = match.winner,
+    }))
+    SendWebEvent("PVP_ARENA_STATS", nil, {
+        instanceId = instanceId,
+        bgId = match.bgId,
+        duration = duration,
+        winner = match.winner,
+        players = match.players,
+    })
+    matches[instanceId] = nil
 end)
 
 -- DEBUG
@@ -523,7 +652,8 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_CHAT, function(event, player, msg, Type, lan
     local query = suffix:match("^%s*(.-)%s*$")
     local instanceId = getWSGInstanceId(player)
     if not instanceId then return end
-    local currentMatchStats = matchStats[instanceId]
+    local match = matches[instanceId]
+    local currentMatchStats = match and match.kind == "WSG" and match.players
     if not currentMatchStats then
         player:SendBroadcastMessage("[WSG Metrics] No metrics available for this match yet.")
         return false
@@ -532,7 +662,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_CHAT, function(event, player, msg, Type, lan
     local metricKey = query ~= "" and query or nil
     local found = false
     for _, stats in pairs(currentMatchStats) do
-        -- GetStats already excludes bots; keep the output limited to real players.
+        -- The WSG accessor already excludes bots.
         local value = metricKey and stats[metricKey] or stats
         local hasValue = not metricKey or (value ~= nil and value ~= false and value ~= 0 and value ~= "")
         if hasValue then

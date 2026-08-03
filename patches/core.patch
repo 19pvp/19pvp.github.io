@@ -113,7 +113,7 @@ index b10feb7b8..c5a2c96ef 100644
          DecreaseInvitedCount(teamId);
  
 diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.cpp b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
-index 169f642ec..5ad912f29 100644
+index 169f642ec..ca298faad 100644
 --- a/src/server/game/Battlegrounds/BattlegroundQueue.cpp
 +++ b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
 @@ -206,6 +206,32 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* group, Battle
@@ -227,6 +227,15 @@ index 169f642ec..5ad912f29 100644
  
              bg->StartBattleground();
          }
+@@ -1337,6 +1407,8 @@ void BattlegroundQueue::InviteGroupToBG(GroupQueueInfo* ginfo, Battleground* bg,
+         bg->IncreaseInvitedCount(ginfo->teamId);
+ 
+         player->SetInviteForBattlegroundQueueType(bgQueueTypeId, ginfo->IsInvitedToBGInstanceGUID);
++        if (bg->isArena())
++            sScriptMgr->OnBattlegroundInvite(bg, player, ginfo->teamId);
+ 
+         // create remind invite events
+         BGQueueInviteEvent* inviteEvent = new BGQueueInviteEvent(player->GetGUID(), ginfo->IsInvitedToBGInstanceGUID, bgTypeId, ginfo->ArenaType, ginfo->RemoveInviteTime);
 diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.h b/src/server/game/Battlegrounds/BattlegroundQueue.h
 index 34575e539..a76200a3d 100644
 --- a/src/server/game/Battlegrounds/BattlegroundQueue.h
@@ -795,10 +804,22 @@ index da9480a6b..2bef671a3 100644
      bool preventAfkSanctuaryLogout = sWorld->getIntConfig(CONFIG_AFK_PREVENT_LOGOUT) == 1
                                       && GetPlayer()->isAFK() && sAreaTableStore.LookupEntry(GetPlayer()->GetAreaId())->IsSanctuary();
 diff --git a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
-index 9881a25f0..246cd3a8a 100644
+index 9881a25f0..78623aff8 100644
 --- a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
 +++ b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.cpp
-@@ -67,6 +67,12 @@ void ScriptMgr::OnAddGroup(BattlegroundQueue* queue, GroupQueueInfo* ginfo, uint
+@@ -44,6 +44,11 @@ void ScriptMgr::OnBattlegroundBeforeAddPlayer(Battleground* bg, Player* player)
+     CALL_ENABLED_HOOKS(AllBattlegroundScript, ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_BEFORE_ADD_PLAYER, script->OnBattlegroundBeforeAddPlayer(bg, player));
+ }
+ 
++void ScriptMgr::OnBattlegroundInvite(Battleground* bg, Player* player, TeamId teamId)
++{
++    CALL_ENABLED_HOOKS(AllBattlegroundScript, ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_INVITE, script->OnBattlegroundInvite(bg, player, teamId));
++}
++
+ void ScriptMgr::OnBattlegroundRemovePlayerAtLeave(Battleground* bg, Player* player)
+ {
+     CALL_ENABLED_HOOKS(AllBattlegroundScript, ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_REMOVE_PLAYER_AT_LEAVE, script->OnBattlegroundRemovePlayerAtLeave(bg, player));
+@@ -67,6 +72,12 @@ void ScriptMgr::OnAddGroup(BattlegroundQueue* queue, GroupQueueInfo* ginfo, uint
  bool ScriptMgr::CanFillPlayersToBG(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id)
  {
      CALL_ENABLED_BOOLEAN_HOOKS(AllBattlegroundScript, ALLBATTLEGROUNDHOOK_CAN_FILL_PLAYERS_TO_BG, !script->CanFillPlayersToBG(queue, bg, bracket_id));
@@ -812,10 +833,18 @@ index 9881a25f0..246cd3a8a 100644
  
  bool ScriptMgr::IsCheckNormalMatch(BattlegroundQueue* queue, Battleground* bgTemplate, BattlegroundBracketId bracket_id, uint32 minPlayers, uint32 maxPlayers)
 diff --git a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.h b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.h
-index 108f3cf7f..21a2bd6fc 100644
+index 108f3cf7f..e9baca675 100644
 --- a/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.h
 +++ b/src/server/game/Scripting/ScriptDefines/AllBattlegroundScript.h
-@@ -43,6 +43,7 @@ enum AllBattlegroundHook
+@@ -29,6 +29,7 @@ enum AllBattlegroundHook
+     ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_UPDATE,
+     ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_ADD_PLAYER,
+     ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_BEFORE_ADD_PLAYER,
++    ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_INVITE,
+     ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_REMOVE_PLAYER_AT_LEAVE,
+     ALLBATTLEGROUNDHOOK_ON_QUEUE_UPDATE,
+     ALLBATTLEGROUNDHOOK_ON_QUEUE_UPDATE_VALIDITY,
+@@ -43,6 +44,7 @@ enum AllBattlegroundHook
      ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_CREATE,
      ALLBATTLEGROUNDHOOK_CAN_ADD_GROUP_TO_MATCHING_POOL,
      ALLBATTLEGROUNDHOOK_GET_PLAYER_MATCHMAKING_RATING,
@@ -823,7 +852,17 @@ index 108f3cf7f..21a2bd6fc 100644
      ALLBATTLEGROUNDHOOK_END
  };
  
-@@ -92,6 +93,8 @@ public:
+@@ -80,6 +82,9 @@ public:
+     // Before added player in Battlegroud
+     virtual void OnBattlegroundBeforeAddPlayer(Battleground* /*bg*/, Player* /*player*/) { }
+ 
++    // Invite player to Battleground
++    virtual void OnBattlegroundInvite(Battleground* /*bg*/, Player* /*player*/, TeamId /*teamId*/) { }
++
+     // Remove player at leave BG
+     virtual void OnBattlegroundRemovePlayerAtLeave(Battleground* /*bg*/, Player* /*player*/) { }
+ 
+@@ -92,6 +97,8 @@ public:
  
      [[nodiscard]] virtual bool CanFillPlayersToBG(BattlegroundQueue* /*queue*/, Battleground* /*bg*/, BattlegroundBracketId /*bracket_id*/) { return true; }
  
@@ -930,7 +969,7 @@ index b718b81c5..dfa4a7c5f 100644
  
  #endif
 diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
-index 9fd4ff356..fdf736aee 100644
+index 9fd4ff356..6aa1951e8 100644
 --- a/src/server/game/Scripting/ScriptMgr.h
 +++ b/src/server/game/Scripting/ScriptMgr.h
 @@ -346,6 +346,7 @@ public: /* PlayerScript */
@@ -957,7 +996,14 @@ index 9fd4ff356..fdf736aee 100644
      void OnPlayerVictimRewardBefore(Player* player, Player* victim, uint32& killer_title, int32& victim_rank);
      void OnPlayerVictimRewardAfter(Player* player, Player* victim, uint32& killer_title, int32& victim_rank, float& honor_f);
      void OnPlayerCustomScalingStatValueBefore(Player* player, ItemTemplate const* proto, uint8 slot, bool apply, uint32& CustomScalingStatValue);
-@@ -625,6 +628,7 @@ public: /* BGScript */
+@@ -619,12 +622,14 @@ public: /* BGScript */
+     void OnBattlegroundUpdate(Battleground* bg, uint32 diff);
+     void OnBattlegroundAddPlayer(Battleground* bg, Player* player);
+     void OnBattlegroundBeforeAddPlayer(Battleground* bg, Player* player);
++    void OnBattlegroundInvite(Battleground* bg, Player* player, TeamId teamId);
+     void OnBattlegroundRemovePlayerAtLeave(Battleground* bg, Player* player);
+     void OnQueueUpdate(BattlegroundQueue* queue, uint32 diff, BattlegroundTypeId bgTypeId, BattlegroundBracketId bracket_id, uint8 arenaType, bool isRated, uint32 arenaRating);
+     bool OnQueueUpdateValidity(BattlegroundQueue* queue, uint32 diff, BattlegroundTypeId bgTypeId, BattlegroundBracketId bracket_id, uint8 arenaType, bool isRated, uint32 arenaRating);
      void OnAddGroup(BattlegroundQueue* queue, GroupQueueInfo* ginfo, uint32& index, Player* leader, Group* group, BattlegroundTypeId bgTypeId, PvPDifficultyEntry const* bracketEntry,
          uint8 arenaType, bool isRated, bool isPremade, uint32 arenaRating, uint32 matchmakerRating, uint32 arenaTeamId, uint32 opponentsArenaTeamId);
      bool CanFillPlayersToBG(BattlegroundQueue* queue, Battleground* bg, BattlegroundBracketId bracket_id);
@@ -1019,10 +1065,10 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..f12ddd5d7 100644
+index 0f71208b0..f7d34810b 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,116 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,121 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
@@ -1083,12 +1129,17 @@ index 0f71208b0..f12ddd5d7 100644
 +        spellInfo->AttributesEx5 |= SPELL_ATTR5_ALLOW_WHILE_STUNNED | SPELL_ATTR5_ALLOW_WHILE_CONFUSED;
 +    });
 +
-+    // Shadowmeld (night elf racial 58984): trigger Cloak of Shadows dispel (35729) to instantly remove all harmful spell effects
++    // Shadowmeld (night elf racial 58984): use the DBC dummy effect to trigger Cloak of Shadows dispel (35729).
++    // Keep EFFECT_2 as the original stealth aura; its aura handling and linked spells reset aggro/selection.
 +    ApplySpellFix({ 58984 }, [](SpellInfo* spellInfo)
 +    {
-+        spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_TRIGGER_SPELL;
-+        spellInfo->Effects[EFFECT_2].TriggerSpell = 35729; // Cloak of Shadows dispel effect
-+        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
++        SpellEffectInfo& effect = spellInfo->Effects[EFFECT_1];
++        effect.Effect = SPELL_EFFECT_TRIGGER_SPELL;
++        effect.TriggerSpell = 35729; // Cloak of Shadows dispel effect
++        effect.TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
++        effect.TargetB = SpellImplicitTargetInfo();
++        effect.RadiusEntry = nullptr;
++        effect.ChainTarget = 0;
 +    });
 +
 +    // Bull Rush (4083): 0.5s duration, 100% movement speed bonus
