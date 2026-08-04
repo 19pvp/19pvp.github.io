@@ -1,20 +1,29 @@
 import { auth, characters, type SqlRow } from './db.ts'
 import { type WebEvent, wowEvents } from './wow-events.ts'
 import {
-  isLeaderboardSortMetric,
   isLeaderboardPeriod,
+  isLeaderboardSortMetric,
   isLeaderboardValueMode,
-  metricsByKey,
-  type LeaderboardSortMetric,
   type LeaderboardPeriod,
-  type LeaderboardValueMode,
+  type LeaderboardSortMetric,
   LeaderboardStore,
+  type LeaderboardValueMode,
+  metricsByKey,
 } from './leaderboards_store.ts'
 import { env } from './env.ts'
 
 const BATCH_SIZE = 1_000
-const store = new LeaderboardStore()
+const battlegroundStore = new LeaderboardStore()
+const arenaStore = new LeaderboardStore()
+const stores = [battlegroundStore, arenaStore]
 let replayedThrough = 0
+
+type LeaderboardKind = 'battleground' | 'arena'
+
+const isLeaderboardKind = (value: string): value is LeaderboardKind => value === 'battleground' || value === 'arena'
+
+const storeForEvent = (event: Pick<WebEvent, 'type'> | SqlRow) =>
+  event.type === 'PVP_ARENA_STATS' ? arenaStore : battlegroundStore
 
 const eventTimestamp = (event: Pick<WebEvent, 'at'> | SqlRow) => {
   const value = event.at
@@ -30,19 +39,19 @@ const eventData = (data: unknown) => {
   }
 }
 
-const applyEvent = (event: Pick<WebEvent, 'id' | 'at' | 'data'> | SqlRow) => {
-  store.addMatch(eventData(event.data), eventTimestamp(event))
+const applyEvent = (event: Pick<WebEvent, 'id' | 'at' | 'data' | 'type'> | SqlRow) => {
+  storeForEvent(event).addMatch(eventData(event.data), eventTimestamp(event))
 }
 
 const replay = async () => {
   let cursor = 0
   while (true) {
     const events = await auth.sql`
-      SELECT id, at, data FROM web_events
-      WHERE world=${env.WORLD_ID} AND type='PVP_BG_STATS' AND id > ${cursor}
+      SELECT id, type, at, data FROM web_events
+      WHERE world=${env.WORLD_ID} AND type IN ('PVP_BG_STATS', 'PVP_ARENA_STATS') AND id > ${cursor}
       UNION ALL
-      SELECT id, at, data FROM web_events_archive
-      WHERE world=${env.WORLD_ID} AND type='PVP_BG_STATS' AND id > ${cursor}
+      SELECT id, type, at, data FROM web_events_archive
+      WHERE world=${env.WORLD_ID} AND type IN ('PVP_BG_STATS', 'PVP_ARENA_STATS') AND id > ${cursor}
       ORDER BY id
       LIMIT ${BATCH_SIZE}
     `
@@ -54,7 +63,7 @@ const replay = async () => {
     }
   }
 
-  const guids = [...store.players.keys()].filter((guid) => /^\d+$/.test(guid))
+  const guids = [...new Set(stores.flatMap((store) => [...store.players.keys()]))].filter((guid) => /^\d+$/.test(guid))
   const existingGuids = new Set<string>()
   for (let offset = 0; offset < guids.length; offset += BATCH_SIZE) {
     const classes = await characters.raw.sql`
@@ -63,13 +72,19 @@ const replay = async () => {
     for (const row of classes) {
       const guid = String(row.guid)
       existingGuids.add(guid)
-      const player = store.players.get(guid)
       const classId = Number(row.class)
-      if (player && Number.isInteger(classId) && classId > 0) player.class = classId
+      if (Number.isInteger(classId) && classId > 0) {
+        for (const store of stores) {
+          const player = store.players.get(guid)
+          if (player) player.class = classId
+        }
+      }
     }
   }
-  for (const guid of guids) {
-    if (!existingGuids.has(guid)) store.players.delete(guid)
+  for (const store of stores) {
+    for (const guid of store.players.keys()) {
+      if (!existingGuids.has(guid)) store.players.delete(guid)
+    }
   }
 
   replayedThrough = cursor
@@ -80,21 +95,30 @@ export const leaderboardReady = replay().catch((error) => {
   throw error
 })
 
-wowEvents.on.PVP_BG_STATS(async (event) => {
+const handleMatchEvent = async (event: WebEvent) => {
   await leaderboardReady
   if (Number(event.id) <= replayedThrough) return
   applyEvent(event)
   replayedThrough = Math.max(replayedThrough, Number(event.id) || replayedThrough)
-})
+}
 
-export const getLeaderboards = async (metricParam: string, periodParam: string, modeParam = 'absolute') => {
+wowEvents.on.PVP_BG_STATS(handleMatchEvent)
+wowEvents.on.PVP_ARENA_STATS(handleMatchEvent)
+
+export const getLeaderboards = async (
+  metricParam: string,
+  periodParam: string,
+  modeParam = 'absolute',
+  kindParam = 'battleground',
+) => {
   await leaderboardReady
   if (!isLeaderboardSortMetric(metricParam)) throw new Error('Unknown leaderboard metric')
   if (!isLeaderboardPeriod(periodParam)) throw new Error('Unknown leaderboard period')
   if (!isLeaderboardValueMode(modeParam)) throw new Error('Unknown leaderboard mode')
+  if (!isLeaderboardKind(kindParam)) throw new Error('Unknown leaderboard kind')
 
   const definition = metricsByKey[metricParam]
-  const rows = store.getLeaderboardData(
+  const rows = (kindParam === 'arena' ? arenaStore : battlegroundStore).getLeaderboardData(
     periodParam as LeaderboardPeriod,
     metricParam as LeaderboardSortMetric,
     modeParam as LeaderboardValueMode,
@@ -106,4 +130,4 @@ export const getLeaderboards = async (metricParam: string, periodParam: string, 
   }
 }
 
-export { store as leaderboardStore }
+export { battlegroundStore as leaderboardStore }

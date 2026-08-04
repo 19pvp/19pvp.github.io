@@ -359,8 +359,9 @@ export default {
         const metric = url.searchParams.get('metric') || 'damageDone'
         const period = url.searchParams.get('period') || 'all'
         const mode = url.searchParams.get('mode') || 'absolute'
+        const kind = url.searchParams.get('kind') || 'battleground'
         try {
-          return json(await getLeaderboards(metric, period, mode))
+          return json(await getLeaderboards(metric, period, mode, kind))
         } catch (error) {
           if (error instanceof Error && error.message.startsWith('Unknown leaderboard')) {
             return json({ error: error.message }, { status: 400 })

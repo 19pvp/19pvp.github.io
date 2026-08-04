@@ -179,6 +179,7 @@ local function getWSGStats(player, instanceId)
     if not match.players[guid] then
         local stats = newMetricStats(player, "WSG")
         stats._instanceId = instanceId
+        stats.team = player:GetBgTeamId()
         match.players[guid] = stats
     end
     return match.players[guid]

@@ -17,6 +17,7 @@ const eventTypes = [
   'BATTLEGROUND_START',
   'BATTLEGROUND_END',
   'PVP_BG_STATS',
+  'PVP_ARENA_STATS',
   'PLAYER_LOCATION',
   'PVP_KILL', // { player, victim, map, x, y, z }
   'LUCKY_FISHING_HAT_OBTAINED', // { player }

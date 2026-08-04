@@ -17,6 +17,10 @@ export const LEADERBOARD_METRICS = [
   ['deaths', 'Deaths'],
   ['honorableKills', 'Honorable kills'],
   ['bonusHonor', 'Bonus honor'],
+  ['arenaPoints', 'Arena points'],
+  ['games', 'Games played'],
+  ['wins', 'Games won'],
+  ['losses', 'Games lost'],
   ['damageDone', 'Damage done'],
   ['healingDone', 'Healing done'],
   ['flagCaptures', 'Flag captures'],
@@ -26,6 +30,8 @@ export const LEADERBOARD_METRICS = [
 ] as const
 
 export const LEADERBOARD_DERIVED_METRICS = [
+  ['record', 'Win / loss record'],
+  ['winRate', 'Win rate'],
   ['healingDamageAbsorbs', 'Healing + damage + absorbs'],
   ['totalDispels', 'Total dispels'],
   ['killDeathRatio', 'Kill / death ratio'],
@@ -41,6 +47,7 @@ export type LeaderboardMetricDefinition = { key: LeaderboardSortMetric; label: s
 const LEADERBOARD_SCORE_PRECISION = 100_000
 
 const leaderboardMetricGroups: Record<string, LeaderboardSortMetric[]> = {
+  record: ['record', 'games', 'wins', 'losses', 'winRate'],
   healingDamage: ['healingDamageAbsorbs', 'healingDone', 'damageDone', 'damageTaken', 'absorbsDone'],
   skillPlays: [
     'successfulInterrupts',
@@ -75,12 +82,17 @@ const metricIndex = new Map(
   [...LEADERBOARD_METRICS, ...LEADERBOARD_DERIVED_METRICS].map(([key], index) => [key, index]),
 )
 const timePlayedIndex = metricIndex.get('timePlayed')!
-const derivedMetricIndexes = {
+const metricIndexes = {
+  record: metricIndex.get('record')!,
+  winRate: metricIndex.get('winRate')!,
   healingDamageAbsorbs: metricIndex.get('healingDamageAbsorbs')!,
   totalDispels: metricIndex.get('totalDispels')!,
   killDeathRatio: metricIndex.get('killDeathRatio')!,
   efcPressure: metricIndex.get('efcPressure')!,
   flagEfficiency: metricIndex.get('flagEfficiency')!,
+  games: metricIndex.get('games')!,
+  wins: metricIndex.get('wins')!,
+  losses: metricIndex.get('losses')!,
   healingDone: metricIndex.get('healingDone')!,
   damageDone: metricIndex.get('damageDone')!,
   absorbsDone: metricIndex.get('absorbsDone')!,
@@ -138,19 +150,19 @@ const numberValue = (value: unknown) => {
 }
 
 const updateDerivedValues = (values: Float64Array) => {
-  values[derivedMetricIndexes.healingDamageAbsorbs] =
-    values[derivedMetricIndexes.healingDone] +
-    values[derivedMetricIndexes.damageDone] +
-    values[derivedMetricIndexes.absorbsDone]
-  values[derivedMetricIndexes.totalDispels] =
-    values[derivedMetricIndexes.dispelsOffensive] + values[derivedMetricIndexes.dispelsDefensive]
-  values[derivedMetricIndexes.killDeathRatio] = values[derivedMetricIndexes.deaths]
-    ? values[derivedMetricIndexes.killingBlows] / values[derivedMetricIndexes.deaths]
-    : values[derivedMetricIndexes.killingBlows]
-  values[derivedMetricIndexes.efcPressure] =
-    values[derivedMetricIndexes.damageOnEFC] + values[derivedMetricIndexes.healsOnFC]
-  values[derivedMetricIndexes.flagEfficiency] = values[derivedMetricIndexes.flagCaptures]
-    ? values[derivedMetricIndexes.attemptsOnFlag] / values[derivedMetricIndexes.flagCaptures]
+  values[metricIndexes.record] = values[metricIndexes.games]
+  values[metricIndexes.winRate] = values[metricIndexes.games]
+    ? values[metricIndexes.wins] / values[metricIndexes.games]
+    : 0
+  values[metricIndexes.healingDamageAbsorbs] =
+    values[metricIndexes.healingDone] + values[metricIndexes.damageDone] + values[metricIndexes.absorbsDone]
+  values[metricIndexes.totalDispels] = values[metricIndexes.dispelsOffensive] + values[metricIndexes.dispelsDefensive]
+  values[metricIndexes.killDeathRatio] = values[metricIndexes.deaths]
+    ? values[metricIndexes.killingBlows] / values[metricIndexes.deaths]
+    : values[metricIndexes.killingBlows]
+  values[metricIndexes.efcPressure] = values[metricIndexes.damageOnEFC] + values[metricIndexes.healsOnFC]
+  values[metricIndexes.flagEfficiency] = values[metricIndexes.flagCaptures]
+    ? values[metricIndexes.attemptsOnFlag] / values[metricIndexes.flagCaptures]
     : 0
 }
 
@@ -266,6 +278,8 @@ export class LeaderboardStore {
       const stats = rawStats as Record<string, unknown>
       const guid = String(stats.playerGuid || guidKey)
       if (!guid) continue
+      const winner = (payload as { winner?: unknown }).winner
+      const hasWinner = winner !== undefined && winner !== null && stats.team !== undefined && stats.team !== null
 
       let player = this.players.get(guid)
       if (!player) {
@@ -298,6 +312,23 @@ export class LeaderboardStore {
         player.month[index] += value
         if (day >= this.currentDay - WEEK_DAYS + 1) player.week[index] += value
         if (day === this.currentDay) player.today[index] += value
+      }
+      player.all[metricIndexes.games] += 1
+      if (includeDaily) {
+        player.days[dayBucket * LEADERBOARD_METRICS.length + metricIndexes.games] += 1
+        player.month[metricIndexes.games] += 1
+        if (day >= this.currentDay - WEEK_DAYS + 1) player.week[metricIndexes.games] += 1
+        if (day === this.currentDay) player.today[metricIndexes.games] += 1
+      }
+      if (hasWinner) {
+        const metric = String(stats.team) === String(winner) ? metricIndexes.wins : metricIndexes.losses
+        player.all[metric] += 1
+        if (includeDaily) {
+          player.days[dayBucket * LEADERBOARD_METRICS.length + metric] += 1
+          player.month[metric] += 1
+          if (day >= this.currentDay - WEEK_DAYS + 1) player.week[metric] += 1
+          if (day === this.currentDay) player.today[metric] += 1
+        }
       }
 
       updatePlayerComputedValues(player)

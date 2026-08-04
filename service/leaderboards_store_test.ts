@@ -2,7 +2,8 @@ import { isLeaderboardMetric, isLeaderboardPeriod, LeaderboardStore } from './le
 
 const dateAt = (year: number, month: number, day: number, hour = 12) => new Date(year, month - 1, day, hour).getTime()
 
-const match = (playerGuid: string, name: string, stats: Record<string, unknown>) => ({
+const match = (playerGuid: string, name: string, stats: Record<string, unknown>, result: Record<string, unknown> = {}) => ({
+  ...result,
   players: { [playerGuid]: { playerGuid, name, ...stats } },
 })
 
@@ -28,6 +29,20 @@ Deno.test('aggregates all-time and rolling periods by stable player guid', () =>
   if (Math.floor(store.getLeaderboard('healingDamageAbsorbs', 'all')[0]?.value || 0) !== Math.round(Math.log1p(150) * 100_000)) throw Error('derived aggregation failed')
   const data = store.getLeaderboardData('all').find((row) => row.playerGuid === '1')
   if (data?.stats.damageDone !== 150 || data?.timePlayed !== 0) throw Error('client leaderboard data failed')
+})
+
+Deno.test('aggregates arena metrics without flag metrics', () => {
+  const store = new LeaderboardStore()
+  store.addMatch(match('1', 'Alice', { arenaPoints: 10, damageDone: 150, team: 0 }, { winner: 0 }), Date.now())
+  store.addMatch(match('1', 'Alice', { arenaPoints: 5, damageDone: 100, team: 0 }, { winner: 1 }), Date.now())
+
+  const data = store.getLeaderboardData('all', 'record')
+  if (
+    data[0]?.stats.arenaPoints !== 15 || data[0]?.stats.damageDone !== 250 || data[0]?.stats.flagCaptures !== 0 ||
+    data[0]?.stats.games !== 2 || data[0]?.stats.wins !== 1 || data[0]?.stats.losses !== 1
+  ) {
+    throw Error('arena metrics aggregation failed')
+  }
 })
 
 Deno.test('keeps the daily window bounded while retaining all-time totals', () => {
