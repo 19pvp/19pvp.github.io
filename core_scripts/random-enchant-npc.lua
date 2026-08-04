@@ -65,15 +65,9 @@ local suffix_options = {
 }
 
 local ITEM_ICON_SIZE = 32
-local QUALITY_COST_MULTIPLIER = {
-  [0] = 1,
-  [1] = 1,
-  [2] = 2,
-  [3] = 4,
-  [4] = 8,
-  [5] = 16,
-  [6] = 32,
-  [7] = 64,
+local QUALITY_ENCHANT_COST = {
+  [1] = 5 * 100,   -- 5 silver for normal items
+  [3] = 30 * 100,  -- 30 silver for rare items
 }
 
 local EQUIPMENT_SLOTS = {
@@ -113,8 +107,7 @@ local function itemLabel(item)
 end
 
 local function enchantCost(item)
-  local multiplier = QUALITY_COST_MULTIPLIER[item:GetQuality()] or QUALITY_COST_MULTIPLIER[1]
-  return 1 -- math.max(10000, item:GetBuyPrice() * multiplier)
+  return QUALITY_ENCHANT_COST[item:GetQuality()] or QUALITY_ENCHANT_COST[1]
 end
 
 local function equippedRandomItems(player)
