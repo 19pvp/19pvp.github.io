@@ -197,6 +197,10 @@ export class LeaderboardStore {
   readonly players = new Map<string, PlayerAggregate>()
   private currentDay = localDayNumber(Date.now())
 
+  removePlayer(playerGuid: string) {
+    this.players.delete(playerGuid)
+  }
+
   private makePlayer() {
     const player: PlayerAggregate = {
       name: '',

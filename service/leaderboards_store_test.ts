@@ -51,8 +51,8 @@ Deno.test('does not give a win to an invited player who did not enter', () => {
     winner: 0,
     players: {
       '1': { playerGuid: '1', name: 'Winner', team: 0, deserted: false, timePlayed: 0 },
-      '2': { playerGuid: '2', name: 'Invited winner', team: 0, deserted: 0, timePlayed: 0 },
-      '3': { playerGuid: '3', name: 'No-show loser', team: 1, deserted: 0, timePlayed: 0 },
+      '2': { playerGuid: '2', name: 'Invited winner', team: 0, deserted: -1, timePlayed: 0 },
+      '3': { playerGuid: '3', name: 'No-show loser', team: 1, deserted: -1, timePlayed: 0 },
     },
   }, Date.now())
 

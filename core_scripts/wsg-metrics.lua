@@ -59,15 +59,15 @@ local function pendingArenaInvites(instanceId)
     return count
 end
 
-local function findArenaMatch(player)
+local function findArenaMatch(player, instanceId)
     local guid = tostring(player:GetGUID())
-    local instanceId = arenaInvites[guid] or player:GetBattlegroundId()
+    if not instanceId or instanceId == 0 then instanceId = arenaInvites[guid] or player:GetBattlegroundId() end
     local match = instanceId and matches[instanceId]
-    if match and match.kind == "ARENA" then return match, instanceId end
+    if match and match.kind == "ARENA" then return match end
 
-    for candidateInstanceId, candidate in pairs(matches) do
+    for _, candidate in pairs(matches) do
         if candidate.kind == "ARENA" and candidate.players[guid] then
-            return candidate, candidateInstanceId
+            return candidate
         end
     end
     return nil
@@ -311,6 +311,7 @@ local function addParticipant(player, instanceId, allowInvite, teamId)
     if not stats then
         stats = newMetricStats(player, "ARENA", teamId)
         stats._guid = player:GetGUID()
+        stats.deserted = -1
         -- Set by PLAYER_EVENT_ON_LEAVE_BG after the original queue group is restored.
         stats.queuedWithGroup = false
         stats.left = false
@@ -612,6 +613,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_INVITE, function(event, player, mapId, in
         tracked = match ~= nil,
     })
     if match and stats then
+        stats.deserted = -1
         arenaInvites[tostring(player:GetGUID())] = instanceId
     end
 end)
@@ -624,6 +626,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
         tracked = match ~= nil,
         team = stats and stats.team,
     })
+    if stats then stats.deserted = false end
     arenaInvites[tostring(player:GetGUID())] = nil
 end)
 
@@ -672,15 +675,21 @@ end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapId, instanceId, bg, teamId)
     local guid = tostring(player:GetGUID())
-    local match, foundInstanceId = findArenaMatch(player)
+    mapId = mapId or (bg and bg:GetMapId())
+    if not instanceId or instanceId == 0 then instanceId = bg and bg:GetInstanceId() end
+    local match = findArenaMatch(player, instanceId)
+    if match then instanceId = match.instanceId end
     local stats
     if not match and mapId and mapId ~= WSG_MAP_ID and instanceId and instanceId ~= 0 then
         match, stats = addParticipant(player, instanceId, true, teamId)
-        foundInstanceId = instanceId
     end
     arenaLog("Queue leave", {
         player = player:GetName(),
-        instanceId = foundInstanceId,
+        mapId = mapId,
+        eventInstanceId = instanceId,
+        team = teamId,
+        bgFound = bg ~= nil,
+        instanceId = instanceId,
         inviteFound = arenaInvites[guid] ~= nil,
         matchFound = match ~= nil,
     })
@@ -690,7 +699,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
     stats = stats or match.players[guid]
     if not stats then return end
     stats.left = true
-    stats.deserted = 0
+    stats.deserted = -1
     recordQueueGroup(match, player, stats)
 
     local pending = pendingArenaInvites(instanceId)

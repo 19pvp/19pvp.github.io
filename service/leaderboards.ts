@@ -45,7 +45,7 @@ const applyEvent = (event: Pick<WebEvent, 'id' | 'at' | 'data' | 'type'> | SqlRo
 
 const missingClassGuids = new Set<string>()
 
-const hydrateMissingClasses = async () => {
+const synchronizeMissingCharacters = async () => {
   for (const store of stores) {
     for (const guid of store.players.keys()) {
       const player = store.players.get(guid)
@@ -54,12 +54,14 @@ const hydrateMissingClasses = async () => {
   }
 
   const guids = [...missingClassGuids]
+  const foundGuids = new Set<string>()
   for (let offset = 0; offset < guids.length; offset += BATCH_SIZE) {
     const classes = await characters.raw.sql`
       SELECT guid, class FROM characters WHERE guid IN (${guids.slice(offset, offset + BATCH_SIZE).join(',')})
     `
     for (const row of classes) {
       const guid = String(row.guid)
+      foundGuids.add(guid)
       const classId = Number(row.class)
       if (!Number.isInteger(classId) || classId <= 0) continue
 
@@ -68,6 +70,13 @@ const hydrateMissingClasses = async () => {
         const player = store.players.get(guid)
         if (player) player.class = classId
       }
+    }
+  }
+
+  for (const guid of guids) {
+    if (!foundGuids.has(guid)) {
+      for (const store of stores) store.removePlayer(guid)
+      missingClassGuids.delete(guid)
     }
   }
 }
@@ -92,7 +101,7 @@ const replay = async () => {
     }
   }
 
-  await hydrateMissingClasses()
+  await synchronizeMissingCharacters()
 
   replayedThrough = cursor
 }
@@ -106,7 +115,7 @@ const handleMatchEvent = async (event: WebEvent) => {
   await leaderboardReady
   if (Number(event.id) <= replayedThrough) return
   applyEvent(event)
-  await hydrateMissingClasses()
+  await synchronizeMissingCharacters()
   replayedThrough = Math.max(replayedThrough, Number(event.id) || replayedThrough)
 }
 

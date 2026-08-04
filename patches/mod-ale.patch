@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..94f0ad2 100644
+index d8886ce..d857637 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -20,12 +20,13 @@ index d8886ce..94f0ad2 100644
  
  class ALE_AllCreatureScript : public AllCreatureScript
  {
-@@ -340,9 +344,18 @@ public:
+@@ -340,9 +344,19 @@ public:
          ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_START,
          ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_END,
          ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_DESTROY,
 -        ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_CREATE
 +        ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_CREATE,
++        ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_INVITE,
 +        ALLBATTLEGROUNDHOOK_ON_BATTLEGROUND_QUEUE_DISTRIBUTION,
 +        ALLBATTLEGROUNDHOOK_ON_QUEUE_UPDATE_VALIDITY
      }) { }
@@ -40,7 +41,7 @@ index d8886ce..94f0ad2 100644
      void OnBattlegroundStart(Battleground* bg) override
      {
          sALE->OnBGStart(bg, bg->GetBgTypeID(), bg->GetInstanceID());
-@@ -353,6 +366,11 @@ public:
+@@ -353,6 +367,11 @@ public:
          sALE->OnBGEnd(bg, bg->GetBgTypeID(), bg->GetInstanceID(), winnerTeam);
      }
  
@@ -52,7 +53,7 @@ index d8886ce..94f0ad2 100644
      void OnBattlegroundDestroy(Battleground* bg) override
      {
          sALE->OnBGDestroy(bg, bg->GetBgTypeID(), bg->GetInstanceID());
-@@ -362,6 +380,11 @@ public:
+@@ -362,6 +381,11 @@ public:
      {
          sALE->OnBGCreate(bg, bg->GetBgTypeID(), bg->GetInstanceID());
      }
@@ -64,7 +65,7 @@ index d8886ce..94f0ad2 100644
  };
  
  class ALE_CommandSC : public CommandSC
-@@ -617,7 +640,10 @@ public:
+@@ -617,7 +641,10 @@ public:
          PLAYERHOOK_ON_EMOTE,
          PLAYERHOOK_ON_TEXT_EMOTE,
          PLAYERHOOK_ON_SPELL_CAST,
@@ -75,7 +76,7 @@ index d8886ce..94f0ad2 100644
          PLAYERHOOK_ON_LOGOUT,
          PLAYERHOOK_ON_CREATE,
          PLAYERHOOK_ON_SAVE,
-@@ -737,9 +763,31 @@ public:
+@@ -737,9 +764,31 @@ public:
          sALE->OnQuestAbandon(player, questId);
      }
  
@@ -107,7 +108,7 @@ index d8886ce..94f0ad2 100644
      }
  
      void OnPlayerGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action) override
-@@ -827,13 +875,37 @@ public:
+@@ -827,13 +876,37 @@ public:
          sALE->OnPlayerSpellCast(player, spell, skipCheck);
      }
  
@@ -145,7 +146,7 @@ index d8886ce..94f0ad2 100644
          sALE->OnLogout(player);
      }
  
-@@ -1340,6 +1412,37 @@ public:
+@@ -1340,6 +1413,37 @@ public:
      }
  };
  
@@ -183,7 +184,7 @@ index d8886ce..94f0ad2 100644
  // Group all custom scripts
  void AddSC_ALE()
  {
-@@ -1365,4 +1468,5 @@ void AddSC_ALE()
+@@ -1365,4 +1469,5 @@ void AddSC_ALE()
      new ALE_WorldObjectScript();
      new ALE_WorldScript();
      new ALE_UnitScript();
