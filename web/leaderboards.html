@@ -84,6 +84,12 @@
   color: var(--accent-color);
   --divider-color: var(--accent-color);
 }
+.leaderboard-record-win {
+  color: var(--helpful);
+}
+.leaderboard-record-loss {
+  color: var(--harmful);
+}
 .leaderboard-table th[data-sort-key] {
   cursor: pointer;
   user-select: none;
@@ -575,8 +581,8 @@ const createLeaderboardPanel = ({ domPrefix, urlPrefix, kind, groups, matchLabel
             }; Healing on FC: ${formatLeaderboardValue(leaderboardValue(row, 'healsOnFC', otherUnit))}`
           }
           if (key === 'record') {
-            const recordColumns = [['games', 'Games'], ['wins', 'Wins'], ['losses', 'Losses']]
-            return recordColumns.map(([recordKey, label]) => `<td class="${
+            const recordColumns = [['games', 'Games', ''], ['wins', 'Wins', 'leaderboard-record-win'], ['losses', 'Losses', 'leaderboard-record-loss']]
+            return recordColumns.map(([recordKey, label, colorClass]) => `<td class="${colorClass} ${
               sortKey === recordKey || (recordKey === 'games' && sortKey === 'record') ? 'leaderboard-sort-active' : ''
             }" title="${label}: ${otherLabel} ${formatLeaderboardValue(
               leaderboardValue(row, recordKey, otherUnit), recordKey

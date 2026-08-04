@@ -94,11 +94,12 @@ local SOFT_CC_MECHANICS = {
     [MECHANIC_DAZE] = true,
 }
 
-local function newMetricStats(player, kind)
+local function newMetricStats(player, kind, teamId)
     local guid = tostring(player:GetGUID())
     local stats = {
         name = player:GetName(),
         playerGuid = guid,
+        team = teamId or player:GetBgTeamId(),
         dispelsOffensive = 0,
         dispelsDefensive = 0,
         successfulInterrupts = 0,
@@ -179,7 +180,6 @@ local function getWSGStats(player, instanceId)
     if not match.players[guid] then
         local stats = newMetricStats(player, "WSG")
         stats._instanceId = instanceId
-        stats.team = player:GetBgTeamId()
         match.players[guid] = stats
     end
     return match.players[guid]
@@ -283,9 +283,8 @@ local function addParticipant(player, instanceId, allowInvite, teamId)
     local guid = tostring(player:GetGUID())
     local stats = match.players[guid]
     if not stats then
-        stats = newMetricStats(player, "ARENA")
+        stats = newMetricStats(player, "ARENA", teamId)
         stats._guidLow = player:GetGUIDLow()
-        stats.team = teamId or player:GetBgTeamId()
         -- Set by PLAYER_EVENT_ON_LEAVE_BG after the original queue group is restored.
         stats.queuedWithGroup = false
         stats.left = false
