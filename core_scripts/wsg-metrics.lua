@@ -650,35 +650,38 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_CHAT, function(event, player, msg, Type, lan
     if suffix ~= "" and not suffix:match("^%s") then return end
 
     local query = suffix:match("^%s*(.-)%s*$")
-    local instanceId = getWSGInstanceId(player)
-    if not instanceId then return end
-    local match = matches[instanceId]
-    local currentMatchStats = match and match.kind == "WSG" and match.players
+    local instanceId = player:GetBattlegroundId()
+    local match = instanceId and matches[instanceId]
+    if not match then
+        instanceId = arenaInvites[tostring(player:GetGUID())]
+        match = instanceId and matches[instanceId]
+    end
+    local currentMatchStats = match and match.players
     if not currentMatchStats then
-        player:SendBroadcastMessage("[WSG Metrics] No metrics available for this match yet.")
+        player:SendBroadcastMessage("[Metrics] No metrics available for this match yet.")
         return false
     end
 
+    local label = match.kind == "ARENA" and "Arena" or "WSG"
     local metricKey = query ~= "" and query or nil
     local found = false
     for _, stats in pairs(currentMatchStats) do
-        -- The WSG accessor already excludes bots.
         local value = metricKey and stats[metricKey] or stats
         local hasValue = not metricKey or (value ~= nil and value ~= false and value ~= 0 and value ~= "")
         if hasValue then
             found = true
             if metricKey then
-                player:SendBroadcastMessage("[WSG Metrics] " .. stats.name .. " -> " .. metricKey .. " = " .. inspect(value))
+                player:SendBroadcastMessage("[" .. label .. " Metrics] " .. stats.name .. " -> " .. metricKey .. " = " .. inspect(value))
             else
-                player:SendBroadcastMessage("[WSG Metrics] " .. stats.name .. " -> " .. inspect(stats))
+                player:SendBroadcastMessage("[" .. label .. " Metrics] " .. stats.name .. " -> " .. inspect(stats))
             end
         end
     end
 
     if metricKey and not found then
-        player:SendBroadcastMessage("[WSG Metrics] No players accumulated this metric yet.")
+        player:SendBroadcastMessage("[" .. label .. " Metrics] No players accumulated this metric yet.")
     elseif not metricKey and not found then
-        player:SendBroadcastMessage("[WSG Metrics] No players are tracked in this match yet.")
+        player:SendBroadcastMessage("[" .. label .. " Metrics] No players are tracked in this match yet.")
     end
 
     return false
