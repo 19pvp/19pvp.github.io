@@ -284,7 +284,7 @@ local function addParticipant(player, instanceId, allowInvite, teamId)
     local stats = match.players[guid]
     if not stats then
         stats = newMetricStats(player, "ARENA", teamId)
-        stats._guidLow = player:GetGUIDLow()
+        stats._guid = player:GetGUID()
         -- Set by PLAYER_EVENT_ON_LEAVE_BG after the original queue group is restored.
         stats.queuedWithGroup = false
         stats.left = false
@@ -296,6 +296,7 @@ local function addParticipant(player, instanceId, allowInvite, teamId)
 end
 
 local function snapshotArenaScore(player, instanceId, bg)
+    instanceId = instanceId or player:GetBattlegroundId()
     local match, stats = addParticipant(player, instanceId)
     if not match then return end
 
@@ -607,7 +608,7 @@ RegisterBGEvent(BG_EVENT_ON_PRE_DESTROY, function(event, bg, bgId, instanceId)
         local points = 0
         if not stats.deserted then
             points = stats.team == match.winner and WINNER_ARENA_POINTS or LOSER_ARENA_POINTS
-            local player = GetPlayerByGUID(stats._guidLow)
+            local player = GetPlayerByGUID(stats._guid)
             if player then
                 player:ModifyArenaPoints(points)
             else
@@ -620,7 +621,7 @@ RegisterBGEvent(BG_EVENT_ON_PRE_DESTROY, function(event, bg, bgId, instanceId)
     for _, stats in pairs(match.players) do
         finalizeMetricStats(stats)
         arenaInvites[stats.playerGuid] = nil
-        stats._guidLow = nil
+        stats._guid = nil
     end
 
     print("[Arena Metrics] Closing match instance -> " .. inspect({
