@@ -1,5 +1,3 @@
-print("[Metrics] Loading metrics.lua script...")
-
 -- Global storage for active match state partitioned by the globally unique
 -- server instanceId. Each entry contains kind and players.
 local matches = {}
@@ -44,10 +42,6 @@ local function getOrCreateMatch(kind, instanceId)
     match = { kind = kind, instanceId = instanceId, players = {}, createdAt = GetCurrTime() }
     matches[instanceId] = match
     return match
-end
-
-local function arenaLog(message, data)
-    print("[Arena Metrics][DEBUG] " .. message .. " -> " .. inspect(data))
 end
 
 local function findArenaMatch(player, instanceId)
@@ -271,7 +265,6 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
         finalizeMetricStats(stats)
     end
 
-    print("[WSG Metrics] Closing match instance -> " .. inspect({ instanceId = instanceId, winner = winner }))
     SendWebEvent('PVP_BG_STATS', nil, {
         instanceId = instanceId,
         winner = winner,
@@ -353,12 +346,6 @@ local function finishArenaMatch(match, winner, duration)
         stats._guid = nil
     end
 
-    print("[Arena Metrics] Closing match instance -> " .. inspect({
-        instanceId = match.instanceId,
-        duration = duration,
-        winner = winner,
-        reason = reason,
-    }))
     SendWebEvent("PVP_ARENA_STATS", nil, {
         instanceId = match.instanceId,
         bgId = match.bgId,
@@ -596,24 +583,12 @@ end
 -- The invitation is the participation boundary. Players who refuse or time
 -- out are kept in match.players even though they never enter the arena.
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_INVITE, function(event, player, mapId, instanceId, bg, teamId)
-    arenaLog("Invite", {
-        player = player:GetName(),
-        instanceId = instanceId,
-        team = teamId,
-        tracked = match ~= nil,
-    })
     local match = addParticipant(player, instanceId, true, teamId)
     local arenaType = bg and bg:GetMaxPlayersPerTeam()
     if match and arenaType then match.arenaType = arenaType end
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
-    arenaLog("Enter", {
-        player = player:GetName(),
-        instanceId = instanceId,
-        tracked = match ~= nil,
-        team = stats and stats.team,
-    })
     local _, stats = addParticipant(player, instanceId)
     if stats then stats.deserted = nil end
 end)
@@ -624,11 +599,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura)
     if not player:InArena() or aura:GetAuraId() ~= ARENA_PREPARATION_AURA then return end
 
     local match = getMatch(player)
-    arenaLog("Preparation removed", {
-        player = player:GetName(),
-        instanceId = player:GetBattlegroundId(),
-        tracked = match ~= nil,
-    })
     if match and not match.startedAt then
         local now = GetCurrTime()
         match.startedAt = now
@@ -640,14 +610,6 @@ end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
     local match = matches[instanceId]
-    arenaLog("Leave", {
-        player = player:GetName(),
-        instanceId = instanceId,
-        mapId = mapId,
-        bgFound = bg ~= nil,
-        status = bg and bg:GetStatus(),
-        tracked = match and match.kind == "ARENA" or false,
-    })
     if not match or match.kind ~= "ARENA" then return end
 
     local stats = match.players[tostring(player:GetGUID())]
@@ -666,36 +628,16 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
     if not instanceId or instanceId == 0 then instanceId = bg and bg:GetInstanceId() end
     local match = findArenaMatch(player, instanceId)
     if match then instanceId = match.instanceId end
-    arenaLog("Queue leave", {
-        player = player:GetName(),
-        mapId = mapId,
-        eventInstanceId = instanceId,
-        team = teamId,
-        bgFound = bg ~= nil,
-        instanceId = instanceId,
-        matchFound = match ~= nil,
-    })
     if not match then return end
 
     local stats = match.players[guid]
     if not stats then return end
     stats.left = true
     recordQueueGroup(match, player, stats)
-    arenaLog("Queue leave recorded", {
-        instanceId = instanceId,
-        team = stats.team,
-        playerTimePlayed = stats.timePlayed,
-    })
 end)
 
 RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
     local match = matches[instanceId]
-    arenaLog("Battleground end", {
-        instanceId = instanceId,
-        bgId = bgId,
-        winner = winner,
-        tracked = match and match.kind == "ARENA" or false,
-    })
     local arenaType = bg and bg:GetMaxPlayersPerTeam()
     if not match or match.kind ~= "ARENA" then return end
 
@@ -714,25 +656,19 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
     match.arenaType = arenaType or match.arenaType
     local startedAt = match.startedAt or match.createdAt
     local duration = math.max(0, math.floor((match.endedAt - startedAt) / 1000))
-    finishArenaMatch(match, winner, duration, "completed")
+    finishArenaMatch(match, winner, duration)
 end)
 
 -- By PRE_DESTROY all players have gone through the leave hook, so queue-group
 -- information is available even for players who stayed until the match ended.
 RegisterBGEvent(BG_EVENT_ON_PRE_DESTROY, function(event, bg, bgId, instanceId)
     local match = matches[instanceId]
-    arenaLog("Battleground pre-destroy", {
-        instanceId = instanceId,
-        bgId = bgId,
-        tracked = match and match.kind == "ARENA" or false,
-        ended = match and match.endedAt ~= nil or false,
-    })
     if not match or match.kind ~= "ARENA" or not match.endedAt then return end
 
     local endedAt = match.endedAt
     local startedAt = match.startedAt or match.createdAt
     local duration = math.max(0, math.floor((endedAt - startedAt) / 1000))
-    finishArenaMatch(match, match.winner, duration, "pre_destroy_fallback")
+    finishArenaMatch(match, match.winner, duration)
 end)
 
 -- Metrics inspection command.
