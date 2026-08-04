@@ -360,8 +360,9 @@ export default {
         const period = url.searchParams.get('period') || 'all'
         const mode = url.searchParams.get('mode') || 'absolute'
         const kind = url.searchParams.get('kind') || 'battleground'
+        const arenaType = url.searchParams.get('arenaType') || 'all'
         try {
-          return json(await getLeaderboards(metric, period, mode, kind))
+          return json(await getLeaderboards(metric, period, mode, kind, arenaType))
         } catch (error) {
           if (error instanceof Error && error.message.startsWith('Unknown leaderboard')) {
             return json({ error: error.message }, { status: 400 })

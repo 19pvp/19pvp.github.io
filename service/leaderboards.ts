@@ -1,9 +1,11 @@
 import { auth, characters, type SqlRow } from './db.ts'
 import { type WebEvent, wowEvents } from './wow-events.ts'
 import {
+  isLeaderboardArenaType,
   isLeaderboardPeriod,
   isLeaderboardSortMetric,
   isLeaderboardValueMode,
+  type LeaderboardArenaType,
   type LeaderboardPeriod,
   type LeaderboardSortMetric,
   LeaderboardStore,
@@ -14,16 +16,17 @@ import { env } from './env.ts'
 
 const BATCH_SIZE = 1_000
 const battlegroundStore = new LeaderboardStore()
-const arenaStore = new LeaderboardStore()
-const stores = [battlegroundStore, arenaStore]
+const arenaStores = new Map<LeaderboardArenaType, LeaderboardStore>([
+  ['all', new LeaderboardStore()],
+  ['2v2', new LeaderboardStore()],
+  ['3v3', new LeaderboardStore()],
+])
+const stores = [battlegroundStore, ...arenaStores.values()]
 let replayedThrough = 0
 
 type LeaderboardKind = 'battleground' | 'arena'
 
 const isLeaderboardKind = (value: string): value is LeaderboardKind => value === 'battleground' || value === 'arena'
-
-const storeForEvent = (event: Pick<WebEvent, 'type'> | SqlRow) =>
-  event.type === 'PVP_ARENA_STATS' ? arenaStore : battlegroundStore
 
 const eventTimestamp = (event: Pick<WebEvent, 'at'> | SqlRow) => {
   const value = event.at
@@ -40,7 +43,16 @@ const eventData = (data: unknown) => {
 }
 
 const applyEvent = (event: Pick<WebEvent, 'id' | 'at' | 'data' | 'type'> | SqlRow) => {
-  storeForEvent(event).addMatch(eventData(event.data), eventTimestamp(event))
+  const payload = eventData(event.data)
+  const timestamp = eventTimestamp(event)
+  if (event.type !== 'PVP_ARENA_STATS') {
+    battlegroundStore.addMatch(payload, timestamp)
+    return
+  }
+
+  arenaStores.get('all')!.addMatch(payload, timestamp)
+  arenaStores.get('2v2')!.addMatch(payload, timestamp, 2)
+  arenaStores.get('3v3')!.addMatch(payload, timestamp, 3)
 }
 
 const missingClassGuids = new Set<string>()
@@ -127,15 +139,18 @@ export const getLeaderboards = async (
   periodParam: string,
   modeParam = 'absolute',
   kindParam = 'battleground',
+  arenaTypeParam = 'all',
 ) => {
   await leaderboardReady
   if (!isLeaderboardSortMetric(metricParam)) throw new Error('Unknown leaderboard metric')
   if (!isLeaderboardPeriod(periodParam)) throw new Error('Unknown leaderboard period')
   if (!isLeaderboardValueMode(modeParam)) throw new Error('Unknown leaderboard mode')
   if (!isLeaderboardKind(kindParam)) throw new Error('Unknown leaderboard kind')
+  if (!isLeaderboardArenaType(arenaTypeParam)) throw new Error('Unknown leaderboard arena type')
 
   const definition = metricsByKey[metricParam]
-  const rows = (kindParam === 'arena' ? arenaStore : battlegroundStore).getLeaderboardData(
+  const store = kindParam === 'arena' ? arenaStores.get(arenaTypeParam)! : battlegroundStore
+  const rows = store.getLeaderboardData(
     periodParam as LeaderboardPeriod,
     metricParam as LeaderboardSortMetric,
     modeParam as LeaderboardValueMode,
@@ -143,6 +158,7 @@ export const getLeaderboards = async (
   return {
     metric: definition,
     period: periodParam,
+    arenaType: arenaTypeParam,
     rows,
   }
 }

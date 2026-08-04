@@ -15,7 +15,7 @@ Deno.test('validates the supported leaderboard dimensions', () => {
 Deno.test('aggregates all-time and rolling periods by stable player guid', () => {
   const store = new LeaderboardStore()
   const today = dateAt(2026, 8, 2)
-  store.addMatch(match('1', 'Alice', { damageDone: 100, deserted: false }), today)
+  store.addMatch(match('1', 'Alice', { damageDone: 100 }), today)
   store.addMatch(match('1', 'Alice Renamed', { damageDone: 50, deserted: 37 }), dateAt(2026, 8, 1))
   store.addMatch(match('2', 'Bob', { damageDone: 120 }), dateAt(2026, 7, 1))
 
@@ -45,12 +45,21 @@ Deno.test('aggregates arena metrics without flag metrics', () => {
   }
 })
 
+Deno.test('filters arena metrics by arena type', () => {
+  const store = new LeaderboardStore()
+  store.addMatch(match('1', 'Alice', { damageDone: 100 }, { arenaType: 2 }), Date.now(), 2)
+  store.addMatch(match('1', 'Alice', { damageDone: 200 }, { arenaType: 3 }), Date.now(), 2)
+
+  const data = store.getLeaderboardData('all', 'damageDone')
+  if (data.length !== 1 || data[0]?.stats.damageDone !== 100) throw Error('arena type filtering failed')
+})
+
 Deno.test('does not give a win to an invited player who did not enter', () => {
   const store = new LeaderboardStore()
   store.addMatch({
     winner: 0,
     players: {
-      '1': { playerGuid: '1', name: 'Winner', team: 0, deserted: false, timePlayed: 0 },
+      '1': { playerGuid: '1', name: 'Winner', team: 0, timePlayed: 0 },
       '2': { playerGuid: '2', name: 'Invited winner', team: 0, deserted: -1, timePlayed: 0 },
       '3': { playerGuid: '3', name: 'No-show loser', team: 1, deserted: -1, timePlayed: 0 },
     },

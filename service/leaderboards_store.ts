@@ -43,6 +43,7 @@ export type LeaderboardMetric = typeof LEADERBOARD_METRICS[number][0]
 export type LeaderboardSortMetric = LeaderboardMetric | typeof LEADERBOARD_DERIVED_METRICS[number][0]
 export type LeaderboardPeriod = 'today' | 'week' | 'month' | 'all'
 export type LeaderboardValueMode = 'absolute' | 'average'
+export type LeaderboardArenaType = 'all' | '2v2' | '3v3'
 export type LeaderboardMetricDefinition = { key: LeaderboardSortMetric; label: string }
 const LEADERBOARD_SCORE_PRECISION = 100_000
 
@@ -192,6 +193,8 @@ export const isLeaderboardPeriod = (value: string): value is LeaderboardPeriod =
   value === 'today' || value === 'week' || value === 'month' || value === 'all'
 export const isLeaderboardValueMode = (value: string): value is LeaderboardValueMode =>
   value === 'absolute' || value === 'average'
+export const isLeaderboardArenaType = (value: string): value is LeaderboardArenaType =>
+  value === 'all' || value === '2v2' || value === '3v3'
 
 export class LeaderboardStore {
   readonly players = new Map<string, PlayerAggregate>()
@@ -268,9 +271,11 @@ export class LeaderboardStore {
     }
   }
 
-  addMatch(payload: unknown, timestamp: number) {
+  addMatch(payload: unknown, timestamp: number, arenaType?: number) {
     this.synchronizeDay()
     if (!payload || typeof payload !== 'object') return
+
+    if (arenaType !== undefined && Number((payload as { arenaType?: unknown }).arenaType) !== arenaType) return
 
     const players = (payload as { players?: unknown }).players
     if (!players || typeof players !== 'object') return

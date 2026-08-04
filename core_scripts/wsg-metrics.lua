@@ -3,7 +3,6 @@ print("[Metrics] Loading metrics.lua script...")
 -- Global storage for active match state partitioned by the globally unique
 -- server instanceId. Each entry contains kind and players.
 local matches = {}
-local arenaInvites = {}
 -- aura pointer string -> { stats, type = "HARD"|"SOFT", startTime = ms }
 local activeCCs = {}
 -- aura pointer string -> { stats, effectIndex, initialAmount }
@@ -51,17 +50,9 @@ local function arenaLog(message, data)
     print("[Arena Metrics][DEBUG] " .. message .. " -> " .. inspect(data))
 end
 
-local function pendingArenaInvites(instanceId)
-    local count = 0
-    for _, invitedInstanceId in pairs(arenaInvites) do
-        if invitedInstanceId == instanceId then count = count + 1 end
-    end
-    return count
-end
-
 local function findArenaMatch(player, instanceId)
     local guid = tostring(player:GetGUID())
-    if not instanceId or instanceId == 0 then instanceId = arenaInvites[guid] or player:GetBattlegroundId() end
+    if not instanceId or instanceId == 0 then instanceId = player:GetBattlegroundId() end
     local match = instanceId and matches[instanceId]
     if match and match.kind == "ARENA" then return match end
 
@@ -142,7 +133,7 @@ local function newMetricStats(player, kind, teamId)
         bonusHonor = 0,
         damageDone = 0,
         healingDone = 0,
-        deserted = false,
+        deserted = nil,
         timePlayed = 0,
         _kind = kind,
         _updateTime = GetCurrTime(),
@@ -337,15 +328,15 @@ local function snapshotArenaScore(player, instanceId, bg)
     updateScoreMetrics(stats, score)
 end
 
-local function finishArenaMatch(match, winner, duration, reason)
+local function finishArenaMatch(match, winner, duration)
     if not match or match.finished then return end
     match.finished = true
     match.winner = winner
 
     for _, stats in pairs(match.players) do
         local points = 0
-        local entered = stats.deserted == false or stats.timePlayed > 0
-        if entered and not stats.deserted then
+        local entered = stats.deserted == nil or stats.timePlayed > 0
+        if entered and stats.deserted == nil then
             points = stats.team == winner and WINNER_ARENA_POINTS or LOSER_ARENA_POINTS
             local player = GetPlayerByGUID(stats._guid)
             if player then
@@ -359,7 +350,6 @@ local function finishArenaMatch(match, winner, duration, reason)
 
     for _, stats in pairs(match.players) do
         finalizeMetricStats(stats)
-        arenaInvites[stats.playerGuid] = nil
         stats._guid = nil
     end
 
@@ -372,6 +362,7 @@ local function finishArenaMatch(match, winner, duration, reason)
     SendWebEvent("PVP_ARENA_STATS", nil, {
         instanceId = match.instanceId,
         bgId = match.bgId,
+        arenaType = match.arenaType,
         duration = duration,
         winner = winner,
         players = match.players,
@@ -605,29 +596,26 @@ end
 -- The invitation is the participation boundary. Players who refuse or time
 -- out are kept in match.players even though they never enter the arena.
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_INVITE, function(event, player, mapId, instanceId, bg, teamId)
-    local match, stats = addParticipant(player, instanceId, true, teamId)
     arenaLog("Invite", {
         player = player:GetName(),
         instanceId = instanceId,
         team = teamId,
         tracked = match ~= nil,
     })
-    if match and stats then
-        stats.deserted = -1
-        arenaInvites[tostring(player:GetGUID())] = instanceId
-    end
+    local match = addParticipant(player, instanceId, true, teamId)
+    local arenaType = bg and bg:GetMaxPlayersPerTeam()
+    if match and arenaType then match.arenaType = arenaType end
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
-    local match, stats = addParticipant(player, instanceId)
     arenaLog("Enter", {
         player = player:GetName(),
         instanceId = instanceId,
         tracked = match ~= nil,
         team = stats and stats.team,
     })
-    if stats then stats.deserted = false end
-    arenaInvites[tostring(player:GetGUID())] = nil
+    local _, stats = addParticipant(player, instanceId)
+    if stats then stats.deserted = nil end
 end)
 
 -- The preparation aura is removed when the arena actually begins. This keeps
@@ -675,14 +663,9 @@ end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapId, instanceId, bg, teamId)
     local guid = tostring(player:GetGUID())
-    mapId = mapId or (bg and bg:GetMapId())
     if not instanceId or instanceId == 0 then instanceId = bg and bg:GetInstanceId() end
     local match = findArenaMatch(player, instanceId)
     if match then instanceId = match.instanceId end
-    local stats
-    if not match and mapId and mapId ~= WSG_MAP_ID and instanceId and instanceId ~= 0 then
-        match, stats = addParticipant(player, instanceId, true, teamId)
-    end
     arenaLog("Queue leave", {
         player = player:GetName(),
         mapId = mapId,
@@ -690,23 +673,17 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
         team = teamId,
         bgFound = bg ~= nil,
         instanceId = instanceId,
-        inviteFound = arenaInvites[guid] ~= nil,
         matchFound = match ~= nil,
     })
     if not match then return end
-    arenaInvites[guid] = nil
 
-    stats = stats or match.players[guid]
+    local stats = match.players[guid]
     if not stats then return end
     stats.left = true
-    stats.deserted = -1
     recordQueueGroup(match, player, stats)
-
-    local pending = pendingArenaInvites(instanceId)
     arenaLog("Queue leave recorded", {
         instanceId = instanceId,
         team = stats.team,
-        pendingInvites = pending,
         playerTimePlayed = stats.timePlayed,
     })
 end)
@@ -719,6 +696,7 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
         winner = winner,
         tracked = match and match.kind == "ARENA" or false,
     })
+    local arenaType = bg and bg:GetMaxPlayersPerTeam()
     if not match or match.kind ~= "ARENA" then return end
 
     local map = GetMapById(bg:GetMapId(), instanceId)
@@ -733,6 +711,7 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
     match.endedAt = GetCurrTime()
     match.winner = winner
     match.bgId = bgId
+    match.arenaType = arenaType or match.arenaType
     local startedAt = match.startedAt or match.createdAt
     local duration = math.max(0, math.floor((match.endedAt - startedAt) / 1000))
     finishArenaMatch(match, winner, duration, "completed")
@@ -756,7 +735,7 @@ RegisterBGEvent(BG_EVENT_ON_PRE_DESTROY, function(event, bg, bgId, instanceId)
     finishArenaMatch(match, match.winner, duration, "pre_destroy_fallback")
 end)
 
--- DEBUG
+-- Metrics inspection command.
 RegisterPlayerEvent(PLAYER_EVENT_ON_CHAT, function(event, player, msg, Type, lang)
     if not msg or msg:sub(1, 8):lower() ~= "?metrics" then return end
     local suffix = msg:sub(9)
@@ -765,10 +744,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_CHAT, function(event, player, msg, Type, lan
     local query = suffix:match("^%s*(.-)%s*$")
     local instanceId = player:GetBattlegroundId()
     local match = instanceId and matches[instanceId]
-    if not match then
-        instanceId = arenaInvites[tostring(player:GetGUID())]
-        match = instanceId and matches[instanceId]
-    end
+    if not match then match = findArenaMatch(player, instanceId) end
     local currentMatchStats = match and match.players
     if not currentMatchStats then
         player:SendBroadcastMessage("[Metrics] No metrics available for this match yet.")
@@ -786,7 +762,11 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_CHAT, function(event, player, msg, Type, lan
             if metricKey then
                 player:SendBroadcastMessage("[" .. label .. " Metrics] " .. stats.name .. " -> " .. metricKey .. " = " .. inspect(value))
             else
-                player:SendBroadcastMessage("[" .. label .. " Metrics] " .. stats.name .. " -> " .. inspect(stats))
+                local visibleStats = {}
+                for key, statValue in pairs(stats) do
+                    if key:sub(1, 1) ~= "_" then visibleStats[key] = statValue end
+                end
+                player:SendBroadcastMessage("[" .. label .. " Metrics] " .. stats.name .. " -> " .. inspect(visibleStats))
             end
         end
     end

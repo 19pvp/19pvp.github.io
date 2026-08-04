@@ -229,6 +229,7 @@
     <div class="leaderboard-controls">
       <label
         class="leaderboard-group-control">Group<select id="arenaLeaderboardGroup" aria-label="Arena leaderboard metric group"></select></label>
+      <label>Type<select id="arenaLeaderboardType" aria-label="Arena leaderboard type"><option value="all" selected>All</option><option value="2v2">2v2</option><option value="3v3">3v3</option></select></label>
       <label>Period<select id="arenaLeaderboardPeriod" aria-label="Arena leaderboard period"><option value="today">Today</option><option value="week">Week</option><option value="month">Month</option><option value="all" selected>All time</option></select></label>
       <label>Unit<select id="arenaLeaderboardAverageUnit" aria-label="Arena leaderboard average unit"><option value="all" selected>Total</option><option value="hour">Per hour</option><option value="minute">Per minute</option><option value="second">Per second</option></select></label>
     </div>
@@ -472,8 +473,9 @@ const leaderboardValue = (row, key, unit) => {
     ? row.timePlayed ? total * multiplier / row.timePlayed : 0
     : row.averages[key] * multiplier
 }
-const createLeaderboardPanel = ({ domPrefix, urlPrefix, kind, groups, matchLabel, emptyMessage }) => {
+const createLeaderboardPanel = ({ domPrefix, urlPrefix, kind, groups, matchLabel, emptyMessage, arenaTypes = [] }) => {
   const groupControl = document.getElementById(`${domPrefix}Group`)
+  const typeControl = document.getElementById(`${domPrefix}Type`)
   const periodControl = document.getElementById(`${domPrefix}Period`)
   const unitControl = document.getElementById(`${domPrefix}AverageUnit`)
   const status = document.getElementById(`${domPrefix}Status`)
@@ -496,6 +498,7 @@ const createLeaderboardPanel = ({ domPrefix, urlPrefix, kind, groups, matchLabel
     const period = ['today', 'week', 'month', 'all'].includes(params.get(param('period')))
       ? params.get(param('period'))
       : 'all'
+    const arenaType = arenaTypes.includes(params.get(param('type'))) ? params.get(param('type')) : arenaTypes[0]
     const unit = leaderboardValueUnits[params.get(param('unit'))] ? params.get(param('unit')) : 'all'
     const sortParam = params.get(param('sort'))
     const sortKeys = group.keys.flatMap((key) => leaderboardSortCycle(key) || [key])
@@ -504,10 +507,11 @@ const createLeaderboardPanel = ({ domPrefix, urlPrefix, kind, groups, matchLabel
       params.set(param('sort'), sortKey)
       history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`)
     }
-    return { group, sortKey, period, unit }
+    return { group, sortKey, period, unit, arenaType }
   }
   const syncControls = (state) => {
     groupControl.value = state.group.key
+    if (typeControl) typeControl.value = state.arenaType
     periodControl.value = state.period
     unitControl.value = state.unit
   }
@@ -581,12 +585,23 @@ const createLeaderboardPanel = ({ domPrefix, urlPrefix, kind, groups, matchLabel
             }; Healing on FC: ${formatLeaderboardValue(leaderboardValue(row, 'healsOnFC', otherUnit))}`
           }
           if (key === 'record') {
-            const recordColumns = [['games', 'Games', ''], ['wins', 'Wins', 'leaderboard-record-win'], ['losses', 'Losses', 'leaderboard-record-loss']]
-            return recordColumns.map(([recordKey, label, colorClass]) => `<td class="${colorClass} ${
-              sortKey === recordKey || (recordKey === 'games' && sortKey === 'record') ? 'leaderboard-sort-active' : ''
-            }" title="${label}: ${otherLabel} ${formatLeaderboardValue(
-              leaderboardValue(row, recordKey, otherUnit), recordKey
-            )}">${formatLeaderboardValue(leaderboardValue(row, recordKey, unit), recordKey)}</td>`).join('')
+            const recordColumns = [['games', 'Games', ''], ['wins', 'Wins', 'leaderboard-record-win'], [
+              'losses',
+              'Losses',
+              'leaderboard-record-loss',
+            ]]
+            return recordColumns.map(([recordKey, label, colorClass]) =>
+              `<td class="${colorClass} ${
+                sortKey === recordKey || (recordKey === 'games' && sortKey === 'record')
+                  ? 'leaderboard-sort-active'
+                  : ''
+              }" title="${label}: ${otherLabel} ${
+                formatLeaderboardValue(
+                  leaderboardValue(row, recordKey, otherUnit),
+                  recordKey,
+                )
+              }">${formatLeaderboardValue(leaderboardValue(row, recordKey, unit), recordKey)}</td>`
+            ).join('')
           }
           if (key === 'totalDispels') {
             const total = leaderboardValue(row, 'totalDispels', unit),
@@ -616,9 +631,9 @@ const createLeaderboardPanel = ({ domPrefix, urlPrefix, kind, groups, matchLabel
       const message = !pageRows.length && index === 0
       return '<tr><td>' + (start + pageRows.length + index + 1) + '</td><td' +
         (message ? ' class="leaderboard-empty"' : '') + '>' + (message ? emptyMessage : '-') + '</td>' +
-        group.keys.map((key) => key === 'totalDispels' || key === 'record'
-          ? '<td>-</td><td>-</td><td>-</td>'
-          : '<td>-</td>').join('') +
+        group.keys.map((key) =>
+          key === 'totalDispels' || key === 'record' ? '<td>-</td><td>-</td><td>-</td>' : '<td>-</td>'
+        ).join('') +
         '</tr>'
     }).join('')
     rows.innerHTML = renderedRows + emptyRows
@@ -643,6 +658,7 @@ const createLeaderboardPanel = ({ domPrefix, urlPrefix, kind, groups, matchLabel
         mode: state.unit === 'all' ? 'absolute' : 'average',
         kind,
       })
+      if (state.arenaType) params.set('arenaType', state.arenaType)
       const res = await fetch(`${api}/api/leaderboards?${params}`)
       const result = await res.json()
       if (!res.ok) throw Error(result.error || 'Unable to load leaderboard')
@@ -686,6 +702,12 @@ const createLeaderboardPanel = ({ domPrefix, urlPrefix, kind, groups, matchLabel
     updateUrl({ unit: unitControl.value })
     load()
   }
+  if (typeControl) {
+    typeControl.onchange = () => {
+      updateUrl({ type: typeControl.value })
+      load()
+    }
+  }
   periodControl.onchange = () => {
     updateUrl({ period: periodControl.value })
     load()
@@ -726,6 +748,7 @@ createLeaderboardPanel({
   urlPrefix: 'arena-leaderboard',
   kind: 'arena',
   groups: arenaLeaderboardGroups,
+  arenaTypes: ['all', '2v2', '3v3'],
   matchLabel: 'arenas',
   emptyMessage: 'No arena data yet.',
 }).load()
