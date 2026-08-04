@@ -555,8 +555,8 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
     local now = GetCurrTime()
     updateMetricTime(stats, now, match.startedAt ~= nil)
     stats.left = true
-    if bg and bg:GetStatus() < STATUS_WAIT_LEAVE and match.startedAt then
-        stats.deserted = math.floor((now - match.startedAt) / 1000)
+    if bg and bg:GetStatus() < STATUS_WAIT_LEAVE then
+        stats.deserted = match.startedAt and math.floor((now - match.startedAt) / 1000) or 0
     end
     recordQueueGroup(match, player, stats)
 end)
@@ -604,19 +604,14 @@ RegisterBGEvent(BG_EVENT_ON_PRE_DESTROY, function(event, bg, bgId, instanceId)
     local duration = math.max(0, math.floor((endedAt - startedAt) / 1000))
 
     for _, stats in pairs(match.players) do
-        local points = stats.team == match.winner and WINNER_ARENA_POINTS or LOSER_ARENA_POINTS
-        local player = GetPlayerByGUID(stats._guidLow)
-        if player then
-            player:ModifyArenaPoints(points)
-        else
-            -- A player can disconnect after leaving the arena. Keep the reward
-            -- durable in that case; the online path applies the normal core cap.
-            local result = CharDBQuery("SELECT arenaPoints FROM characters WHERE guid = " .. tostring(stats._guidLow))
-            if result then
-                local current = result:GetUInt32(0)
-                local maximum = tonumber(GetConfigValue("MaxArenaPoints")) or 10000
-                local updated = math.min(current + points, maximum)
-                CharDBExecute("UPDATE characters SET arenaPoints = " .. tostring(updated) .. " WHERE guid = " .. tostring(stats._guidLow))
+        local points = 0
+        if not stats.deserted then
+            points = stats.team == match.winner and WINNER_ARENA_POINTS or LOSER_ARENA_POINTS
+            local player = GetPlayerByGUID(stats._guidLow)
+            if player then
+                player:ModifyArenaPoints(points)
+            else
+                points = 0
             end
         end
         stats.arenaPoints = points
