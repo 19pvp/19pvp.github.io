@@ -1082,6 +1082,40 @@ index cebb7bc..1dfd5da 100644
      template <typename T>
      static int DBQueryAsync(lua_State* L, DatabaseWorkerPool<T>& db)
      {
+diff --git a/src/LuaEngine/methods/ItemMethods.h b/src/LuaEngine/methods/ItemMethods.h
+index 06ddf1d..6c57bbf 100644
+--- a/src/LuaEngine/methods/ItemMethods.h
++++ b/src/LuaEngine/methods/ItemMethods.h
+@@ -712,7 +712,14 @@ namespace LuaItem
+     int SetRandomProperty(lua_State* L, Item* item)
+     {
+         uint32 randomPropId = ALE::CHECKVAL<uint32>(L, 2);
++        Player* owner = item->GetOwner();
++        if (owner && item->IsEquipped())
++            for (uint32 slot = PROP_ENCHANTMENT_SLOT_0; slot < MAX_ENCHANTMENT_SLOT; ++slot)
++                owner->ApplyEnchantment(item, EnchantmentSlot(slot), false);
+         item->SetItemRandomProperties(randomPropId);
++        if (owner && item->IsEquipped())
++            for (uint32 slot = PROP_ENCHANTMENT_SLOT_0; slot < MAX_ENCHANTMENT_SLOT; ++slot)
++                owner->ApplyEnchantment(item, EnchantmentSlot(slot), true);
+         return 0;
+     }
+ 
+@@ -724,7 +731,14 @@ namespace LuaItem
+     int SetRandomSuffix(lua_State* L, Item* item)
+     {
+         uint32 randomPropId = ALE::CHECKVAL<uint32>(L, 2);
++        Player* owner = item->GetOwner();
++        if (owner && item->IsEquipped())
++            for (uint32 slot = PROP_ENCHANTMENT_SLOT_0; slot < MAX_ENCHANTMENT_SLOT; ++slot)
++                owner->ApplyEnchantment(item, EnchantmentSlot(slot), false);
+         item->SetItemRandomProperties(-randomPropId);
++        if (owner && item->IsEquipped())
++            for (uint32 slot = PROP_ENCHANTMENT_SLOT_0; slot < MAX_ENCHANTMENT_SLOT; ++slot)
++                owner->ApplyEnchantment(item, EnchantmentSlot(slot), true);
+         return 0;
+     }
+ 
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
 index c39801f..40b9249 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
