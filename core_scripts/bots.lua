@@ -40,6 +40,7 @@ for _, botInfo in pairs(fixedRoster) do
 end
 
 local bgTypeId = 2 -- Warsong Gulch
+local WSG_MAP_ID = 489
 local level = 19
 local minPlayersPerTeam = 5
 local queueDelayTime = 10
@@ -50,6 +51,13 @@ local pendingInvites = {}
 local activeBGInstances = {}
 local PVP19_SERVER_ID = "19PVP"
 local PVP19_ADDON_VERSION = "1.1"
+
+local function isWsgQueuePlayer(player)
+    for _, queuedPlayer in ipairs(GetPlayersInQueue(bgTypeId, bracketId)) do
+        if queuedPlayer:GetGUIDLow() == player:GetGUIDLow() then return true end
+    end
+    return false
+end
 
 local restoredInstances = {}
 for _, player in ipairs(GetPlayersInWorld()) do
@@ -325,7 +333,7 @@ local function CheckBGEmpty(player, mapId, instanceId)
 end
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
-    if not player or player:IsBot() then return end
+    if not player or player:IsBot() or not isWsgQueuePlayer(player) then return end
     local guidLow = player:GetGUIDLow()
     pendingInvites[guidLow] = nil
     print("[WSG Queue] Player queued " .. inspect({ player = player:GetName(), isBot = false }))
@@ -391,9 +399,10 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     end
 end)
 
-RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player)
+RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapId, instanceId, bg, teamId)
     if not player then return end
     local guidLow = player:GetGUIDLow()
+    if (not bg or bg:GetMapId() ~= WSG_MAP_ID) and not pendingInvites[guidLow] and not isWsgQueuePlayer(player) then return end
     local invitedInstanceId = pendingInvites[guidLow]
     pendingInvites[guidLow] = nil
 
@@ -512,7 +521,7 @@ CreateLuaEvent(function()
 end, 5000, 0)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
-    if not player then return end
+    if not player or mapId ~= WSG_MAP_ID then return end
     local isBot = player:IsBot()
     local playerName = player:GetName()
     local playerGuidLow = player:GetGUIDLow()
@@ -531,12 +540,13 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
+    if mapId ~= WSG_MAP_ID then return end
     local botText = (player and player:IsBot()) and "Bot" or "Player"
     local playerName = player and player:GetName() or "Unknown"
 
     local instId = (instanceId and instanceId > 0) and instanceId or 0
     local realBg = instId > 0 and GetBattleground(instId, bgTypeId) or nil
-    local map = GetMapById((mapId and mapId > 0) and mapId or 489, instId)
+    local map = GetMapById(mapId, instId)
 
     print("[DEBUG ON_LEAVE_BG] Hook fired " .. inspect({ type = botText, player = playerName, mapId = mapId or 489, instanceId = instId }))
 
@@ -587,6 +597,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_MAP_CHANGE, function(event, player)
     end
 
     if player:IsBot() then return end
+    if player:GetMapId() ~= WSG_MAP_ID then return end
     local inBG = player:InBattleground()
     print("[DEBUG ON_MAP_CHANGE (Event 28)] Map change " .. inspect({ player = player:GetName(), mapId = player:GetMapId(), inBG = inBG }))
 
@@ -605,7 +616,7 @@ end)
 
 -- Doors Open Hook (BG_EVENT_ON_START = 1)
 RegisterBGEvent(BG_EVENT_ON_START, function(event, bg, bgTypeIdVal, instanceId)
-    if not bg then return end
+    if not bg or bg:GetMapId() ~= WSG_MAP_ID then return end
     local instId = instanceId or bg:GetInstanceId()
     local map = GetMapById(489, instId)
 
