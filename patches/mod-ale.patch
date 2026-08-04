@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..fed8ff2 100644
+index d8886ce..94f0ad2 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -128,9 +128,9 @@ index d8886ce..fed8ff2 100644
 +        sALE->OnPlayerJoinBG(player);
 +    }
 +
-+    void OnPlayerLeaveBGQueue(Player* player) override
++    void OnPlayerLeaveBGQueue(Player* player, BattleGround* bg, TeamId teamId) override
 +    {
-+        sALE->OnPlayerLeaveBGQueue(player);
++        sALE->OnPlayerLeaveBGQueue(player, bg, teamId);
 +    }
 +
 +    void OnPlayerWhoRequest(Player* player, Player* target) override
@@ -222,7 +222,7 @@ index a8d6fc4..55ca5d2 100644
              lua_pushnil(L);
              return 1;
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
-index f83dd99..06da017 100644
+index f83dd99..3b93257 100644
 --- a/src/LuaEngine/Hooks.h
 +++ b/src/LuaEngine/Hooks.h
 @@ -238,8 +238,15 @@ namespace Hooks
@@ -234,7 +234,7 @@ index f83dd99..06da017 100644
 +        PLAYER_EVENT_ON_BG_QUEUE_ENTER                      =   7000,       // (event, player)
 +        PLAYER_EVENT_ON_ENTER_BG                            =   7001,       // (event, player, mapId, instanceId)
 +        PLAYER_EVENT_ON_LEAVE_BG                            =   7002,       // (event, player, mapId, instanceId)
-+        PLAYER_EVENT_ON_BG_QUEUE_LEAVE                      =   7003,       // (event, player)
++        PLAYER_EVENT_ON_BG_QUEUE_LEAVE                      =   7003,       // (event, player, mapId, instanceId, bg, teamId)
 +        PLAYER_EVENT_ON_WHO_REQUEST                         =   7004,       // (event, requesterPlayer, targetPlayer)
 +        PLAYER_EVENT_ON_INTERRUPT_CAST                      =   7005,       // (event, interrupter, target, targetWasCasting, successful)
 +        PLAYER_EVENT_ON_BG_INVITE                           =   7006,       // (event, player, mapId, instanceId, bg, teamId)
@@ -256,7 +256,7 @@ index f83dd99..06da017 100644
      };
  
 diff --git a/src/LuaEngine/LuaEngine.h b/src/LuaEngine/LuaEngine.h
-index a21640d..99b4a36 100644
+index a21640d..5bcb01f 100644
 --- a/src/LuaEngine/LuaEngine.h
 +++ b/src/LuaEngine/LuaEngine.h
 @@ -38,12 +38,14 @@ extern "C"
@@ -281,7 +281,7 @@ index a21640d..99b4a36 100644
 +    void OnPlayerInterruptCast(Player* interrupter, Player* target, bool targetWasCasting, bool successful);
      void OnLogin(Player* pPlayer);
 +    void OnPlayerJoinBG(Player* pPlayer);
-+    void OnPlayerLeaveBGQueue(Player* pPlayer);
++    void OnPlayerLeaveBGQueue(Player* pPlayer, BattleGround* bg, TeamId teamId);
 +    void OnEnterBG(Player* pPlayer, Battleground* bg);
 +    void OnLeaveBG(Player* pPlayer, Battleground* bg);
 +    void OnWhoRequest(Player* requester, Player* target);
@@ -538,7 +538,7 @@ index ec70cf5..390424d 100644
 +    CallAllFunctions(BGEventBindings, key);
 +}
 diff --git a/src/LuaEngine/hooks/PlayerHooks.cpp b/src/LuaEngine/hooks/PlayerHooks.cpp
-index 7649274..07a48ae 100644
+index 7649274..072be2b 100644
 --- a/src/LuaEngine/hooks/PlayerHooks.cpp
 +++ b/src/LuaEngine/hooks/PlayerHooks.cpp
 @@ -337,6 +337,16 @@ void ALE::OnPlayerSpellCast(Player* pPlayer, Spell* pSpell, bool skipCheck)
@@ -558,7 +558,7 @@ index 7649274..07a48ae 100644
  void ALE::OnLogin(Player* pPlayer)
  {
      START_HOOK(PLAYER_EVENT_ON_LOGIN);
-@@ -344,6 +354,59 @@ void ALE::OnLogin(Player* pPlayer)
+@@ -344,6 +354,63 @@ void ALE::OnLogin(Player* pPlayer)
      CallAllFunctions(PlayerEventBindings, key);
  }
  
@@ -580,10 +580,14 @@ index 7649274..07a48ae 100644
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
 +
-+void ALE::OnPlayerLeaveBGQueue(Player* pPlayer)
++void ALE::OnPlayerLeaveBGQueue(Player* pPlayer, BattleGround* bg, TeamId teamId)
 +{
 +    START_HOOK(PLAYER_EVENT_ON_BG_QUEUE_LEAVE);
 +    Push(pPlayer);
++    Push(bg ? bg->GetMapId() : 0);
++    Push(bg ? bg->GetInstanceID() : 0);
++    Push(bg);
++    Push(teamId);
 +    CallAllFunctions(PlayerEventBindings, key);
 +}
 +
@@ -774,7 +778,7 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..8d5a806 100644
+index cebb7bc..1dfd5da 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,10 @@
@@ -1003,7 +1007,7 @@ index cebb7bc..8d5a806 100644
 +     *     PLAYER_EVENT_ON_BG_QUEUE_ENTER                      =   7000,       // (event, player)
 +     *     PLAYER_EVENT_ON_ENTER_BG                            =   7001,       // (event, player, mapId, instanceId)
 +     *     PLAYER_EVENT_ON_LEAVE_BG                            =   7002,       // (event, player, mapId, instanceId)
-+     *     PLAYER_EVENT_ON_BG_QUEUE_LEAVE                      =   7003,       // (event, player)
++     *     PLAYER_EVENT_ON_BG_QUEUE_LEAVE                      =   7003,       // (event, player, mapId, instanceId, bg, teamId)
 +     *     PLAYER_EVENT_ON_INTERRUPT_CAST                      =   7005,       // (event, interrupter, target, targetWasCasting, successful)
       * };
       * </pre>

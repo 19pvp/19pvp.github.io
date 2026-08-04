@@ -113,7 +113,7 @@ index b10feb7b8..c5a2c96ef 100644
          DecreaseInvitedCount(teamId);
  
 diff --git a/src/server/game/Battlegrounds/BattlegroundQueue.cpp b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
-index 169f642ec..ca298faad 100644
+index 169f642ec..97206c5c6 100644
 --- a/src/server/game/Battlegrounds/BattlegroundQueue.cpp
 +++ b/src/server/game/Battlegrounds/BattlegroundQueue.cpp
 @@ -206,6 +206,32 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* group, Battle
@@ -149,7 +149,7 @@ index 169f642ec..ca298faad 100644
  void BattlegroundQueue::PlayerInvitedToBGUpdateAverageWaitTime(GroupQueueInfo* ginfo)
  {
      uint32 timeInQueue = std::max<uint32>(1, getMSTimeDiff(ginfo->JoinTime, GameTime::GetGameTimeMS().count()));
-@@ -279,6 +305,15 @@ void BattlegroundQueue::RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount)
+@@ -279,6 +305,20 @@ void BattlegroundQueue::RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount)
  
      GroupQueueInfo* groupInfo = itr->second;
  
@@ -159,13 +159,18 @@ index 169f642ec..ca298faad 100644
 +        // decreaseInvitedCount=false with a pending invite means they accepted and entered the BG.
 +        bool acceptedInvite = !decreaseInvitedCount && groupInfo->IsInvitedToBGInstanceGUID;
 +        if (!acceptedInvite)
-+            sScriptMgr->OnPlayerLeaveBGQueue(player);
++        {
++            Battleground* invitedBg = groupInfo->IsInvitedToBGInstanceGUID
++                ? sBattlegroundMgr->GetBattleground(groupInfo->IsInvitedToBGInstanceGUID, groupInfo->BgTypeId)
++                : nullptr;
++            sScriptMgr->OnPlayerLeaveBGQueue(player, invitedBg, groupInfo->teamId);
++        }
 +    }
 +
      uint32 _bracketId = groupInfo->BracketId;
      uint32 _groupType = groupInfo->GroupType;
  
-@@ -819,11 +854,27 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+@@ -819,11 +859,27 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
              m_SelectionPools[TEAM_ALLIANCE].Init();
              m_SelectionPools[TEAM_HORDE].Init();
  
@@ -197,7 +202,7 @@ index 169f642ec..ca298faad 100644
  
              if (!bg->HasFreeSlots())
                  bg->RemoveFromBGFreeSlotQueue();
-@@ -899,8 +950,27 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
+@@ -899,8 +955,27 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 diff, BattlegroundTypeId
                  return;
              }
  
@@ -227,7 +232,7 @@ index 169f642ec..ca298faad 100644
  
              bg->StartBattleground();
          }
-@@ -1337,6 +1407,8 @@ void BattlegroundQueue::InviteGroupToBG(GroupQueueInfo* ginfo, Battleground* bg,
+@@ -1337,6 +1412,8 @@ void BattlegroundQueue::InviteGroupToBG(GroupQueueInfo* ginfo, Battleground* bg,
          bg->IncreaseInvitedCount(ginfo->teamId);
  
          player->SetInviteForBattlegroundQueueType(bgQueueTypeId, ginfo->IsInvitedToBGInstanceGUID);
@@ -872,7 +877,7 @@ index 108f3cf7f..e9baca675 100644
  
      [[nodiscard]] virtual bool CanSendMessageBGQueue(BattlegroundQueue* /*queue*/, Player* /*leader*/, Battleground* /*bg*/, PvPDifficultyEntry const* /*bracketEntry*/) { return true; }
 diff --git a/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp b/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
-index 5ee4be5e1..804024579 100644
+index 5ee4be5e1..62cf13ed8 100644
 --- a/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
 +++ b/src/server/game/Scripting/ScriptDefines/PlayerScript.cpp
 @@ -197,6 +197,11 @@ void ScriptMgr::OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck)
@@ -891,9 +896,9 @@ index 5ee4be5e1..804024579 100644
      CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PLAYER_JOIN_BG, script->OnPlayerJoinBG(player));
  }
  
-+void ScriptMgr::OnPlayerLeaveBGQueue(Player* player)
++void ScriptMgr::OnPlayerLeaveBGQueue(Player* player, Battleground* bg, TeamId teamId)
 +{
-+    CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PLAYER_LEAVE_BG_QUEUE, script->OnPlayerLeaveBGQueue(player));
++    CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_PLAYER_LEAVE_BG_QUEUE, script->OnPlayerLeaveBGQueue(player, bg, teamId));
 +}
 +
  void ScriptMgr::OnPlayerJoinArena(Player* player)
@@ -912,7 +917,7 @@ index 5ee4be5e1..804024579 100644
      : ScriptObject(name, PLAYERHOOK_END)
  {
 diff --git a/src/server/game/Scripting/ScriptDefines/PlayerScript.h b/src/server/game/Scripting/ScriptDefines/PlayerScript.h
-index b718b81c5..dfa4a7c5f 100644
+index b718b81c5..ea96e5fc6 100644
 --- a/src/server/game/Scripting/ScriptDefines/PlayerScript.h
 +++ b/src/server/game/Scripting/ScriptDefines/PlayerScript.h
 @@ -67,6 +67,7 @@ enum PlayerHook
@@ -954,7 +959,7 @@ index b718b81c5..dfa4a7c5f 100644
      virtual void OnPlayerJoinBG(Player* /*player*/) { }
  
 +    // After player leaves queue for BG
-+    virtual void OnPlayerLeaveBGQueue(Player* /*player*/) { }
++    virtual void OnPlayerLeaveBGQueue(Player* /*player*/, Battleground* /*bg*/, TeamId /*teamId*/) { }
 +
      // After player enters queue for Arena
      virtual void OnPlayerJoinArena(Player* /*player*/) { }
@@ -969,7 +974,7 @@ index b718b81c5..dfa4a7c5f 100644
  
  #endif
 diff --git a/src/server/game/Scripting/ScriptMgr.h b/src/server/game/Scripting/ScriptMgr.h
-index 9fd4ff356..6aa1951e8 100644
+index 9fd4ff356..a057cc60a 100644
 --- a/src/server/game/Scripting/ScriptMgr.h
 +++ b/src/server/game/Scripting/ScriptMgr.h
 @@ -346,6 +346,7 @@ public: /* PlayerScript */
@@ -984,7 +989,7 @@ index 9fd4ff356..6aa1951e8 100644
      void OnPlayerEquip(Player* player, Item* it, uint8 bag, uint8 slot, bool update);
      void OnPlayerUnequip(Player* player, Item* it);
      void OnPlayerJoinBG(Player* player);
-+    void OnPlayerLeaveBGQueue(Player* player);
++    void OnPlayerLeaveBGQueue(Player* player, Battleground* bg, TeamId teamId);
      void OnPlayerJoinArena(Player* player);
      void OnPlayerGetMaxPersonalArenaRatingRequirement(Player const* player, uint32 minSlot, uint32& maxArenaRating) const;
      void OnPlayerLootItem(Player* player, Item* item, uint32 count, ObjectGuid lootguid);
