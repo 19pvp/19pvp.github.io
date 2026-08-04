@@ -16,7 +16,7 @@ Deno.test('aggregates all-time and rolling periods by stable player guid', () =>
   const store = new LeaderboardStore()
   const today = dateAt(2026, 8, 2)
   store.addMatch(match('1', 'Alice', { damageDone: 100, deserted: false }), today)
-  store.addMatch(match('1', 'Alice Renamed', { damageDone: 50, deserted: true }), dateAt(2026, 8, 1))
+  store.addMatch(match('1', 'Alice Renamed', { damageDone: 50, deserted: 37 }), dateAt(2026, 8, 1))
   store.addMatch(match('2', 'Bob', { damageDone: 120 }), dateAt(2026, 7, 1))
 
   const all = store.getLeaderboard('damageDone', 'all')
@@ -42,6 +42,30 @@ Deno.test('aggregates arena metrics without flag metrics', () => {
     data[0]?.stats.games !== 2 || data[0]?.stats.wins !== 1 || data[0]?.stats.losses !== 1
   ) {
     throw Error('arena metrics aggregation failed')
+  }
+})
+
+Deno.test('does not give a win to an invited player who did not enter', () => {
+  const store = new LeaderboardStore()
+  store.addMatch({
+    winner: 0,
+    players: {
+      '1': { playerGuid: '1', name: 'Winner', team: 0, deserted: false, timePlayed: 0 },
+      '2': { playerGuid: '2', name: 'Invited winner', team: 0, deserted: 0, timePlayed: 0 },
+      '3': { playerGuid: '3', name: 'No-show loser', team: 1, deserted: 0, timePlayed: 0 },
+    },
+  }, Date.now())
+
+  const data = store.getLeaderboardData('all', 'record')
+  const winner = data.find((row) => row.playerGuid === '1')
+  const invitedWinner = data.find((row) => row.playerGuid === '2')
+  const noShowLoser = data.find((row) => row.playerGuid === '3')
+  if (
+    !winner || winner.stats.games !== 1 || winner.stats.wins !== 1 || winner.stats.losses !== 0 ||
+    invitedWinner ||
+    !noShowLoser || noShowLoser.stats.games !== 1 || noShowLoser.stats.wins !== 0 || noShowLoser.stats.losses !== 1
+  ) {
+    throw Error('non-entered arena result aggregation failed')
   }
 })
 

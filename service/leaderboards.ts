@@ -43,6 +43,35 @@ const applyEvent = (event: Pick<WebEvent, 'id' | 'at' | 'data' | 'type'> | SqlRo
   storeForEvent(event).addMatch(eventData(event.data), eventTimestamp(event))
 }
 
+const missingClassGuids = new Set<string>()
+
+const hydrateMissingClasses = async () => {
+  for (const store of stores) {
+    for (const guid of store.players.keys()) {
+      const player = store.players.get(guid)
+      if (player && player.class === undefined && /^\d+$/.test(guid)) missingClassGuids.add(guid)
+    }
+  }
+
+  const guids = [...missingClassGuids]
+  for (let offset = 0; offset < guids.length; offset += BATCH_SIZE) {
+    const classes = await characters.raw.sql`
+      SELECT guid, class FROM characters WHERE guid IN (${guids.slice(offset, offset + BATCH_SIZE).join(',')})
+    `
+    for (const row of classes) {
+      const guid = String(row.guid)
+      const classId = Number(row.class)
+      if (!Number.isInteger(classId) || classId <= 0) continue
+
+      missingClassGuids.delete(guid)
+      for (const store of stores) {
+        const player = store.players.get(guid)
+        if (player) player.class = classId
+      }
+    }
+  }
+}
+
 const replay = async () => {
   let cursor = 0
   while (true) {
@@ -63,29 +92,7 @@ const replay = async () => {
     }
   }
 
-  const guids = [...new Set(stores.flatMap((store) => [...store.players.keys()]))].filter((guid) => /^\d+$/.test(guid))
-  const existingGuids = new Set<string>()
-  for (let offset = 0; offset < guids.length; offset += BATCH_SIZE) {
-    const classes = await characters.raw.sql`
-      SELECT guid, class FROM characters WHERE guid IN (${guids.slice(offset, offset + BATCH_SIZE).join(',')})
-    `
-    for (const row of classes) {
-      const guid = String(row.guid)
-      existingGuids.add(guid)
-      const classId = Number(row.class)
-      if (Number.isInteger(classId) && classId > 0) {
-        for (const store of stores) {
-          const player = store.players.get(guid)
-          if (player) player.class = classId
-        }
-      }
-    }
-  }
-  for (const store of stores) {
-    for (const guid of store.players.keys()) {
-      if (!existingGuids.has(guid)) store.players.delete(guid)
-    }
-  }
+  await hydrateMissingClasses()
 
   replayedThrough = cursor
 }
@@ -99,6 +106,7 @@ const handleMatchEvent = async (event: WebEvent) => {
   await leaderboardReady
   if (Number(event.id) <= replayedThrough) return
   applyEvent(event)
+  await hydrateMissingClasses()
   replayedThrough = Math.max(replayedThrough, Number(event.id) || replayedThrough)
 }
 

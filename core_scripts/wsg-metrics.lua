@@ -310,6 +310,47 @@ local function snapshotArenaScore(player, instanceId, bg)
     updateScoreMetrics(stats, score)
 end
 
+local function finishArenaMatch(match, winner, duration)
+    if not match or match.finished then return end
+    match.finished = true
+    match.winner = winner
+
+    for _, stats in pairs(match.players) do
+        local points = 0
+        local entered = stats.deserted == false or stats.timePlayed > 0
+        if entered and not stats.deserted then
+            points = stats.team == winner and WINNER_ARENA_POINTS or LOSER_ARENA_POINTS
+            local player = GetPlayerByGUID(stats._guid)
+            if player then
+                player:ModifyArenaPoints(points)
+            else
+                points = 0
+            end
+        end
+        stats.arenaPoints = points
+    end
+
+    for _, stats in pairs(match.players) do
+        finalizeMetricStats(stats)
+        arenaInvites[stats.playerGuid] = nil
+        stats._guid = nil
+    end
+
+    print("[Arena Metrics] Closing match instance -> " .. inspect({
+        instanceId = match.instanceId,
+        duration = duration,
+        winner = winner,
+    }))
+    SendWebEvent("PVP_ARENA_STATS", nil, {
+        instanceId = match.instanceId,
+        bgId = match.bgId,
+        duration = duration,
+        winner = winner,
+        players = match.players,
+    })
+    matches[match.instanceId] = nil
+end
+
 local function getMetricStats(player, instanceId)
     local stats = getWSGStats(player, instanceId)
     if stats then return stats end
@@ -576,6 +617,40 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player)
     stats.left = true
     stats.deserted = 0
     recordQueueGroup(match, player, stats)
+
+    for _, invitedInstanceId in pairs(arenaInvites) do
+        if invitedInstanceId == instanceId then return end
+    end
+
+    local hasEntered = false
+    for _, memberStats in pairs(match.players) do
+        if memberStats.deserted == false or memberStats.timePlayed > 0 then
+            hasEntered = true
+            break
+        end
+    end
+    if not hasEntered then
+        matches[instanceId] = nil
+        return
+    end
+
+    local loserTeam
+    for _, memberStats in pairs(match.players) do
+        if memberStats.deserted == 0 then
+            if loserTeam and loserTeam ~= memberStats.team then
+                matches[instanceId] = nil
+                return
+            end
+            loserTeam = memberStats.team
+        end
+    end
+    if not loserTeam then return end
+
+    local winner = loserTeam == TEAM_ALLIANCE and TEAM_HORDE or TEAM_ALLIANCE
+    for _, memberStats in pairs(match.players) do
+        if memberStats.team == loserTeam then memberStats.deserted = 0 end
+    end
+    finishArenaMatch(match, winner, 0)
 end)
 
 RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
@@ -603,40 +678,7 @@ RegisterBGEvent(BG_EVENT_ON_PRE_DESTROY, function(event, bg, bgId, instanceId)
     local endedAt = match.endedAt
     local startedAt = match.startedAt or match.createdAt
     local duration = math.max(0, math.floor((endedAt - startedAt) / 1000))
-
-    for _, stats in pairs(match.players) do
-        local points = 0
-        if not stats.deserted then
-            points = stats.team == match.winner and WINNER_ARENA_POINTS or LOSER_ARENA_POINTS
-            local player = GetPlayerByGUID(stats._guid)
-            if player then
-                player:ModifyArenaPoints(points)
-            else
-                points = 0
-            end
-        end
-        stats.arenaPoints = points
-    end
-
-    for _, stats in pairs(match.players) do
-        finalizeMetricStats(stats)
-        arenaInvites[stats.playerGuid] = nil
-        stats._guid = nil
-    end
-
-    print("[Arena Metrics] Closing match instance -> " .. inspect({
-        instanceId = instanceId,
-        duration = duration,
-        winner = match.winner,
-    }))
-    SendWebEvent("PVP_ARENA_STATS", nil, {
-        instanceId = instanceId,
-        bgId = match.bgId,
-        duration = duration,
-        winner = match.winner,
-        players = match.players,
-    })
-    matches[instanceId] = nil
+    finishArenaMatch(match, match.winner, duration)
 end)
 
 -- DEBUG

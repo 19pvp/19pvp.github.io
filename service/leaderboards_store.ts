@@ -279,7 +279,10 @@ export class LeaderboardStore {
       const guid = String(stats.playerGuid || guidKey)
       if (!guid) continue
       const winner = (payload as { winner?: unknown }).winner
-      const hasWinner = winner !== undefined && winner !== null && stats.team !== undefined && stats.team !== null
+      const team = stats.team
+      const hasWinner = typeof winner === 'number' && typeof team === 'number'
+      const entered = stats.deserted === undefined || stats.deserted === false || numberValue(stats.timePlayed) > 0
+      const hasResult = !hasWinner || entered || team !== winner
 
       let player = this.players.get(guid)
       if (!player) {
@@ -287,7 +290,6 @@ export class LeaderboardStore {
         this.players.set(guid, player)
       }
       if (typeof stats.name === 'string' && stats.name) player.name = stats.name
-      player.matches++
 
       const dayBucket = includeDaily ? bucketIndex(day) : -1
       if (includeDaily && player.dayIds[dayBucket] !== day) {
@@ -295,15 +297,18 @@ export class LeaderboardStore {
         player.days.fill(0, dayBucket * LEADERBOARD_METRICS.length, (dayBucket + 1) * LEADERBOARD_METRICS.length)
         player.dayMatches[dayBucket] = 0
       }
-      if (includeDaily) {
-        player.dayMatches[dayBucket]++
-        player.monthMatches++
-        if (day >= this.currentDay - WEEK_DAYS + 1) player.weekMatches++
-        if (day === this.currentDay) player.todayMatches++
+      if (hasResult) {
+        player.matches++
+        if (includeDaily) {
+          player.dayMatches[dayBucket]++
+          player.monthMatches++
+          if (day >= this.currentDay - WEEK_DAYS + 1) player.weekMatches++
+          if (day === this.currentDay) player.todayMatches++
+        }
       }
 
       for (const [key] of LEADERBOARD_METRICS) {
-        const value = numberValue(stats[key])
+        const value = key === 'deserted' ? (numberValue(stats[key]) > 0 ? 1 : 0) : numberValue(stats[key])
         const index = baseMetricIndex.get(key)!
         player.all[index] += value
         if (!includeDaily) continue
@@ -313,14 +318,16 @@ export class LeaderboardStore {
         if (day >= this.currentDay - WEEK_DAYS + 1) player.week[index] += value
         if (day === this.currentDay) player.today[index] += value
       }
-      player.all[metricIndexes.games] += 1
-      if (includeDaily) {
-        player.days[dayBucket * LEADERBOARD_METRICS.length + metricIndexes.games] += 1
-        player.month[metricIndexes.games] += 1
-        if (day >= this.currentDay - WEEK_DAYS + 1) player.week[metricIndexes.games] += 1
-        if (day === this.currentDay) player.today[metricIndexes.games] += 1
+      if (hasResult) {
+        player.all[metricIndexes.games] += 1
+        if (includeDaily) {
+          player.days[dayBucket * LEADERBOARD_METRICS.length + metricIndexes.games] += 1
+          player.month[metricIndexes.games] += 1
+          if (day >= this.currentDay - WEEK_DAYS + 1) player.week[metricIndexes.games] += 1
+          if (day === this.currentDay) player.today[metricIndexes.games] += 1
+        }
       }
-      if (hasWinner) {
+      if (hasWinner && hasResult) {
         const metric = String(stats.team) === String(winner) ? metricIndexes.wins : metricIndexes.losses
         player.all[metric] += 1
         if (includeDaily) {
