@@ -24,16 +24,6 @@ local function isFlagCarrier(player)
     return player:HasAura(HORDE_FLAG) or player:HasAura(ALLIANCE_FLAG)
 end
 
-RegisterSpellEvent(HAND_OF_PROTECTION, SPELL_EVENT_ON_CHECK_CAST, function(event, caster, spell, strict)
-    local target = spell:GetTarget()
-    if not target or not caster or target:GetGUID() == caster:GetGUID() then return end
-
-    local targetPlayer = target:ToPlayer()
-    if targetPlayer and isFlagCarrier(targetPlayer) then
-        return false
-    end
-end)
-
 local function isMatchStarted(player)
     return not player:HasAura(PREPARATION_AURA)
 end
