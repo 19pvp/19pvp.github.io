@@ -29,6 +29,17 @@ local function ReplaceWarriorWeapon(bot)
         if not bot:GetItemByEntry(itemId) then bot:AddItem(itemId, 1) end
     end
 
+    for _, trinket in ipairs({
+        { itemId = 18706, slot = SLOT_TRINKET1 },
+        { itemId = 13966, slot = SLOT_TRINKET2 },
+    }) do
+        local equipped = bot:GetEquippedItemBySlot(trinket.slot)
+        if not equipped or equipped:GetEntry() ~= trinket.itemId then
+            local item = bot:GetItemByEntry(trinket.itemId)
+            if item then bot:EquipItem(item, trinket.slot) end
+        end
+    end
+
     if not bot:HasSpell(55500) then bot:LearnSpell(55500) end
 end
 
