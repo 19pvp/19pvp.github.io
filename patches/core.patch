@@ -598,18 +598,6 @@ index 849ee2627..c8375251d 100644
      else
      {
          if (count < -1)
-diff --git a/src/server/game/Groups/Group.cpp b/src/server/game/Groups/Group.cpp
-index e6799fec5..392ce779a 100644
---- a/src/server/game/Groups/Group.cpp
-+++ b/src/server/game/Groups/Group.cpp
-@@ -2072,6 +2072,7 @@ GroupJoinBattlegroundResult Group::CanJoinBattlegroundQueue(Battleground const*
-         if (!member->HasFreeBattlegroundQueueId())
-             return ERR_BATTLEGROUND_TOO_MANY_QUEUES;
- 
-+
-         // don't let join if someone from the group is already in that bg queue
-         if (member->InBattlegroundQueueForBattlegroundQueueType(bgQueueTypeId))
-         {
 diff --git a/src/server/game/Handlers/ArenaTeamHandler.cpp b/src/server/game/Handlers/ArenaTeamHandler.cpp
 index 65ad0e0c7..6137982cc 100644
 --- a/src/server/game/Handlers/ArenaTeamHandler.cpp
@@ -645,24 +633,10 @@ index 65ad0e0c7..6137982cc 100644
  }
  
 diff --git a/src/server/game/Handlers/BattleGroundHandler.cpp b/src/server/game/Handlers/BattleGroundHandler.cpp
-index f9cbfac32..81413cc68 100644
+index f9cbfac32..c5b6cdb90 100644
 --- a/src/server/game/Handlers/BattleGroundHandler.cpp
 +++ b/src/server/game/Handlers/BattleGroundHandler.cpp
-@@ -177,12 +177,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
-         {
-             err = ERR_IN_NON_RANDOM_BG;
-         }
--        else if (_player->InBattlegroundQueueForBattlegroundQueueType(BATTLEGROUND_QUEUE_2v2) ||
--            _player->InBattlegroundQueueForBattlegroundQueueType(BATTLEGROUND_QUEUE_3v3) ||
--            _player->InBattlegroundQueueForBattlegroundQueueType(BATTLEGROUND_QUEUE_5v5)) // can't be already queued for arenas
--        {
--            err = ERR_BATTLEGROUND_QUEUED_FOR_RATED;
--        }
-+
-         // don't let Death Knights join BG queues when they are not allowed to be teleported yet
-         else if (_player->IsClass(CLASS_DEATH_KNIGHT, CLASS_CONTEXT_TELEPORT) && _player->GetMapId() == MAP_EBON_HOLD && !_player->IsGameMaster() && !_player->HasSpell(50977))
-         {
-@@ -231,12 +226,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
+@@ -231,12 +231,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
              {
                  err = ERR_IN_NON_RANDOM_BG;
              }
@@ -676,7 +650,7 @@ index f9cbfac32..81413cc68 100644
              else if (member->InBattlegroundQueueForBattlegroundQueueType(bgQueueTypeId)) // queued for this bg
              {
                  err = ERR_BATTLEGROUND_NONE;
-@@ -533,6 +523,10 @@ void WorldSession::HandleBattleFieldPortOpcode(WorldPacket& recvData)
+@@ -533,6 +528,10 @@ void WorldSession::HandleBattleFieldPortOpcode(WorldPacket& recvData)
              auto playerBgQueueTypeId = _player->GetBattlegroundQueueTypeId(i);
              if (playerBgQueueTypeId != BATTLEGROUND_QUEUE_NONE && playerBgQueueTypeId != bgQueueTypeId)
              {
@@ -687,25 +661,7 @@ index f9cbfac32..81413cc68 100644
                  _player->RemoveBattlegroundQueueId(playerBgQueueTypeId);
                  sBattlegroundMgr->GetBattlegroundQueue(playerBgQueueTypeId).RemovePlayer(_player->GetGUID(), true);
              }
-@@ -667,8 +661,6 @@ void WorldSession::HandleBattlefieldStatusOpcode(WorldPacket& /*recvData*/)
- 
- void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
- {
--    LOG_DEBUG("network", "WORLD: CMSG_BATTLEMASTER_JOIN_ARENA");
--
-     ObjectGuid guid; // arena Battlemaster guid
-     uint8 arenaslot; // 2v2, 3v3 or 5v5
-     uint8 asGroup;   // asGroup
-@@ -676,6 +668,8 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
- 
-     recvData >> guid >> arenaslot >> asGroup >> isRated;
- 
-+    LOG_DEBUG("network", "WORLD: CMSG_BATTLEMASTER_JOIN_ARENA guid={} arenaslot={} asGroup={} isRated={}", guid.ToString(), arenaslot, asGroup, isRated);
-+
-     // can't queue for rated without a group
-     if (isRated && !asGroup)
-         return;
-@@ -684,11 +678,6 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
+@@ -684,11 +683,6 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
      if (_player->InBattleground())
          return;
  
@@ -717,7 +673,7 @@ index f9cbfac32..81413cc68 100644
      // get arena type
      uint8 arenatype = 0;
      uint32 ateamId = 0;
-@@ -735,11 +724,10 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
+@@ -735,11 +729,10 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
          return;
  
      // must have free queue slot
@@ -732,7 +688,7 @@ index f9cbfac32..81413cc68 100644
          return;
      }
 diff --git a/src/server/game/Handlers/ChannelHandler.cpp b/src/server/game/Handlers/ChannelHandler.cpp
-index 2193daaab..9d120cb43 100644
+index 2193daaab..be5735d55 100644
 --- a/src/server/game/Handlers/ChannelHandler.cpp
 +++ b/src/server/game/Handlers/ChannelHandler.cpp
 @@ -16,6 +16,7 @@
@@ -743,11 +699,10 @@ index 2193daaab..9d120cb43 100644
  #include "ObjectMgr.h"                                      // for normalizePlayerName
  #include "Player.h"
  #include <cctype>
-@@ -28,7 +29,19 @@ void WorldSession::HandleJoinChannel(WorldPacket& recvPacket)
- 
+@@ -29,6 +30,19 @@ void WorldSession::HandleJoinChannel(WorldPacket& recvPacket)
      recvPacket >> channelId >> unknown1 >> unknown2 >> channelName >> password;
  
--    LOG_DEBUG("chat.system", "CMSG_JOIN_CHANNEL {} Channel: {}, unk1: {}, unk2: {}, channel: {}, password: {}", GetPlayerInfo(), channelId, unknown1, unknown2, channelName, password);
+     LOG_DEBUG("chat.system", "CMSG_JOIN_CHANNEL {} Channel: {}, unk1: {}, unk2: {}, channel: {}, password: {}", GetPlayerInfo(), channelId, unknown1, unknown2, channelName, password);
 +    if (channelId == 1 || channelName == "General" || channelName.rfind("General - ", 0) == 0)
 +    {
 +        channelId = 1;
@@ -1070,10 +1025,10 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..f7d34810b 100644
+index 0f71208b0..d52fd0610 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
-@@ -40,6 +40,121 @@ void SpellMgr::LoadSpellInfoCorrections()
+@@ -40,6 +40,109 @@ void SpellMgr::LoadSpellInfoCorrections()
  {
      uint32 oldMSTime = getMSTime();
  
@@ -1147,13 +1102,6 @@ index 0f71208b0..f7d34810b 100644
 +        effect.ChainTarget = 0;
 +    });
 +
-+    // Bull Rush (4083): 0.5s duration, 100% movement speed bonus
-+    ApplySpellFix({ 4083 }, [](SpellInfo* spellInfo)
-+    {
-+        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(327); // 0.5s
-+        spellInfo->Effects[EFFECT_0].BasePoints = 99; // +100% move speed
-+    });
-+
 +    // Stomp (55196): reduce armor effect duration to 8s
 +    ApplySpellFix({ 55196 }, [](SpellInfo* spellInfo)
 +    {
@@ -1170,20 +1118,15 @@ index 0f71208b0..f7d34810b 100644
 +        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(31); // 8s
 +    });
 +
-+    // War Stomp (tauren racial 20549): trigger Bull Rush (4083) on caster and Stomp (55196) on targets
++    // War Stomp (tauren racial 20549): trigger Stomp (55196) on targets
 +    ApplySpellFix({ 20549 }, [](SpellInfo* spellInfo)
 +    {
-+        // Effect 1: Trigger Bull Rush (4083) on caster
-+        spellInfo->Effects[EFFECT_1].Effect = SPELL_EFFECT_TRIGGER_SPELL;
-+        spellInfo->Effects[EFFECT_1].TriggerSpell = 4083;
-+        spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
-+
 +        // Effect 2: Trigger Stomp (55196) on enemy targets in radius
-+        spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_TRIGGER_SPELL;
-+        spellInfo->Effects[EFFECT_2].TriggerSpell = 55196;
-+        spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_SRC_CASTER);
-+        spellInfo->Effects[EFFECT_2].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENEMY);
-+        spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(14); // 8 yd radius
++        spellInfo->Effects[EFFECT_1].Effect = SPELL_EFFECT_TRIGGER_SPELL;
++        spellInfo->Effects[EFFECT_1].TriggerSpell = 55196;
++        spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_SRC_CASTER);
++        spellInfo->Effects[EFFECT_1].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENEMY);
++        spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(14); // 8 yd radius
 +    });
 +
 +    // Thunder Clap must not trigger weapon enchants.
