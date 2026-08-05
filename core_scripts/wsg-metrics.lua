@@ -13,6 +13,7 @@ local WSG_ARENA_TEAM_TYPE = 5
 local PREPARATION_AURA = 44521
 local HORDE_FLAG = 23333
 local ALLIANCE_FLAG = 23335
+local HAND_OF_PROTECTION = 1022
 local ARENA_PREPARATION_AURA = 32727
 local WINNER_ARENA_POINTS = 10
 local LOSER_ARENA_POINTS = 5
@@ -22,6 +23,16 @@ local NO_FAKE_CAST_CLASSES = { [WARRIOR] = true, [HUNTER] = true, [ROGUE] = true
 local function isFlagCarrier(player)
     return player:HasAura(HORDE_FLAG) or player:HasAura(ALLIANCE_FLAG)
 end
+
+RegisterSpellEvent(HAND_OF_PROTECTION, SPELL_EVENT_ON_CHECK_CAST, function(event, caster, spell, strict)
+    local target = spell:GetTarget()
+    if not target or not caster or target:GetGUID() == caster:GetGUID() then return end
+
+    local targetPlayer = target:ToPlayer()
+    if targetPlayer and isFlagCarrier(targetPlayer) then
+        return false
+    end
+end)
 
 local function isMatchStarted(player)
     return not player:HasAura(PREPARATION_AURA)
@@ -66,7 +77,7 @@ local DISPEL_PROTECTIVE_SPELLS = {
     [528] = true,   -- Cure Disease
     -- Paladin
     [1152] = true,  -- Purify
-    [1022] = true,  -- Hand of Protection
+    [HAND_OF_PROTECTION] = true,  -- Hand of Protection
     [1044] = true,  -- Hand of Freedom
     -- Shaman
     [370] = true,   -- Purge
