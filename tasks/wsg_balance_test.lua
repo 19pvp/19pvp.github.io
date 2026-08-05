@@ -407,21 +407,23 @@ local teamNoWarrior = { { name = "RealPriest", class = 5 } }
 local added1 = balance.selectClassesToAdd(teamNoWarrior, 1)
 assert(added1[1] == 1, "Warrior (class 1) is picked first when no warrior is in team")
 
--- 16b: Real player is a Warrior -> Warrior is skipped (already in team), Druid (11) picked first
+-- 16b: Real player is a Warrior -> Warrior remains the first filler, then Druid (11)
 local teamRealWarrior = { { name = "RealWarrior", class = 1 } }
+local addedRealWarrOne = balance.selectClassesToAdd(teamRealWarrior, 1)
+assert(addedRealWarrOne[1] == 1, "Warrior (1) is still picked when it is already in team and only one bot is added")
 local addedRealWarr = balance.selectClassesToAdd(teamRealWarrior, 2)
-assert(addedRealWarr[1] == 11, "Druid (11) is picked first when real Warrior is already in team")
-assert(addedRealWarr[2] == 8, "Mage (8) is picked second when real Warrior is already in team")
+assert(addedRealWarr[1] == 1, "Warrior (1) remains the first filler when it is already in team")
+assert(addedRealWarr[2] == 11, "Druid (11) is picked second when real Warrior is already in team")
 
--- 16c: 3-player premade (Warrior, Druid, Mage) -> Unrepresented Priest (5) and Rogue (4) added next
+-- 16c: 3-player premade (Warrior, Druid, Mage) -> Warrior first, then unrepresented Priest (5)
 local teamTrio = {
     { name = "RealWarrior", class = 1 },
     { name = "RealDruid", class = 11 },
     { name = "RealMage", class = 8 },
 }
 local addedTrio = balance.selectClassesToAdd(teamTrio, 2)
-assert(addedTrio[1] == 5, "Priest (5) is added first to complete unrepresented classes")
-assert(addedTrio[2] == 4, "Rogue (4) is added second to complete unrepresented classes")
+assert(addedTrio[1] == 1, "Warrior (1) remains the first filler")
+assert(addedTrio[2] == 5, "Priest (5) is added second to complete unrepresented classes")
 
 -- 16d: 2 real players (Priest, Rogue) -> Warrior (1) -> Druid (11) -> Mage (8)
 local teamDuo = { { name = "RealPriest", class = 5 }, { name = "RealRogue", class = 4 } }

@@ -257,36 +257,30 @@ function WsgBalance.selectClassesToAdd(teamPlayers, count)
         end
     end
 
-    local warriorInTeam = presentClasses[1] == true
-    local selectedClasses = {}
+    -- Warrior is the highest-priority filler, even when the team already has one.
+    local selectedClasses = { 1 }
+    presentClasses[1] = true
 
-    for i = 1, count do
+    for i = 2, count do
         local chosenClass = nil
 
-        if not warriorInTeam then
-            chosenClass = 1
-        else
-            for _, classId in ipairs({ 11, 8, 5, 4 }) do
-                if not presentClasses[classId] then
-                    chosenClass = classId
-                    break
-                end
+        for _, classId in ipairs({ 11, 8, 5, 4 }) do
+            if not presentClasses[classId] then
+                chosenClass = classId
+                break
             end
+        end
 
-            if not chosenClass then
-                for _, classId in ipairs({ 11, 8, 5, 4, 1 }) do
-                    chosenClass = classId
-                    break
-                end
+        if not chosenClass then
+            for _, classId in ipairs({ 11, 8, 5, 4, 1 }) do
+                chosenClass = classId
+                break
             end
         end
 
         chosenClass = chosenClass or 11
         table.insert(selectedClasses, chosenClass)
         presentClasses[chosenClass] = true
-        if chosenClass == 1 then
-            warriorInTeam = true
-        end
     end
 
     return selectedClasses

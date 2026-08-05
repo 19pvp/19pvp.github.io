@@ -16,12 +16,20 @@ local startupBotSpecs = custom_data and custom_data.wsg_bot_specs or {}
 local function ReplaceWarriorWeapon(bot)
     if not bot or bot:GetClass() ~= 1 then return end
 
-    local oldCount = bot:GetItemCount(1459)
-    if oldCount > 0 then bot:RemoveItem(1459, oldCount) end
+    for _, itemId in ipairs({ 1459, 4818 }) do
+        local oldCount = bot:GetItemCount(itemId)
+        if oldCount > 0 then bot:RemoveItem(itemId, oldCount) end
+    end
 
     local weapon = bot:GetItemByEntry(1482)
     if not weapon then weapon = bot:AddItem(1482, 1) end
     if weapon then weapon:SetEnchantment(1900, 0, 0) end
+
+    for _, itemId in ipairs({ 18706, 13966, 14530 }) do
+        if not bot:GetItemByEntry(itemId) then bot:AddItem(itemId, 1) end
+    end
+
+    if not bot:HasSpell(55500) then bot:LearnSpell(55500) end
 end
 
 local function InitializeBot(bot)
