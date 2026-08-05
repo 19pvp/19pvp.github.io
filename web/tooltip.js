@@ -10,6 +10,9 @@ const statLabels = {
   5: 'Intellect',
   6: 'Spirit',
   7: 'Stamina',
+  12: 'Defense',
+  13: 'Dodge',
+  15: 'Block',
   31: 'Hit Rating',
   32: 'Critical Strike Rating',
   36: 'Haste Rating',
@@ -44,11 +47,78 @@ const itemTypes = {
   16: 'Glyph',
 }
 
+const inventorySlots = {
+  1: 'Head',
+  2: 'Neck',
+  3: 'Shoulders',
+  4: 'Shirt',
+  5: 'Chest',
+  6: 'Waist',
+  7: 'Legs',
+  8: 'Feet',
+  9: 'Wrist',
+  10: 'Hands',
+  11: 'Finger',
+  12: 'Trinket',
+  13: 'One-Hand',
+  14: 'Shield',
+  15: 'Ranged',
+  16: 'Back',
+  17: 'Two-Hand',
+  19: 'Tabard',
+  20: 'Chest',
+  21: 'Main Hand',
+  22: 'Off Hand',
+  23: 'Held In Off-hand',
+  25: 'Thrown',
+  26: 'Ranged',
+}
+
+const armorTypes = {
+  1: 'Cloth',
+  2: 'Leather',
+  3: 'Mail',
+  4: 'Plate',
+  6: 'Shield',
+}
+
+const weaponTypes = {
+  0: 'Axe',
+  1: 'Axe',
+  2: 'Bow',
+  3: 'Gun',
+  4: 'Mace',
+  5: 'Mace',
+  6: 'Polearm',
+  7: 'Sword',
+  8: 'Sword',
+  10: 'Staff',
+  13: 'Fist Weapon',
+  15: 'Dagger',
+  16: 'Thrown',
+  18: 'Crossbow',
+  19: 'Wand',
+  20: 'Fishing Pole',
+}
+
+const damageTypes = {
+  1: 'Holy',
+  2: 'Fire',
+  3: 'Nature',
+  4: 'Frost',
+  5: 'Shadow',
+  6: 'Arcane',
+}
+
 const asNumber = (value) => typeof value === 'number' && Number.isFinite(value) ? value : 0
 const asRecord = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 const formatMilliseconds = (value) => {
   const seconds = asNumber(value) / 1000
   return seconds >= 60 ? `${Math.floor(seconds / 60)} min ${Math.round(seconds % 60)} sec` : `${seconds} sec`
+}
+const formatNumber = (value) => {
+  const rounded = Math.round(value * 100) / 100
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded)
 }
 
 const text = (tag, value, className = '') => {
@@ -63,9 +133,34 @@ const addLine = (parent, value, className = '') => {
   parent.append(text('div', value, className))
 }
 
+const addPairLine = (parent, left, right, className = '') => {
+  if (left === right) right = ''
+  if (!left && right) [left, right] = [right, '']
+  const line = text('div', '', `tooltip-pair ${className}`.trim())
+  line.append(text('span', left))
+  if (right) line.append(text('span', right))
+  parent.append(line)
+}
+
 const addDescription = (parent, value, className = 'tooltip-description') => {
   if (!value) return
   addLine(parent, value, className)
+}
+
+const renderEnchant = (parent, entry, enchantId) => {
+  const key = entry.suffix !== undefined ? `enchant-suffix:${enchantId}` : `enchant-random:${enchantId}`
+  const enchant = database[key]
+  if (!enchant || typeof enchant !== 'object') return false
+  const factor = entry.suffix === undefined ? 1 : asNumber(entry.suffix)
+  const stats = Object.entries(enchant)
+    .filter(([key]) => key.startsWith('stat_'))
+    .map(([key, value]) => {
+      const amount = asNumber(value) * factor
+      const label = statLabels[key.slice(5)] || `Stat ${key.slice(5)}`
+      return `${amount > 0 ? '+' : ''}${formatNumber(amount)} ${label}`
+    })
+  addLine(parent, `${enchant.name}${stats.length ? ` (${stats.join(', ')})` : ''}`, 'tooltip-stat')
+  return true
 }
 
 const addIcon = (parent, value, quality) => {
@@ -81,8 +176,14 @@ const addIcon = (parent, value, quality) => {
 
 const effectiveEntry = (entry) => {
   const custom = asRecord(entry.custom)
+  const value = { ...entry }
+  if (Object.keys(custom).some((key) => /^stat_\d+$/.test(key))) {
+    for (const key of Object.keys(value)) {
+      if (/^stat_\d+$/.test(key)) delete value[key]
+    }
+  }
   return {
-    ...entry,
+    ...value,
     ...custom,
     spells: { ...asRecord(entry.spells), ...asRecord(custom.spells) },
   }
@@ -119,8 +220,10 @@ const renderSpell = (content, entry) => {
   addDescription(content, value.auraDescription, 'tooltip-description tooltip-aura')
 }
 
-const renderItem = (content, entry) => {
+const renderItem = (content, entry, htmlEnchant) => {
   const value = effectiveEntry(entry)
+  const isWeapon = asNumber(value.class) === 2
+  const isArmor = asNumber(value.class) === 4
   const header = document.createElement('div')
   header.className = 'tooltip-header'
   addIcon(header, value.icon, value.quality)
@@ -134,18 +237,58 @@ const renderItem = (content, entry) => {
 
   const metadata = document.createElement('div')
   metadata.className = 'tooltip-metadata'
-  addLine(metadata, itemTypes[asNumber(value.class)])
-  if (asNumber(value.requiredLevel) > 0) addLine(metadata, `Requires Level ${value.requiredLevel}`)
-  if (asNumber(value.armor) > 0) addLine(metadata, `${value.armor} Armor`)
-  if (asNumber(value.weaponSpeed) > 0) addLine(metadata, `Speed ${formatMilliseconds(value.weaponSpeed)}`)
+  if (!isWeapon && !isArmor) addLine(metadata, itemTypes[asNumber(value.class)])
   if (metadata.childNodes.length) content.append(metadata)
 
   const damages = Array.isArray(value.damage) ? value.damage : []
-  for (const damage of damages) {
-    const row = asRecord(damage)
-    const min = asNumber(row.min)
-    const max = asNumber(row.max)
-    if (min || max) addLine(content, `${min}-${max} Damage`, 'tooltip-stat')
+  if (isWeapon) {
+    addPairLine(
+      content,
+      inventorySlots[asNumber(value.inventoryType)] || 'Weapon',
+      weaponTypes[asNumber(value.subclass)],
+      'tooltip-item-detail',
+    )
+    const first = asRecord(damages[0])
+    const firstMin = asNumber(first.min)
+    const firstMax = asNumber(first.max)
+    const speed = asNumber(value.weaponSpeed)
+    if (firstMin || firstMax || speed) {
+      addPairLine(
+        content,
+        firstMin || firstMax ? `${firstMin} - ${firstMax}` : '',
+        speed > 0 ? `Speed ${(speed / 1000).toFixed(2)}` : '',
+        'tooltip-item-detail',
+      )
+    }
+    for (const damage of damages.slice(1)) {
+      const row = asRecord(damage)
+      const min = asNumber(row.min)
+      const max = asNumber(row.max)
+      const type = damageTypes[asNumber(row.type)]
+      if (min || max) addLine(content, `+${min} - ${max}${type ? ` ${type} Damage` : ' Damage'}`, 'tooltip-item-detail')
+    }
+    if (speed > 0 && damages.length) {
+      const average = damages.reduce((total, damage) => {
+        const row = asRecord(damage)
+        return total + (asNumber(row.min) + asNumber(row.max)) / 2
+      }, 0)
+      addLine(content, `(${formatNumber(average / (speed / 1000))} damage per second)`, 'tooltip-item-detail')
+    }
+  } else if (isArmor) {
+    addPairLine(
+      content,
+      inventorySlots[asNumber(value.inventoryType)] || 'Armor',
+      armorTypes[asNumber(value.subclass)],
+      'tooltip-item-detail',
+    )
+    if (asNumber(value.armor) > 0) addLine(content, `${value.armor} Armor`, 'tooltip-item-detail')
+  } else {
+    for (const damage of damages) {
+      const row = asRecord(damage)
+      const min = asNumber(row.min)
+      const max = asNumber(row.max)
+      if (min || max) addLine(content, `${min}-${max} Damage`, 'tooltip-stat')
+    }
   }
 
   for (const [key, label] of Object.entries(statLabels)) {
@@ -169,6 +312,13 @@ const renderItem = (content, entry) => {
 
   addDescription(content, value.description)
 
+  if (Array.isArray(value.enchant) || value.suffix !== undefined) {
+    const enchantId = Number(htmlEnchant)
+    if (!htmlEnchant || !Number.isInteger(enchantId) || !renderEnchant(content, value, enchantId)) {
+      addLine(content, '<Randomly enchanted>', 'tooltip-stat')
+    }
+  }
+
   for (const [spellId, metadata] of Object.entries(asRecord(value.spells))) {
     const spell = database[`spell:${spellId}`]
     if (!spell) continue
@@ -183,11 +333,12 @@ const renderItem = (content, entry) => {
   }
 }
 
-const renderEntry = (tooltip, entry) => {
+const renderEntry = (tooltip, key, entry, enchantId) => {
   const content = document.createElement('div')
   content.className = 'tooltip-content'
-  if (entry.kind === 'item') renderItem(content, entry)
-  else if (entry.kind === 'spell') renderSpell(content, entry)
+  const kind = key.split(':', 1)[0]
+  if (kind === 'item') renderItem(content, entry, enchantId)
+  else if (kind === 'spell') renderSpell(content, entry)
   else return false
   const icon = content.querySelector('.tooltip-icon')
   const shell = document.createElement('div')
@@ -251,9 +402,9 @@ export const installTooltip = () => {
     tooltip.style.transform = `translate3d(${Math.round(position.left)}px, ${Math.round(position.top)}px, 0)`
   }
 
-  const updateEntry = (key) => {
+  const updateEntry = (key, enchantId) => {
     const entry = database[key]
-    if (!entry || !renderEntry(tooltip, entry, database)) {
+    if (!entry || !renderEntry(tooltip, key, entry, enchantId)) {
       hide()
       return
     }
@@ -262,26 +413,37 @@ export const installTooltip = () => {
     redrawPosition()
   }
 
+  const updateTarget = (target) => {
+    const match = target instanceof Element ? target.closest('[data-tip]') : undefined
+    const key = match?.getAttribute('data-tip')?.trim()
+    if (!key) {
+      hide()
+      return
+    }
+    const enchantId = match?.getAttribute('data-enchant') || ''
+    const stateKey = `${key}:${enchantId}`
+    if (stateKey !== currentKey) {
+      currentKey = stateKey
+      updateEntry(key, enchantId)
+    }
+    redrawPosition()
+  }
+
   globalThis.addEventListener('resize', () => {
     viewportWidth = globalThis.innerWidth
     viewportHeight = globalThis.innerHeight
+    updateTarget(document.elementFromPoint(mouseX, mouseY))
     redrawPosition()
   })
 
   globalThis.addEventListener('mousemove', (event) => {
     mouseX = event.clientX
     mouseY = event.clientY
-    const match = event.target instanceof HTMLElement ? event.target.closest('[data-tip]') : undefined
-    const key = match?.getAttribute('data-tip')?.trim()
-    if (!key) {
-      hide()
-      return
-    }
-    if (key !== currentKey) {
-      currentKey = key
-      updateEntry(key)
-    }
-    redrawPosition()
+    updateTarget(event.target)
+  })
+
+  globalThis.addEventListener('scroll', () => updateTarget(document.elementFromPoint(mouseX, mouseY)), {
+    passive: true,
   })
 }
 

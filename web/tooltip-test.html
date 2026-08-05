@@ -66,17 +66,17 @@
     import database from './db.json' with { type: 'json' }
 
     const entries = Object.entries(database)
-      .filter(([, entry]) => entry.kind === 'item' || entry.kind === 'spell')
+      .filter(([key]) => key.startsWith('item:') || key.startsWith('spell:'))
       .sort(([, left], [, right]) => String(left.name).localeCompare(String(right.name)))
 
     const links = (kind) => {
       const fragment = document.createDocumentFragment()
-      const filtered = entries.filter(([, entry]) => entry.kind === kind)
+      const filtered = entries.filter(([key]) => key.startsWith(`${kind}:`))
       for (const [key, entry] of filtered) {
         const link = document.createElement('a')
         link.href = `#${key}`
         link.dataset.tip = key
-        link.textContent = `${entry.name || 'Unknown'} (${entry.id})`
+        link.textContent = `${entry.name || 'Unknown'} (${key.slice(kind.length + 1)})`
         fragment.append(link)
       }
       return { fragment, count: filtered.length }

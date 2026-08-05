@@ -515,7 +515,6 @@ export const buildItemEntry = (
       inventoryType: toNumber(row.inventoryType ?? dbcItem?.InventoryType),
       quality: toNumber(row.quality),
       flags: toNumber(row.flags),
-      requiredLevel: toNumber(row.requiredLevel),
       ...stats.stats,
       armor: toNumber(row.armor),
       res_holy: toNumber(row.holyRes),

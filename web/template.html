@@ -20,7 +20,18 @@
   <body>
     <header>
       <img class="logo-icon" src="/logo.png" alt="19 PvP Logo">
-      <nav id="siteNavigation" class="site-navigation" aria-label="Primary navigation"></nav>
+      <nav id="siteNavigation" class="site-navigation" aria-label="Primary navigation">
+        <a class="site-nav-account" data-nav-page="account" href="/account">
+          <img id="siteNavAccountAvatar" class="avatar site-nav-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Account avatar">
+          <span id="siteNavAccountName">Account</span>
+        </a>
+        <a data-nav-page="about" href="/about">About</a>
+        <span class="site-nav-separator" aria-hidden="true">|</span>
+        <a data-nav-page="leaderboards" href="/leaderboards">Leaderboards</a>
+        <span class="site-nav-separator" aria-hidden="true">|</span>
+        <a data-nav-page="install" href="/install">Installer &amp; Patcher</a>
+        <span class="site-nav-separator" aria-hidden="true">|</span>
+      </nav>
     </header>
     <div class="container<!--@CONTAINER_CLASS@-->">
       <div id="topLoadingBarContainer"

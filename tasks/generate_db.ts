@@ -37,6 +37,56 @@ const uniquePositiveIds = (rows: ItemSheetRow[]) => [
   ),
 ]
 
+type RandomEnchantItem = { randomProperty: number; randomSuffix: number; properties?: number[] }
+type RandomEnchantOption = {
+  name: string
+  stats: { id: number; value: number }[]
+}
+
+const parseLuaNumberList = (value: string) => [...value.matchAll(/\d+/g)].map((match) => Number(match[0]))
+
+const parseRandomEnchantLua = async () => {
+  const customData = await Deno.readTextFile('core_scripts/custom-data.lua')
+  const npcScript = await Deno.readTextFile('core_scripts/random-enchant-npc.lua')
+  const items = new Map<number, RandomEnchantItem>()
+  const properties = new Map<number, RandomEnchantOption>()
+  const suffixes = new Map<number, RandomEnchantOption>()
+  const itemsSection = customData.match(/items\s*=\s*\{([\s\S]*?)\n\s*\},\s*property_options/)?.[1] ?? ''
+  for (const line of itemsSection.split(/\r?\n/)) {
+    const match = line.match(/^\s*\[(\d+)\]\s*=\s*\{(.*)\},?\s*$/)
+    if (!match) continue
+    const body = match[2]
+    const propertyList = body.match(/properties\s*=\s*\{([^}]*)\}/)?.[1]
+    items.set(Number(match[1]), {
+      randomSuffix: Number(body.match(/random_suffix\s*=\s*(\d+)/)?.[1] ?? 0),
+      randomProperty: Number(body.match(/random_property\s*=\s*(\d+)/)?.[1] ?? 0),
+      properties: propertyList === undefined ? undefined : parseLuaNumberList(propertyList),
+    })
+  }
+  const propertySection = customData.match(/property_options\s*=\s*\{([\s\S]*?)\n\s*\},\s*\n\s*\},/)?.[1] ?? ''
+  for (const line of propertySection.split(/\r?\n/)) {
+    const match = line.match(/^\s*\[(\d+)\]\s*=\s*\{(.*)\},?\s*$/)
+    if (!match) continue
+    const body = match[2]
+    const name = body.match(/name\s*=\s*"([^"]*)"/)?.[1]
+    if (!name) continue
+    properties.set(Number(match[1]), {
+      name,
+      stats: [...body.matchAll(/\{\s*id\s*=\s*(\d+)\s*,\s*value\s*=\s*(\d+)/g)].map((match) => ({
+        id: Number(match[1]),
+        value: Number(match[2]),
+      })),
+    })
+  }
+  const suffixSection = npcScript.match(/local suffix_options\s*=\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+  for (const line of suffixSection.split(/\r?\n/)) {
+    const match = line.match(/^\s*\[(\d+)\]\s*=\s*\{\s*id\s*=\s*\d+\s*,\s*name\s*=\s*"([^"]*)"/)
+    if (!match) continue
+    suffixes.set(Number(match[1]), { name: match[2], stats: [] })
+  }
+  return { items, properties, suffixes }
+}
+
 const fetchSheet = async (): Promise<GSheetData> => {
   const refresh = await fetch(`https://gsheet.devazuka.com/refresh/${sheetId}/ITEM`)
   if (!refresh.ok) throw Error(`could not refresh ITEM sheet: ${refresh.status}`)
@@ -210,6 +260,8 @@ const dbcItem = openDBC('Item')
 const dbcSpell = openDBC('Spell')
 const itemDisplay = openDBC('ItemDisplayInfo')
 const spellIcons = openDBC('SpellIcon')
+const dbcEnchantment = openDBC('SpellItemEnchantment')
+const dbcRandomSuffix = openDBC('ItemRandomSuffix')
 const castTimes = openDBC('SpellCastTimes')
 const durations = openDBC('SpellDuration')
 const radii = openDBC('SpellRadius')
@@ -238,10 +290,71 @@ const templates = await itemRows(itemIds, 'item_template')
 const originalTemplates = await itemRows(itemIds, 'acore_world.item_template')
 const templatesById = new Map(templates.map((row) => [asNumber(row.entry), row]))
 const originalTemplatesById = new Map(originalTemplates.map((row) => [asNumber(row.entry), row]))
+const randomEnchantData = await parseRandomEnchantLua()
 
-const dataset: Record<string, Record<string, unknown>> = {}
+const dataset: Record<string, unknown> = {}
 const missingItems: number[] = []
 const itemSpellIds = new Set<number>()
+const enchantIds = new Set<number>()
+const randomEnchantIds = new Set<number>()
+const suffixEnchantIds = new Set<number>()
+const suffixStats = (suffixId: number) => {
+  const suffix = dbcRandomSuffix.get(suffixId) as Record<string, unknown> | undefined
+  const stats: Record<string, number> = {}
+  for (let index = 1; index <= 5; index++) {
+    const enchantId = asNumber(suffix?.[`Enchantment_${index}`])
+    const value = asNumber(suffix?.[`AllocationPct_${index}`])
+    const enchant = dbcEnchantment.get(enchantId) as Record<string, unknown> | undefined
+    if (!enchant || value <= 0) continue
+    for (let effectIndex = 1; effectIndex <= 3; effectIndex++) {
+      const stat = asNumber(enchant[`EffectArg_${effectIndex}`])
+      if (stat > 0) stats[`stat_${stat}`] = (stats[`stat_${stat}`] ?? 0) + value
+    }
+  }
+  return stats
+}
+const spellEnchantIds = (row: ItemTemplateRow) =>
+  Array.from({ length: 5 }, (_, index) => {
+    const spell = dbcSpell.get(asNumber(row[`spellId${index + 1}`])) as Record<string, unknown> | undefined
+    if (!spell) return 0
+    for (const effectIndex of [1, 2, 3]) {
+      if (asNumber(spell[`Effect_${effectIndex}`]) === 53) return asNumber(spell[`EffectMiscValue_${effectIndex}`])
+    }
+    return 0
+  }).filter((id): id is number => id > 0)
+const enchantData = (row: ItemTemplateRow) => {
+  for (const id of spellEnchantIds(row)) enchantIds.add(id)
+  const info = randomEnchantData.items.get(asNumber(row.entry))
+  const random = new Set(info?.properties ?? [])
+  const suffix = info && info.randomSuffix > 0 && info.properties === undefined
+    ? new Set(randomEnchantData.suffixes.keys())
+    : new Set<number>()
+  for (const id of random) randomEnchantIds.add(id)
+  for (const id of suffix) suffixEnchantIds.add(id)
+  return {
+    ...(random.size ? { enchant: [...random] } : {}),
+    ...(suffix.size ? { suffix: 0.1 } : {}),
+  }
+}
+const flattenFields = (entry: ReturnType<typeof buildItemEntry>, custom: Record<string, unknown>) => {
+  if (Object.keys(custom).length === 0) return entry
+  const result = { ...entry }
+  delete result.custom
+  delete result.description
+  delete result.spells
+  if (Object.keys(custom).some((key) => /^stat_\d+$/.test(key))) {
+    for (const key of Object.keys(result)) {
+      if (/^stat_\d+$/.test(key)) delete result[key]
+    }
+  }
+  return { ...result, ...custom, custom: true }
+}
+const flattenCustom = (entry: ReturnType<typeof buildItemEntry>) => {
+  const custom = entry.custom && typeof entry.custom === 'object' && !Array.isArray(entry.custom)
+    ? entry.custom as Record<string, unknown>
+    : {}
+  return flattenFields(entry, custom)
+}
 for (const id of itemIds) {
   const row = originalTemplatesById.get(id)
   if (!row) {
@@ -278,7 +391,13 @@ for (const id of itemIds) {
       const fields = Object.fromEntries(
         Object.entries(sheetCustom).filter(([key]) => key !== 'use' && key !== 'cooldown'),
       )
-      return { ...currentEntry, ...fields, spells, created: true }
+      const createdEntry = {
+        ...currentEntry,
+        ...fields,
+        spells,
+        created: true,
+      }
+      return flattenFields(createdEntry, { ...fields, ...(use ? { spells } : {}) })
     })()
     : (() => {
       const dbCustom = Object.fromEntries(
@@ -286,9 +405,9 @@ for (const id of itemIds) {
           !['id', 'kind', 'icon'].includes(key) && JSON.stringify(value) !== JSON.stringify(baseEntry?.[key])
         ),
       )
-      return buildItemEntry(dbcItem.get(id), row, { ...dbCustom, ...sheetCustom }, iconContext, dbcSpell)
+      return flattenCustom(buildItemEntry(dbcItem.get(id), row, { ...dbCustom, ...sheetCustom }, iconContext, dbcSpell))
     })()
-  dataset[`item:${id}`] = entry
+  dataset[`item:${id}`] = Object.assign(entry, enchantData(row))
   const effective = (entry as Record<string, unknown>).custom as Record<string, unknown> | undefined
   for (const spells of [entry.spells, currentEntry.spells, effective?.spells]) {
     if (spells && typeof spells === 'object' && !Array.isArray(spells)) {
@@ -337,11 +456,41 @@ for (const id of selectedSpellIds) {
   dataset[`spell:${id}`] = entry
 }
 
+for (const optionId of randomEnchantIds) {
+  const option = randomEnchantData.properties.get(optionId)
+  if (!option) continue
+  dataset[`enchant-random:${optionId}`] = {
+    name: option.name,
+    ...Object.fromEntries(option.stats.map((stat) => [`stat_${stat.id}`, stat.value])),
+  }
+}
+for (const optionId of suffixEnchantIds) {
+  const option = randomEnchantData.suffixes.get(optionId)
+  if (!option) continue
+  const suffix = dbcRandomSuffix.get(optionId)
+  dataset[`enchant-suffix:${optionId}`] = {
+    name: suffix?.Name_Lang_enUS || option.name,
+    ...suffixStats(optionId),
+  }
+}
+for (const enchantId of enchantIds) {
+  const enchant = dbcEnchantment.get(enchantId)
+  if (enchant) dataset[`enchant:${enchantId}`] = enchant.Name_Lang_enUS
+}
+for (const value of Object.values(dataset)) {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    delete (value as Record<string, unknown>).id
+    delete (value as Record<string, unknown>).kind
+  }
+}
+
 const iconNames = [
   ...new Set(
-    Object.values(dataset).flatMap((entry) => [
-      entry.icon,
-    ]).filter((icon): icon is string => typeof icon === 'string' && icon.length > 0),
+    Object.values(dataset).flatMap((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return []
+      const icon = (entry as Record<string, unknown>).icon
+      return typeof icon === 'string' && icon.length > 0 ? [icon] : []
+    }),
   ),
 ].sort()
 const iconDirectory = 'web/assets/icon'
@@ -365,7 +514,11 @@ const replaceIconNames = (value: Record<string, unknown>) => {
     value.icon = index
   }
 }
-for (const entry of Object.values(dataset)) replaceIconNames(entry)
+for (const entry of Object.values(dataset)) {
+  if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+    replaceIconNames(entry as Record<string, unknown>)
+  }
+}
 
 for (const iconName of iconNames) {
   await Deno.remove(`${iconCacheDirectory}/${iconName}.png`).catch((error) => {

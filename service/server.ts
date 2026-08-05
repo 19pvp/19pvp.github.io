@@ -35,6 +35,7 @@ import leaderboardsHTMLRaw from '../web/leaderboards.html' with { type: 'text' }
 import accountHTMLRaw from '../web/account.html' with { type: 'text' }
 import installHTMLRaw from '../web/install.html' with { type: 'text' }
 import eventsHTMLRaw from '../web/events.html' with { type: 'text' }
+import aboutHTMLRaw from '../web/about.html' with { type: 'text' }
 import styleCSSRaw from '../web/style.css' with { type: 'text' }
 import scriptJSRaw from '../web/script.js' with { type: 'text' }
 import tooltipJSRaw from '../web/tooltip.js' with { type: 'text' }
@@ -191,6 +192,10 @@ const eventsHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
   '',
   ' events-shell',
 )))
+const aboutHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
+  aboutHTMLRaw,
+  '19 PvP - About the Server',
+)))
 const installHTMLBytes = new TextEncoder().encode(
   inlineAssets(
     composePage(
@@ -241,6 +246,7 @@ export default {
         return respondText(installHTMLBytes, 'text/html')
       }
       if (url.pathname === '/events') return respondText(eventsHTMLBytes, 'text/html')
+      if (url.pathname === '/about' || url.pathname === '/about.html') return respondText(aboutHTMLBytes, 'text/html')
       if (url.pathname === '/tooltip-test' || url.pathname === '/tooltip-test.html') return staticTooltipTest(req)
       if (url.pathname === '/style.css') return staticStyle(req)
       if (url.pathname === '/script.js') return staticScript(req)

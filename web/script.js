@@ -165,6 +165,7 @@ const navigationState = {
 const navigationPage = (url) => {
   if (url.pathname === '/account') return 'account'
   if (url.pathname === '/install') return 'install'
+  if (url.pathname === '/about' || url.pathname === '/about.html') return 'about'
   if (url.pathname === '/leaderboards' || url.pathname === '/') return 'leaderboards'
   return ''
 }
@@ -191,6 +192,8 @@ const setupSiteNavigation = () => {
     <a data-nav-page="leaderboards" href="/leaderboards">Leaderboards</a>
     <span class="site-nav-separator" aria-hidden="true">|</span>
     <a data-nav-page="install" href="/install">Installer &amp; Patcher</a>
+    <span class="site-nav-separator" aria-hidden="true">|</span>
+    <a data-nav-page="about" href="/about">About</a>
   `
   updateSiteNavigation()
 
