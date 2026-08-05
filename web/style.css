@@ -81,7 +81,7 @@
   z-index: 50;
   pointer-events: none;
   color: var(--white-color);
-  font: 14px/1.35 system-ui, sans-serif;
+  font: 16px/1.35 var(--font-sans);
   opacity: 1;
   transition: opacity 160ms ease;
 }
@@ -190,6 +190,7 @@
 }
 
 .tooltip-name {
+  font-family: var(--font-title);
   font-weight: 700;
 }
 

@@ -689,7 +689,8 @@ INSERT INTO starting_info_spell (classmask, spell, note) VALUES
   (1024, 6808, 'DRUID - Maul'),
   (1024, 8938, 'DRUID - Regrowth'),
   (1024, 16810, 'DRUID - Nature\'s Grasp'),
-  (1024, 16924, 'DRUID - Celestial Focus'), -- custom, pushback reduce
+  (1024, 67125, 'DRUID - T2 9P bonus set'), -- allow crit on moonfire dots
+  (1024, 16909, 'DRUID - Vengeance'), -- +20% crit damage
   (1024, 53122, 'DRUID - Toughness'),
   (1024, 53663, 'DRUID - Master of Anatomy'),
   (1024, 199, 'DRUID - Two-Handed Maces'),
