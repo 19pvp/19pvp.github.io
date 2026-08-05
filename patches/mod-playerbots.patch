@@ -495,6 +495,30 @@ index 7982deb4..f9668567 100644
      if (!master)
          return false;
  
+diff --git a/src/Ai/Base/Actions/CheckMountStateAction.cpp b/src/Ai/Base/Actions/CheckMountStateAction.cpp
+index e5af665b..bc2cf26e 100644
+--- a/src/Ai/Base/Actions/CheckMountStateAction.cpp
++++ b/src/Ai/Base/Actions/CheckMountStateAction.cpp
+@@ -312,7 +312,8 @@ bool CheckMountStateAction::TryForms(Player* master, int32 masterMountType, int3
+         ((masterInShapeshiftForm == FORM_FLIGHT && botInShapeshiftForm != FORM_FLIGHT) ||
+         (masterMountType == 1 && masterSpeed == 149)))
+     {
+-        botAI->CastSpell(SPELL_FLIGHT_FORM, bot);
++        if (!botAI->CastSpell(SPELL_FLIGHT_FORM, bot))
++            return false;
+ 
+         // Compensate speedbuff
+         bot->SetSpeed(MOVE_RUN, 2.5, true);
+@@ -324,7 +325,8 @@ bool CheckMountStateAction::TryForms(Player* master, int32 masterMountType, int3
+         ((masterInShapeshiftForm == FORM_FLIGHT_EPIC && botInShapeshiftForm != FORM_FLIGHT_EPIC) ||
+         (masterMountType == 1 && masterSpeed >= 279)))
+     {
+-        botAI->CastSpell(SPELL_SWIFT_FLIGHT_FORM, bot);
++        if (!botAI->CastSpell(SPELL_SWIFT_FLIGHT_FORM, bot))
++            return false;
+ 
+         // Compensate speedbuff
+         bot->SetSpeed(MOVE_RUN, 3.8, true);
 diff --git a/src/Ai/Base/Actions/FollowActions.cpp b/src/Ai/Base/Actions/FollowActions.cpp
 index 21937606..f5c8a86f 100644
 --- a/src/Ai/Base/Actions/FollowActions.cpp
@@ -865,6 +889,30 @@ index 50f7a386..c3c938d3 100644
                 !AttackersValue::IsValidTarget(target, bot);
      }
  
+diff --git a/src/Ai/Class/Druid/Strategy/GenericDruidNonCombatStrategy.cpp b/src/Ai/Class/Druid/Strategy/GenericDruidNonCombatStrategy.cpp
+index a376aea0..861c5629 100644
+--- a/src/Ai/Class/Druid/Strategy/GenericDruidNonCombatStrategy.cpp
++++ b/src/Ai/Class/Druid/Strategy/GenericDruidNonCombatStrategy.cpp
+@@ -174,6 +174,7 @@ void GenericDruidNonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& trig
+                        }));
+ 
+     triggers.push_back(new TriggerNode("aquatic form", { NextAction("aquatic form", 10.0f) }));
++    triggers.push_back(new TriggerNode("player has flag", { NextAction("travel form", ACTION_EMERGENCY + 3) }));
+ 
+     int specTab = AiFactory::GetPlayerSpecTab(botAI->GetBot());
+     if (specTab == DRUID_TAB_BALANCE || specTab == DRUID_TAB_RESTORATION)
+diff --git a/src/Ai/Class/Druid/Strategy/GenericDruidStrategy.cpp b/src/Ai/Class/Druid/Strategy/GenericDruidStrategy.cpp
+index 5895ac02..04be2831 100644
+--- a/src/Ai/Class/Druid/Strategy/GenericDruidStrategy.cpp
++++ b/src/Ai/Class/Druid/Strategy/GenericDruidStrategy.cpp
+@@ -78,6 +78,7 @@ void GenericDruidStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ 
+     triggers.push_back(new TriggerNode("being attacked",
+                                        { NextAction("nature's grasp", 39.0f) }));
++    triggers.push_back(new TriggerNode("player has flag", { NextAction("travel form", ACTION_EMERGENCY + 3) }));
+ }
+ 
+ void DruidCureStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 diff --git a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp b/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
 index 9277cb65..db42799a 100644
 --- a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
@@ -1644,7 +1692,7 @@ index 2ef0f539..32f58752 100644
  
  void PlayerbotFactory::InitTalents(uint32 specNo)
 diff --git a/src/Bot/PlayerbotAI.cpp b/src/Bot/PlayerbotAI.cpp
-index cd7a0993..c5f8421a 100644
+index cd7a0993..10e6e316 100644
 --- a/src/Bot/PlayerbotAI.cpp
 +++ b/src/Bot/PlayerbotAI.cpp
 @@ -5,12 +5,15 @@
@@ -2058,6 +2106,16 @@ index cd7a0993..c5f8421a 100644
      if (pet && pet->HasSpell(spellId))
      {
          bool autocast = false;
+@@ -4837,6 +5129,9 @@ void PlayerbotAI::RemoveShapeshift()
+     RemoveAura("aquatic form");
+     RemoveAura("ghost wolf");
+     // RemoveAura("tree of life");
++
++    // Flight forms override MOVE_RUN manually in CheckMountStateAction; restore the aura-derived rate when leaving them.
++    bot->UpdateSpeed(MOVE_RUN, true);
+ }
+ 
+ // Mirrors Blizzard’s GetAverageItemLevel rules :
 diff --git a/src/Bot/PlayerbotAI.h b/src/Bot/PlayerbotAI.h
 index 7940ee31..327570fa 100644
 --- a/src/Bot/PlayerbotAI.h
@@ -2246,3 +2304,25 @@ index 91606f80..a9dcb5cb 100644
      std::vector<uint32> randomBotQuestIds;
      uint32 randomBotTeleportDistance;
      float randomGearLoweringChance;
+diff --git a/src/Script/Playerbots.cpp b/src/Script/Playerbots.cpp
+index e8630cd5..a2a78764 100644
+--- a/src/Script/Playerbots.cpp
++++ b/src/Script/Playerbots.cpp
+@@ -106,16 +106,7 @@ public:
+             if (sPlayerbotAIConfig.enabled)
+             {
+                 ChatHandler(player->GetSession()).SendSysMessage(
+-                    "|cff00ff00This server runs with |cff00ccffmod-playerbots|r "
+-                    "|cffcccccchttps://github.com/mod-playerbots/mod-playerbots|r");
+-            }
+-
+-            if (sPlayerbotAIConfig.enabled || sPlayerbotAIConfig.randomBotAutologin)
+-            {
+-                std::string maxAllowedBotCount = std::to_string(sRandomPlayerbotMgr.GetMaxAllowedBotCount());
+-
+-                ChatHandler(player->GetSession()).SendSysMessage(
+-                    "|cff00ff00Playerbots:|r The server is configured with " + maxAllowedBotCount + " bots.");
++                    "Server sources accessible here: |cffcccccchttps://github.com/19pvp/19pvp.github.io|r");
+             }
+         }
+     }
