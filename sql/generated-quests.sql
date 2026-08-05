@@ -2,14 +2,14 @@
 
 USE `19pvp_world`;
 
-DELETE FROM quest_request_items WHERE ID >= 777000 AND ID <= 777017;
-DELETE FROM quest_offer_reward WHERE ID >= 777000 AND ID <= 777017;
-DELETE FROM quest_template_addon WHERE ID >= 777000 AND ID <= 777017;
-DELETE FROM creature_queststarter WHERE quest >= 777000 AND quest <= 777017;
-DELETE FROM creature_questender WHERE quest >= 777000 AND quest <= 777017;
-DELETE FROM quest_template WHERE ID >= 777000 AND ID <= 777017;
-DELETE FROM quest_poi WHERE QuestId >= 777000 AND QuestId <= 777017;
-DELETE FROM quest_poi_points WHERE QuestId >= 777000 AND QuestId <= 777017;
+DELETE FROM quest_request_items WHERE ID >= 777000 AND ID <= 777018;
+DELETE FROM quest_offer_reward WHERE ID >= 777000 AND ID <= 777018;
+DELETE FROM quest_template_addon WHERE ID >= 777000 AND ID <= 777018;
+DELETE FROM creature_queststarter WHERE quest >= 777000 AND quest <= 777018;
+DELETE FROM creature_questender WHERE quest >= 777000 AND quest <= 777018;
+DELETE FROM quest_template WHERE ID >= 777000 AND ID <= 777018;
+DELETE FROM quest_poi WHERE QuestId >= 777000 AND QuestId <= 777018;
+DELETE FROM quest_poi_points WHERE QuestId >= 777000 AND QuestId <= 777018;
 
 UPDATE item_template SET RequiredReputationFaction = 0, RequiredReputationRank = 0, AllowableRace = -1 WHERE RequiredReputationFaction <> 0 OR AllowableRace <> -1 OR RequiredReputationRank <> 0;
 UPDATE item_template SET AllowableClass = -1 WHERE (entry = 18468);
@@ -29,12 +29,19 @@ UPDATE creature_template SET gossip_menu_id = 0, ScriptName = '' WHERE (entry IN
 
 UPDATE creature_template
 SET name = CASE entry
+  WHEN 171 THEN 'Murloc Warrior'
   WHEN 213 THEN 'Starving Dire Wolf'
   WHEN 428 THEN 'Dire Condor'
+  WHEN 513 THEN 'Murloc Netter'
+  WHEN 517 THEN 'Murloc Oracle'
   WHEN 539 THEN 'Venom Web Spider'
+  WHEN 544 THEN 'Murloc Nightcrawler'
   WHEN 547 THEN 'Great Goretusk'
+  WHEN 548 THEN 'Murloc Tidecaller'
   WHEN 569 THEN 'Green Recluse'
   WHEN 715 THEN 'Hemet Nesingwary Jr.'
+  WHEN 1024 THEN 'Bluegill Murloc'
+  WHEN 1083 THEN 'Murloc Shorestriker'
   WHEN 1417 THEN 'Wetlands Crocolisk'
   WHEN 1557 THEN 'Gurubashi Gorilla'
   WHEN 2233 THEN 'Encrusted Tide Crawler'
@@ -62,7 +69,12 @@ SET name = CASE entry
   WHEN 9988 THEN 'Xon \' Cha'
   WHEN 11069 THEN 'Jenova Stoneshield'
   WHEN 14981 THEN 'Elfarran'
+  WHEN 15186 THEN 'Murky'
+  WHEN 15357 THEN 'Baby Purple Murloc'
+  WHEN 15359 THEN 'Baby Pink Murloc'
+  WHEN 15360 THEN 'Baby Green Murloc'
   WHEN 16355 THEN 'Scourgebat'
+  WHEN 16445 THEN 'Terky'
   WHEN 17523 THEN 'Myst Leecher'
   WHEN 17527 THEN 'Enraged Ravager'
   WHEN 19531 THEN 'Eyonix'
@@ -84,7 +96,10 @@ SET name = CASE entry
   WHEN 21206 THEN 'Mendegrglrgl'
   WHEN 22427 THEN 'Zarevhi'
   WHEN 22899 THEN 'Warpweaver Rahim'
+  WHEN 25835 THEN 'Nesingwary Trapper'
+  WHEN 27986 THEN 'Hemet Nesingwary'
   WHEN 29510 THEN 'Linna Bruder'
+  WHEN 30737 THEN 'Nesingwary Game Warden'
   WHEN 32332 THEN 'Action Jaxon'
   WHEN 32474 THEN 'Jonas The Fisherman'
   WHEN 32541 THEN 'Training Dummy'
@@ -92,11 +107,18 @@ SET name = CASE entry
   WHEN 35365 THEN 'Behsten'
   WHEN 73390 THEN 'Markaru'
 END
-WHERE entry IN (213, 428, 539, 547, 569, 715, 1417, 1557, 2233, 2350, 2804, 3247, 3252, 3370, 3496, 3636, 3637, 3653, 3862, 4129, 4511, 4512, 4974, 5056, 5161, 5188, 5193, 5755, 5756, 6499, 9988, 11069, 14981, 16355, 17523, 17527, 19531, 19533, 19534, 19535, 19536, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 21206, 22427, 22899, 29510, 32332, 32474, 32541, 35364, 35365, 73390);
+WHERE entry IN (171, 213, 428, 513, 517, 539, 544, 547, 548, 569, 715, 1024, 1083, 1417, 1557, 2233, 2350, 2804, 3247, 3252, 3370, 3496, 3636, 3637, 3653, 3862, 4129, 4511, 4512, 4974, 5056, 5161, 5188, 5193, 5755, 5756, 6499, 9988, 11069, 14981, 15186, 15357, 15359, 15360, 16355, 16445, 17523, 17527, 19531, 19533, 19534, 19535, 19536, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 21206, 22427, 22899, 25835, 27986, 29510, 30737, 32332, 32474, 32541, 35364, 35365, 73390);
 
 UPDATE creature_template
 SET subname = CASE entry
+  WHEN 171 THEN 'Murloc Village'
+  WHEN 513 THEN 'Murloc Village'
+  WHEN 517 THEN 'Murloc Village'
+  WHEN 544 THEN 'Murloc Village'
+  WHEN 548 THEN 'Murloc Village'
   WHEN 715 THEN 'The Expedition'
+  WHEN 1024 THEN 'Murloc Village'
+  WHEN 1083 THEN 'Murloc Village'
   WHEN 2804 THEN 'Warsong Gulch Battlemaster'
   WHEN 3370 THEN 'Guild Master'
   WHEN 3496 THEN 'Banker'
@@ -108,6 +130,11 @@ SET subname = CASE entry
   WHEN 9988 THEN 'Stable Master'
   WHEN 11069 THEN 'Stable Master'
   WHEN 14981 THEN 'Warsong Gulch Battlemaster'
+  WHEN 15186 THEN 'Murloc Village'
+  WHEN 15357 THEN 'Murloc Village'
+  WHEN 15359 THEN 'Murloc Village'
+  WHEN 15360 THEN 'Murloc VIllage'
+  WHEN 16445 THEN 'Murloc Village'
   WHEN 19531 THEN 'Innkeeper'
   WHEN 19533 THEN '(WIP) Transmog Merchant'
   WHEN 19534 THEN 'Weapons Merchant'
@@ -127,22 +154,32 @@ SET subname = CASE entry
   WHEN 21206 THEN 'Murloc Village'
   WHEN 22427 THEN 'Arcane Healer'
   WHEN 22899 THEN '(WIP) Transmogrifier'
+  WHEN 25835 THEN 'The Expedition'
+  WHEN 27986 THEN 'The Expedition'
   WHEN 29510 THEN 'Trading Card Items'
+  WHEN 30737 THEN 'The Expedition'
   WHEN 32332 THEN 'Arena Battlemaster'
   WHEN 32474 THEN 'Fishing Trainer'
   WHEN 35364 THEN 'Weapons Quartermaster'
   WHEN 35365 THEN 'Armor Quartermaster'
 END
-WHERE entry IN (715, 2804, 3370, 3496, 4974, 5161, 5188, 5193, 6499, 9988, 11069, 14981, 19531, 19533, 19534, 19535, 19536, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 21206, 22427, 22899, 29510, 32332, 32474, 35364, 35365);
+WHERE entry IN (171, 513, 517, 544, 548, 715, 1024, 1083, 2804, 3370, 3496, 4974, 5161, 5188, 5193, 6499, 9988, 11069, 14981, 15186, 15357, 15359, 15360, 16445, 19531, 19533, 19534, 19535, 19536, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 21206, 22427, 22899, 25835, 27986, 29510, 30737, 32332, 32474, 35364, 35365);
 
 UPDATE creature_template
 SET minlevel = CASE entry
+  WHEN 171 THEN 19
   WHEN 213 THEN 19
   WHEN 428 THEN 19
+  WHEN 513 THEN 19
+  WHEN 517 THEN 19
   WHEN 539 THEN 19
+  WHEN 544 THEN 19
   WHEN 547 THEN 19
+  WHEN 548 THEN 19
   WHEN 569 THEN 19
   WHEN 715 THEN 19
+  WHEN 1024 THEN 19
+  WHEN 1083 THEN 19
   WHEN 1417 THEN 19
   WHEN 1557 THEN 19
   WHEN 2233 THEN 19
@@ -169,7 +206,12 @@ SET minlevel = CASE entry
   WHEN 9988 THEN 19
   WHEN 11069 THEN 19
   WHEN 14981 THEN 19
+  WHEN 15186 THEN 1
+  WHEN 15357 THEN 1
+  WHEN 15359 THEN 1
+  WHEN 15360 THEN 1
   WHEN 16355 THEN 19
+  WHEN 16445 THEN 1
   WHEN 17523 THEN 19
   WHEN 17527 THEN 19
   WHEN 19531 THEN 20
@@ -191,7 +233,10 @@ SET minlevel = CASE entry
   WHEN 21206 THEN 21
   WHEN 22427 THEN 20
   WHEN 22899 THEN 20
+  WHEN 25835 THEN 29
+  WHEN 27986 THEN 49
   WHEN 29510 THEN 20
+  WHEN 30737 THEN 39
   WHEN 32332 THEN 20
   WHEN 32474 THEN 19
   WHEN 32541 THEN 19
@@ -200,12 +245,19 @@ SET minlevel = CASE entry
   WHEN 73390 THEN 19
 END,
     maxlevel = CASE entry
+  WHEN 171 THEN 19
   WHEN 213 THEN 19
   WHEN 428 THEN 19
+  WHEN 513 THEN 19
+  WHEN 517 THEN 19
   WHEN 539 THEN 19
+  WHEN 544 THEN 19
   WHEN 547 THEN 19
+  WHEN 548 THEN 19
   WHEN 569 THEN 19
   WHEN 715 THEN 19
+  WHEN 1024 THEN 19
+  WHEN 1083 THEN 19
   WHEN 1417 THEN 19
   WHEN 1557 THEN 19
   WHEN 2233 THEN 19
@@ -232,7 +284,12 @@ END,
   WHEN 9988 THEN 19
   WHEN 11069 THEN 19
   WHEN 14981 THEN 19
+  WHEN 15186 THEN 1
+  WHEN 15357 THEN 1
+  WHEN 15359 THEN 1
+  WHEN 15360 THEN 1
   WHEN 16355 THEN 19
+  WHEN 16445 THEN 1
   WHEN 17523 THEN 19
   WHEN 17527 THEN 19
   WHEN 19531 THEN 20
@@ -254,7 +311,10 @@ END,
   WHEN 21206 THEN 21
   WHEN 22427 THEN 20
   WHEN 22899 THEN 20
+  WHEN 25835 THEN 29
+  WHEN 27986 THEN 49
   WHEN 29510 THEN 20
+  WHEN 30737 THEN 39
   WHEN 32332 THEN 20
   WHEN 32474 THEN 19
   WHEN 32541 THEN 19
@@ -262,7 +322,7 @@ END,
   WHEN 35365 THEN 20
   WHEN 73390 THEN 19
 END
-WHERE entry IN (213, 428, 539, 547, 569, 715, 1417, 1557, 2233, 2350, 2804, 3247, 3252, 3370, 3496, 3636, 3637, 3653, 3862, 4129, 4511, 4512, 4974, 5056, 5161, 5188, 5193, 5755, 5756, 9988, 11069, 14981, 16355, 17523, 17527, 19531, 19533, 19534, 19535, 19536, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 21206, 22427, 22899, 29510, 32332, 32474, 32541, 35364, 35365, 73390);
+WHERE entry IN (171, 213, 428, 513, 517, 539, 544, 547, 548, 569, 715, 1024, 1083, 1417, 1557, 2233, 2350, 2804, 3247, 3252, 3370, 3496, 3636, 3637, 3653, 3862, 4129, 4511, 4512, 4974, 5056, 5161, 5188, 5193, 5755, 5756, 9988, 11069, 14981, 15186, 15357, 15359, 15360, 16355, 16445, 17523, 17527, 19531, 19533, 19534, 19535, 19536, 19537, 19538, 19539, 19540, 20066, 20084, 20205, 20242, 20980, 20981, 20989, 21206, 22427, 22899, 25835, 27986, 29510, 30737, 32332, 32474, 32541, 35364, 35365, 73390);
 
 UPDATE creature SET id = 14981 WHERE guid = 69933;
 UPDATE creature SET id = 2804 WHERE guid = 69934;
@@ -412,13 +472,48 @@ UPDATE creature SET id = 5056 WHERE guid = 73409;
 UPDATE creature SET id = 17527 WHERE guid = 73410;
 UPDATE creature SET id = 715 WHERE guid = 73594;
 UPDATE creature SET id = 213 WHERE guid = 74839;
+UPDATE creature SET id = 513 WHERE guid = 5300824;
+UPDATE creature SET id = 513 WHERE guid = 5300825;
+UPDATE creature SET id = 548 WHERE guid = 5300826;
+UPDATE creature SET id = 548 WHERE guid = 5300827;
+UPDATE creature SET id = 548 WHERE guid = 5300827;
+UPDATE creature SET id = 544 WHERE guid = 5300829;
+UPDATE creature SET id = 544 WHERE guid = 5300830;
+UPDATE creature SET id = 544 WHERE guid = 5300831;
+UPDATE creature SET id = 517 WHERE guid = 5300833;
+UPDATE creature SET id = 517 WHERE guid = 5300834;
+UPDATE creature SET id = 513 WHERE guid = 5300836;
+UPDATE creature SET id = 513 WHERE guid = 5300837;
+UPDATE creature SET id = 513 WHERE guid = 5300838;
+UPDATE creature SET id = 544 WHERE guid = 5300839;
+UPDATE creature SET id = 15360 WHERE guid = 5300841;
+UPDATE creature SET id = 171 WHERE guid = 5300844;
 UPDATE creature SET id = 9988 WHERE guid = 5300859;
 UPDATE creature SET id = 11069 WHERE guid = 5300860;
 UPDATE creature SET id = 4974 WHERE guid = 5300861;
 UPDATE creature SET id = 5193 WHERE guid = 5300862;
 UPDATE creature SET id = 3370 WHERE guid = 5300864;
 UPDATE creature SET id = 5188 WHERE guid = 5300865;
+UPDATE creature SET id = 1083 WHERE guid = 5300883;
+UPDATE creature SET id = 1024 WHERE guid = 5300884;
+UPDATE creature SET id = 15359 WHERE guid = 5300886;
+UPDATE creature SET id = 15357 WHERE guid = 5300887;
+UPDATE creature SET id = 15357 WHERE guid = 5300888;
 UPDATE creature SET id = 3496 WHERE guid = 5300906;
+UPDATE creature SET id = 548 WHERE guid = 5300919;
+UPDATE creature SET id = 548 WHERE guid = 5300920;
+UPDATE creature SET id = 548 WHERE guid = 5300921;
+UPDATE creature SET id = 548 WHERE guid = 5300922;
+UPDATE creature SET id = 548 WHERE guid = 5300923;
+UPDATE creature SET id = 548 WHERE guid = 5300924;
+UPDATE creature SET id = 27986 WHERE guid = 5300931;
+UPDATE creature SET id = 30737 WHERE guid = 5300932;
+UPDATE creature SET id = 25835 WHERE guid = 5300933;
+UPDATE creature SET id = 517 WHERE guid = 5330832;
+UPDATE creature SET id = 171 WHERE guid = 8300845;
+UPDATE creature SET id = 16445 WHERE guid = 8300845;
+UPDATE creature SET id = 15186 WHERE guid = 8300846;
+UPDATE creature SET id = 1024 WHERE guid = 8300885;
 
 -- Remove vendor inventory and vendor flags from NPCs not listed in the ITEM sheet.
 DELETE FROM npc_vendor WHERE entry NOT IN (19534, 19536, 19537, 19538, 19539, 19540, 20066, 20205, 20980, 20989, 35364, 35365);
@@ -454,7 +549,7 @@ WHERE entry IN (7718, 10153, 13185, 13358, 14552, 15067, 15386, 15513, 16669, 16
 -- Mark generated vendor items with an extended cost as refundable through item purchase records.
 UPDATE item_template
 SET Flags = Flags | 4096
-WHERE entry IN (890, 1121, 1318, 1482, 1486, 1935, 2041, 2231, 2256, 2271, 2567, 2933, 3324, 3415, 3761, 3822, 4315, 4320, 4385, 4534, 5191, 5194, 5195, 5199, 5202, 5254, 5404, 5815, 5970, 6087, 6226, 6282, 6319, 6414, 6459, 6460, 6465, 6468, 6469, 6472, 6473, 6504, 6505, 6633, 7001, 7002, 7003, 7230, 7718, 8068, 10043, 10153, 10399, 10403, 10410, 10411, 10412, 10413, 10654, 10657, 12982, 12987, 12990, 12994, 12997, 13185, 13358, 14147, 14148, 14552, 15067, 15386, 15513, 16669, 16679, 16701, 16708, 16718, 16729, 16733, 16768, 16987, 17046, 18757, 19394, 19695, 19969, 19972, 20425, 20426, 20427, 20428, 20429, 20430, 20431, 20434, 20437, 20438, 20439, 20440, 20441, 20442, 20443, 20444, 21933, 22001, 22008, 22016, 22073, 22459, 23530, 24033, 24457, 24551, 25829, 25947, 27417, 31174, 31712, 32196, 38839, 38853, 38854, 38855, 38858, 38859, 38860, 38861, 38862, 38863, 38865, 38866, 38870, 38871, 38873, 38879, 38880, 38881, 38882, 38883, 38884, 38890, 38893, 38896, 38921, 38929, 38933, 38934, 38936, 38946, 39900, 39905, 39906, 39912, 39914, 39915, 39918, 39920, 39927, 44115, 45626, 51809);
+WHERE entry IN (890, 1121, 1318, 1482, 1486, 1935, 2041, 2231, 2256, 2271, 2567, 2933, 3324, 3415, 3761, 3822, 4315, 4320, 4385, 4534, 5191, 5194, 5195, 5199, 5202, 5254, 5404, 5815, 5970, 6087, 6226, 6282, 6319, 6414, 6459, 6460, 6465, 6468, 6469, 6472, 6473, 6504, 6505, 6633, 7001, 7002, 7003, 7230, 7718, 8068, 10043, 10153, 10399, 10403, 10410, 10411, 10412, 10413, 10654, 10657, 12982, 12987, 12990, 12994, 12997, 13185, 13358, 14147, 14148, 14552, 15067, 15386, 15513, 16669, 16679, 16701, 16708, 16718, 16729, 16733, 16768, 16987, 17046, 18757, 19394, 19695, 19969, 19972, 20425, 20426, 20427, 20428, 20429, 20430, 20431, 20434, 20437, 20438, 20439, 20440, 20441, 20442, 20443, 20444, 21933, 22001, 22008, 22016, 22073, 22459, 23530, 24033, 24457, 24551, 25829, 25947, 27417, 31174, 31712, 32196, 38839, 38853, 38854, 38855, 38858, 38859, 38860, 38861, 38862, 38863, 38865, 38866, 38870, 38871, 38872, 38873, 38879, 38880, 38881, 38882, 38883, 38884, 38890, 38893, 38896, 38921, 38929, 38933, 38934, 38936, 38946, 39900, 39905, 39906, 39912, 39914, 39915, 39918, 39920, 39927, 44115, 45626, 51809);
 
 -- Normalize arena vendor items by removing random enchants, sockets, and faction-only flags.
 UPDATE item_template
@@ -1217,23 +1312,24 @@ INSERT INTO npc_vendor (entry, slot, item, maxcount, incrtime, ExtendedCost, Ver
   (19540, 13, 38866, 0, 0, 491, NULL),
   (19540, 14, 38870, 0, 0, 1062, NULL),
   (19540, 15, 38871, 0, 0, 747, NULL),
-  (19540, 16, 38873, 0, 0, 2261, NULL),
-  (19540, 17, 38879, 0, 0, 747, NULL),
-  (19540, 18, 38880, 0, 0, 747, NULL),
-  (19540, 19, 38881, 0, 0, 1062, NULL),
-  (19540, 20, 38882, 0, 0, 1062, NULL),
-  (19540, 21, 38883, 0, 0, 747, NULL),
-  (19540, 22, 38884, 0, 0, 747, NULL),
-  (19540, 23, 38890, 0, 0, 1062, NULL),
-  (19540, 24, 38893, 0, 0, 837, NULL),
-  (19540, 25, 38896, 0, 0, 747, NULL),
-  (19540, 26, 38921, 0, 0, 2261, NULL),
-  (19540, 27, 38929, 0, 0, 1062, NULL),
-  (19540, 28, 38933, 0, 0, 1062, NULL),
-  (19540, 29, 38934, 0, 0, 1062, NULL),
-  (19540, 30, 38936, 0, 0, 1062, NULL),
-  (19540, 31, 38946, 0, 0, 2261, NULL),
-  (19540, 32, 44115, 0, 0, 1909, NULL),
+  (19540, 16, 38872, 0, 0, 1062, NULL),
+  (19540, 17, 38873, 0, 0, 2261, NULL),
+  (19540, 18, 38879, 0, 0, 747, NULL),
+  (19540, 19, 38880, 0, 0, 747, NULL),
+  (19540, 20, 38881, 0, 0, 1062, NULL),
+  (19540, 21, 38882, 0, 0, 1062, NULL),
+  (19540, 22, 38883, 0, 0, 747, NULL),
+  (19540, 23, 38884, 0, 0, 747, NULL),
+  (19540, 24, 38890, 0, 0, 1062, NULL),
+  (19540, 25, 38893, 0, 0, 837, NULL),
+  (19540, 26, 38896, 0, 0, 747, NULL),
+  (19540, 27, 38921, 0, 0, 2261, NULL),
+  (19540, 28, 38929, 0, 0, 1062, NULL),
+  (19540, 29, 38933, 0, 0, 1062, NULL),
+  (19540, 30, 38934, 0, 0, 1062, NULL),
+  (19540, 31, 38936, 0, 0, 1062, NULL),
+  (19540, 32, 38946, 0, 0, 2261, NULL),
+  (19540, 33, 44115, 0, 0, 1909, NULL),
   (20066, 1, 2933, 0, 0, 1911, NULL),
   (20066, 2, 6414, 0, 0, 1911, NULL),
   (20066, 3, 20426, 0, 0, 491, NULL),
@@ -1252,11 +1348,11 @@ INSERT INTO npc_vendor (entry, slot, item, maxcount, incrtime, ExtendedCost, Ver
   (20205, 1, 7718, 0, 0, 2432, NULL),
   (20205, 2, 10153, 0, 0, 2432, NULL),
   (20205, 3, 13185, 0, 0, 2432, NULL),
-  (20205, 4, 13358, 0, 0, 26, NULL),
+  (20205, 4, 13358, 0, 0, 2342, NULL),
   (20205, 5, 14552, 0, 0, 2432, NULL),
   (20205, 6, 15067, 0, 0, 2432, NULL),
-  (20205, 7, 15386, 0, 0, 26, NULL),
-  (20205, 8, 15513, 0, 0, 26, NULL),
+  (20205, 7, 15386, 0, 0, 2342, NULL),
+  (20205, 8, 15513, 0, 0, 2342, NULL),
   (20205, 9, 16669, 0, 0, 2432, NULL),
   (20205, 10, 16679, 0, 0, 2432, NULL),
   (20205, 11, 16701, 0, 0, 2432, NULL),
@@ -1264,16 +1360,16 @@ INSERT INTO npc_vendor (entry, slot, item, maxcount, incrtime, ExtendedCost, Ver
   (20205, 13, 16718, 0, 0, 2432, NULL),
   (20205, 14, 16729, 0, 0, 2432, NULL),
   (20205, 15, 16733, 0, 0, 2432, NULL),
-  (20205, 16, 18757, 0, 0, 26, NULL),
-  (20205, 17, 19394, 0, 0, 26, NULL),
-  (20205, 18, 19695, 0, 0, 26, NULL),
-  (20205, 19, 22001, 0, 0, 26, NULL),
-  (20205, 20, 22008, 0, 0, 26, NULL),
-  (20205, 21, 22016, 0, 0, 26, NULL),
-  (20205, 22, 22073, 0, 0, 26, NULL),
-  (20205, 23, 24457, 0, 0, 26, NULL),
-  (20205, 24, 25947, 0, 0, 26, NULL),
-  (20205, 25, 27417, 0, 0, 26, NULL),
+  (20205, 16, 18757, 0, 0, 2342, NULL),
+  (20205, 17, 19394, 0, 0, 2342, NULL),
+  (20205, 18, 19695, 0, 0, 2342, NULL),
+  (20205, 19, 22001, 0, 0, 2342, NULL),
+  (20205, 20, 22008, 0, 0, 2342, NULL),
+  (20205, 21, 22016, 0, 0, 2342, NULL),
+  (20205, 22, 22073, 0, 0, 2342, NULL),
+  (20205, 23, 24457, 0, 0, 2342, NULL),
+  (20205, 24, 25947, 0, 0, 2342, NULL),
+  (20205, 25, 27417, 0, 0, 2342, NULL),
   (20205, 26, 31712, 0, 0, 2432, NULL),
   (20205, 27, 44115, 0, 0, 2525, NULL),
   (20980, 1, 1116, 0, 0, 0, NULL),
@@ -1671,7 +1767,8 @@ Come back when you have them all !', 'Fight in the arena', 'Fight in the arena',
   (777016, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 83500, 0, 0, 0, 15000, 0, 0, 32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4120, 2926, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Judgment of Champions', 'Each victories give you 2 badges, loosing only 1 (at least you tried).
 Come back when you have them all !', 'More Fight in the battlegrounds', 'More Fight in the battlegrounds', 'More Fight in the battlegrounds', 0, 0, 0, 0, 0, 0, 0, 0, 29434, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 'More Fight in the battlegrounds', '', '', '', 0),
   (777017, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 83500, 0, 0, 0, 0, 0, 0, 32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Heroes of the Arena', 'Each victories give you 2 badges, loosing only 1 (at least you tried).
-Come back when you have them all !', 'Fight in the arena', 'Fight in the arena', 'Fight in the arena', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, 'Fight in the arena', '', '', '', 0);
+Come back when you have them all !', 'Fight in the arena', 'Fight in the arena', 'Fight in the arena', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, 'Fight in the arena', '', '', '', 0),
+  (777018, 2, 19, 19, 3738, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19024, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 530, 4090, 2989, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Another Arena Grand Master', 'more', 'An anotherone', 'Fight in the arena', 'Fight in the arena', 0, 0, 0, 0, 0, 0, 0, 0, 40752, 0, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 'Fight in the arena', '', '', '', 0);
 
 -- Reapply sheet-defined item requirements explicitly after quest row generation.
 UPDATE quest_template
@@ -1698,6 +1795,9 @@ WHERE ID = 777016;
 UPDATE quest_template
 SET RequiredItemId1 = 40752, RequiredItemCount1 = 35, RequiredItemId2 = 0, RequiredItemCount2 = 0, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
 WHERE ID = 777017;
+UPDATE quest_template
+SET RequiredItemId1 = 40752, RequiredItemCount1 = 30, RequiredItemId2 = 0, RequiredItemCount2 = 0, RequiredItemId3 = 0, RequiredItemCount3 = 0, RequiredItemId4 = 0, RequiredItemCount4 = 0
+WHERE ID = 777018;
 
 INSERT INTO quest_offer_reward (ID, Emote1, Emote2, Emote3, Emote4, EmoteDelay1, EmoteDelay2, EmoteDelay3, EmoteDelay4, RewardText, VerifiedBuild) VALUES
   (777000, 0, 0, 0, 0, 0, 0, 0, 0, 'Welcome to the Stormspire, traveler! Please, take a moment to rest, have a warm meal, and enjoy the artificial breeze. Your adventure in the dome starts now, but heed my words: do not step outside the glass. The twisting nether out there will tear a newcomer apart, and I’d prefer not to lose a customer so quickly.', 0),
@@ -1761,7 +1861,8 @@ Accept this reward as recognition of your unwavering dedication. Rest while you 
 
 You\'ve stood against determined foes, earned valuable experience, and strengthened your reputation among the combatants.
 
-Accept your reward with pride, and prepare yourself—the arena\'s call never grows silent, and another challenge awaits when the new week begins.', 0);
+Accept your reward with pride, and prepare yourself—the arena\'s call never grows silent, and another challenge awaits when the new week begins.', 0),
+  (777018, 0, 0, 0, 0, 0, 0, 0, 0, 'yeeee', 0);
 
 INSERT INTO quest_template_addon (ID, MaxLevel, AllowableClasses, SourceSpellID, PrevQuestID, NextQuestID, ExclusiveGroup, RewardMailTemplateID, RewardMailDelay, RequiredSkillID, RequiredSkillPoints, RequiredMinRepFaction, RequiredMaxRepFaction, RequiredMinRepValue, RequiredMaxRepValue, ProvidedItemCount, SpecialFlags) VALUES
   (777000, 19, 0, 0, 0, 777001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
@@ -1776,7 +1877,8 @@ INSERT INTO quest_template_addon (ID, MaxLevel, AllowableClasses, SourceSpellID,
   (777014, 19, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777015, 19, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
   (777016, 19, 0, 0, 777006, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
-  (777017, 19, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32);
+  (777017, 19, 0, 0, 777004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32),
+  (777018, 19, 0, 0, 777010, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32);
 
 INSERT INTO quest_request_items (ID, EmoteOnComplete, EmoteOnIncomplete, CompletionText, VerifiedBuild) VALUES
   (777000, 0, 0, '', 0),
@@ -1804,7 +1906,8 @@ Come back when you have them all !', 0),
   (777016, 0, 0, 'Each victories give you 2 badges, loosing only 1 (at least you tried).
 Come back when you have them all !', 0),
   (777017, 0, 0, 'Each victories give you 2 badges, loosing only 1 (at least you tried).
-Come back when you have them all !', 0);
+Come back when you have them all !', 0),
+  (777018, 0, 0, 'more', 0);
 
 INSERT INTO creature_queststarter (id, quest) VALUES
   (19531, 777000),
@@ -1820,7 +1923,8 @@ INSERT INTO creature_queststarter (id, quest) VALUES
   (20084, 777014),
   (20205, 777015),
   (20084, 777016),
-  (20205, 777017);
+  (20205, 777017),
+  (20205, 777018);
 
 INSERT INTO creature_questender (id, quest) VALUES
   (19531, 777000),
@@ -1836,7 +1940,8 @@ INSERT INTO creature_questender (id, quest) VALUES
   (20084, 777014),
   (20205, 777015),
   (20084, 777016),
-  (20205, 777017);
+  (20205, 777017),
+  (20205, 777018);
 
 INSERT INTO quest_poi (QuestId, id, ObjectiveIndex, MapId, WorldMapAreaId, Floor, Priority, Flags, VerifiedBuild) VALUES
   (777000, 1, -1, 530, 105, 0, 0, 0, 0),
@@ -1852,7 +1957,8 @@ INSERT INTO quest_poi (QuestId, id, ObjectiveIndex, MapId, WorldMapAreaId, Floor
   (777014, 1, -1, 530, 105, 0, 0, 0, 0),
   (777015, 1, -1, 530, 105, 0, 0, 0, 0),
   (777016, 1, -1, 530, 105, 0, 0, 0, 0),
-  (777017, 1, -1, 530, 105, 0, 0, 0, 0);
+  (777017, 1, -1, 530, 105, 0, 0, 0, 0),
+  (777018, 1, -1, 530, 105, 0, 0, 0, 0);
 
 INSERT INTO quest_poi_points (QuestId, idx1, idx2, X, Y) VALUES
   (777000, 1, 0, 4113, 3066),
@@ -1868,4 +1974,5 @@ INSERT INTO quest_poi_points (QuestId, idx1, idx2, X, Y) VALUES
   (777014, 1, 0, 4120, 2926),
   (777015, 1, 0, 4090, 2989),
   (777016, 1, 0, 4120, 2926),
-  (777017, 1, 0, 4090, 2989);
+  (777017, 1, 0, 4090, 2989),
+  (777018, 1, 0, 4090, 2989);
