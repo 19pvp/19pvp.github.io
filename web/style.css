@@ -68,7 +68,7 @@
   width: var(--icon-size);
   height: var(--icon-size);
   background-color: var(--black-color);
-  background-image: url('/assets/icons.jpg?v=414');
+  background-image: url('/assets/icons.jpg?v=415');
   background-repeat: no-repeat;
   background-size: calc(var(--icon-size) * var(--icon-columns)) auto;
   background-position: calc(var(--icon-x) * var(--icon-size) * -1) calc(var(--icon-y) * var(--icon-size) * -1);
@@ -281,8 +281,8 @@
 @supports (background-image: image-set(url('x') type('image/avif'))) {
   .icon-sprite {
     background-image: image-set(
-      url('/assets/icons.avif?v=414') type('image/avif'),
-      url('/assets/icons.jpg?v=414') type('image/jpeg')
+      url('/assets/icons.avif?v=415') type('image/avif'),
+      url('/assets/icons.jpg?v=415') type('image/jpeg')
     );
   }
 }
