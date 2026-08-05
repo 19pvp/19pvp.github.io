@@ -1,5 +1,5 @@
 diff --git a/src/ALE_SC.cpp b/src/ALE_SC.cpp
-index d8886ce..d857637 100644
+index d8886ce..7ac589a 100644
 --- a/src/ALE_SC.cpp
 +++ b/src/ALE_SC.cpp
 @@ -15,6 +15,7 @@
@@ -146,7 +146,25 @@ index d8886ce..d857637 100644
          sALE->OnLogout(player);
      }
  
-@@ -1340,6 +1413,37 @@ public:
+@@ -1000,11 +1073,17 @@ public:
+         ALLSPELLHOOK_ON_DUMMY_EFFECT_GAMEOBJECT,
+         ALLSPELLHOOK_ON_DUMMY_EFFECT_CREATURE,
+         ALLSPELLHOOK_ON_DUMMY_EFFECT_ITEM,
++        ALLSPELLHOOK_ON_SPELL_CHECK_CAST,
+         ALLSPELLHOOK_ON_CAST_CANCEL,
+         ALLSPELLHOOK_ON_CAST,
+         ALLSPELLHOOK_ON_PREPARE
+     }) { }
+ 
++    void OnSpellCheckCast(Spell* spell, bool strict, SpellCastResult& result) override
++    {
++        sALE->OnSpellCheckCast(spell, strict, result);
++    }
++
+     void OnDummyEffect(WorldObject* caster, uint32 spellID, SpellEffIndex effIndex, GameObject* gameObjTarget) override
+     {
+         sALE->OnDummyEffect(caster, spellID, effIndex, gameObjTarget);
+@@ -1340,6 +1419,37 @@ public:
      }
  };
  
@@ -184,7 +202,7 @@ index d8886ce..d857637 100644
  // Group all custom scripts
  void AddSC_ALE()
  {
-@@ -1365,4 +1469,5 @@ void AddSC_ALE()
+@@ -1365,4 +1475,5 @@ void AddSC_ALE()
      new ALE_WorldObjectScript();
      new ALE_WorldScript();
      new ALE_UnitScript();
@@ -223,7 +241,7 @@ index a8d6fc4..55ca5d2 100644
              lua_pushnil(L);
              return 1;
 diff --git a/src/LuaEngine/Hooks.h b/src/LuaEngine/Hooks.h
-index f83dd99..3b93257 100644
+index f83dd99..7aed7ef 100644
 --- a/src/LuaEngine/Hooks.h
 +++ b/src/LuaEngine/Hooks.h
 @@ -238,8 +238,15 @@ namespace Hooks
@@ -256,8 +274,16 @@ index f83dd99..3b93257 100644
          BG_EVENT_COUNT
      };
  
+@@ -407,6 +419,7 @@ namespace Hooks
+         SPELL_EVENT_ON_PREPARE                          = 1, // (event, caster, spell)
+         SPELL_EVENT_ON_CAST                             = 2, // (event, caster, spell, skipCheck)
+         SPELL_EVENT_ON_CAST_CANCEL                      = 3, // (event, caster, spell, bySelf)
++        SPELL_EVENT_ON_CHECK_CAST                        = 4, // (event, caster, spell, strict) - Return false to prevent the cast
+         SPELL_EVENT_COUNT
+     };
+ 
 diff --git a/src/LuaEngine/LuaEngine.h b/src/LuaEngine/LuaEngine.h
-index a21640d..5bcb01f 100644
+index a21640d..7a56309 100644
 --- a/src/LuaEngine/LuaEngine.h
 +++ b/src/LuaEngine/LuaEngine.h
 @@ -38,12 +38,14 @@ extern "C"
@@ -306,6 +332,14 @@ index a21640d..5bcb01f 100644
  
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
+@@ -599,6 +615,7 @@ public:
+     void OnTicketResolve(GmTicket* ticket);
+   
+     /* Spell */
++    void OnSpellCheckCast(Spell* spell, bool strict, SpellCastResult& result);
+     void OnSpellPrepare(Unit* caster, Spell* spell, SpellInfo const* spellInfo);
+     void OnSpellCast(Unit* caster, Spell* spell, SpellInfo const* spellInfo, bool skipCheck);
+     void OnSpellCastCancel(Unit* caster, Spell* spell, SpellInfo const* spellInfo, bool bySelf);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
 index c0acc01..515a794 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
@@ -624,6 +658,34 @@ index 7649274..072be2b 100644
  void ALE::OnLogout(Player* pPlayer)
  {
      START_HOOK(PLAYER_EVENT_ON_LOGOUT);
+diff --git a/src/LuaEngine/hooks/SpellHooks.cpp b/src/LuaEngine/hooks/SpellHooks.cpp
+index 8c08018..56ffa2e 100644
+--- a/src/LuaEngine/hooks/SpellHooks.cpp
++++ b/src/LuaEngine/hooks/SpellHooks.cpp
+@@ -29,6 +29,18 @@ using namespace Hooks;
+         return RETVAL;\
+     LOCK_ALE
+ 
++void ALE::OnSpellCheckCast(Spell* spell, bool strict, SpellCastResult& result)
++{
++    SpellInfo const* spellInfo = spell->GetSpellInfo();
++    START_HOOK(SPELL_EVENT_ON_CHECK_CAST, spellInfo->Id);
++    Push(spell->GetCaster());
++    Push(spell);
++    Push(strict);
++
++    if (!CallAllFunctionsBool(SpellEventBindings, key, true))
++        result = SPELL_FAILED_DONT_REPORT;
++}
++
+ void ALE::OnSpellCastCancel(Unit* caster, Spell* spell, SpellInfo const* spellInfo, bool bySelf)
+ {
+     START_HOOK(SPELL_EVENT_ON_CAST_CANCEL, spellInfo->Id);
+@@ -57,4 +69,3 @@ void ALE::OnSpellPrepare(Unit* caster, Spell* spell, SpellInfo const* spellInfo)
+ 
+     CallAllFunctions(SpellEventBindings, key);
+ }
+-
 diff --git a/src/LuaEngine/methods/AuraMethods.h b/src/LuaEngine/methods/AuraMethods.h
 index 3f63743..8db7423 100644
 --- a/src/LuaEngine/methods/AuraMethods.h
@@ -780,7 +842,7 @@ index 70e97bb..e32c8b1 100644
  };
  #endif
 diff --git a/src/LuaEngine/methods/GlobalMethods.h b/src/LuaEngine/methods/GlobalMethods.h
-index cebb7bc..1dfd5da 100644
+index cebb7bc..4d2533c 100644
 --- a/src/LuaEngine/methods/GlobalMethods.h
 +++ b/src/LuaEngine/methods/GlobalMethods.h
 @@ -14,6 +14,10 @@
@@ -1014,7 +1076,15 @@ index cebb7bc..1dfd5da 100644
       * };
       * </pre>
       *
-@@ -1432,6 +1628,68 @@ namespace LuaGlobalFunctions
+@@ -1346,6 +1542,7 @@ namespace LuaGlobalFunctions
+      *     SPELL_EVENT_ON_PREPARE                          = 1, // (event, caster, spell)
+      *     SPELL_EVENT_ON_CAST                             = 2, // (event, caster, spell, skipCheck)
+      *     SPELL_EVENT_ON_CAST_CANCEL                      = 3, // (event, caster, spell, bySelf)
++     *     SPELL_EVENT_ON_CHECK_CAST                       = 4, // (event, caster, spell, strict) - Return false to prevent the cast
+      *     SPELL_EVENT_COUNT
+      * };
+      * </pre>
+@@ -1432,6 +1629,68 @@ namespace LuaGlobalFunctions
          return 0;
      }
  

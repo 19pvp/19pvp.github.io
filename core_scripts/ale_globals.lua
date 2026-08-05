@@ -1198,6 +1198,12 @@ BG_EVENT_ON_CREATE      = 3 -- (event, bg, bgId, instanceId)
 BG_EVENT_ON_PRE_DESTROY = 4 -- (event, bg, bgId, instanceId)
 BG_EVENT_ON_QUEUE_DISTRIBUTION = 5 -- (event, bg, bracketId, queueDistributionTable) - Can return true
 
+-- RegisterSpellEvent
+SPELL_EVENT_ON_PREPARE    = 1 -- (event, caster, spell)
+SPELL_EVENT_ON_CAST       = 2 -- (event, caster, spell, skipCheck)
+SPELL_EVENT_ON_CAST_CANCEL = 3 -- (event, caster, spell, bySelf)
+SPELL_EVENT_ON_CHECK_CAST = 4 -- (event, caster, spell, strict) - Return false to prevent the cast
+
 -- RegisterPlayerEvent
 PLAYER_EVENT_ON_CHARACTER_CREATE       = 1 -- (event, player)
 PLAYER_EVENT_ON_CHARACTER_DELETE       = 2 -- (event, guid)
