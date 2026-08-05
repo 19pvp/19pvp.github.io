@@ -27,6 +27,7 @@ import { auth } from './db.ts'
 import { env } from './env.ts'
 import { handleLog } from './logs.ts'
 import { getLeaderboards } from './leaderboards.ts'
+import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib'
 
 import indexHTMLRaw from '../web/index.html' with { type: 'text' }
 import templateHTMLRaw from '../web/template.html' with { type: 'text' }
@@ -36,8 +37,7 @@ import installHTMLRaw from '../web/install.html' with { type: 'text' }
 import eventsHTMLRaw from '../web/events.html' with { type: 'text' }
 import styleCSSRaw from '../web/style.css' with { type: 'text' }
 import scriptJSRaw from '../web/script.js' with { type: 'text' }
-import logoPNG from '../web/logo.png' with { type: 'bytes' }
-import pvp19Lua from '../addons/PvP19/PvP19.lua' with { type: 'bytes' }
+import tooltipJSRaw from '../web/tooltip.js' with { type: 'text' }
 import pvp19Toc from '../addons/PvP19/PvP19.toc' with { type: 'text' }
 import manifestJSON from './manifest.json' with { type: 'json' }
 
@@ -80,10 +80,80 @@ try {
   patchSha1 = Array.from(new Uint8Array(rootBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
 } catch {}
 
+type StaticOptions = {
+  type: string
+  cache?: string
+  headers?: HeadersInit
+}
+
+const staticFile = (filePath: string, options: StaticOptions) => {
+  const resource = (async () => {
+    const path = new URL(filePath, import.meta.url)
+    const [body, file] = await Promise.all([Deno.readFile(path), Deno.stat(path)])
+    const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', body))
+    const etag = `"${Array.from(hash, (byte) => byte.toString(16).padStart(2, '0')).join('')}"`
+    const brotli = brotliCompressSync(body, {
+      params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
+    })
+    const gzip = gzipSync(body, { level: 9 })
+    return {
+      body,
+      brotli: brotli.length < body.length ? brotli : undefined,
+      gzip: gzip.length < body.length ? gzip : undefined,
+      etag,
+      lastModified: file.mtime?.toUTCString(),
+    }
+  })()
+
+  return async (request: Request) => {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return new Response('Method Not Allowed', { status: 405, headers: { allow: 'GET, HEAD' } })
+    }
+    const asset = await resource
+    const headers = new Headers(options.headers)
+    headers.set('cache-control', options.cache ?? 'public, max-age=3600')
+    headers.set('content-type', options.type)
+    headers.set('etag', asset.etag)
+    headers.set('vary', 'Accept-Encoding')
+    if (asset.lastModified) headers.set('last-modified', asset.lastModified)
+
+    const ifNoneMatch = request.headers.get('if-none-match')
+    if (ifNoneMatch === '*' || ifNoneMatch?.split(',').some((tag) => tag.trim() === asset.etag)) {
+      return new Response(null, { status: 304, headers })
+    }
+
+    const accepted = new Map(
+      (request.headers.get('accept-encoding') ?? '')
+        .toLowerCase()
+        .split(',')
+        .map((value) => {
+          const [encoding, ...parameters] = value.trim().split(';')
+          const quality = parameters.find((parameter) => parameter.trim().startsWith('q='))?.trim().slice(2)
+          return [encoding, quality === undefined ? 1 : Number(quality)]
+        })
+        .filter(([encoding, quality]) => encoding && Number.isFinite(quality)) as [string, number][],
+    )
+    const quality = (encoding: string) => accepted.get(encoding) ?? accepted.get('*') ?? 0
+    const brotliQuality = asset.brotli ? quality('br') : 0
+    const gzipQuality = asset.gzip ? quality('gzip') : 0
+    const encoding = brotliQuality >= gzipQuality && brotliQuality > 0 ? 'br' : gzipQuality > 0 ? 'gzip' : undefined
+    const body = encoding === 'br'
+      ? asset.brotli ?? asset.body
+      : encoding === 'gzip'
+      ? asset.gzip ?? asset.body
+      : asset.body
+    const bodyBytes = new Uint8Array(body)
+    if (encoding) headers.set('content-encoding', encoding)
+    headers.set('content-length', String(bodyBytes.length))
+
+    return new Response(request.method === 'HEAD' ? null : bodyBytes, { headers })
+  }
+}
+
 const inlineAssets = (html: string) => {
   return html
     .replace(/<link rel="stylesheet" href="\/style\.css(\?v=\d+)?"\s*\/?>/, `<style>${styleCSSRaw}</style>`)
-    .replace('</head>', `<script type="module">\n${scriptJSRaw}\n</script>\n</head>`)
+    .replace('</head>', `<script type="module">\n${scriptJSRaw}\n${tooltipJSRaw}\n</script>\n</head>`)
 }
 
 const composePage = (content: string, title: string, prefetch = '', containerClass = '') => {
@@ -132,9 +202,28 @@ const installHTMLBytes = new TextEncoder().encode(
       .replace('REALMLIST_PLACEHOLDER', JSON.stringify(launcherRealmlist)),
   ),
 )
-const styleCSSBytes = new TextEncoder().encode(styleCSSRaw)
 const respondText = (content: string | Uint8Array<ArrayBuffer>, type = 'text/html') =>
   new Response(content, { headers: { 'content-type': `${type}; charset=utf-8` } })
+
+const staticStyle = staticFile('../web/style.css', { type: 'text/css' })
+const staticScript = staticFile('../web/script.js', { type: 'text/javascript', cache: 'no-cache' })
+const staticTooltip = staticFile('../web/tooltip.js', { type: 'text/javascript', cache: 'no-cache' })
+const staticTooltipTest = staticFile('../web/tooltip-test.html', { type: 'text/html', cache: 'no-cache' })
+const staticDatabase = staticFile('../web/db.json', { type: 'application/json' })
+const staticIconsAVIF = staticFile('../web/assets/icons.avif', {
+  type: 'image/avif',
+  cache: 'public, max-age=31536000, immutable',
+})
+const staticIconsJPG = staticFile('../web/assets/icons.jpg', {
+  type: 'image/jpeg',
+  cache: 'public, max-age=31536000, immutable',
+})
+const staticLogo = staticFile('../web/logo.png', { type: 'image/png', cache: 'public, max-age=31536000, immutable' })
+const staticAddon = staticFile('../addons/PvP19/PvP19.lua', {
+  type: 'text/x-lua; charset=utf-8',
+  cache: 'public, max-age=60',
+  headers: { 'x-addon-version': pvp19AddonVersion },
+})
 
 void watch()
 
@@ -152,26 +241,15 @@ export default {
         return respondText(installHTMLBytes, 'text/html')
       }
       if (url.pathname === '/events') return respondText(eventsHTMLBytes, 'text/html')
-      if (url.pathname === '/style.css') {
-        return respondText(styleCSSBytes, 'text/css')
-      }
-      if (url.pathname === '/logo.png') {
-        return new Response(logoPNG, {
-          headers: {
-            'cache-control': 'public, max-age=31536000, immutable',
-            'content-type': 'image/png',
-          },
-        })
-      }
-      if (url.pathname === '/addons/PvP19.lua') {
-        return new Response(pvp19Lua, {
-          headers: {
-            'cache-control': 'public, max-age=60',
-            'content-type': 'text/x-lua; charset=utf-8',
-            'x-addon-version': pvp19AddonVersion,
-          },
-        })
-      }
+      if (url.pathname === '/tooltip-test' || url.pathname === '/tooltip-test.html') return staticTooltipTest(req)
+      if (url.pathname === '/style.css') return staticStyle(req)
+      if (url.pathname === '/script.js') return staticScript(req)
+      if (url.pathname === '/tooltip.js') return staticTooltip(req)
+      if (url.pathname === '/db.json') return staticDatabase(req)
+      if (url.pathname === '/assets/icons.avif') return staticIconsAVIF(req)
+      if (url.pathname === '/assets/icons.jpg') return staticIconsJPG(req)
+      if (url.pathname === '/logo.png') return staticLogo(req)
+      if (url.pathname === '/addons/PvP19.lua') return staticAddon(req)
       if (url.pathname === '/patch-S.mpq') {
         const session = await getSession(req)
         if (!session) return json({ error: 'Unauthorized' }, { status: 401 })

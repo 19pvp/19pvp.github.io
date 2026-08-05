@@ -10,6 +10,20 @@
   --surface2: #1e2029;
   --border-color: rgba(255, 255, 255, 0.08);
   --border-light: rgba(255, 255, 255, 0.15);
+  --gray-dark-color: #555;
+  --gray-light-color: #9d9d9d;
+  --black-color: #000;
+  --white-color: #f3f4f6;
+  --gray-color: #aaa;
+  --bright-blue-color: #71d5ff;
+  --blue-color: #367aef;
+  --green-color: #1eff00;
+  --purple-color: #a335ee;
+  --orange-color: #ff8000;
+  --gold-color: #e6cc80;
+  --yellow-color: #ffd100;
+  --overlay-bg: rgba(15, 15, 20, .98);
+  --shadow-color: rgba(0, 0, 0, .55);
 
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
@@ -41,6 +55,211 @@
   --font-title: 'Lacquer', system-ui, cursive;
   --font-sans: 'Comic Neue', cursive, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Icon sprite: set --icon-index to the zero-based db icon index. */
+.icon-sprite {
+  --icon-size: 58px;
+  --icon-index: 0;
+  --icon-columns: 35;
+  --icon-x: mod(var(--icon-index), var(--icon-columns));
+  --icon-y: round(down, calc(var(--icon-index) / var(--icon-columns)), 1);
+  display: inline-block;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background-color: var(--black-color);
+  background-image: url('/assets/icons.jpg?v=414');
+  background-repeat: no-repeat;
+  background-size: calc(var(--icon-size) * var(--icon-columns)) auto;
+  background-position: calc(var(--icon-x) * var(--icon-size) * -1) calc(var(--icon-y) * var(--icon-size) * -1);
+}
+
+#tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  pointer-events: none;
+  color: var(--white-color);
+  font: 14px/1.35 system-ui, sans-serif;
+  opacity: 1;
+  transition: opacity 160ms ease;
+}
+
+#tooltip[hidden] {
+  display: none;
+}
+
+.tooltip-shell {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tooltip-content {
+  position: relative;
+  isolation: isolate;
+  padding: 10px;
+  background-color: transparent;
+  box-shadow: none;
+  overflow: auto;
+  white-space: pre-line;
+}
+
+.tooltip-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: rgb(22 24 31 / 70%);
+  backdrop-filter: blur(7px);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='blur' x='-30' y='-30' width='160' height='160' filterUnits='userSpaceOnUse'%3E%3CfeGaussianBlur stdDeviation='2'/%3E%3C/filter%3E%3C/defs%3E%3Crect x='10' y='10' width='80' height='80' rx='5' fill='white' filter='url(%23blur)'/%3E%3C/svg%3E") center / 125% 125% no-repeat;
+  pointer-events: none;
+}
+
+.tooltip-content > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tooltip-header {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.tooltip-icon {
+  position: relative;
+  flex: 0 0 62px;
+  width: 62px;
+  height: 62px;
+  --icon-size: 58px;
+}
+
+.tooltip-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--icon-glow-color, transparent);
+}
+
+.tooltip-icon:not([data-quality]) {
+  --icon-glow-color: var(--bright-blue-color);
+}
+
+.tooltip-icon .icon-sprite {
+  position: absolute;
+  inset: 2px;
+  z-index: 1;
+  width: auto;
+  height: auto;
+}
+
+.tooltip-icon[data-quality="0"] {
+  --icon-glow-color: var(--gray-light-color);
+}
+
+.tooltip-icon[data-quality="1"] {
+  --icon-glow-color: var(--white-color);
+}
+
+.tooltip-icon[data-quality="2"] {
+  --icon-glow-color: var(--green-color);
+}
+
+.tooltip-icon[data-quality="3"] {
+  --icon-glow-color: var(--blue-color);
+}
+
+.tooltip-icon[data-quality="4"] {
+  --icon-glow-color: var(--purple-color);
+}
+
+.tooltip-icon[data-quality="5"] {
+  --icon-glow-color: var(--orange-color);
+}
+
+.tooltip-icon[data-quality="6"] {
+  --icon-glow-color: var(--gold-color);
+}
+
+.tooltip-heading {
+  min-width: 0;
+}
+
+.tooltip-name {
+  font-weight: 700;
+}
+
+.tooltip-name[data-quality="0"] {
+  color: var(--gray-light-color);
+}
+
+.tooltip-name[data-quality="1"] {
+  color: var(--white-color);
+}
+
+.tooltip-name[data-quality="2"] {
+  color: var(--green-color);
+}
+
+.tooltip-name[data-quality="3"] {
+  color: var(--blue-color);
+}
+
+.tooltip-name[data-quality="4"] {
+  color: var(--purple-color);
+}
+
+.tooltip-name[data-quality="5"] {
+  color: var(--orange-color);
+}
+
+.tooltip-name[data-quality="6"] {
+  color: var(--gold-color);
+}
+
+.tooltip-spell-name {
+  color: var(--bright-blue-color);
+}
+
+.tooltip-subtext,
+.tooltip-metadata {
+  color: var(--gray-color);
+  font-size: .9em;
+}
+
+.tooltip-description {
+  margin-top: 8px;
+  color: var(--white-color);
+}
+
+.tooltip-aura {
+  color: var(--bright-blue-color);
+}
+
+.tooltip-stat {
+  color: var(--green-color);
+}
+
+.tooltip-effect {
+  margin-top: 8px;
+  color: var(--yellow-color);
+}
+
+.tooltip-effect .tooltip-description {
+  margin-top: 2px;
+  color: var(--white-color);
+}
+
+@supports (background-image: image-set(url('x') type('image/avif'))) {
+  .icon-sprite {
+    background-image: image-set(
+      url('/assets/icons.avif?v=414') type('image/avif'),
+      url('/assets/icons.jpg?v=414') type('image/jpeg')
+    );
+  }
 }
 
 /* Base resets & typography */
@@ -228,12 +447,21 @@ header {
   gap: 6px;
 }
 
-.avatar {
-  object-fit: cover;
-  background-color: var(--surface2);
+.avatar,
+.tooltip-icon::before,
+.tooltip-icon .icon-sprite {
+  -webkit-mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 71.2 32.5' preserveAspectRatio='none'%3E%3Cpath d='M2 31 0 21Q-1 8 2 3q5-4 32-1l13-1 3 1 8-1q13-4 13 9l-1 11-2 5-1 4c-1 1-10 3-10 1L7 32q-4 2-5-1' fill='black'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 71.2 32.5' preserveAspectRatio='none'%3E%3Cpath d='M2 31 0 21Q-1 8 2 3q5-4 32-1l13-1 3 1 8-1q13-4 13 9l-1 11-2 5-1 4c-1 1-10 3-10 1L7 32q-4 2-5-1' fill='black'/%3E%3C/svg%3E");
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
+  mask-mode: alpha;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+}
+
+.avatar {
+  object-fit: cover;
+  background-color: var(--surface2);
   transform: rotate(-3deg);
 }
 

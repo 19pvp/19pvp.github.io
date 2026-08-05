@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tooltip test</title>
+    <link rel="stylesheet" href="./style.css">
+    <style>
+    .tooltip-test {
+      width: min(100%, 1100px);
+      padding: 24px;
+    }
+    .tooltip-test h1 {
+      margin-bottom: 8px;
+    }
+    .tooltip-test p {
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+    .tooltip-test-sections {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .tooltip-test-section {
+      min-width: 0;
+    }
+    .tooltip-test-section h2 {
+      margin-bottom: 10px;
+    }
+    .tooltip-test-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 4px 12px;
+    }
+    .tooltip-test-links a {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tooltip-test-links a[data-tip^="item:"] {
+      color: var(--green-color);
+    }
+    .tooltip-test-links a[data-tip^="spell:"] {
+      color: var(--blue-color);
+    }
+    </style>
+  </head>
+  <body>
+    <main class="container tooltip-test">
+      <h1>Tooltip test</h1>
+      <p>Hover an item or spell to preview its tooltip.</p>
+      <div class="tooltip-test-sections">
+        <section class="tooltip-test-section">
+          <h2>Items <span id="item-count"></span></h2>
+          <div id="item-links" class="tooltip-test-links"></div>
+        </section>
+        <section class="tooltip-test-section">
+          <h2>Spells <span id="spell-count"></span></h2>
+          <div id="spell-links" class="tooltip-test-links"></div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module">
+    import database from './db.json' with { type: 'json' }
+
+    const entries = Object.entries(database)
+      .filter(([, entry]) => entry.kind === 'item' || entry.kind === 'spell')
+      .sort(([, left], [, right]) => String(left.name).localeCompare(String(right.name)))
+
+    const links = (kind) => {
+      const fragment = document.createDocumentFragment()
+      const filtered = entries.filter(([, entry]) => entry.kind === kind)
+      for (const [key, entry] of filtered) {
+        const link = document.createElement('a')
+        link.href = `#${key}`
+        link.dataset.tip = key
+        link.textContent = `${entry.name || 'Unknown'} (${entry.id})`
+        fragment.append(link)
+      }
+      return { fragment, count: filtered.length }
+    }
+
+    for (const kind of ['item', 'spell']) {
+      const result = links(kind)
+      document.getElementById(`${kind}-links`).append(result.fragment)
+      document.getElementById(`${kind}-count`).textContent = `(${result.count})`
+    }
+    </script>
+    <script type="module" src="/script.js"></script>
+    <script type="module" src="/tooltip.js"></script>
+  </body>
+</html>
