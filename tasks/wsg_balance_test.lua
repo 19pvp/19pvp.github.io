@@ -441,6 +441,10 @@ assert(added5[3] == 8, "3rd bot added to empty team is Mage (8)")
 assert(added5[4] == 5, "4th bot added to empty team is Priest (5)")
 assert(added5[5] == 4, "5th bot added to empty team is Rogue (4)")
 
+-- 16f: A bot class already in the BG is not selected again.
+local addedWithWarriorBot = balance.selectClassesToAdd(emptyTeam, 1, { { class = 1 } })
+assert(addedWithWarriorBot[1] == 11, "Existing Warrior bot is skipped in favor of Druid")
+
 print("  -> PASSED: Bot addition selection sequence across diverse team compositions verified.")
 
 -- 17. Bot Removal Class Priority & Order

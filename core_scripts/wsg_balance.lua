@@ -244,10 +244,11 @@ local function getClassPriority(classId)
     return CLASS_PRIORITY[classId] or (10 + (classId or 99))
 end
 
-function WsgBalance.selectClassesToAdd(teamPlayers, count)
+function WsgBalance.selectClassesToAdd(teamPlayers, count, currentBots)
     if not count or count <= 0 then return {} end
 
     local presentClasses = {}
+    local botClasses = {}
     if teamPlayers then
         for _, p in ipairs(teamPlayers) do
             local c = getClassId(p)
@@ -256,16 +257,25 @@ function WsgBalance.selectClassesToAdd(teamPlayers, count)
             end
         end
     end
+    if currentBots then
+        for _, bot in ipairs(currentBots) do
+            local c = getClassId(bot)
+            if c > 0 then botClasses[c] = true end
+        end
+    end
 
-    -- Warrior is the highest-priority filler, even when the team already has one.
-    local selectedClasses = { 1 }
-    presentClasses[1] = true
+    -- Warrior is the highest-priority filler unless its fixed bot is already in the BG.
+    local selectedClasses = {}
+    if not botClasses[1] then
+        selectedClasses[1] = 1
+        presentClasses[1] = true
+    end
 
-    for i = 2, count do
+    for i = #selectedClasses + 1, count do
         local chosenClass = nil
 
         for _, classId in ipairs({ 11, 8, 5, 4 }) do
-            if not presentClasses[classId] then
+            if not presentClasses[classId] and not botClasses[classId] then
                 chosenClass = classId
                 break
             end
@@ -273,8 +283,10 @@ function WsgBalance.selectClassesToAdd(teamPlayers, count)
 
         if not chosenClass then
             for _, classId in ipairs({ 11, 8, 5, 4, 1 }) do
-                chosenClass = classId
-                break
+                if not botClasses[classId] then
+                    chosenClass = classId
+                    break
+                end
             end
         end
 
@@ -349,7 +361,7 @@ function WsgBalance.computeBotActions(roster, minPlayersPerTeam)
             end
         elseif currentBotCount < targetBotCount then
             local addCount = targetBotCount - currentBotCount
-            toAdd[team] = WsgBalance.selectClassesToAdd(tData.players, addCount)
+            toAdd[team] = WsgBalance.selectClassesToAdd(tData.players, addCount, tData.bots)
         end
     end
 
