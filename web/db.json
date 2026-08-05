@@ -47,9 +47,10 @@
     "class": 4,
     "inventoryType": 23,
     "quality": 2,
-    "weaponSpeed": 1600,
     "flags": 4096,
+    "weaponSpeed": 1600,
     "stat_5": 4,
+    "stat_45": 5,
     "custom": true
   },
   "item:16608": {
@@ -59,11 +60,16 @@
     "subclass": 2,
     "inventoryType": 6,
     "quality": 2,
+    "flags": 4096,
     "stat_32": 6,
     "stat_31": 5,
     "armor": 49,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "62352": {
+        "trigger": "use",
+        "cooldown": 300000
+      }
+    }
   },
   "item:7002": {
     "name": "Arctic Buckler",
@@ -72,12 +78,11 @@
     "subclass": 6,
     "inventoryType": 14,
     "quality": 3,
+    "flags": 4096,
     "stat_6": 8,
     "stat_7": 3,
     "armor": 642,
-    "res_frost": 5,
-    "flags": 4096,
-    "custom": true
+    "res_frost": 5
   },
   "item:13209": {
     "name": "Arena Contender",
@@ -86,6 +91,7 @@
     "inventoryType": 12,
     "quality": 2,
     "flags": 32768,
+    "created": true,
     "stat_7": 6,
     "spells": {
       "29506": {
@@ -93,7 +99,7 @@
         "cooldown": 900000
       }
     },
-    "created": true
+    "custom": true
   },
   "item:19024": {
     "name": "Arena Grand Master",
@@ -102,6 +108,7 @@
     "inventoryType": 12,
     "quality": 4,
     "flags": 64,
+    "created": true,
     "stat_7": 12,
     "spells": {
       "29506": {
@@ -109,7 +116,7 @@
         "cooldown": 900000
       }
     },
-    "created": true
+    "custom": true
   },
   "item:18706": {
     "name": "Arena Initiate",
@@ -118,6 +125,7 @@
     "inventoryType": 12,
     "quality": 1,
     "flags": 64,
+    "created": true,
     "stat_7": 3,
     "spells": {
       "29506": {
@@ -125,7 +133,7 @@
         "cooldown": 900000
       }
     },
-    "created": true
+    "custom": true
   },
   "item:8663": {
     "name": "Arena Master",
@@ -135,13 +143,13 @@
     "quality": 3,
     "armor": 50,
     "stat_7": 9,
-    "custom": true,
     "spells": {
       "29506": {
         "trigger": "use",
         "cooldown": 900000
       }
-    }
+    },
+    "custom": true
   },
   "item:6473": {
     "name": "Armor of the Fang",
@@ -150,9 +158,10 @@
     "subclass": 2,
     "inventoryType": 5,
     "quality": 3,
-    "armor": 91,
     "flags": 4096,
+    "armor": 91,
     "stat_38": 16,
+    "stat_7": 8,
     "custom": true
   },
   "item:1935": {
@@ -162,6 +171,7 @@
     "subclass": 15,
     "inventoryType": 13,
     "quality": 3,
+    "flags": 4096,
     "stat_3": 4,
     "stat_4": 3,
     "damage": [
@@ -170,9 +180,7 @@
         "max": 39
       }
     ],
-    "weaponSpeed": 1900,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 1900
   },
   "item:6678": {
     "name": "Band of Elven Grace",
@@ -180,10 +188,9 @@
     "class": 4,
     "inventoryType": 11,
     "quality": 2,
-    "stat_7": 3,
-    "stat_31": 4,
     "flags": 4096,
-    "custom": true
+    "stat_7": 3,
+    "stat_31": 4
   },
   "item:12996": {
     "name": "Band of Purification",
@@ -193,8 +200,7 @@
     "quality": 2,
     "flags": 528384,
     "stat_6": 6,
-    "stat_7": 2,
-    "custom": true
+    "stat_7": 2
   },
   "item:31270": {
     "name": "Banshee Rod",
@@ -212,7 +218,7 @@
     ],
     "weaponSpeed": 1400,
     "rangedModRange": 100,
-    "suffix": 0.1
+    "suffix": 3333
   },
   "item:20427": {
     "name": "Battle Healer's Cloak",
@@ -234,11 +240,10 @@
     "subclass": 3,
     "inventoryType": 9,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 5,
     "stat_3": 2,
-    "armor": 83,
-    "flags": 4096,
-    "custom": true
+    "armor": 83
   },
   "item:10412": {
     "name": "Belt of the Fang",
@@ -247,11 +252,10 @@
     "subclass": 2,
     "inventoryType": 6,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 6,
     "stat_3": 5,
-    "armor": 49,
-    "flags": 4096,
-    "custom": true
+    "armor": 49
   },
   "item:16701": {
     "name": "Dreadmist Mantle",
@@ -261,13 +265,13 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 27,
+    "created": true,
     "stat_5": 2,
     "stat_7": 2,
     "stat_31": 5,
     "stat_45": 6,
-    "armor": 27,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:3194": {
     "name": "Black Malice",
@@ -276,6 +280,7 @@
     "subclass": 5,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 48,
@@ -288,8 +293,13 @@
       }
     ],
     "weaponSpeed": 3300,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "18205": {
+        "trigger": "hit",
+        "ppmRate": 2,
+        "cooldown": -1
+      }
+    }
   },
   "item:6332": {
     "name": "Black Pearl Ring",
@@ -300,8 +310,7 @@
     "flags": 528384,
     "stat_6": 6,
     "stat_5": 1,
-    "stat_7": 1,
-    "custom": true
+    "stat_7": 1
   },
   "item:10399": {
     "name": "Blackened Defias Armor",
@@ -310,12 +319,11 @@
     "subclass": 2,
     "inventoryType": 5,
     "quality": 4,
+    "flags": 4096,
     "stat_7": 11,
     "stat_3": 3,
     "stat_4": 4,
-    "armor": 92,
-    "flags": 4096,
-    "custom": true
+    "armor": 92
   },
   "item:10403": {
     "name": "Blackened Defias Belt",
@@ -324,10 +332,9 @@
     "subclass": 2,
     "inventoryType": 6,
     "quality": 3,
-    "stat_38": 18,
-    "armor": 50,
     "flags": 4096,
-    "custom": true
+    "stat_38": 18,
+    "armor": 50
   },
   "item:4998": {
     "name": "Blood Ring",
@@ -335,8 +342,7 @@
     "class": 4,
     "inventoryType": 11,
     "quality": 1,
-    "stat_7": 5,
-    "custom": true
+    "stat_7": 5
   },
   "item:6226": {
     "name": "Bloody Apron",
@@ -345,10 +351,9 @@
     "subclass": 1,
     "inventoryType": 20,
     "quality": 3,
-    "stat_7": 12,
-    "armor": 41,
     "flags": 4096,
-    "custom": true
+    "stat_7": 12,
+    "armor": 41
   },
   "item:2046": {
     "name": "Bluegill Kukri",
@@ -377,6 +382,7 @@
     "armor": 24,
     "stat_45": 2,
     "stat_7": 2,
+    "stat_5": 2,
     "custom": true
   },
   "item:5423": {
@@ -386,6 +392,7 @@
     "subclass": 1,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "stat_4": 9,
     "stat_32": 4,
     "damage": [
@@ -394,9 +401,7 @@
         "max": 53
       }
     ],
-    "weaponSpeed": 2500,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2500
   },
   "item:5356": {
     "name": "Branding Rod",
@@ -413,8 +418,7 @@
       }
     ],
     "weaponSpeed": 1600,
-    "rangedModRange": 100,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:4708": {
     "name": "Bright Belt",
@@ -425,8 +429,7 @@
     "quality": 1,
     "stat_5": 4,
     "stat_7": 4,
-    "armor": 21,
-    "custom": true
+    "armor": 21
   },
   "item:3647": {
     "name": "Bright Bracers",
@@ -435,10 +438,9 @@
     "subclass": 1,
     "inventoryType": 9,
     "quality": 2,
-    "stat_5": 4,
-    "armor": 16,
     "flags": 4096,
-    "custom": true
+    "stat_5": 4,
+    "armor": 16
   },
   "item:3066": {
     "name": "Bright Gloves",
@@ -447,11 +449,10 @@
     "subclass": 1,
     "inventoryType": 10,
     "quality": 2,
+    "flags": 4096,
     "stat_6": 4,
     "stat_5": 4,
-    "armor": 24,
-    "flags": 4096,
-    "custom": true
+    "armor": 24
   },
   "item:14568": {
     "name": "Bristlebark Boots",
@@ -462,8 +463,7 @@
     "quality": 1,
     "stat_3": 5,
     "stat_7": 3,
-    "armor": 57,
-    "custom": true
+    "armor": 57
   },
   "item:30804": {
     "name": "Bronze Band of Force",
@@ -473,7 +473,12 @@
     "quality": 2,
     "flags": 528384,
     "stat_45": 6,
-    "custom": true
+    "spells": {
+      "26596": {
+        "trigger": "equip",
+        "cooldown": -1
+      }
+    }
   },
   "item:6633": {
     "name": "Butcher's Slicer",
@@ -482,6 +487,7 @@
     "subclass": 7,
     "inventoryType": 13,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 4,
     "stat_7": 3,
     "damage": [
@@ -490,9 +496,7 @@
         "max": 57
       }
     ],
-    "weaponSpeed": 2900,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2900
   },
   "item:1937": {
     "name": "Buzz Saw",
@@ -501,6 +505,7 @@
     "subclass": 7,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_3": 4,
     "stat_4": 3,
     "damage": [
@@ -509,9 +514,7 @@
         "max": 44
       }
     ],
-    "weaponSpeed": 2400,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2400
   },
   "item:2169": {
     "name": "Buzzer Blade",
@@ -520,6 +523,7 @@
     "subclass": 15,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_32": 5,
     "damage": [
       {
@@ -527,9 +531,7 @@
         "max": 28
       }
     ],
-    "weaponSpeed": 1500,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 1500
   },
   "item:20428": {
     "name": "Caretaker's Cape",
@@ -551,11 +553,10 @@
     "subclass": 3,
     "inventoryType": 9,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 3,
     "stat_7": 4,
-    "armor": 78,
-    "flags": 4096,
-    "custom": true
+    "armor": 78
   },
   "item:14151": {
     "name": "Chanting Blade",
@@ -564,8 +565,7 @@
     "subclass": 15,
     "inventoryType": 13,
     "quality": 2,
-    "stat_3": 3,
-    "stat_7": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 12,
@@ -573,7 +573,8 @@
       }
     ],
     "weaponSpeed": 1500,
-    "flags": 4096,
+    "stat_7": 3,
+    "stat_45": 3,
     "custom": true
   },
   "item:6087": {
@@ -583,11 +584,10 @@
     "subclass": 3,
     "inventoryType": 7,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 5,
     "stat_4": 11,
-    "armor": 173,
-    "flags": 4096,
-    "custom": true
+    "armor": 173
   },
   "item:6460": {
     "name": "Cobrahn's Grasp",
@@ -596,19 +596,24 @@
     "subclass": 3,
     "inventoryType": 6,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 8,
     "stat_3": 3,
-    "armor": 111,
-    "flags": 4096,
-    "custom": true
+    "armor": 111
   },
   "item:44115": {
     "name": "Commendation of Bravery",
-    "icon": 310,
+    "icon": 309,
     "class": 12,
     "quality": 2,
     "flags": 134221888,
-    "custom": true
+    "spells": {
+      "61700": {
+        "trigger": "use",
+        "charges": -1,
+        "cooldown": 2000
+      }
+    }
   },
   "item:5198": {
     "name": "Cookie's Stirring Rod",
@@ -617,6 +622,7 @@
     "subclass": 19,
     "inventoryType": 26,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 20,
@@ -625,9 +631,7 @@
       }
     ],
     "weaponSpeed": 1300,
-    "rangedModRange": 100,
-    "flags": 4096,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:5197": {
     "name": "Cookie's Tenderizer",
@@ -636,6 +640,7 @@
     "subclass": 4,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_4": 6,
     "damage": [
       {
@@ -643,9 +648,7 @@
         "max": 51
       }
     ],
-    "weaponSpeed": 2800,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2800
   },
   "item:5202": {
     "name": "Corsair's Overshirt",
@@ -654,9 +657,10 @@
     "subclass": 1,
     "inventoryType": 5,
     "quality": 3,
-    "armor": 42,
     "flags": 4096,
+    "armor": 42,
     "stat_32": 11,
+    "stat_7": 5,
     "custom": true
   },
   "item:6505": {
@@ -666,6 +670,7 @@
     "subclass": 10,
     "inventoryType": 17,
     "quality": 3,
+    "flags": 4096,
     "damage": [
       {
         "min": 47,
@@ -673,7 +678,6 @@
       }
     ],
     "weaponSpeed": 2900,
-    "flags": 4096,
     "stat_45": 7,
     "stat_32": 7,
     "stat_36": 7,
@@ -686,6 +690,7 @@
     "subclass": 7,
     "inventoryType": 13,
     "quality": 3,
+    "flags": 4096,
     "stat_38": 12,
     "damage": [
       {
@@ -693,9 +698,7 @@
         "max": 57
       }
     ],
-    "weaponSpeed": 2800,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2800
   },
   "item:14148": {
     "name": "Crystalline Cuffs",
@@ -704,12 +707,11 @@
     "subclass": 1,
     "inventoryType": 9,
     "quality": 3,
+    "flags": 4096,
     "stat_6": 2,
     "stat_5": 2,
     "stat_45": 4,
-    "armor": 15,
-    "flags": 4096,
-    "custom": true
+    "armor": 15
   },
   "item:14145": {
     "name": "Cursed Felblade",
@@ -718,6 +720,7 @@
     "subclass": 7,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 22,
@@ -725,8 +728,13 @@
       }
     ],
     "weaponSpeed": 2600,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "18381": {
+        "trigger": "hit",
+        "ppmRate": 1.2,
+        "cooldown": -1
+      }
+    }
   },
   "item:5961": {
     "name": "Dark Leather Pants",
@@ -736,8 +744,7 @@
     "inventoryType": 7,
     "quality": 1,
     "stat_3": 8,
-    "armor": 72,
-    "custom": true
+    "armor": 72
   },
   "item:12987": {
     "name": "Darkweave Breeches",
@@ -746,12 +753,11 @@
     "subclass": 1,
     "inventoryType": 7,
     "quality": 3,
+    "flags": 4096,
     "stat_6": 6,
     "stat_5": 7,
     "stat_7": 4,
-    "armor": 35,
-    "flags": 4096,
-    "custom": true
+    "armor": 35
   },
   "item:22984": {
     "name": "Dawnblade",
@@ -760,6 +766,7 @@
     "subclass": 15,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 5,
     "damage": [
       {
@@ -767,9 +774,7 @@
         "max": 29
       }
     ],
-    "weaponSpeed": 1600,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 1600
   },
   "item:4369": {
     "name": "Deadly Blunderbuss",
@@ -785,8 +790,7 @@
       }
     ],
     "weaponSpeed": 2600,
-    "rangedModRange": 100,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:3761": {
     "name": "Deadskull Shield",
@@ -795,11 +799,10 @@
     "subclass": 6,
     "inventoryType": 14,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 1,
     "stat_7": 7,
-    "armor": 611,
-    "flags": 4096,
-    "custom": true
+    "armor": 611
   },
   "item:6573": {
     "name": "Defender Boots",
@@ -851,6 +854,8 @@
     "quality": 2,
     "flags": 4096,
     "stat_36": 2,
+    "stat_4": 4,
+    "stat_7": 2,
     "custom": true
   },
   "item:6468": {
@@ -860,12 +865,11 @@
     "subclass": 2,
     "inventoryType": 6,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 6,
     "stat_3": 5,
     "stat_31": 3,
-    "armor": 51,
-    "flags": 4096,
-    "custom": true
+    "armor": 51
   },
   "item:6467": {
     "name": "Deviate Scale Gloves",
@@ -876,8 +880,7 @@
     "quality": 1,
     "stat_7": 3,
     "stat_3": 3,
-    "armor": 49,
-    "custom": true
+    "armor": 49
   },
   "item:6668": {
     "name": "Draftsman Boots",
@@ -886,11 +889,10 @@
     "subclass": 2,
     "inventoryType": 8,
     "quality": 2,
+    "flags": 4096,
     "stat_4": 5,
     "stat_7": 5,
-    "armor": 61,
-    "flags": 4096,
-    "custom": true
+    "armor": 61
   },
   "item:5317": {
     "name": "Dry Moss Tunic",
@@ -925,7 +927,7 @@
     "inventoryType": 6,
     "quality": 3,
     "armor": 113,
-    "suffix": 0.1
+    "suffix": 1000
   },
   "item:6341": {
     "name": "Eerie Stable Lantern",
@@ -933,10 +935,9 @@
     "class": 4,
     "inventoryType": 23,
     "quality": 2,
-    "stat_7": 4,
-    "stat_45": 5,
     "flags": 4096,
-    "custom": true
+    "stat_7": 4,
+    "stat_45": 5
   },
   "item:7334": {
     "name": "Efflorescent Robe",
@@ -945,11 +946,10 @@
     "subclass": 1,
     "inventoryType": 20,
     "quality": 2,
+    "flags": 4096,
     "stat_5": 2,
     "stat_32": 9,
-    "armor": 41,
-    "flags": 4096,
-    "custom": true
+    "armor": 41
   },
   "item:5201": {
     "name": "Emberstone Staff",
@@ -958,6 +958,7 @@
     "subclass": 10,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "stat_6": 5,
     "stat_7": 5,
     "stat_5": 8,
@@ -967,9 +968,7 @@
         "max": 71
       }
     ],
-    "weaponSpeed": 3000,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 3000
   },
   "item:6667": {
     "name": "Engineer's Cloak",
@@ -978,11 +977,10 @@
     "subclass": 1,
     "inventoryType": 16,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 5,
     "stat_5": 2,
-    "armor": 20,
-    "flags": 4096,
-    "custom": true
+    "armor": 20
   },
   "item:51968": {
     "name": "Enumerated Wrap",
@@ -992,7 +990,7 @@
     "inventoryType": 6,
     "quality": 3,
     "armor": 24,
-    "suffix": 0.1
+    "suffix": 1000
   },
   "item:2567": {
     "name": "Evocator's Blade",
@@ -1010,8 +1008,7 @@
         "max": 32
       }
     ],
-    "weaponSpeed": 1600,
-    "custom": true
+    "weaponSpeed": 1600
   },
   "item:4818": {
     "name": "Executioner's Sword",
@@ -1027,8 +1024,7 @@
         "max": 65
       }
     ],
-    "weaponSpeed": 3400,
-    "custom": true
+    "weaponSpeed": 3400
   },
   "item:1483": {
     "name": "Face Smasher",
@@ -1037,6 +1033,7 @@
     "subclass": 4,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_4": 3,
     "stat_7": 3,
     "damage": [
@@ -1045,9 +1042,7 @@
         "max": 48
       }
     ],
-    "weaponSpeed": 2600,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2600
   },
   "item:22982": {
     "name": "Farstrider's Longbow",
@@ -1056,6 +1051,7 @@
     "subclass": 2,
     "inventoryType": 15,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 17,
@@ -1063,9 +1059,7 @@
       }
     ],
     "weaponSpeed": 1700,
-    "rangedModRange": 100,
-    "flags": 4096,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:1121": {
     "name": "Feet of the Lynx",
@@ -1074,11 +1068,10 @@
     "subclass": 2,
     "inventoryType": 8,
     "quality": 3,
+    "flags": 4096,
     "stat_3": 8,
     "stat_4": 3,
-    "armor": 63,
-    "flags": 4096,
-    "custom": true
+    "armor": 63
   },
   "item:23530": {
     "name": "Felsteel Shield Spike",
@@ -1103,11 +1096,10 @@
     "subclass": 1,
     "inventoryType": 16,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 4,
     "stat_45": 5,
-    "armor": 19,
-    "flags": 4096,
-    "custom": true
+    "armor": 19
   },
   "item:1276": {
     "name": "Fire Hardened Buckler",
@@ -1127,10 +1119,10 @@
     "subclass": 1,
     "inventoryType": 16,
     "quality": 2,
-    "armor": 19,
-    "res_fire": 5,
     "flags": 4096,
+    "armor": 19,
     "stat_32": 5,
+    "stat_7": 5,
     "custom": true
   },
   "item:5243": {
@@ -1140,6 +1132,7 @@
     "subclass": 19,
     "inventoryType": 26,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 24,
@@ -1148,9 +1141,7 @@
       }
     ],
     "weaponSpeed": 1700,
-    "rangedModRange": 100,
-    "flags": 4096,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:4368": {
     "name": "Flying Tiger Goggles",
@@ -1171,11 +1162,10 @@
     "subclass": 2,
     "inventoryType": 8,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 6,
     "stat_3": 6,
-    "armor": 62,
-    "flags": 4096,
-    "custom": true
+    "armor": 62
   },
   "item:2167": {
     "name": "Foreman's Gloves",
@@ -1184,10 +1174,9 @@
     "subclass": 2,
     "inventoryType": 10,
     "quality": 2,
-    "stat_38": 10,
-    "armor": 48,
     "flags": 4096,
-    "custom": true
+    "stat_38": 10,
+    "armor": 48
   },
   "item:6383": {
     "name": "Forest Buckler",
@@ -1196,9 +1185,10 @@
     "subclass": 6,
     "inventoryType": 14,
     "quality": 2,
-    "armor": 478,
     "flags": 4096,
+    "armor": 478,
     "stat_7": 4,
+    "stat_5": 4,
     "custom": true
   },
   "item:3202": {
@@ -1208,10 +1198,9 @@
     "subclass": 2,
     "inventoryType": 9,
     "quality": 2,
-    "stat_3": 5,
-    "armor": 37,
     "flags": 4096,
-    "custom": true
+    "stat_3": 5,
+    "armor": 37
   },
   "item:9811": {
     "name": "Fortified Bracers",
@@ -1232,7 +1221,8 @@
       845,
       930,
       590,
-      675
+      675,
+      1015
     ]
   },
   "item:16768": {
@@ -1244,7 +1234,6 @@
     "quality": 4,
     "flags": 4096,
     "stat_7": 10,
-    "spells": {},
     "created": true
   },
   "item:3324": {
@@ -1254,11 +1243,10 @@
     "subclass": 1,
     "inventoryType": 3,
     "quality": 3,
+    "flags": 4096,
     "stat_5": 5,
     "stat_6": 5,
-    "armor": 31,
-    "flags": 4096,
-    "custom": true
+    "armor": 31
   },
   "item:6319": {
     "name": "Girdle of the Blindwatcher",
@@ -1267,11 +1255,10 @@
     "subclass": 2,
     "inventoryType": 6,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 7,
     "stat_5": 8,
-    "armor": 54,
-    "flags": 4096,
-    "custom": true
+    "armor": 54
   },
   "item:5815": {
     "name": "Glacial Stone",
@@ -1280,6 +1267,7 @@
     "subclass": 5,
     "inventoryType": 17,
     "quality": 4,
+    "flags": 4096,
     "damage": [
       {
         "min": 60,
@@ -1287,8 +1275,13 @@
       }
     ],
     "weaponSpeed": 3600,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "20869": {
+        "trigger": "hit",
+        "ppmRate": 2,
+        "cooldown": -1
+      }
+    }
   },
   "item:10413": {
     "name": "Gloves of the Fang",
@@ -1297,11 +1290,10 @@
     "subclass": 2,
     "inventoryType": 10,
     "quality": 3,
+    "flags": 4096,
     "stat_3": 6,
     "stat_4": 5,
-    "armor": 52,
-    "flags": 4096,
-    "custom": true
+    "armor": 52
   },
   "item:6449": {
     "name": "Glowing Lizardscale Cloak",
@@ -1310,11 +1302,10 @@
     "subclass": 1,
     "inventoryType": 16,
     "quality": 2,
+    "flags": 4096,
     "stat_3": 6,
     "stat_7": 2,
-    "armor": 20,
-    "flags": 4096,
-    "custom": true
+    "armor": 20
   },
   "item:892": {
     "name": "Gnoll Casting Gloves",
@@ -1324,8 +1315,7 @@
     "inventoryType": 10,
     "quality": 1,
     "stat_45": 6,
-    "armor": 22,
-    "custom": true
+    "armor": 22
   },
   "item:2910": {
     "name": "Gold Militia Boot",
@@ -1336,8 +1326,7 @@
     "quality": 1,
     "stat_4": 3,
     "stat_7": 5,
-    "armor": 126,
-    "custom": true
+    "armor": 126
   },
   "item:5195": {
     "name": "Gold-flecked Gloves",
@@ -1346,9 +1335,10 @@
     "subclass": 1,
     "inventoryType": 10,
     "quality": 3,
-    "armor": 25,
     "flags": 4096,
+    "armor": 25,
     "stat_7": 5,
+    "stat_45": 7,
     "custom": true
   },
   "item:5443": {
@@ -1358,11 +1348,10 @@
     "subclass": 6,
     "inventoryType": 14,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 5,
     "stat_3": 2,
-    "armor": 471,
-    "flags": 4096,
-    "custom": true
+    "armor": 471
   },
   "item:7001": {
     "name": "Gravestone Scepter",
@@ -1371,6 +1360,7 @@
     "subclass": 19,
     "inventoryType": 26,
     "quality": 3,
+    "flags": 4096,
     "stat_6": 1,
     "res_shadow": 5,
     "damage": [
@@ -1381,9 +1371,7 @@
       }
     ],
     "weaponSpeed": 1500,
-    "rangedModRange": 100,
-    "flags": 4096,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:24551": {
     "name": "Greater Insigna of Blasting",
@@ -1392,6 +1380,7 @@
     "inventoryType": 12,
     "quality": 3,
     "flags": 36864,
+    "created": true,
     "stat_32": 9,
     "spells": {
       "42292": {
@@ -1399,7 +1388,7 @@
         "cooldown": 180000
       }
     },
-    "created": true
+    "custom": true
   },
   "item:25829": {
     "name": "Greater Insigna of Solidity",
@@ -1408,6 +1397,7 @@
     "inventoryType": 12,
     "quality": 3,
     "flags": 36864,
+    "created": true,
     "stat_7": 7,
     "spells": {
       "42292": {
@@ -1415,7 +1405,7 @@
         "cooldown": 180000
       }
     },
-    "created": true
+    "custom": true
   },
   "item:4385": {
     "name": "Green Tinted Goggles",
@@ -1424,9 +1414,10 @@
     "subclass": 1,
     "inventoryType": 1,
     "quality": 3,
-    "armor": 35,
     "flags": 4096,
+    "armor": 35,
     "stat_31": 6,
+    "stat_7": 8,
     "custom": true
   },
   "item:9768": {
@@ -1482,11 +1473,10 @@
     "subclass": 2,
     "inventoryType": 8,
     "quality": 2,
+    "flags": 4096,
     "stat_4": 2,
     "stat_7": 7,
-    "armor": 63,
-    "flags": 4096,
-    "custom": true
+    "armor": 63
   },
   "item:15511": {
     "name": "Grunt's Legguards",
@@ -1540,8 +1530,7 @@
     "quality": 1,
     "stat_7": 4,
     "stat_3": 4,
-    "armor": 47,
-    "custom": true
+    "armor": 47
   },
   "item:2807": {
     "name": "Guillotine Axe",
@@ -1549,6 +1538,7 @@
     "class": 2,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_3": 3,
     "stat_4": 3,
     "damage": [
@@ -1557,9 +1547,7 @@
         "max": 53
       }
     ],
-    "weaponSpeed": 2700,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2700
   },
   "item:17046": {
     "name": "Gutterblade",
@@ -1567,6 +1555,7 @@
     "class": 2,
     "inventoryType": 13,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 3,
     "stat_7": 3,
     "damage": [
@@ -1575,9 +1564,7 @@
         "max": 46
       }
     ],
-    "weaponSpeed": 2200,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2200
   },
   "item:27640": {
     "name": "Hand of Argus Crossfire",
@@ -1586,6 +1573,7 @@
     "subclass": 18,
     "inventoryType": 26,
     "quality": 2,
+    "flags": 4096,
     "stat_3": 1,
     "stat_7": 1,
     "damage": [
@@ -1595,9 +1583,7 @@
       }
     ],
     "weaponSpeed": 2800,
-    "rangedModRange": 100,
-    "flags": 4096,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:8545": {
     "name": "Heavy Mageweave Bandage",
@@ -1636,6 +1622,7 @@
     "quality": 1,
     "armor": 31,
     "stat_7": 5,
+    "stat_5": 3,
     "custom": true
   },
   "item:3184": {
@@ -1687,10 +1674,9 @@
     "subclass": 1,
     "inventoryType": 20,
     "quality": 4,
-    "stat_45": 19,
-    "armor": 53,
     "flags": 4096,
-    "custom": true
+    "stat_45": 19,
+    "armor": 53
   },
   "item:22268": {
     "name": "Insigna of Blasting",
@@ -1699,6 +1685,7 @@
     "inventoryType": 12,
     "quality": 2,
     "flags": 528448,
+    "created": true,
     "stat_32": 6,
     "spells": {
       "42292": {
@@ -1706,7 +1693,7 @@
         "cooldown": 240000
       }
     },
-    "created": true
+    "custom": true
   },
   "item:18471": {
     "name": "Insigna of Solidity",
@@ -1715,6 +1702,7 @@
     "inventoryType": 12,
     "quality": 2,
     "flags": 4096,
+    "created": true,
     "stat_7": 5,
     "spells": {
       "42292": {
@@ -1722,7 +1710,7 @@
         "cooldown": 240000
       }
     },
-    "created": true
+    "custom": true
   },
   "item:28303": {
     "name": "Invoker's Signet",
@@ -1733,6 +1721,7 @@
     "flags": 4096,
     "stat_45": 2,
     "stat_32": 3,
+    "stat_5": 3,
     "custom": true
   },
   "item:12976": {
@@ -1742,6 +1731,7 @@
     "subclass": 7,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_4": 4,
     "stat_7": 2,
     "damage": [
@@ -1750,9 +1740,7 @@
         "max": 46
       }
     ],
-    "weaponSpeed": 2600,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2600
   },
   "item:10654": {
     "name": "Jutebraid Gloves",
@@ -1761,11 +1749,10 @@
     "subclass": 1,
     "inventoryType": 10,
     "quality": 3,
+    "flags": 4096,
     "stat_5": 6,
     "stat_45": 7,
-    "armor": 27,
-    "flags": 4096,
-    "custom": true
+    "armor": 27
   },
   "item:25873": {
     "name": "Keen Throwing Knife",
@@ -1791,11 +1778,10 @@
     "subclass": 1,
     "inventoryType": 6,
     "quality": 2,
+    "flags": 4096,
     "stat_5": 8,
     "stat_7": 3,
-    "armor": 23,
-    "flags": 4096,
-    "custom": true
+    "armor": 23
   },
   "item:6191": {
     "name": "Kimbra Boots",
@@ -1804,11 +1790,10 @@
     "subclass": 1,
     "inventoryType": 8,
     "quality": 2,
+    "flags": 4096,
     "stat_6": 3,
     "stat_45": 5,
-    "armor": 25,
-    "flags": 4096,
-    "custom": true
+    "armor": 25
   },
   "item:13245": {
     "name": "Kresh's Back",
@@ -1817,8 +1802,14 @@
     "subclass": 6,
     "inventoryType": 14,
     "quality": 2,
-    "armor": 471,
     "flags": 4096,
+    "armor": 471,
+    "spells": {
+      "7517": {
+        "trigger": "equip",
+        "cooldown": -1
+      }
+    },
     "stat_7": 4,
     "stat_36": 4,
     "custom": true
@@ -1831,8 +1822,7 @@
     "quality": 2,
     "flags": 528384,
     "stat_5": 6,
-    "stat_31": 2,
-    "custom": true
+    "stat_31": 2
   },
   "item:10410": {
     "name": "Leggings of the Fang",
@@ -1841,12 +1831,11 @@
     "subclass": 2,
     "inventoryType": 7,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 5,
     "stat_7": 4,
     "stat_3": 9,
-    "armor": 79,
-    "flags": 4096,
-    "custom": true
+    "armor": 79
   },
   "item:20429": {
     "name": "Legionnaire's Band",
@@ -1879,6 +1868,7 @@
   },
   "item:2516": {
     "name": "Light Shot",
+    "description": "Unlimited ammunition, You will never draw a blank.",
     "icon": 68,
     "class": 6,
     "subclass": 3,
@@ -1890,9 +1880,7 @@
         "max": 2
       }
     ],
-    "weaponSpeed": 3000,
-    "custom": true,
-    "description": "Unlimited ammunition, You will never draw a blank."
+    "weaponSpeed": 3000
   },
   "item:13136": {
     "name": "Lil Timmy's Peashooter",
@@ -1901,6 +1889,7 @@
     "subclass": 3,
     "inventoryType": 26,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 26,
@@ -1908,9 +1897,7 @@
       }
     ],
     "weaponSpeed": 2600,
-    "rangedModRange": 100,
-    "flags": 4096,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:20431": {
     "name": "Lorekeeper's Ring",
@@ -1948,6 +1935,8 @@
     "class": 4,
     "inventoryType": 12,
     "quality": 1,
+    "armor": 0,
+    "created": true,
     "stat_32": 3,
     "spells": {
       "42292": {
@@ -1955,8 +1944,7 @@
         "cooldown": 300000
       }
     },
-    "armor": 0,
-    "created": true
+    "custom": true
   },
   "item:18468": {
     "name": "Lower Insigna of Solidity",
@@ -1964,6 +1952,7 @@
     "class": 4,
     "inventoryType": 12,
     "quality": 1,
+    "created": true,
     "stat_7": 3,
     "spells": {
       "42292": {
@@ -1971,7 +1960,7 @@
         "cooldown": 300000
       }
     },
-    "created": true
+    "custom": true
   },
   "item:19972": {
     "name": "Lucky Fishing Hat",
@@ -1980,10 +1969,15 @@
     "subclass": 1,
     "inventoryType": 1,
     "quality": 4,
+    "flags": 4096,
     "stat_7": 15,
     "armor": 43,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "7823": {
+        "trigger": "equip",
+        "cooldown": -1
+      }
+    }
   },
   "item:15019": {
     "name": "Lupine Mantle",
@@ -2004,12 +1998,11 @@
     "subclass": 1,
     "inventoryType": 10,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 3,
     "stat_6": 4,
     "stat_5": 5,
-    "armor": 23,
-    "flags": 4096,
-    "custom": true
+    "armor": 23
   },
   "item:15269": {
     "name": "Massive Battle Axe",
@@ -2051,8 +2044,7 @@
     "quality": 1,
     "stat_4": 5,
     "stat_7": 5,
-    "armor": 155,
-    "custom": true
+    "armor": 155
   },
   "item:1974": {
     "name": "Mindthrust Bracers",
@@ -2061,11 +2053,10 @@
     "subclass": 1,
     "inventoryType": 9,
     "quality": 2,
+    "flags": 4096,
     "stat_5": 9,
     "stat_7": -5,
-    "armor": 17,
-    "flags": 4096,
-    "custom": true
+    "armor": 17
   },
   "item:5444": {
     "name": "Miner's Cape",
@@ -2074,8 +2065,8 @@
     "subclass": 1,
     "inventoryType": 16,
     "quality": 2,
-    "armor": 18,
     "flags": 4096,
+    "armor": 18,
     "stat_7": 4,
     "stat_36": 5,
     "custom": true
@@ -2086,26 +2077,25 @@
     "class": 4,
     "inventoryType": 11,
     "quality": 2,
-    "stat_5": 2,
-    "stat_32": 4,
     "flags": 4096,
-    "custom": true
+    "stat_5": 2,
+    "stat_32": 4
   },
   "item:4381": {
     "name": "Minor Recombobulator",
     "icon": 131,
     "class": 4,
     "inventoryType": 12,
-    "quality": 3,
+    "quality": 2,
     "flags": 4128,
-    "custom": true,
     "spells": {
       "18805": {
         "trigger": "use",
         "ppmRate": -10,
         "cooldown": 300000
       }
-    }
+    },
+    "custom": true
   },
   "item:43515": {
     "name": "Mystic Tome",
@@ -2113,9 +2103,8 @@
     "class": 4,
     "inventoryType": 23,
     "quality": 2,
-    "stat_45": 8,
     "flags": 4096,
-    "custom": true
+    "stat_45": 8
   },
   "item:15946": {
     "name": "Mystic's Sphere",
@@ -2125,6 +2114,7 @@
     "quality": 1,
     "stat_45": 3,
     "stat_5": 2,
+    "stat_7": 2,
     "custom": true
   },
   "item:19969": {
@@ -2152,6 +2142,7 @@
     "subclass": 1,
     "inventoryType": 17,
     "quality": 3,
+    "flags": 4096,
     "damage": [
       {
         "min": 52,
@@ -2164,8 +2155,13 @@
       }
     ],
     "weaponSpeed": 3300,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "13480": {
+        "trigger": "hit",
+        "ppmRate": 1,
+        "cooldown": -1
+      }
+    }
   },
   "item:935": {
     "name": "Night Watch Shortsword",
@@ -2174,6 +2170,7 @@
     "subclass": 7,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 4,
     "damage": [
       {
@@ -2181,9 +2178,7 @@
         "max": 46
       }
     ],
-    "weaponSpeed": 2600,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2600
   },
   "item:7285": {
     "name": "Nimble Leather Gloves",
@@ -2192,11 +2187,10 @@
     "subclass": 2,
     "inventoryType": 10,
     "quality": 2,
+    "flags": 4096,
     "stat_3": 4,
     "stat_37": 4,
-    "armor": 52,
-    "flags": 4096,
-    "custom": true
+    "armor": 52
   },
   "item:21934": {
     "name": "Ornate Tigerseye Necklace",
@@ -2283,9 +2277,10 @@
     "subclass": 1,
     "inventoryType": 7,
     "quality": 3,
-    "armor": 38,
     "flags": 4096,
+    "armor": 38,
     "stat_36": 7,
+    "stat_7": 8,
     "custom": true
   },
   "item:12975": {
@@ -2295,6 +2290,7 @@
     "subclass": 1,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 8,
     "stat_4": 7,
     "damage": [
@@ -2303,9 +2299,7 @@
         "max": 51
       }
     ],
-    "weaponSpeed": 2400,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2400
   },
   "item:20439": {
     "name": "Protector's Band",
@@ -2342,10 +2336,9 @@
     "class": 4,
     "inventoryType": 23,
     "quality": 2,
-    "stat_7": 2,
-    "stat_45": 6,
     "flags": 4096,
-    "custom": true
+    "stat_7": 2,
+    "stat_45": 6
   },
   "item:12983": {
     "name": "Rakzur Club",
@@ -2354,6 +2347,7 @@
     "subclass": 5,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 38,
@@ -2361,8 +2355,9 @@
       }
     ],
     "weaponSpeed": 2600,
-    "flags": 4096,
     "stat_32": 5,
+    "stat_4": 4,
+    "stat_7": 8,
     "custom": true
   },
   "item:12990": {
@@ -2371,6 +2366,7 @@
     "class": 2,
     "inventoryType": 13,
     "quality": 3,
+    "flags": 4096,
     "damage": [
       {
         "min": 25,
@@ -2378,8 +2374,8 @@
       }
     ],
     "weaponSpeed": 2400,
-    "flags": 4096,
     "stat_32": 3,
+    "stat_4": 4,
     "custom": true
   },
   "item:7284": {
@@ -2391,7 +2387,12 @@
     "quality": 2,
     "flags": 4160,
     "armor": 52,
-    "custom": true
+    "spells": {
+      "9233": {
+        "trigger": "equip",
+        "cooldown": -1
+      }
+    }
   },
   "item:12997": {
     "name": "Redbeard Crest",
@@ -2400,11 +2401,10 @@
     "subclass": 6,
     "inventoryType": 14,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 6,
     "stat_7": 3,
-    "armor": 547,
-    "flags": 4096,
-    "custom": true
+    "armor": 547
   },
   "item:4315": {
     "name": "Reinforced Woolen Shoulders",
@@ -2413,11 +2413,10 @@
     "subclass": 1,
     "inventoryType": 3,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 4,
     "stat_45": 5,
-    "armor": 28,
-    "flags": 4096,
-    "custom": true
+    "armor": 28
   },
   "item:5627": {
     "name": "Relic Blade",
@@ -2434,6 +2433,7 @@
     ],
     "weaponSpeed": 1800,
     "stat_5": 1,
+    "stat_7": 3,
     "custom": true
   },
   "item:3561": {
@@ -2445,6 +2445,7 @@
     "quality": 1,
     "armor": 20,
     "stat_31": 2,
+    "stat_7": 5,
     "custom": true
   },
   "item:5187": {
@@ -2454,7 +2455,7 @@
     "subclass": 5,
     "inventoryType": 17,
     "quality": 2,
-    "stat_7": 11,
+    "flags": 4096,
     "damage": [
       {
         "min": 45,
@@ -2462,7 +2463,7 @@
       }
     ],
     "weaponSpeed": 3200,
-    "flags": 4096,
+    "stat_7": 14,
     "custom": true
   },
   "item:1116": {
@@ -2471,10 +2472,9 @@
     "class": 4,
     "inventoryType": 11,
     "quality": 2,
-    "stat_7": 1,
-    "stat_6": 6,
     "flags": 4096,
-    "custom": true
+    "stat_7": 1,
+    "stat_6": 6
   },
   "item:5312": {
     "name": "Riveted Gauntlets",
@@ -2485,8 +2485,7 @@
     "quality": 1,
     "stat_4": 4,
     "stat_7": 1,
-    "armor": 105,
-    "custom": true
+    "armor": 105
   },
   "item:14150": {
     "name": "Robe of Evocation",
@@ -2495,12 +2494,11 @@
     "subclass": 1,
     "inventoryType": 20,
     "quality": 2,
+    "flags": 4096,
     "stat_5": 5,
     "stat_7": 4,
     "stat_32": 5,
-    "armor": 35,
-    "flags": 4096,
-    "custom": true
+    "armor": 35
   },
   "item:3555": {
     "name": "Robe of Solomon",
@@ -2522,11 +2520,11 @@
     "subclass": 1,
     "inventoryType": 20,
     "quality": 3,
-    "stat_6": 6,
+    "flags": 4096,
+    "armor": 40,
+    "stat_31": 6,
     "stat_7": 6,
     "stat_45": 7,
-    "armor": 40,
-    "flags": 4096,
     "custom": true
   },
   "item:872": {
@@ -2536,6 +2534,7 @@
     "subclass": 1,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 48,
@@ -2543,7 +2542,7 @@
       }
     ],
     "weaponSpeed": 3300,
-    "flags": 4096,
+    "stat_38": 22,
     "stat_32": 3,
     "custom": true
   },
@@ -2554,8 +2553,8 @@
     "subclass": 2,
     "inventoryType": 3,
     "quality": 3,
-    "armor": 64,
     "flags": 4096,
+    "armor": 64,
     "stat_7": 8,
     "custom": true
   },
@@ -2581,10 +2580,9 @@
     "subclass": 3,
     "inventoryType": 6,
     "quality": 2,
-    "stat_4": 8,
-    "armor": 104,
     "flags": 4096,
-    "custom": true
+    "stat_4": 8,
+    "armor": 104
   },
   "item:3822": {
     "name": "Runic Darkblade",
@@ -2593,6 +2591,7 @@
     "subclass": 8,
     "inventoryType": 17,
     "quality": 3,
+    "flags": 4096,
     "damage": [
       {
         "min": 57,
@@ -2600,8 +2599,13 @@
       }
     ],
     "weaponSpeed": 3300,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "16409": {
+        "trigger": "hit",
+        "ppmRate": 0.8,
+        "cooldown": -1
+      }
+    }
   },
   "item:6282": {
     "name": "Sacred Burial Trousers",
@@ -2610,12 +2614,11 @@
     "subclass": 1,
     "inventoryType": 7,
     "quality": 3,
+    "flags": 4096,
     "stat_6": 9,
     "stat_5": 5,
     "stat_45": 4,
-    "armor": 39,
-    "flags": 4096,
-    "custom": true
+    "armor": 39
   },
   "item:14374": {
     "name": "Sanguine Sandals",
@@ -2624,11 +2627,10 @@
     "subclass": 1,
     "inventoryType": 8,
     "quality": 2,
+    "flags": 4096,
     "stat_5": 4,
     "stat_7": 4,
-    "armor": 26,
-    "flags": 4096,
-    "custom": true
+    "armor": 26
   },
   "item:6459": {
     "name": "Savage Trodders",
@@ -2637,10 +2639,9 @@
     "subclass": 3,
     "inventoryType": 8,
     "quality": 3,
-    "stat_7": 9,
-    "armor": 134,
     "flags": 4096,
-    "custom": true
+    "stat_7": 9,
+    "armor": 134
   },
   "item:20441": {
     "name": "Scout's Blade",
@@ -2726,13 +2727,12 @@
     "subclass": 2,
     "inventoryType": 6,
     "quality": 3,
+    "flags": 4096,
     "stat_5": 5,
     "stat_7": 3,
     "stat_6": 2,
     "stat_38": 12,
-    "armor": 50,
-    "flags": 4096,
-    "custom": true
+    "armor": 50
   },
   "item:38896": {
     "name": "Scroll of Enchant 2h Weapon - Agility",
@@ -2838,7 +2838,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "63746": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38837": {
     "name": "Scroll of Enchant Boots - Minor Speed",
@@ -2846,7 +2851,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "13890": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38830": {
     "name": "Scroll of Enchant Boots - Stamina",
@@ -2854,7 +2864,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "13836": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38852": {
     "name": "Scroll of Enchant Bracer - Greater Intellect",
@@ -3016,7 +3031,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "13858": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38825": {
     "name": "Scroll of Enchant Cloak - Greater Defense",
@@ -3024,7 +3044,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "13746": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38858": {
     "name": "Scroll of Enchant Cloak - Greater Resistance",
@@ -3046,7 +3071,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "13882": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38826": {
     "name": "Scroll of Enchant Cloak - Resistance",
@@ -3054,7 +3084,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "13794": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38893": {
     "name": "Scroll of Enchant Cloak - Stealth",
@@ -3258,7 +3293,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "13689": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38816": {
     "name": "Scroll of Enchant Shield - Spirit",
@@ -3266,7 +3306,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "13659": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38828": {
     "name": "Scroll of Enchant Shield - Stamina",
@@ -3274,7 +3319,12 @@
     "subclass": 6,
     "quality": 2,
     "flags": 268439616,
-    "custom": true
+    "spells": {
+      "13817": {
+        "trigger": "use",
+        "charges": -1
+      }
+    }
   },
   "item:38860": {
     "name": "Scroll of Enchant Shield - Vitality",
@@ -3492,10 +3542,9 @@
     "class": 4,
     "inventoryType": 11,
     "quality": 4,
-    "stat_7": 8,
-    "stat_4": 3,
     "flags": 4096,
-    "custom": true
+    "stat_7": 8,
+    "stat_4": 3
   },
   "item:2933": {
     "name": "Seal of Wrynn",
@@ -3503,13 +3552,12 @@
     "class": 4,
     "inventoryType": 11,
     "quality": 4,
+    "flags": 4096,
     "stat_7": 4,
     "stat_6": 3,
     "stat_3": 3,
     "stat_4": 3,
-    "stat_5": 4,
-    "flags": 4096,
-    "custom": true
+    "stat_5": 4
   },
   "item:12992": {
     "name": "Searing Blade",
@@ -3518,6 +3566,7 @@
     "subclass": 8,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 39,
@@ -3525,8 +3574,13 @@
       }
     ],
     "weaponSpeed": 2500,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "16413": {
+        "trigger": "hit",
+        "ppmRate": 1,
+        "cooldown": -1
+      }
+    }
   },
   "item:20443": {
     "name": "Sentinel's Blade",
@@ -3563,11 +3617,10 @@
     "subclass": 1,
     "inventoryType": 16,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 5,
     "stat_3": 4,
-    "armor": 21,
-    "flags": 4096,
-    "custom": true
+    "armor": 21
   },
   "item:5614": {
     "name": "Seraph's Strike",
@@ -3576,6 +3629,7 @@
     "subclass": 8,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 54,
@@ -3583,8 +3637,8 @@
       }
     ],
     "weaponSpeed": 3200,
-    "flags": 4096,
     "stat_36": 10,
+    "stat_4": 3,
     "custom": true
   },
   "item:5970": {
@@ -3594,9 +3648,10 @@
     "subclass": 1,
     "inventoryType": 10,
     "quality": 3,
-    "armor": 25,
     "flags": 4096,
+    "armor": 25,
     "stat_36": 5,
+    "stat_45": 7,
     "custom": true
   },
   "item:5426": {
@@ -3605,6 +3660,7 @@
     "class": 2,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 23,
@@ -3612,8 +3668,13 @@
       }
     ],
     "weaponSpeed": 2500,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "18197": {
+        "trigger": "hit",
+        "ppmRate": 1,
+        "cooldown": -1
+      }
+    }
   },
   "item:5404": {
     "name": "Serpent's Shoulders",
@@ -3622,10 +3683,9 @@
     "subclass": 2,
     "inventoryType": 3,
     "quality": 3,
-    "stat_3": 9,
-    "armor": 68,
     "flags": 4096,
-    "custom": true
+    "stat_3": 9,
+    "armor": 68
   },
   "item:4373": {
     "name": "Shadow Goggles",
@@ -3634,8 +3694,8 @@
     "subclass": 1,
     "inventoryType": 1,
     "quality": 2,
-    "armor": 31,
     "flags": 4096,
+    "armor": 31,
     "stat_5": 8,
     "stat_43": 4,
     "custom": true
@@ -3647,6 +3707,7 @@
     "subclass": 7,
     "inventoryType": 13,
     "quality": 4,
+    "flags": 4096,
     "damage": [
       {
         "min": 29,
@@ -3659,8 +3720,13 @@
       }
     ],
     "weaponSpeed": 2700,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "13440": {
+        "trigger": "hit",
+        "ppmRate": 1.6,
+        "cooldown": -1
+      }
+    }
   },
   "item:1459": {
     "name": "Shadowhide Scalper",
@@ -3676,6 +3742,7 @@
     ],
     "weaponSpeed": 2900,
     "stat_7": 1,
+    "stat_4": 3,
     "custom": true
   },
   "item:6568": {
@@ -3708,11 +3775,10 @@
     "subclass": 3,
     "inventoryType": 8,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 3,
     "stat_7": 7,
-    "armor": 129,
-    "flags": 4096,
-    "custom": true
+    "armor": 129
   },
   "item:22995": {
     "name": "Sin'dorei Warblade",
@@ -3721,6 +3787,7 @@
     "subclass": 8,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 4,
     "stat_4": 10,
     "damage": [
@@ -3729,9 +3796,7 @@
         "max": 75
       }
     ],
-    "weaponSpeed": 3400,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 3400
   },
   "item:2256": {
     "name": "Skeletal Club",
@@ -3740,6 +3805,7 @@
     "subclass": 4,
     "inventoryType": 13,
     "quality": 3,
+    "flags": 4096,
     "damage": [
       {
         "min": 28,
@@ -3747,8 +3813,12 @@
       }
     ],
     "weaponSpeed": 2600,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "13440": {
+        "trigger": "hit",
+        "ppmRate": 0.75
+      }
+    }
   },
   "item:12984": {
     "name": "Skycaller",
@@ -3757,6 +3827,7 @@
     "subclass": 19,
     "inventoryType": 26,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 24,
@@ -3765,9 +3836,7 @@
       }
     ],
     "weaponSpeed": 1600,
-    "rangedModRange": 100,
-    "flags": 4096,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:22979": {
     "name": "Slayer's Band",
@@ -3776,6 +3845,7 @@
     "inventoryType": 11,
     "quality": 1,
     "stat_32": 3,
+    "stat_7": 3,
     "custom": true
   },
   "item:5199": {
@@ -3785,11 +3855,10 @@
     "subclass": 2,
     "inventoryType": 7,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 8,
     "stat_32": 7,
-    "armor": 76,
-    "flags": 4096,
-    "custom": true
+    "armor": 76
   },
   "item:7230": {
     "name": "Smite's Mighty Hammer",
@@ -3798,6 +3867,7 @@
     "subclass": 5,
     "inventoryType": 17,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 11,
     "stat_3": 4,
     "damage": [
@@ -3806,9 +3876,7 @@
         "max": 83
       }
     ],
-    "weaponSpeed": 3500,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 3500
   },
   "item:5196": {
     "name": "Smite's Reaver",
@@ -3816,6 +3884,7 @@
     "class": 2,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_4": 2,
     "stat_31": 2,
     "stat_7": 3,
@@ -3825,9 +3894,7 @@
         "max": 36
       }
     ],
-    "weaponSpeed": 1900,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 1900
   },
   "item:4320": {
     "name": "Spidersilk Boots",
@@ -3836,26 +3903,24 @@
     "subclass": 1,
     "inventoryType": 8,
     "quality": 3,
+    "flags": 4096,
     "stat_45": 8,
     "stat_5": 4,
     "stat_7": 4,
-    "armor": 29,
-    "flags": 4096,
-    "custom": true
+    "armor": 29
   },
   "item:45626": {
     "name": "Spidersilk Drape",
-    "icon": 412,
+    "icon": 411,
     "class": 4,
     "subclass": 1,
     "inventoryType": 16,
     "quality": 3,
+    "flags": 4096,
     "stat_31": 4,
     "stat_7": 4,
     "stat_45": 4,
-    "armor": 21,
-    "flags": 4096,
-    "custom": true
+    "armor": 21
   },
   "item:6333": {
     "name": "Spikelash Dagger",
@@ -3872,8 +3937,7 @@
         "max": 28
       }
     ],
-    "weaponSpeed": 1900,
-    "custom": true
+    "weaponSpeed": 1900
   },
   "item:6629": {
     "name": "Sporid Cape",
@@ -3882,11 +3946,10 @@
     "subclass": 1,
     "inventoryType": 16,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 5,
     "stat_6": 4,
-    "armor": 20,
-    "flags": 4096,
-    "custom": true
+    "armor": 20
   },
   "item:2271": {
     "name": "Staff of the Blessed Seer",
@@ -3895,6 +3958,7 @@
     "subclass": 10,
     "inventoryType": 17,
     "quality": 3,
+    "flags": 4096,
     "stat_6": 3,
     "stat_7": 2,
     "stat_45": 13,
@@ -3904,9 +3968,7 @@
         "max": 71
       }
     ],
-    "weaponSpeed": 3000,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 3000
   },
   "item:3415": {
     "name": "Staff of the Friar",
@@ -3915,6 +3977,7 @@
     "subclass": 10,
     "inventoryType": 17,
     "quality": 3,
+    "flags": 4096,
     "stat_6": 11,
     "stat_7": 4,
     "stat_5": 3,
@@ -3924,9 +3987,7 @@
         "max": 64
       }
     ],
-    "weaponSpeed": 2600,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2600
   },
   "item:22980": {
     "name": "Staff of the Sun",
@@ -3935,6 +3996,7 @@
     "subclass": 10,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "stat_6": 4,
     "stat_5": 10,
     "damage": [
@@ -3943,9 +4005,7 @@
         "max": 66
       }
     ],
-    "weaponSpeed": 3000,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 3000
   },
   "item:2042": {
     "name": "Staff of Westfall",
@@ -3954,6 +4014,7 @@
     "subclass": 10,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "stat_6": 11,
     "stat_5": 5,
     "damage": [
@@ -3962,9 +4023,7 @@
         "max": 74
       }
     ],
-    "weaponSpeed": 3000,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 3000
   },
   "item:4406": {
     "name": "Standard Scope",
@@ -3973,7 +4032,14 @@
     "subclass": 3,
     "quality": 2,
     "flags": 4160,
-    "custom": true
+    "spells": {
+      "3975": {
+        "trigger": "use",
+        "charges": -1,
+        "ppmRate": -1,
+        "cooldown": 1000
+      }
+    }
   },
   "item:12988": {
     "name": "Starsight Tunic",
@@ -3982,11 +4048,10 @@
     "subclass": 2,
     "inventoryType": 5,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 4,
     "stat_6": 10,
-    "armor": 89,
-    "flags": 4096,
-    "custom": true
+    "armor": 89
   },
   "item:4534": {
     "name": "Steel-clasped Bracers",
@@ -3995,11 +4060,10 @@
     "subclass": 3,
     "inventoryType": 9,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 6,
     "stat_6": 1,
-    "armor": 85,
-    "flags": 4096,
-    "custom": true
+    "armor": 85
   },
   "item:6472": {
     "name": "Stinging Viper",
@@ -4008,6 +4072,7 @@
     "subclass": 4,
     "inventoryType": 13,
     "quality": 3,
+    "flags": 4096,
     "damage": [
       {
         "min": 30,
@@ -4015,8 +4080,12 @@
       }
     ],
     "weaponSpeed": 2800,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "18197": {
+        "trigger": "hit",
+        "ppmRate": 1
+      }
+    }
   },
   "item:14149": {
     "name": "Subterranean Cape",
@@ -4025,8 +4094,8 @@
     "subclass": 1,
     "inventoryType": 16,
     "quality": 2,
-    "armor": 17,
     "flags": 4096,
+    "armor": 17,
     "stat_4": 5,
     "stat_3": 5,
     "custom": true
@@ -4039,10 +4108,10 @@
     "inventoryType": 5,
     "quality": 4,
     "flags": 4096,
-    "stat_45": 19,
     "armor": 53,
-    "spells": {},
-    "created": true
+    "created": true,
+    "stat_45": 19,
+    "custom": true
   },
   "item:2035": {
     "name": "Sword of the Night Sky",
@@ -4069,6 +4138,7 @@
     "subclass": 15,
     "inventoryType": 13,
     "quality": 2,
+    "flags": 4096,
     "stat_3": 3,
     "stat_4": 4,
     "damage": [
@@ -4077,9 +4147,7 @@
         "max": 34
       }
     ],
-    "weaponSpeed": 1800,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 1800
   },
   "item:10657": {
     "name": "Talbar Mantle",
@@ -4088,11 +4156,10 @@
     "subclass": 1,
     "inventoryType": 3,
     "quality": 3,
+    "flags": 4096,
     "stat_5": 6,
     "stat_7": 3,
-    "armor": 30,
-    "flags": 4096,
-    "custom": true
+    "armor": 30
   },
   "item:5194": {
     "name": "Taskmaster Axe",
@@ -4101,6 +4168,7 @@
     "subclass": 1,
     "inventoryType": 17,
     "quality": 3,
+    "flags": 4096,
     "damage": [
       {
         "min": 42,
@@ -4108,8 +4176,8 @@
       }
     ],
     "weaponSpeed": 2700,
-    "flags": 4096,
     "stat_36": 8,
+    "stat_7": 8,
     "custom": true
   },
   "item:29201": {
@@ -4128,8 +4196,7 @@
       }
     ],
     "weaponSpeed": 2200,
-    "rangedModRange": 100,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:21933": {
     "name": "Thick Bronze Necklace",
@@ -4139,6 +4206,7 @@
     "quality": 3,
     "flags": 4096,
     "stat_45": 5,
+    "stat_7": 3,
     "custom": true
   },
   "item:5192": {
@@ -4156,8 +4224,7 @@
         "max": 32
       }
     ],
-    "weaponSpeed": 1700,
-    "custom": true
+    "weaponSpeed": 1700
   },
   "item:12994": {
     "name": "Thorbia's Gauntlets",
@@ -4166,11 +4233,10 @@
     "subclass": 3,
     "inventoryType": 10,
     "quality": 3,
+    "flags": 4096,
     "stat_4": 8,
     "stat_7": 3,
-    "armor": 122,
-    "flags": 4096,
-    "custom": true
+    "armor": 122
   },
   "item:12645": {
     "name": "Thorium shield spike",
@@ -4203,8 +4269,7 @@
       }
     ],
     "weaponSpeed": 1800,
-    "rangedModRange": 100,
-    "custom": true
+    "rangedModRange": 100
   },
   "item:1131": {
     "name": "Totem of Infliction",
@@ -4214,7 +4279,12 @@
     "quality": 2,
     "flags": 4160,
     "armor": 50,
-    "custom": true
+    "spells": {
+      "7617": {
+        "trigger": "equip",
+        "cooldown": -1
+      }
+    }
   },
   "item:46978": {
     "name": "Totem of the Earthen Ring",
@@ -4232,10 +4302,9 @@
     "subclass": 2,
     "inventoryType": 5,
     "quality": 2,
-    "stat_7": 13,
-    "armor": 92,
     "flags": 4096,
-    "custom": true
+    "stat_7": 13,
+    "armor": 92
   },
   "item:10653": {
     "name": "Trailblazer Boots",
@@ -4244,11 +4313,10 @@
     "subclass": 2,
     "inventoryType": 8,
     "quality": 2,
+    "flags": 4096,
     "stat_7": 3,
     "stat_3": 7,
-    "armor": 64,
-    "flags": 4096,
-    "custom": true
+    "armor": 64
   },
   "item:22990": {
     "name": "Tranquillien Champion's Cloak",
@@ -4269,11 +4337,10 @@
     "subclass": 1,
     "inventoryType": 5,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 6,
     "stat_5": 10,
-    "armor": 42,
-    "flags": 4096,
-    "custom": true
+    "armor": 42
   },
   "item:51994": {
     "name": "Tumultuous Cloak",
@@ -4283,7 +4350,7 @@
     "inventoryType": 16,
     "quality": 3,
     "armor": 21,
-    "suffix": 0.1
+    "suffix": 1300
   },
   "item:2041": {
     "name": "Tunic of Westfall",
@@ -4292,11 +4359,10 @@
     "subclass": 2,
     "inventoryType": 5,
     "quality": 3,
+    "flags": 4096,
     "stat_7": 5,
     "stat_3": 11,
-    "armor": 92,
-    "flags": 4096,
-    "custom": true
+    "armor": 92
   },
   "item:890": {
     "name": "Twisted Chanter's Staff",
@@ -4305,6 +4371,7 @@
     "subclass": 10,
     "inventoryType": 17,
     "quality": 3,
+    "flags": 4096,
     "stat_5": 10,
     "stat_7": 6,
     "damage": [
@@ -4313,9 +4380,7 @@
         "max": 84
       }
     ],
-    "weaponSpeed": 3400,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 3400
   },
   "item:6469": {
     "name": "Venomstrike",
@@ -4324,6 +4389,7 @@
     "subclass": 2,
     "inventoryType": 15,
     "quality": 4,
+    "flags": 4096,
     "damage": [
       {
         "min": 26,
@@ -4332,8 +4398,12 @@
     ],
     "weaponSpeed": 2400,
     "rangedModRange": 100,
-    "flags": 4096,
-    "custom": true
+    "spells": {
+      "29636": {
+        "trigger": "equip",
+        "cooldown": -1
+      }
+    }
   },
   "item:51964": {
     "name": "Vigorous Belt",
@@ -4343,7 +4413,7 @@
     "inventoryType": 6,
     "quality": 3,
     "armor": 53,
-    "suffix": 0.1
+    "suffix": 1000
   },
   "item:5750": {
     "name": "Warchief's Girdle",
@@ -4364,6 +4434,7 @@
     "subclass": 7,
     "inventoryType": 13,
     "quality": 3,
+    "flags": 4096,
     "stat_3": 5,
     "stat_7": 2,
     "damage": [
@@ -4372,9 +4443,7 @@
         "max": 45
       }
     ],
-    "weaponSpeed": 2200,
-    "flags": 4096,
-    "custom": true
+    "weaponSpeed": 2200
   },
   "item:1484": {
     "name": "Witching Stave",
@@ -4383,6 +4452,7 @@
     "subclass": 10,
     "inventoryType": 17,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 55,
@@ -4390,8 +4460,8 @@
       }
     ],
     "weaponSpeed": 3600,
-    "flags": 4096,
     "stat_32": 8,
+    "stat_45": 9,
     "custom": true
   },
   "item:1306": {
@@ -4403,8 +4473,7 @@
     "quality": 1,
     "stat_3": 2,
     "stat_7": 2,
-    "armor": 34,
-    "custom": true
+    "armor": 34
   },
   "item:6447": {
     "name": "Worn Turtle Shell Shield",
@@ -4413,8 +4482,8 @@
     "subclass": 6,
     "inventoryType": 14,
     "quality": 2,
-    "armor": 662,
     "flags": 4096,
+    "armor": 662,
     "custom": true
   },
   "item:15331": {
@@ -4457,8 +4526,7 @@
         "max": 66
       }
     ],
-    "weaponSpeed": 3600,
-    "custom": true
+    "weaponSpeed": 3600
   },
   "item:7336": {
     "name": "Wildwood Chain",
@@ -4492,10 +4560,10 @@
     "subclass": 1,
     "inventoryType": 1,
     "quality": 2,
-    "stat_31": 11,
     "armor": 50,
-    "spells": {},
-    "created": true
+    "created": true,
+    "stat_31": 11,
+    "custom": true
   },
   "item:15196": {
     "name": "Private's Tabard",
@@ -4517,7 +4585,6 @@
     "class": 1,
     "inventoryType": 18,
     "quality": 1,
-    "spells": {},
     "created": true
   },
   "item:21876": {
@@ -4527,21 +4594,20 @@
     "inventoryType": 18,
     "quality": 2,
     "flags": 4096,
-    "spells": {},
     "created": true
   },
   "item:51809": {
     "name": "Portable Hole",
-    "icon": 413,
+    "icon": 412,
     "class": 1,
     "inventoryType": 18,
     "quality": 4,
     "flags": 4096,
-    "spells": {},
     "created": true
   },
   "item:2512": {
     "name": "Rough Arrow",
+    "description": "Unlimited ammunition, You will never draw a blank.",
     "icon": 67,
     "class": 6,
     "subclass": 2,
@@ -4553,63 +4619,58 @@
         "max": 2
       }
     ],
-    "weaponSpeed": 3000,
-    "custom": true,
-    "description": "Unlimited ammunition, You will never draw a blank."
+    "weaponSpeed": 3000
   },
   "item:2519": {
     "name": "Heavy Shot",
+    "description": "Unlimited ammunition, You will never draw a blank.",
     "icon": 68,
     "class": 6,
     "subclass": 3,
     "inventoryType": 24,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 3,
         "max": 4
       }
     ],
-    "weaponSpeed": 3000,
-    "flags": 4096,
-    "custom": true,
-    "description": "Unlimited ammunition, You will never draw a blank."
+    "weaponSpeed": 3000
   },
   "item:2515": {
     "name": "Sharp Arrow",
+    "description": "Unlimited ammunition, You will never draw a blank.",
     "icon": 67,
     "class": 6,
     "subclass": 2,
     "inventoryType": 24,
     "quality": 2,
+    "flags": 4096,
     "damage": [
       {
         "min": 3,
         "max": 4
       }
     ],
-    "weaponSpeed": 3000,
-    "flags": 4096,
-    "custom": true,
-    "description": "Unlimited ammunition, You will never draw a blank."
+    "weaponSpeed": 3000
   },
   "item:8068": {
     "name": "Crafted Heavy Shot",
+    "description": "Unlimited ammunition, You will never draw a blank.",
     "icon": 68,
     "class": 6,
     "subclass": 3,
     "inventoryType": 24,
     "quality": 3,
+    "flags": 4096,
     "damage": [
       {
         "min": 4,
         "max": 5
       }
     ],
-    "weaponSpeed": 3000,
-    "flags": 4096,
-    "custom": true,
-    "description": "Unlimited ammunition, You will never draw a blank."
+    "weaponSpeed": 3000
   },
   "item:22016": {
     "name": "Gladiator Beastmaster's Mantle",
@@ -4619,13 +4680,13 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 69,
+    "created": true,
     "stat_3": 8,
     "stat_7": 6,
     "stat_38": 8,
     "stat_31": 4,
-    "armor": 69,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:15513": {
     "name": "Gladiator Ironfeather Shoulders",
@@ -4635,13 +4696,13 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 69,
+    "created": true,
     "stat_5": 6,
     "stat_7": 4,
     "stat_43": 1,
     "stat_45": 6,
-    "armor": 69,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:22073": {
     "name": "Gladiator Dreadmist Mantle",
@@ -4651,13 +4712,13 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 31,
+    "created": true,
     "stat_5": 3,
     "stat_7": 3,
     "stat_31": 5,
     "stat_45": 6,
-    "armor": 31,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:15386": {
     "name": "Gladiator Thunderclaw Epaulets",
@@ -4667,13 +4728,13 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 69,
+    "created": true,
     "stat_7": 5,
     "stat_5": 3,
     "stat_45": 6,
     "stat_36": 5,
-    "armor": 69,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:18757": {
     "name": "Gladiator Sunderseer Mantle",
@@ -4683,13 +4744,13 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 31,
+    "created": true,
     "stat_7": 5,
     "stat_45": 6,
     "stat_32": 3,
     "stat_36": 5,
-    "armor": 31,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:27417": {
     "name": "Gladiator Feralheart Spaulders",
@@ -4699,12 +4760,12 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 69,
+    "created": true,
     "stat_7": 9,
     "stat_45": 6,
     "stat_31": 3,
-    "armor": 69,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:19394": {
     "name": "Gladiator Herod's Shoulder",
@@ -4714,13 +4775,13 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 69,
+    "created": true,
     "stat_3": 5,
     "stat_7": 5,
     "stat_5": 3,
     "stat_38": 10,
-    "armor": 69,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:24457": {
     "name": "Gladiator Lightforge Spaulders",
@@ -4730,13 +4791,13 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 148,
+    "created": true,
     "stat_7": 6,
     "stat_45": 5,
     "stat_43": 1,
     "stat_36": 4,
-    "armor": 148,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:25947": {
     "name": "Gladiator Pauldrons of Elements",
@@ -4746,13 +4807,13 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 69,
+    "created": true,
     "stat_7": 6,
     "stat_5": 4,
     "stat_45": 5,
     "stat_43": 1,
-    "armor": 69,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:22008": {
     "name": "Gladiator Shadowcraft Spaulders",
@@ -4762,12 +4823,12 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 69,
+    "created": true,
     "stat_7": 4,
     "stat_38": 14,
     "stat_31": 4,
-    "armor": 69,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:22001": {
     "name": "Gladiator Spaulders of Valor",
@@ -4777,12 +4838,12 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 148,
+    "created": true,
     "stat_7": 6,
     "stat_4": 6,
     "stat_32": 4,
-    "armor": 148,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:19695": {
     "name": "Gladiator Stockade Pauldrons",
@@ -4792,12 +4853,12 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 148,
+    "created": true,
     "stat_4": 5,
     "stat_7": 7,
     "stat_31": 4,
-    "armor": 148,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:13358": {
     "name": "Gladiator Stormshroud Shoulders",
@@ -4807,13 +4868,13 @@
     "inventoryType": 3,
     "quality": 4,
     "flags": 4096,
+    "armor": 69,
+    "created": true,
     "stat_3": 3,
     "stat_7": 6,
     "stat_38": 8,
     "stat_32": 4,
-    "armor": 69,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:16679": {
     "name": "Beastmaster's Mantle",
@@ -4823,13 +4884,13 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 61,
+    "created": true,
     "stat_3": 4,
     "stat_7": 4,
     "stat_38": 8,
     "stat_31": 4,
-    "armor": 61,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:15067": {
     "name": "Ironfeather Shoulders",
@@ -4839,13 +4900,13 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 61,
+    "created": true,
     "stat_5": 5,
     "stat_7": 4,
     "stat_43": 1,
     "stat_45": 5,
-    "armor": 61,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:31712": {
     "name": "Thunderclaw Epaulets",
@@ -4855,13 +4916,13 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 61,
+    "created": true,
     "stat_7": 4,
     "stat_5": 3,
     "stat_45": 6,
     "stat_36": 4,
-    "armor": 61,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:16718": {
     "name": "Feralheart Spaulders",
@@ -4871,12 +4932,12 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 61,
+    "created": true,
     "stat_7": 8,
     "stat_45": 5,
     "stat_31": 3,
-    "armor": 61,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:7718": {
     "name": "Herod's Shoulder",
@@ -4886,13 +4947,13 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 61,
+    "created": true,
     "stat_3": 4,
     "stat_7": 4,
     "stat_5": 3,
     "stat_38": 10,
-    "armor": 61,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:16729": {
     "name": "Lightforge Spaulders",
@@ -4902,13 +4963,13 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 137,
+    "created": true,
     "stat_7": 4,
     "stat_45": 5,
     "stat_43": 1,
     "stat_36": 4,
-    "armor": 137,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:16669": {
     "name": "Pauldrons of Elements",
@@ -4918,13 +4979,13 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 61,
+    "created": true,
     "stat_7": 4,
     "stat_5": 4,
     "stat_45": 5,
     "stat_43": 1,
-    "armor": 61,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:16708": {
     "name": "Shadowcraft Spaulders",
@@ -4934,12 +4995,12 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 61,
+    "created": true,
     "stat_7": 4,
     "stat_38": 10,
     "stat_31": 4,
-    "armor": 61,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:16733": {
     "name": "Spaulders of Valor",
@@ -4949,12 +5010,12 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 137,
+    "created": true,
     "stat_7": 5,
     "stat_4": 5,
     "stat_32": 4,
-    "armor": 137,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:14552": {
     "name": "Stockade Pauldrons",
@@ -4964,12 +5025,12 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 137,
+    "created": true,
     "stat_4": 5,
     "stat_7": 5,
     "stat_31": 4,
-    "armor": 137,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:10153": {
     "name": "Stormshroud Shoulders",
@@ -4979,13 +5040,13 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 61,
+    "created": true,
     "stat_3": 3,
     "stat_7": 4,
     "stat_38": 8,
     "stat_32": 4,
-    "armor": 61,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:13185": {
     "name": "Sunderseer Mantle",
@@ -4995,13 +5056,13 @@
     "inventoryType": 3,
     "quality": 3,
     "flags": 4096,
+    "armor": 27,
+    "created": true,
     "stat_7": 4,
     "stat_45": 6,
     "stat_32": 3,
     "stat_36": 4,
-    "armor": 27,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:25438": {
     "name": "Malachite Pendant",
@@ -5021,10 +5082,10 @@
     "inventoryType": 2,
     "quality": 2,
     "flags": 4160,
+    "created": true,
     "stat_7": 2,
     "stat_3": 4,
-    "spells": {},
-    "created": true
+    "custom": true
   },
   "item:3480": {
     "name": "Rough Bronze Shoulders",
@@ -5035,6 +5096,7 @@
     "quality": 2,
     "armor": 130,
     "stat_4": 4,
+    "stat_7": 4,
     "custom": true
   },
   "item:6043": {
@@ -5043,7 +5105,14 @@
     "subclass": 6,
     "quality": 2,
     "flags": 64,
-    "custom": true
+    "spells": {
+      "7218": {
+        "trigger": "use",
+        "charges": -1,
+        "ppmRate": -1,
+        "cooldown": -1
+      }
+    }
   },
   "item:38929": {
     "name": "Scroll of Enchant Chest - Restore Mana Prime",
@@ -5091,7 +5160,7 @@
   },
   "spell:81": {
     "name": "Dodge",
-    "icon": 352,
+    "icon": 351,
     "nameSubtext": "Passive",
     "description": "Gives a chance to dodge enemy melee attacks.",
     "school": 1
@@ -5130,7 +5199,7 @@
   },
   "spell:118": {
     "name": "Polymorph",
-    "icon": 359,
+    "icon": 358,
     "nameSubtext": "Rank 1",
     "description": "Transforms the enemy into a sheep, forcing it to wander around for up to 20 sec. While wandering, the sheep cannot attack or cast spells but will regenerate very quickly. Any damage will transform the target back into its normal form. Only one target can be polymorphed at a time. Only works on Beasts, Humanoids and Critters.",
     "auraDescription": "Cannot attack or cast spells. Increased regeneration.",
@@ -5143,7 +5212,7 @@
   },
   "spell:122": {
     "name": "Frost Nova",
-    "icon": 308,
+    "icon": 307,
     "nameSubtext": "Rank 1",
     "description": "Blasts enemies near the caster for 19 to 21 Frost damage and freezes them in place for up to 8 sec. Damage caused may interrupt the effect.",
     "auraDescription": "Frozen in place.",
@@ -5155,7 +5224,7 @@
   },
   "spell:130": {
     "name": "Slow Fall",
-    "icon": 341,
+    "icon": 340,
     "description": "Slows friendly party or raid target's falling speed for 30 sec.",
     "auraDescription": "Slows falling speed.",
     "school": 64,
@@ -5190,7 +5259,7 @@
   },
   "spell:325": {
     "name": "Lightning Shield",
-    "icon": 354,
+    "icon": 353,
     "nameSubtext": "Rank 2",
     "description": "The caster is surrounded by 3 balls of lightning. When a spell, melee or ranged attack hits the caster, the attacker will be struck for 29 Nature damage. This expends one lightning ball. Only one ball will fire every few seconds. Lasts 10 min. Only one Elemental Shield can be active on the Shaman at any one time.",
     "auraDescription": "Causes 29 Nature damage to attacker on hit. 3 charges.",
@@ -5199,7 +5268,7 @@
   },
   "spell:355": {
     "name": "Taunt",
-    "icon": 364,
+    "icon": 363,
     "description": "Taunts the target to attack you, but has no effect if the target is already attacking you.",
     "auraDescription": "Taunted.",
     "school": 1,
@@ -5210,7 +5279,7 @@
   },
   "spell:370": {
     "name": "Purge",
-    "icon": 360,
+    "icon": 359,
     "nameSubtext": "Rank 1",
     "description": "Purges the enemy target, removing 1 beneficial magic effect.",
     "school": 8,
@@ -5221,7 +5290,7 @@
   },
   "spell:475": {
     "name": "Remove Curse",
-    "icon": 366,
+    "icon": 365,
     "description": "Removes 1 Curse from a friendly target.",
     "school": 64,
     "resource": {
@@ -5231,7 +5300,7 @@
   },
   "spell:498": {
     "name": "Divine Protection",
-    "icon": 331,
+    "icon": 330,
     "description": "Reduces all damage taken by -50% for 12 sec. Once protected, the target cannot be targeted by Divine Shield, Divine Protection, or Hand of Protection again for 2 min. Cannot be used within 30 sec of using Avenging Wrath.",
     "auraDescription": "Damage taken reduced by -50%.",
     "school": 2,
@@ -5243,7 +5312,7 @@
   },
   "spell:526": {
     "name": "Cure Toxins",
-    "icon": 358,
+    "icon": 357,
     "description": "Cures 1 poison effect and 1 disease effect on a friendly target.",
     "school": 8,
     "resource": {
@@ -5253,7 +5322,7 @@
   },
   "spell:527": {
     "name": "Dispel Magic",
-    "icon": 313,
+    "icon": 312,
     "nameSubtext": "Rank 1",
     "description": "Dispels magic on the target, removing 1 harmful spell from a friend or 1 beneficial spell from an enemy.",
     "school": 2,
@@ -5264,7 +5333,7 @@
   },
   "spell:528": {
     "name": "Cure Disease",
-    "icon": 326,
+    "icon": 325,
     "description": "Removes 1 disease from the friendly target.",
     "school": 2,
     "resource": {
@@ -5274,7 +5343,7 @@
   },
   "spell:548": {
     "name": "Lightning Bolt",
-    "icon": 353,
+    "icon": 352,
     "nameSubtext": "Rank 3",
     "description": "Casts a bolt of lightning at the target for 45 Nature damage.",
     "castTime": 2500,
@@ -5286,7 +5355,7 @@
   },
   "spell:586": {
     "name": "Fade",
-    "icon": 342,
+    "icon": 341,
     "description": "Fade out, temporarily reducing all your threat for 10 sec.",
     "auraDescription": "Reduced threat level.",
     "school": 32,
@@ -5297,7 +5366,7 @@
   },
   "spell:588": {
     "name": "Inner Fire",
-    "icon": 321,
+    "icon": 320,
     "nameSubtext": "Rank 1",
     "description": "A burst of Holy energy fills the caster, increasing armor by 315. Each melee or ranged damage hit against the priest will remove one charge. Lasts 30 min or until 20 charges are used.",
     "auraDescription": "Increases armor by 315.",
@@ -5309,7 +5378,7 @@
   },
   "spell:598": {
     "name": "Smite",
-    "icon": 320,
+    "icon": 319,
     "nameSubtext": "Rank 3",
     "description": "Smite an enemy for 54 Holy damage.",
     "castTime": 2500,
@@ -5321,7 +5390,7 @@
   },
   "spell:600": {
     "name": "Power Word: Shield",
-    "icon": 327,
+    "icon": 326,
     "nameSubtext": "Rank 3",
     "description": "Draws on the soul of the friendly target to shield them, absorbing 158 damage. Lasts 30 sec. While the shield holds, spellcasting will not be interrupted by damage. Once shielded, the target cannot be shielded again for 15 sec.",
     "auraDescription": "Absorbs damage.",
@@ -5333,7 +5402,7 @@
   },
   "spell:604": {
     "name": "Dampen Magic",
-    "icon": 344,
+    "icon": 343,
     "nameSubtext": "Rank 1",
     "description": "Dampens magic used against the targeted party member, decreasing damage taken from spells by up to -10 and healing spells by up to -11. Lasts 10 min.",
     "auraDescription": "Reduces magic damage taken by up to -10 and healing by up to -11.",
@@ -5345,7 +5414,7 @@
   },
   "spell:633": {
     "name": "Lay on Hands",
-    "icon": 322,
+    "icon": 321,
     "nameSubtext": "Rank 1",
     "description": "Heals a friendly target for an amount equal to the Paladin's maximum health. If used on self, the Paladin cannot be targeted by Divine Shield, Divine Protection, Hand of Protection, or self-targeted Lay on Hands again for 2 min. Also cannot be used on self within 30 sec of using Avenging Wrath.",
     "school": 2,
@@ -5353,7 +5422,7 @@
   },
   "spell:647": {
     "name": "Holy Light",
-    "icon": 318,
+    "icon": 317,
     "nameSubtext": "Rank 3",
     "description": "Heals a friendly target for 203.",
     "castTime": 2500,
@@ -5385,7 +5454,7 @@
   },
   "spell:688": {
     "name": "Summon Imp",
-    "icon": 404,
+    "icon": 403,
     "nameSubtext": "Summon",
     "description": "Summons an Imp under the command of the Warlock.",
     "castTime": 10000,
@@ -5397,7 +5466,7 @@
   },
   "spell:689": {
     "name": "Drain Life",
-    "icon": 394,
+    "icon": 393,
     "nameSubtext": "Rank 1",
     "description": "Transfers 10 health every 1 sec from the target to the caster. Lasts 5 sec.",
     "auraDescription": "Drains 10 health every 1 sec to the caster.",
@@ -5409,7 +5478,7 @@
   },
   "spell:693": {
     "name": "Create Soulstone",
-    "icon": 403,
+    "icon": 402,
     "nameSubtext": "Rank 1",
     "description": "Creates a Minor Soulstone. The Soulstone can be used to store one target's soul. If the target dies while his soul is stored, he will be able to resurrect with -400 health and 700 mana.\r\n\r\nConjured items disappear if logged out for more than 15 minutes.",
     "castTime": 3000,
@@ -5433,7 +5502,7 @@
   },
   "spell:696": {
     "name": "Demon Skin",
-    "icon": 397,
+    "icon": 396,
     "nameSubtext": "Rank 2",
     "description": "Protects the caster, increasing armor by 265, and increasing the amount of health generated through spells and effects by 20%. Only one type of Armor spell can be active on the Warlock at any time. Lasts 30 min.",
     "auraDescription": "Increases armor by 265, and amount of health generated through spells and effects by 20%",
@@ -5445,7 +5514,7 @@
   },
   "spell:697": {
     "name": "Summon Voidwalker",
-    "icon": 405,
+    "icon": 404,
     "nameSubtext": "Summon",
     "description": "Summons a Voidwalker under the command of the Warlock.",
     "castTime": 10000,
@@ -5470,7 +5539,7 @@
   },
   "spell:705": {
     "name": "Shadow Bolt",
-    "icon": 400,
+    "icon": 399,
     "nameSubtext": "Rank 3",
     "description": "Sends a shadowy bolt at the enemy, causing 48 Shadow damage.",
     "castTime": 2800,
@@ -5482,7 +5551,7 @@
   },
   "spell:707": {
     "name": "Immolate",
-    "icon": 301,
+    "icon": 300,
     "nameSubtext": "Rank 2",
     "description": "Burns the enemy for 19 Fire damage and then an additional 40 Fire damage over 15 sec.",
     "auraDescription": "8 Fire damage every 3 seconds.",
@@ -5495,7 +5564,7 @@
   },
   "spell:755": {
     "name": "Health Funnel",
-    "icon": 393,
+    "icon": 392,
     "nameSubtext": "Rank 1",
     "description": "Gives 12 health to the caster's pet every second for 10 sec as long as the caster channels.",
     "auraDescription": "Transferring Life.",
@@ -5509,7 +5578,7 @@
   },
   "spell:770": {
     "name": "Faerie Fire",
-    "icon": 350,
+    "icon": 349,
     "description": "Decrease the armor of the target by -5% for 5 min. While affected, the target cannot stealth or turn invisible.",
     "auraDescription": "Decreases armor by -5%. Cannot stealth or turn invisible.",
     "school": 8,
@@ -5532,7 +5601,7 @@
   },
   "spell:782": {
     "name": "Thorns",
-    "icon": 377,
+    "icon": 376,
     "nameSubtext": "Rank 2",
     "description": "Thorns sprout from the friendly target causing 6 Nature damage to attackers when hit. Lasts 10 min.",
     "auraDescription": "Causes 6 Nature damage to attackers.",
@@ -5556,7 +5625,7 @@
   },
   "spell:822": {
     "name": "Magic Resistance",
-    "icon": 383,
+    "icon": 382,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by spells by -2%.",
     "school": 1,
@@ -5564,7 +5633,7 @@
   },
   "spell:837": {
     "name": "Frostbolt",
-    "icon": 307,
+    "icon": 306,
     "nameSubtext": "Rank 3",
     "description": "Launches a bolt of frost at the enemy, causing 51 to 57 Frost damage and slowing movement speed by -40% for 6 sec.",
     "auraDescription": "Movement slowed by -40%.",
@@ -5577,7 +5646,7 @@
   },
   "spell:853": {
     "name": "Hammer of Justice",
-    "icon": 335,
+    "icon": 334,
     "nameSubtext": "Rank 1",
     "description": "Stuns the target for 3 sec and interrupts non-player spellcasting for 3 sec.",
     "auraDescription": "Stunned.",
@@ -5596,7 +5665,7 @@
   },
   "spell:913": {
     "name": "Healing Wave",
-    "icon": 355,
+    "icon": 354,
     "nameSubtext": "Rank 4",
     "description": "Heals a friendly target for 268.",
     "castTime": 3000,
@@ -5615,7 +5684,7 @@
   },
   "spell:970": {
     "name": "Shadow Word: Pain",
-    "icon": 402,
+    "icon": 401,
     "nameSubtext": "Rank 3",
     "description": "A word of darkness that causes 120 Shadow damage over 18 sec.",
     "auraDescription": "20 Shadow damage every 3 seconds.",
@@ -5662,7 +5731,7 @@
   },
   "spell:1008": {
     "name": "Amplify Magic",
-    "icon": 315,
+    "icon": 314,
     "nameSubtext": "Rank 1",
     "description": "Amplifies magic used against the targeted party member, increasing damage taken from spells by up to 15 and healing spells by up to 16. Lasts 10 min.",
     "auraDescription": "Increases magic damage taken by up to 15 and healing by up to 16.",
@@ -5674,7 +5743,7 @@
   },
   "spell:1014": {
     "name": "Curse of Agony",
-    "icon": 387,
+    "icon": 386,
     "nameSubtext": "Rank 2",
     "description": "Curses the target with agony, causing 180 Shadow damage over 24 sec. This damage is dealt slowly at first, and builds up as the Curse reaches its full duration. Only one Curse per Warlock can be active on any one target.",
     "auraDescription": "180 Shadow damage over 24 sec.",
@@ -5686,7 +5755,7 @@
   },
   "spell:1022": {
     "name": "Hand of Protection",
-    "icon": 336,
+    "icon": 335,
     "nameSubtext": "Rank 1",
     "description": "A targeted party or raid member is protected from all physical attacks for 6 sec, but during that time they cannot attack or use physical abilities. Players may only have one Hand on them per Paladin at any one time. Once protected, the target cannot be targeted by Divine Shield, Divine Protection, or Hand of Protection again for 2 min. Cannot be targeted on players who have used Avenging Wrath within the last 30 sec.",
     "auraDescription": "Immune to physical attacks. Cannot attack or use physical abilities.",
@@ -5698,7 +5767,7 @@
   },
   "spell:1044": {
     "name": "Hand of Freedom",
-    "icon": 337,
+    "icon": 336,
     "description": "Places a Hand on the friendly target, granting immunity to movement impairing effects for 6 sec. Players may only have one Hand on them per Paladin at any one time.",
     "auraDescription": "Immune to movement impairing effects.",
     "school": 2,
@@ -5710,7 +5779,7 @@
   },
   "spell:1062": {
     "name": "Entangling Roots",
-    "icon": 375,
+    "icon": 374,
     "nameSubtext": "Rank 2",
     "description": "Roots the target in place and causes 50 Nature damage over 15 sec. Damage caused may interrupt the effect.",
     "auraDescription": "Rooted. Causes 10 Nature damage every 3 seconds.",
@@ -5735,7 +5804,7 @@
   },
   "spell:1108": {
     "name": "Curse of Weakness",
-    "icon": 386,
+    "icon": 385,
     "nameSubtext": "Rank 2",
     "description": "Target's melee attack power is reduced by -41 and armor is reduced by -5% for 2 min. Only one Curse per Warlock can be active on any one target.",
     "auraDescription": "Melee attack power reduced by -41, and armor is reduced by -5%.",
@@ -5747,7 +5816,7 @@
   },
   "spell:1120": {
     "name": "Drain Soul",
-    "icon": 392,
+    "icon": 391,
     "nameSubtext": "Rank 1",
     "description": "Drains the soul of the target, causing 55 Shadow damage over 15 sec. If the target is at or below 25% health, Drain Soul causes four times the normal damage. If the target dies while being drained, and yields experience or honor, the caster gains a Soul Shard. Each time the Drain Soul damages the target, it also has a chance to generate a Soul Shard. Soul Shards are required for other spells.",
     "auraDescription": "11 Shadow damage every 3 seconds.",
@@ -5771,7 +5840,7 @@
   },
   "spell:1152": {
     "name": "Purify",
-    "icon": 329,
+    "icon": 328,
     "description": "Purifies the friendly target, removing 1 disease effect and 1 poison effect.",
     "school": 2,
     "resource": {
@@ -5794,7 +5863,7 @@
   },
   "spell:1244": {
     "name": "Power Word: Fortitude",
-    "icon": 340,
+    "icon": 339,
     "nameSubtext": "Rank 2",
     "description": "Power infuses the target, increasing their Stamina by 8 for 30 min.",
     "auraDescription": "Increases Stamina by 8.",
@@ -5806,7 +5875,7 @@
   },
   "spell:1430": {
     "name": "Rejuvenation",
-    "icon": 365,
+    "icon": 364,
     "nameSubtext": "Rank 3",
     "description": "Heals the target for 145 over 15 sec.",
     "auraDescription": "Heals 29 damage every 3 seconds.",
@@ -5818,7 +5887,7 @@
   },
   "spell:1449": {
     "name": "Arcane Explosion",
-    "icon": 381,
+    "icon": 380,
     "nameSubtext": "Rank 1",
     "description": "Causes an explosion of arcane magic around the caster, causing 32 Arcane damage to all targets within 10 yards.",
     "school": 64,
@@ -5829,7 +5898,7 @@
   },
   "spell:1455": {
     "name": "Life Tap",
-    "icon": 384,
+    "icon": 383,
     "nameSubtext": "Rank 2",
     "description": "Converts 216 health into 116 mana. Spell power increases the amount of mana returned.",
     "school": 32,
@@ -5840,7 +5909,7 @@
   },
   "spell:1460": {
     "name": "Arcane Intellect",
-    "icon": 324,
+    "icon": 323,
     "nameSubtext": "Rank 2",
     "description": "Increases the target's Intellect by 7 for 30 min.",
     "auraDescription": "Increases Intellect by 7.",
@@ -5895,7 +5964,7 @@
   },
   "spell:1535": {
     "name": "Fire Nova",
-    "icon": 302,
+    "icon": 301,
     "nameSubtext": "Rank 1",
     "description": "Causes the shaman's active Fire totem to emit a wave of flames, inflicting 48 Fire damage to enemies within 10 yards of the totem.",
     "school": 4,
@@ -5918,7 +5987,7 @@
   },
   "spell:1758": {
     "name": "Sinister Strike",
-    "icon": 399,
+    "icon": 398,
     "nameSubtext": "Rank 3",
     "description": "An instant strike that causes 10 damage in addition to 100% of your normal weapon damage. Awards 1 combo point.",
     "school": 1,
@@ -5961,7 +6030,7 @@
   },
   "spell:1804": {
     "name": "Pick Lock",
-    "icon": 356,
+    "icon": 355,
     "description": "Allows opening of locked chests and doors.",
     "castTime": 5000,
     "school": 1,
@@ -5981,7 +6050,7 @@
   },
   "spell:2006": {
     "name": "Resurrection",
-    "icon": 332,
+    "icon": 331,
     "nameSubtext": "Rank 1",
     "description": "Brings a dead player back to life with 70 health and 135 mana. Cannot be cast when in combat.",
     "castTime": 10000,
@@ -5993,7 +6062,7 @@
   },
   "spell:2008": {
     "name": "Ancestral Spirit",
-    "icon": 362,
+    "icon": 361,
     "nameSubtext": "Rank 1",
     "description": "Returns the spirit to the body, restoring a dead target to life with 65 health and 120 mana. Cannot be cast when in combat.",
     "castTime": 10000,
@@ -6005,7 +6074,7 @@
   },
   "spell:2053": {
     "name": "Lesser Heal",
-    "icon": 323,
+    "icon": 322,
     "nameSubtext": "Rank 3",
     "description": "Heal your target for 135.",
     "castTime": 2500,
@@ -6017,7 +6086,7 @@
   },
   "spell:2054": {
     "name": "Heal",
-    "icon": 317,
+    "icon": 316,
     "nameSubtext": "Rank 1",
     "description": "Heal your target for 295.",
     "castTime": 3000,
@@ -6029,7 +6098,7 @@
   },
   "spell:2120": {
     "name": "Flamestrike",
-    "icon": 304,
+    "icon": 303,
     "nameSubtext": "Rank 1",
     "description": "Calls down a pillar of fire, burning all enemies within the area for 52 Fire damage and an additional 48 Fire damage over 8 sec.",
     "auraDescription": "12 Fire damage every 2 seconds.",
@@ -6042,7 +6111,7 @@
   },
   "spell:2137": {
     "name": "Fire Blast",
-    "icon": 297,
+    "icon": 296,
     "nameSubtext": "Rank 2",
     "description": "Blasts the enemy for 57 Fire damage.",
     "school": 4,
@@ -6063,7 +6132,7 @@
   },
   "spell:2479": {
     "name": "Honorless Target",
-    "icon": 342,
+    "icon": 341,
     "auraDescription": "You are currently worth no honor points to the enemy.",
     "school": 1
   },
@@ -6078,7 +6147,7 @@
   },
   "spell:2484": {
     "name": "Earthbind Totem",
-    "icon": 376,
+    "icon": 375,
     "description": "Summons an Earthbind Totem with 5 health at the feet of the caster for 45 sec that slows the movement speed of enemies within 10 yards.",
     "school": 1,
     "resource": {
@@ -6113,7 +6182,7 @@
   },
   "spell:2637": {
     "name": "Hibernate",
-    "icon": 369,
+    "icon": 368,
     "nameSubtext": "Rank 1",
     "description": "Forces the enemy target to sleep for up to 20 sec. Any damage will awaken the target. Only one target can be forced to hibernate at a time. Only works on Beasts and Dragonkin.",
     "auraDescription": "Asleep.",
@@ -6126,7 +6195,7 @@
   },
   "spell:2641": {
     "name": "Dismiss Pet",
-    "icon": 371,
+    "icon": 370,
     "description": "Dismiss your pet. Dismissing your pet will reduce its happiness by 50.",
     "castTime": 5000,
     "school": 1,
@@ -6145,7 +6214,7 @@
   },
   "spell:2645": {
     "name": "Ghost Wolf",
-    "icon": 371,
+    "icon": 370,
     "description": "Turns the Shaman into a Ghost Wolf, increasing speed by 40%. As a Ghost Wolf, the Shaman is less hindered by effects that would reduce movement speed. Only useable outdoors.",
     "auraDescription": "Increases movement speed by 40%.\r\nEffects that reduce movement speed may not bring you below your normal movement speed.",
     "castTime": 2000,
@@ -6200,7 +6269,7 @@
   },
   "spell:3140": {
     "name": "Fireball",
-    "icon": 298,
+    "icon": 297,
     "nameSubtext": "Rank 4",
     "description": "Hurls a fiery ball that causes 84 Fire damage and an additional 12 Fire damage over 8 sec.",
     "auraDescription": "3 Fire damage every 2 seconds.",
@@ -6213,7 +6282,7 @@
   },
   "spell:3599": {
     "name": "Searing Totem",
-    "icon": 303,
+    "icon": 302,
     "nameSubtext": "Rank 1",
     "description": "Summons a Searing Totem with 5 health at your feet for 30 sec that repeatedly attacks an enemy within 20 yards for 9 Fire damage.",
     "school": 1,
@@ -6224,7 +6293,7 @@
   },
   "spell:3975": {
     "name": "Standard Scope",
-    "icon": 410,
+    "icon": 409,
     "description": "Attaches a permanent scope to a bow or gun that increases its damage by 2.",
     "castTime": 3000,
     "school": 1
@@ -6238,7 +6307,7 @@
   },
   "spell:5116": {
     "name": "Concussive Shot",
-    "icon": 309,
+    "icon": 308,
     "description": "Dazes the target, slowing movement speed by -50% for 4 sec.",
     "auraDescription": "Movement slowed by -50%.",
     "castTime": -1000000,
@@ -6258,7 +6327,7 @@
   },
   "spell:5144": {
     "name": "Arcane Missiles",
-    "icon": 372,
+    "icon": 371,
     "nameSubtext": "Rank 2",
     "description": "Launches Arcane Missiles at the enemy, causing 36 Arcane damage every 1 sec for 4 sec.",
     "school": 64,
@@ -6282,7 +6351,7 @@
   },
   "spell:5178": {
     "name": "Wrath",
-    "icon": 344,
+    "icon": 343,
     "nameSubtext": "Rank 3",
     "description": "Causes 49 Nature damage to the target.",
     "castTime": 2000,
@@ -6294,7 +6363,7 @@
   },
   "spell:5187": {
     "name": "Healing Touch",
-    "icon": 351,
+    "icon": 350,
     "nameSubtext": "Rank 3",
     "description": "Heals a friendly target for 195 to 243.",
     "castTime": 2500,
@@ -6319,7 +6388,7 @@
   },
   "spell:5227": {
     "name": "Underwater Breathing",
-    "icon": 389,
+    "icon": 388,
     "nameSubtext": "Racial Passive",
     "description": "Underwater breath lasts 233% longer than normal.",
     "school": 1,
@@ -6339,7 +6408,7 @@
   },
   "spell:5232": {
     "name": "Mark of the Wild",
-    "icon": 363,
+    "icon": 362,
     "nameSubtext": "Rank 2",
     "description": "Increases the friendly target's armor by 65 and all attributes by 2 for 30 min.",
     "auraDescription": "Increases armor by 65 and all attributes by 2.",
@@ -6364,7 +6433,7 @@
   },
   "spell:5277": {
     "name": "Evasion",
-    "icon": 401,
+    "icon": 400,
     "nameSubtext": "Rank 1",
     "description": "The rogue's dodge chance will increase by 50% for 15 sec.",
     "auraDescription": "Increases dodge chance by 50%.",
@@ -6400,7 +6469,7 @@
   },
   "spell:5676": {
     "name": "Searing Pain",
-    "icon": 305,
+    "icon": 304,
     "nameSubtext": "Rank 1",
     "description": "Inflict searing pain on the enemy target, causing 34 Fire damage. Causes a high amount of threat.",
     "castTime": 1500,
@@ -6412,7 +6481,7 @@
   },
   "spell:5697": {
     "name": "Unending Breath",
-    "icon": 389,
+    "icon": 388,
     "description": "Allows the target to breathe underwater for 10 min.",
     "auraDescription": "Underwater Breathing.",
     "school": 32,
@@ -6423,7 +6492,7 @@
   },
   "spell:5782": {
     "name": "Fear",
-    "icon": 395,
+    "icon": 394,
     "nameSubtext": "Rank 1",
     "description": "Strikes fear in the enemy, causing it to run in fear for up to 10 sec. Damage caused may interrupt the effect. Only 1 target can be feared at a time.",
     "auraDescription": "Feared.",
@@ -6436,7 +6505,7 @@
   },
   "spell:6074": {
     "name": "Renew",
-    "icon": 330,
+    "icon": 329,
     "nameSubtext": "Rank 2",
     "description": "Heals the target for 100 over 15 sec.",
     "auraDescription": "Healing 20 damage every 3 seconds.",
@@ -6471,7 +6540,7 @@
   },
   "spell:6222": {
     "name": "Corruption",
-    "icon": 382,
+    "icon": 381,
     "nameSubtext": "Rank 2",
     "description": "Corrupts the target, causing 90 Shadow damage over 15 sec.",
     "auraDescription": "18 Shadow damage every 3 seconds.",
@@ -6483,7 +6552,7 @@
   },
   "spell:6390": {
     "name": "Stoneclaw Totem",
-    "icon": 373,
+    "icon": 372,
     "nameSubtext": "Rank 2",
     "description": "Summons a Stoneclaw Totem with 150 health at the feet of the caster for 15 sec that taunts creatures within 8 yards to attack it. Enemies attacking the Stoneclaw Totem have a 50% chance to be stunned for 3 sec. Stoneclaw totem also protects all your totems, causing them to absorb 58 damage.",
     "auraDescription": "Taunting creatures.",
@@ -6592,14 +6661,14 @@
   },
   "spell:7218": {
     "name": "Weapon Counterweight",
-    "icon": 410,
+    "icon": 409,
     "description": "Attaches a counterweight to a two-handed sword, mace, axe or polearm increasing the wielder's haste rating by 20.",
     "castTime": 3000,
     "school": 1
   },
   "spell:7294": {
     "name": "Retribution Aura",
-    "icon": 311,
+    "icon": 310,
     "nameSubtext": "Rank 1",
     "description": "Causes 10 Holy damage to any enemy that strikes a party or raid member within 40 yards. Players may only have one Aura on them per Paladin at any one time.",
     "auraDescription": "Does 10 Holy damage to anyone who strikes you.",
@@ -6608,7 +6677,7 @@
   },
   "spell:7300": {
     "name": "Frost Armor",
-    "icon": 306,
+    "icon": 305,
     "nameSubtext": "Rank 2",
     "description": "Increases Armor by 110. If an enemy strikes the caster, they may have their movement slowed by -30% and the time between their attacks increased by -25% for 5 sec. Only one type of Armor spell can be active on the Mage at any time. Lasts 30 min.",
     "auraDescription": "Increases Armor by 110 and may slow attackers.",
@@ -6620,7 +6689,7 @@
   },
   "spell:7328": {
     "name": "Redemption",
-    "icon": 332,
+    "icon": 331,
     "nameSubtext": "Rank 1",
     "description": "Brings a dead player back to life with 65 health and 120 mana. Cannot be cast when in combat.",
     "castTime": 10000,
@@ -6655,20 +6724,20 @@
   },
   "spell:7517": {
     "name": "Increased Defense",
-    "icon": 410,
+    "icon": 409,
     "description": "Increases defense rating by 6.",
     "school": 1
   },
   "spell:7617": {
     "name": "Shadow Bolt",
-    "icon": 410,
+    "icon": 409,
     "description": "When struck in combat has a 1% chance of inflicting 75 Shadow damage to the attacker.",
     "school": 32,
     "classMask": 256
   },
   "spell:7744": {
     "name": "Will of the Forsaken",
-    "icon": 398,
+    "icon": 397,
     "nameSubtext": "Racial",
     "description": "Removes any Charm, Fear and Sleep effect. This effect shares a 45 sec cooldown with other similar effects.",
     "school": 1,
@@ -6687,13 +6756,13 @@
   },
   "spell:7823": {
     "name": "Fishing Skill +5",
-    "icon": 411,
+    "icon": 410,
     "description": "Fishing skill increased by 5.",
     "school": 1
   },
   "spell:8019": {
     "name": "Rockbiter Weapon",
-    "icon": 368,
+    "icon": 367,
     "nameSubtext": "Rank 3",
     "description": "Imbue the Shaman's weapon, increasing its damage per second by 6. Lasts 30 minutes.",
     "school": 8,
@@ -6704,7 +6773,7 @@
   },
   "spell:8027": {
     "name": "Flametongue Weapon",
-    "icon": 300,
+    "icon": 299,
     "nameSubtext": "Rank 2",
     "description": "Imbue the Shaman's weapon with fire, increasing total spell damage by 13. Each hit causes 6.221 to 19.16 additional Fire damage, based on the speed of the weapon. Slower weapons cause more fire damage per swing. Lasts 30 minutes.",
     "school": 4,
@@ -6715,7 +6784,7 @@
   },
   "spell:8045": {
     "name": "Earth Shock",
-    "icon": 348,
+    "icon": 347,
     "nameSubtext": "Rank 3",
     "description": "Instantly shocks the target with concussive force, causing 60 Nature damage and reducing melee attack speed by -10% for 8 sec.",
     "auraDescription": "Time between attacks increased by -10%.",
@@ -6727,7 +6796,7 @@
   },
   "spell:8052": {
     "name": "Flame Shock",
-    "icon": 299,
+    "icon": 298,
     "nameSubtext": "Rank 2",
     "description": "Instantly sears the target with fire, causing 45 Fire damage immediately and 72 Fire damage over 18 sec. This periodic damage may critically strike and will occur more rapidly based on the caster's spell haste.",
     "auraDescription": "12 Fire damage every 3 seconds.",
@@ -6739,7 +6808,7 @@
   },
   "spell:8075": {
     "name": "Strength of Earth Totem",
-    "icon": 347,
+    "icon": 346,
     "nameSubtext": "Rank 1",
     "description": "Summons a Strength of Earth Totem with 5 health at the feet of the caster. The totem increases the strength and agility of all party and raid members within 30 yards by 10. Lasts 5 min.",
     "school": 1,
@@ -6750,7 +6819,7 @@
   },
   "spell:8102": {
     "name": "Mind Blast",
-    "icon": 407,
+    "icon": 406,
     "nameSubtext": "Rank 2",
     "description": "Blasts the target for 72 Shadow damage.",
     "castTime": 1500,
@@ -6762,7 +6831,7 @@
   },
   "spell:8122": {
     "name": "Psychic Scream",
-    "icon": 396,
+    "icon": 395,
     "nameSubtext": "Rank 1",
     "description": "The caster lets out a psychic scream, causing 2 enemies within 8 yards to flee for 8 sec. Damage caused may interrupt the effect.",
     "auraDescription": "Running in Fear.",
@@ -6774,7 +6843,7 @@
   },
   "spell:8143": {
     "name": "Tremor Totem",
-    "icon": 379,
+    "icon": 378,
     "description": "Summons a Tremor Totem with 5 health at the feet of the caster that shakes the ground around it, removing Fear, Charm and Sleep effects from party members within 30 yards. Lasts 5 min.",
     "school": 1,
     "resource": {
@@ -6784,7 +6853,7 @@
   },
   "spell:8154": {
     "name": "Stoneskin Totem",
-    "icon": 374,
+    "icon": 373,
     "nameSubtext": "Rank 2",
     "description": "Summons a Stoneskin Totem with 5 health at the feet of the caster. The totem protects party and raid members within 30 yards, increasing armor by 200. Lasts 5 min.",
     "school": 1,
@@ -6795,7 +6864,7 @@
   },
   "spell:8198": {
     "name": "Thunder Clap",
-    "icon": 378,
+    "icon": 377,
     "nameSubtext": "Rank 2",
     "description": "Blasts nearby enemies increasing the time between their attacks by -10% for 14 sec and doing 34 damage to them. Damage increased by attack power. This ability causes additional threat.",
     "auraDescription": "Time between attacks increased by -10%.",
@@ -6832,7 +6901,7 @@
   },
   "spell:8925": {
     "name": "Moonfire",
-    "icon": 372,
+    "icon": 371,
     "nameSubtext": "Rank 3",
     "description": "Burns the enemy for 25 Arcane damage and then an additional 52 Arcane damage over 12 sec.",
     "auraDescription": "13 Arcane damage every 3 seconds.",
@@ -6844,7 +6913,7 @@
   },
   "spell:8938": {
     "name": "Regrowth",
-    "icon": 367,
+    "icon": 366,
     "nameSubtext": "Rank 2",
     "description": "Heals a friendly target for 164 and another 175 over 21 sec.",
     "auraDescription": "Heals 25 every 3 seconds.",
@@ -6857,7 +6926,7 @@
   },
   "spell:8946": {
     "name": "Cure Poison",
-    "icon": 358,
+    "icon": 357,
     "description": "Cures 1 poison effect on the target.",
     "school": 8,
     "resource": {
@@ -6867,13 +6936,13 @@
   },
   "spell:9233": {
     "name": "Firebolt",
-    "icon": 325,
+    "icon": 324,
     "description": "5% chance of dealing 15 Fire damage on a successful melee attack.",
     "school": 4
   },
   "spell:10290": {
     "name": "Devotion Aura",
-    "icon": 312,
+    "icon": 311,
     "nameSubtext": "Rank 2",
     "description": "Gives 160 additional armor to party and raid members within 40 yards. Players may only have one Aura on them per Paladin at any one time.",
     "auraDescription": "Increases armor by 160.",
@@ -6882,7 +6951,7 @@
   },
   "spell:10839": {
     "name": "First Aid",
-    "icon": 317,
+    "icon": 316,
     "nameSubtext": "Rank 8",
     "description": "Heals 1104 damage over 8 sec.",
     "auraDescription": "Healing 138 damage every 1 seconds.",
@@ -6890,7 +6959,7 @@
   },
   "spell:12351": {
     "name": "Burning Soul",
-    "icon": 295,
+    "icon": 294,
     "nameSubtext": "Rank 2",
     "description": "Reduces the pushback suffered from damaging attacks while casting Fire spells by 70% and reduces the threat caused by your Fire spells by -20%.",
     "school": 4,
@@ -6898,7 +6967,7 @@
   },
   "spell:12678": {
     "name": "Stance Mastery",
-    "icon": 349,
+    "icon": 348,
     "nameSubtext": "Passive",
     "description": "You retain up to 10 of your rage points when you change stances.",
     "school": 1,
@@ -6914,7 +6983,7 @@
   },
   "spell:13440": {
     "name": "Shadow Bolt",
-    "icon": 400,
+    "icon": 399,
     "description": "Sends a shadowy bolt at the enemy causing 30 Shadow damage.",
     "castTime": 2200,
     "school": 32,
@@ -6925,7 +6994,7 @@
   },
   "spell:13480": {
     "name": "Shadow Bolt",
-    "icon": 400,
+    "icon": 399,
     "description": "Sends a shadowy bolt at the enemy causing 60 Shadow damage.",
     "castTime": 2200,
     "school": 32,
@@ -6949,35 +7018,35 @@
   },
   "spell:13659": {
     "name": "Enchant Shield - Spirit",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a shield to give 5 Spirit.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13689": {
     "name": "Enchant Shield - Lesser Block",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a shield to increase block rating by 10.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13746": {
     "name": "Enchant Cloak - Greater Defense",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a cloak to give 50 additional armor.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13794": {
     "name": "Enchant Cloak - Resistance",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a cloak to give 3 to all resistances.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13795": {
     "name": "Immolation Trap",
-    "icon": 299,
+    "icon": 298,
     "nameSubtext": "Rank 1",
     "description": "Place a fire trap that will burn the first enemy to approach for 110 Fire damage over 15 sec. Trap will exist for 30 sec. Only one trap can be active at a time.",
     "school": 4,
@@ -6988,28 +7057,28 @@
   },
   "spell:13817": {
     "name": "Enchant Shield - Stamina",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a shield to increase Stamina by 5.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13836": {
     "name": "Enchant Boots - Stamina",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant boots to give +5 Stamina.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13858": {
     "name": "Enchant Chest - Superior Health",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a piece of chest armor to grant +50 health.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13872": {
     "name": "Endurance",
-    "icon": 401,
+    "icon": 400,
     "nameSubtext": "Rank 2",
     "description": "Reduces the cooldown of your Sprint and Evasion abilities by -60 sec and increases your total Stamina by 4%.",
     "school": 1,
@@ -7017,70 +7086,70 @@
   },
   "spell:13882": {
     "name": "Enchant Cloak - Lesser Agility",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a cloak to increase Agility by 3.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13890": {
     "name": "Enchant Boots - Minor Speed",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant boots to give a slight movement speed increase.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13898": {
     "name": "Enchant Weapon - Fiery Weapon",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to often strike for 40 additional fire damage.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13905": {
     "name": "Enchant Shield - Greater Spirit",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a shield to give +7 Spirit.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13935": {
     "name": "Enchant Boots - Agility",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant boots to give +5 Agility.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13939": {
     "name": "Enchant Bracer - Greater Strength",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchants bracers to give +7 Strength.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13941": {
     "name": "Enchant Chest - Stats",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a piece of chest armor to grant +3 to all stats.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13943": {
     "name": "Enchant Weapon - Greater Striking",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to do 4 additional points of damage.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13945": {
     "name": "Enchant Bracer - Greater Stamina",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant bracers to increase Stamina by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13948": {
     "name": "Enchant Gloves - Minor Haste",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to increase haste rating by 10.",
     "castTime": 5000,
     "school": 1
@@ -7110,7 +7179,7 @@
   },
   "spell:14318": {
     "name": "Aspect of the Hawk",
-    "icon": 361,
+    "icon": 360,
     "nameSubtext": "Rank 2",
     "description": "The hunter takes on the aspects of a hawk, increasing ranged attack power by 35. Only one Aspect can be active at a time.",
     "auraDescription": "Increases ranged attack power by 35.",
@@ -7119,7 +7188,7 @@
   },
   "spell:16130": {
     "name": "Earth's Grasp",
-    "icon": 373,
+    "icon": 372,
     "nameSubtext": "Rank 2",
     "description": "Increases the health of your Stoneclaw Totem by 50% and the radius of your Earthbind Totem by 20%, and reduces the cooldown of both totems by -30%.",
     "school": 1,
@@ -7127,7 +7196,7 @@
   },
   "spell:16409": {
     "name": "Shadow Bolt",
-    "icon": 400,
+    "icon": 399,
     "description": "Sends a shadowy bolt at the enemy causing 35 Shadow damage.",
     "castTime": 2200,
     "school": 32,
@@ -7138,7 +7207,7 @@
   },
   "spell:16413": {
     "name": "Fireball",
-    "icon": 296,
+    "icon": 295,
     "description": "Hurls a fiery ball that causes 70 Fire damage and an additional 9 damage over 6 sec.",
     "auraDescription": "3 Fire damage every 2 sec.",
     "castTime": 2000,
@@ -7150,14 +7219,14 @@
   },
   "spell:16623": {
     "name": "Thorium Shield Spike",
-    "icon": 410,
+    "icon": 409,
     "description": "Attaches a Thorium Spike to your shield that deals damage every time you block with it.",
     "castTime": 3000,
     "school": 1
   },
   "spell:16769": {
     "name": "Arcane Stability",
-    "icon": 372,
+    "icon": 371,
     "nameSubtext": "Rank 4",
     "description": "Reduces the pushback suffered from damaging attacks while casting Arcane Missiles and Arcane Blast by 80%.",
     "school": 1,
@@ -7165,7 +7234,7 @@
   },
   "spell:16810": {
     "name": "Nature's Grasp",
-    "icon": 357,
+    "icon": 356,
     "nameSubtext": "Rank 2",
     "description": "While active, any time an enemy strikes the caster they have a 100% chance to become afflicted by Entangling Roots (Rank 2). 3 charges. Lasts 45 sec.",
     "auraDescription": "Melee damage you take has a chance to entangle the enemy.",
@@ -7174,7 +7243,7 @@
   },
   "spell:16857": {
     "name": "Faerie Fire (Feral)",
-    "icon": 350,
+    "icon": 349,
     "description": "Decrease the armor of the target by -5% for 5 min. While affected, the target cannot stealth or turn invisible. Deals 31 damage and additional threat when used in Bear Form or Dire Bear Form.",
     "auraDescription": "Decreases armor by -5%. Cannot stealth or turn invisible.",
     "school": 8,
@@ -7183,24 +7252,24 @@
     },
     "classMask": 1024
   },
-  "spell:16924": {
-    "name": "Celestial Focus",
-    "icon": 294,
-    "nameSubtext": "Rank 3",
-    "description": "Reduces the pushback suffered from damaging attacks while casting Starfire, Hibernate and Hurricane by 70% and increases your total spell haste by 3%.",
+  "spell:16909": {
+    "name": "Vengeance",
+    "icon": 359,
+    "nameSubtext": "Rank 1",
+    "description": "Increases the critical strike damage bonus of your Starfire, Starfall, Moonfire, and Wrath spells by 20%.",
     "school": 1,
     "classMask": 1024
   },
   "spell:18197": {
     "name": "Poison",
-    "icon": 345,
+    "icon": 344,
     "description": "Poisons target for 7 Nature damage every 3 sec for 15 sec.",
     "auraDescription": "7 Nature damage inflicted every 3 sec.",
     "school": 8
   },
   "spell:18205": {
     "name": "Shadow Bolt",
-    "icon": 400,
+    "icon": 399,
     "description": "Sends a shadowy bolt at the enemy causing 55 Shadow damage.",
     "castTime": 2200,
     "school": 32,
@@ -7211,7 +7280,7 @@
   },
   "spell:18381": {
     "name": "Cripple",
-    "icon": 386,
+    "icon": 385,
     "nameSubtext": "Rank 1",
     "description": "Reduces target enemy's attack power by -25 for 30 sec.",
     "auraDescription": "Reduced attack power.",
@@ -7222,7 +7291,7 @@
   },
   "spell:18608": {
     "name": "First Aid",
-    "icon": 317,
+    "icon": 316,
     "nameSubtext": "Rank 9",
     "description": "Heals 1360 damage over 8 sec.",
     "auraDescription": "Healing 170 damage every 1 seconds.",
@@ -7230,7 +7299,7 @@
   },
   "spell:18610": {
     "name": "First Aid",
-    "icon": 317,
+    "icon": 316,
     "nameSubtext": "Rank 10",
     "description": "Heals 2000 damage over 8 sec.",
     "auraDescription": "Healing 250 damage every 1 seconds.",
@@ -7238,13 +7307,13 @@
   },
   "spell:18805": {
     "name": "Recombobulate",
-    "icon": 410,
+    "icon": 409,
     "description": "Restores 150 health and mana to a friendly target and attempts to dispel any polymorph effects from them. Reduced effectiveness against polymorph effects from casters of level 31 and higher.",
     "school": 64
   },
   "spell:18822": {
     "name": "Improved Enslave Demon",
-    "icon": 391,
+    "icon": 390,
     "nameSubtext": "Rank 2",
     "description": "Reduces the Attack Speed and Casting Speed penalty of your Enslave Demon spell by 0% and reduces the resist chance by 10%.",
     "school": 1,
@@ -7252,7 +7321,7 @@
   },
   "spell:19742": {
     "name": "Blessing of Wisdom",
-    "icon": 338,
+    "icon": 337,
     "nameSubtext": "Rank 1",
     "description": "Places a Blessing on the friendly target, restoring 10 mana every 5 seconds for 10 min. Players may only have one Blessing on them per Paladin at any one time.",
     "auraDescription": "Restores 10 mana every 5 seconds.",
@@ -7264,7 +7333,7 @@
   },
   "spell:19834": {
     "name": "Blessing of Might",
-    "icon": 314,
+    "icon": 313,
     "nameSubtext": "Rank 2",
     "description": "Places a Blessing on the friendly target, increasing attack power by 35 for 10 min. Players may only have one Blessing on them per Paladin at any one time.",
     "auraDescription": "Increases attack power by 35.",
@@ -7276,7 +7345,7 @@
   },
   "spell:19883": {
     "name": "Track Humanoids",
-    "icon": 328,
+    "icon": 327,
     "description": "Shows the location of all nearby humanoids on the minimap. Only one form of tracking can be active at a time.",
     "auraDescription": "Tracking Humanoids.",
     "school": 1,
@@ -7284,7 +7353,7 @@
   },
   "spell:19884": {
     "name": "Track Undead",
-    "icon": 388,
+    "icon": 387,
     "description": "Shows the location of all nearby undead on the minimap. Only one form of tracking can be active at a time.",
     "auraDescription": "Tracking Undead.",
     "school": 1,
@@ -7292,154 +7361,154 @@
   },
   "spell:20008": {
     "name": "Enchant Bracer - Greater Intellect",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant bracers to increase Intellect by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20009": {
     "name": "Enchant Bracer - Superior Spirit",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant bracers to increase Spirit by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20010": {
     "name": "Enchant Bracer - Superior Strength",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant bracers to increase Strength by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20011": {
     "name": "Enchant Bracer - Superior Stamina",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant bracers to increase Stamina by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20012": {
     "name": "Enchant Gloves - Greater Agility",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to increase Agility by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20013": {
     "name": "Enchant Gloves - Greater Strength",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to increase Strength by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20014": {
     "name": "Enchant Cloak - Greater Resistance",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a cloak to increase all resistances by 5.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20015": {
     "name": "Enchant Cloak - Superior Defense",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a cloak to increase armor by 70.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20016": {
     "name": "Enchant Shield - Vitality",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a shield to regenerate 4 mana and health every 5 sec.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20017": {
     "name": "Enchant Shield - Greater Stamina",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a shield to increase Stamina by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20020": {
     "name": "Enchant Boots - Greater Stamina",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant boots to increase Stamina by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20023": {
     "name": "Enchant Boots - Greater Agility",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant boots to increase Agility by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20025": {
     "name": "Enchant Chest - Greater Stats",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant chest armor to increase all stats by 4.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20026": {
     "name": "Enchant Chest - Major Health",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant chest armor to increase health by 100.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20029": {
     "name": "Enchant Weapon - Icy Chill",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to often chill the target, reducing their movement and attack speed. Has a reduced effect for players above level 60.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20030": {
     "name": "Enchant 2H Weapon - Superior Impact",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a two-handed melee weapon to increase its damage by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20031": {
     "name": "Enchant Weapon - Superior Striking",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to increase its damage by 5.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20032": {
     "name": "Enchant Weapon - Lifestealing",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to often steal life from the enemy and give it to the wielder. Has a reduced effect for players above level 60.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20033": {
     "name": "Enchant Weapon - Unholy Weapon",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to often inflict a curse on the target, inflicting Shadow damage and reducing their melee damage.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20034": {
     "name": "Enchant Weapon - Crusader",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to often heal for 75 to 125 and increase Strength by 100 for 15 sec. when attacking in melee. Has a reduced effect for players above level 60.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20035": {
     "name": "Enchant 2H Weapon - Major Spirit",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a two-handed melee weapon to increase Spirit by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20036": {
     "name": "Enchant 2H Weapon - Major Intellect",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a two-handed melee weapon to increase Intellect by 9.",
     "castTime": 5000,
     "school": 1
@@ -7457,7 +7526,7 @@
   },
   "spell:20271": {
     "name": "Judgement of Light",
-    "icon": 333,
+    "icon": 332,
     "description": "Unleashes the energy of a Seal spell to judge an enemy for 20 sec, granting attacks made against the judged enemy a chance of healing the attacker for 2% of their maximum health. Refer to individual Seals for additional Judgement effect. Only one Judgement per Paladin can be active at any one time.",
     "school": 2,
     "resource": {
@@ -7485,7 +7554,7 @@
   },
   "spell:20550": {
     "name": "Endurance",
-    "icon": 380,
+    "icon": 379,
     "nameSubtext": "Racial Passive",
     "description": "Base Health increased by 5%.",
     "school": 1,
@@ -7493,7 +7562,7 @@
   },
   "spell:20551": {
     "name": "Nature Resistance",
-    "icon": 370,
+    "icon": 369,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Nature spells by -2%.",
     "school": 1,
@@ -7509,7 +7578,7 @@
   },
   "spell:20555": {
     "name": "Regeneration",
-    "icon": 362,
+    "icon": 361,
     "nameSubtext": "Racial Passive",
     "description": "Health regeneration rate increased by 10%. 10% of total Health regeneration may continue during combat.",
     "school": 1,
@@ -7592,7 +7661,7 @@
   },
   "spell:20579": {
     "name": "Shadow Resistance",
-    "icon": 390,
+    "icon": 389,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
@@ -7608,7 +7677,7 @@
   },
   "spell:20583": {
     "name": "Nature Resistance",
-    "icon": 370,
+    "icon": 369,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Nature spells by -2%.",
     "school": 1,
@@ -7616,7 +7685,7 @@
   },
   "spell:20585": {
     "name": "Wisp Spirit",
-    "icon": 381,
+    "icon": 380,
     "nameSubtext": "Racial Passive",
     "description": "Transform into a wisp upon death, increasing speed by 75%.",
     "school": 1,
@@ -7649,7 +7718,7 @@
   },
   "spell:20592": {
     "name": "Arcane Resistance",
-    "icon": 381,
+    "icon": 380,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Arcane spells by -2%.",
     "school": 1,
@@ -7665,7 +7734,7 @@
   },
   "spell:20594": {
     "name": "Stoneform",
-    "icon": 408,
+    "icon": 407,
     "nameSubtext": "Racial",
     "description": "Removes all poison, disease and bleed effects and increases your armor by 10% for 8 sec.",
     "school": 1,
@@ -7688,7 +7757,7 @@
   },
   "spell:20596": {
     "name": "Frost Resistance",
-    "icon": 310,
+    "icon": 309,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Frost spells by -2%.",
     "school": 1,
@@ -7741,7 +7810,7 @@
   },
   "spell:20869": {
     "name": "Frost Blast",
-    "icon": 307,
+    "icon": 306,
     "description": "Blasts a target for 75 Frost damage.",
     "school": 16,
     "resource": {
@@ -7786,62 +7855,62 @@
   },
   "spell:22749": {
     "name": "Enchant Weapon - Spellpower",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to increase spell power by 30.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23799": {
     "name": "Enchant Weapon - Strength",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to increase Strength by 15.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23800": {
     "name": "Enchant Weapon - Agility",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to increase Agility by 15.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23801": {
     "name": "Enchant Bracer - Mana Regeneration",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant bracers to restore 5 mana every 5 seconds.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23802": {
     "name": "Enchant Bracer - Healing Power",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant bracers to increase spell power by 15.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23803": {
     "name": "Enchant Weapon - Mighty Spirit",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to increase Spirit by 20.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23804": {
     "name": "Enchant Weapon - Mighty Intellect",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to increase Intellect by 22.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23990": {
     "name": "Item - Minor Run Speed",
-    "icon": 410,
+    "icon": 409,
     "description": "Run speed increased slightly.",
     "school": 1
   },
   "spell:25046": {
     "name": "Arcane Torrent",
-    "icon": 406,
+    "icon": 405,
     "nameSubtext": "Racial",
     "description": "Silence all enemies within 8 yards for 2 sec and restores 15 of your Energy. Non-player victim spellcasting is also interrupted for 3 sec.",
     "auraDescription": "Silenced.",
@@ -7857,28 +7926,28 @@
   },
   "spell:25079": {
     "name": "Enchant Gloves - Healing Power",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to increase spell power by 16.",
     "castTime": 5000,
     "school": 1
   },
   "spell:25080": {
     "name": "Enchant Gloves - Superior Agility",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to increase Agility by 15.",
     "castTime": 5000,
     "school": 1
   },
   "spell:25083": {
     "name": "Enchant Cloak - Stealth",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a cloak to increase stealth.",
     "castTime": 5000,
     "school": 1
   },
   "spell:25780": {
     "name": "Righteous Fury",
-    "icon": 334,
+    "icon": 333,
     "description": "Increases the threat generated by your Holy spells by 80%. Lasts until cancelled.",
     "auraDescription": "Increases the threat generated by your Holy spells by 80%.",
     "school": 2,
@@ -7915,20 +7984,20 @@
   },
   "spell:26596": {
     "name": "Weapon Damage",
-    "icon": 410,
+    "icon": 409,
     "description": "+1 Weapon Damage.",
     "school": 1
   },
   "spell:27837": {
     "name": "Enchant 2H Weapon - Agility",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a two-handed melee weapon to increase Agility by 25.",
     "castTime": 5000,
     "school": 1
   },
   "spell:27975": {
     "name": "Enchant Weapon - Major Spellpower",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to increase spell power by 40. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
@@ -7941,7 +8010,7 @@
   },
   "spell:28730": {
     "name": "Arcane Torrent",
-    "icon": 406,
+    "icon": 405,
     "nameSubtext": "Racial",
     "description": "Silence all enemies within 8 yards for 2 sec and restores 6% of your Mana. Non-player victim spellcasting is also interrupted for 3 sec.",
     "auraDescription": "Silenced.",
@@ -7957,7 +8026,7 @@
   },
   "spell:28875": {
     "name": "Gemcutting",
-    "icon": 343,
+    "icon": 342,
     "nameSubtext": "Racial Passive",
     "description": "Jewelcrafting skill increased by 5.",
     "school": 1,
@@ -7983,7 +8052,7 @@
   },
   "spell:28880": {
     "name": "Gift of the Naaru",
-    "icon": 319,
+    "icon": 318,
     "nameSubtext": "Racial",
     "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your attack power.",
     "auraDescription": "Healing 10 every 3 seconds.",
@@ -7994,14 +8063,14 @@
   },
   "spell:29454": {
     "name": "Felsteel Shield Spike",
-    "icon": 410,
+    "icon": 409,
     "description": "Attaches a Felsteel Spike to your shield that deals 26-38 damage every time you block with it.",
     "castTime": 3000,
     "school": 1
   },
   "spell:29506": {
     "name": "The Burrower's Shell",
-    "icon": 312,
+    "icon": 311,
     "description": "Absorbs 900 damage. Lasts 20 sec.",
     "auraDescription": "Absorbs 900 damage.",
     "school": 2,
@@ -8014,7 +8083,7 @@
   },
   "spell:29636": {
     "name": "Venom Shot",
-    "icon": 325,
+    "icon": 324,
     "description": "Chance to strike your ranged target with a Venom Shot for 31 Nature damage.",
     "school": 8
   },
@@ -8060,7 +8129,7 @@
   },
   "spell:33991": {
     "name": "Enchant Chest - Restore Mana Prime",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a piece of chest armor to grant 7 Mana every 5 seconds. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
@@ -8073,7 +8142,7 @@
   },
   "spell:33993": {
     "name": "Enchant Gloves - Blasting",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to grant 10 critical strike rating. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
@@ -8086,7 +8155,7 @@
   },
   "spell:33994": {
     "name": "Enchant Gloves - Precise Strikes",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to increase hit rating by 15. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
@@ -8099,7 +8168,7 @@
   },
   "spell:33995": {
     "name": "Enchant Gloves - Major Strength",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to grant +15 Strength. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
@@ -8112,7 +8181,7 @@
   },
   "spell:33996": {
     "name": "Enchant Gloves - Assault",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to grant 26 attack power. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
@@ -8125,7 +8194,7 @@
   },
   "spell:33999": {
     "name": "Enchant Gloves - Major Healing",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant gloves to increase spell power by 19. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
@@ -8138,7 +8207,7 @@
   },
   "spell:34010": {
     "name": "Enchant Weapon - Major Healing",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant a melee weapon to increase spell power by 40. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
@@ -8161,7 +8230,7 @@
   },
   "spell:42292": {
     "name": "PvP Trinket",
-    "icon": 313,
+    "icon": 312,
     "description": "Removes all movement impairing effects and all effects which cause loss of control of your character.",
     "school": 1,
     "custom": {
@@ -8173,7 +8242,7 @@
   },
   "spell:45927": {
     "name": "Summon Friend",
-    "icon": 409,
+    "icon": 408,
     "description": "Allows you to summon your Refer-A-Friend.",
     "castTime": 10000,
     "school": 1,
@@ -8231,7 +8300,7 @@
   },
   "spell:57994": {
     "name": "Wind Shear",
-    "icon": 346,
+    "icon": 345,
     "description": "Instantly blasts the target with a gust of wind, causing no damage but interrupting spellcasting and preventing any spell in that school from being cast for 2 sec. Also lowers your threat, making the enemy less likely to attack you.",
     "school": 8,
     "resource": {
@@ -8266,7 +8335,7 @@
   },
   "spell:58985": {
     "name": "Perception",
-    "icon": 369,
+    "icon": 368,
     "nameSubtext": "Racial Passive",
     "description": "Increases your Stealth detection.",
     "school": 1,
@@ -8274,7 +8343,7 @@
   },
   "spell:59221": {
     "name": "Shadow Resistance",
-    "icon": 390,
+    "icon": 389,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
@@ -8291,7 +8360,7 @@
   },
   "spell:59535": {
     "name": "Shadow Resistance",
-    "icon": 390,
+    "icon": 389,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
@@ -8300,7 +8369,7 @@
   },
   "spell:59536": {
     "name": "Shadow Resistance",
-    "icon": 390,
+    "icon": 389,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
@@ -8309,7 +8378,7 @@
   },
   "spell:59538": {
     "name": "Shadow Resistance",
-    "icon": 390,
+    "icon": 389,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
@@ -8318,7 +8387,7 @@
   },
   "spell:59540": {
     "name": "Shadow Resistance",
-    "icon": 390,
+    "icon": 389,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
@@ -8327,7 +8396,7 @@
   },
   "spell:59541": {
     "name": "Shadow Resistance",
-    "icon": 390,
+    "icon": 389,
     "nameSubtext": "Racial Passive",
     "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
@@ -8336,7 +8405,7 @@
   },
   "spell:59542": {
     "name": "Gift of the Naaru",
-    "icon": 319,
+    "icon": 318,
     "nameSubtext": "Racial",
     "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power or attack power, whichever is higher.",
     "auraDescription": "Healing 10 every 3 seconds.",
@@ -8347,7 +8416,7 @@
   },
   "spell:59543": {
     "name": "Gift of the Naaru",
-    "icon": 319,
+    "icon": 318,
     "nameSubtext": "Racial",
     "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your attack power.",
     "auraDescription": "Healing 10 damage every 3 seconds.",
@@ -8358,7 +8427,7 @@
   },
   "spell:59544": {
     "name": "Gift of the Naaru",
-    "icon": 319,
+    "icon": 318,
     "nameSubtext": "Racial",
     "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power.",
     "auraDescription": "Healing 10 every 3 seconds.",
@@ -8369,7 +8438,7 @@
   },
   "spell:59547": {
     "name": "Gift of the Naaru",
-    "icon": 319,
+    "icon": 318,
     "nameSubtext": "Racial",
     "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power or attack power, whichever is higher.",
     "auraDescription": "Healing 10 every 3 seconds.",
@@ -8380,7 +8449,7 @@
   },
   "spell:59548": {
     "name": "Gift of the Naaru",
-    "icon": 319,
+    "icon": 318,
     "nameSubtext": "Racial",
     "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power.",
     "auraDescription": "Healing 10 damage every 3 seconds.",
@@ -8391,7 +8460,7 @@
   },
   "spell:59752": {
     "name": "Every Man for Himself",
-    "icon": 385,
+    "icon": 384,
     "nameSubtext": "Racial",
     "description": "Removes all movement impairing effects and all effects which cause loss of control of your character. This effect shares a cooldown with other similar effects.",
     "school": 1,
@@ -8412,7 +8481,7 @@
   },
   "spell:62124": {
     "name": "Hand of Reckoning",
-    "icon": 339,
+    "icon": 338,
     "description": "Taunts the target to attack you. If the target is tauntable and not currently targeting you, causes 101 Holy damage.",
     "auraDescription": "Taunted.",
     "school": 2,
@@ -8424,7 +8493,7 @@
   },
   "spell:62352": {
     "name": "Heal",
-    "icon": 410,
+    "icon": 409,
     "description": "Restores 280 health.",
     "school": 1,
     "resource": {
@@ -8454,7 +8523,7 @@
   },
   "spell:63746": {
     "name": "Enchant Boots - Lesser Accuracy",
-    "icon": 316,
+    "icon": 315,
     "description": "Permanently enchant boots to increase your hit rating by 5.",
     "castTime": 5000,
     "school": 1
@@ -8468,9 +8537,16 @@
     "classMask": 64,
     "raceMask": 2
   },
+  "spell:67125": {
+    "name": "Item - Druid T9 Balance 2P Bonus (Moonfire)",
+    "icon": 409,
+    "description": "Your Moonfire ability now has a chance for its periodic damage to be critical strikes.",
+    "school": 1,
+    "classMask": 1024
+  },
   "spell:75461": {
     "name": "Flame Shock Passive",
-    "icon": 410,
+    "icon": 409,
     "description": "The damage dealt by your Flame Shock can now be critical strikes.",
     "school": 1,
     "classMask": 64,
@@ -9049,12 +9125,6 @@
     "stat_5": 5259,
     "stat_6": 5259,
     "stat_45": 6153
-  },
-  "enchant-suffix:57": {
-    "name": "of the Shadow",
-    "stat_38": 14532,
-    "stat_3": 4106,
-    "stat_7": 4790
   },
   "enchant-suffix:58": {
     "name": "of the Sun",

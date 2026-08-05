@@ -4,6 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tooltip test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Lacquer&display=swap"
+      rel="stylesheet">
     <link rel="stylesheet" href="./style.css">
     <style>
     .tooltip-test {
@@ -54,6 +59,21 @@
         <section class="tooltip-test-section">
           <h2>Items <span id="item-count"></span></h2>
           <div id="item-links" class="tooltip-test-links"></div>
+        </section>
+        <section class="tooltip-test-section">
+          <h2>Enchantments</h2>
+          <div class="tooltip-test-links">
+            <a href="#item:31270" data-tip="item:31270">Banshee Rod · random suffix</a>
+            <a href="#item:31270" data-tip="item:31270" data-suffix="18">Banshee Rod · of Agility</a>
+            <a href="#item:6573" data-tip="item:6573">Defender Boots · random enchant</a>
+            <a href="#item:6573" data-tip="item:6573" data-random-enchant="128">Defender Boots · of Defense</a>
+            <a href="#item:6505" data-tip="item:6505" data-enchant="2650">Crescent Staff · +15 Spell Power</a>
+            <a href="#item:51978" data-tip="item:51978" data-suffix="18">Earthbound Girdle · 1 stat suffix</a>
+            <a href="#item:51968" data-tip="item:51968" data-suffix="68">Enumerated Wrap · 2 stat suffixes</a>
+            <a href="#item:51994" data-tip="item:51994" data-suffix="71">Tumultuous Cloak · 3 stat suffixes</a>
+            <a href="#item:51964" data-tip="item:51964" data-suffix="59">Vigorous Belt · 3 stat suffixes</a>
+            <a href="#item:51964" data-tip="item:51964" data-suffix="59" data-enchant="2650">Vigorous Belt · suffix + player enchant</a>
+          </div>
         </section>
         <section class="tooltip-test-section">
           <h2>Spells <span id="spell-count"></span></h2>

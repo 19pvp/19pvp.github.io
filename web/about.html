@@ -66,6 +66,9 @@
   border: 1px solid var(--border-color);
   border-radius: 10px;
 }
+.about-grid .wide {
+  grid-column: span 2;
+}
 .about-card h3,
 .suffix-group h3 {
   color: var(--accent-color);
@@ -106,8 +109,7 @@
 }
 .about-item-id,
 .about-item-note,
-.suffix-stats,
-.section-kicker {
+.suffix-stats {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: .75rem;
@@ -165,14 +167,15 @@
   .suffix-grid {
     grid-template-columns: 1fr;
   }
+  .about-grid .wide {
+    grid-column: auto;
+  }
 }
 </style>
 <main id="page-content" class="about-page" data-page="about">
   <section class="about-hero">
-    <div class="section-kicker">AzerothCore · Lua · SQL · 3.3.5a</div>
     <h1>About 19 PvP</h1>
-    <p
-      class="about-lede">A small level-19 PvP server for friends. Start with a real build, find upgrades, and queue when you feel like playing.</p>
+    <p class="about-lede">Yet another 19 Twink 3.3.5 server.<br>So what's different ?</p>
   </section>
 
   <section class="about-section">
@@ -192,17 +195,27 @@
         <h3>Custom items</h3>
         <p>Some items have been tweaked, for example swapping Spirit for Hit, Crit, or Haste. Everyone starts with a lower version of the Arena Grand Master, which can be upgraded up to the normal <strong>+12 Stamina</strong> version.</p>
       </article>
-    </div>
-    <div id="customItemExamples" class="item-grid" aria-live="polite" style="margin-top: 14px;">
-      <p>Loading item examples…</p>
+      <article class="about-card">
+        <h3>Examples</h3>
+        <ul>
+          <li><a href="#item:6505" data-tip="item:6505">[Cresent Staff]</a></li>
+          <li><a href="#item:5202" data-tip="item:5202">[Corsair Shirt]</a></li>
+          <li><a href="#item:6383" data-tip="item:6383">[Forest Buckler]</a></li>
+          <li><a href="#item:5444" data-tip="item:5444">[Miner's Cape]</a></li>
+        </ul>
+      </article>
     </div>
   </section>
 
   <section class="about-section">
     <h2 class="section-title">🔮 New suffixes</h2>
     <p>More options were added to the random-suffix items from dungeon satchels. The in-game NPC lets you pick one for a few silvers.</p>
-    <div id="suffixExamples" class="suffix-groups" aria-live="polite">
-      <p>Loading suffix options…</p>
+    <div class="about-card">
+      <ul>
+        <li><a href="#item:51994" data-tip="item:51994" data-suffix="88">[Tumultuous Cloak of the Foreseer]</a></li>
+        <li><a href="#item:51978" data-tip="item:51978" data-suffix="26">[Earthbound Girdle of Spell Power]</a></li>
+        <li><a href="#item:51964" data-tip="item:51964" data-suffix="50">[Vigorous Belt of the Hunt]</a></li>
+      </ul>
     </div>
   </section>
 
@@ -251,12 +264,14 @@
     <h2 class="section-title">🧬 Racial changes</h2>
     <ul>
       <li><strong>Troll:</strong> <code data-tip="spell:26297">26297</code> Berserking</li>
-      <li><strong>Dwarf:</strong> <code data-tip="spell:65116">65116</code> Stoneform</li>
+      <li><strong>Dwarf:</strong> <code data-tip="spell:20594">20594</code> Stoneform</li>
       <li><strong>Gnome:</strong> <code data-tip="spell:20589">20589</code> Escape Artist</li>
       <li><strong>Blood Elf:</strong> <code data-tip="spell:25046">25046</code> / <code data-tip="spell:28730">28730</code> Arcane Torrent</li>
-      <li><strong>Orc:</strong> <code data-tip="spell:20572">20572</code>, <code data-tip="spell:33697">33697</code>, <code data-tip="spell:33702">33702</code>, <code data-tip="spell:23230">23230</code> Blood Fury</li>
+      <li><strong>Orc:</strong> <code data-tip="spell:20572">20572</code> Attack Power / <code data-tip="spell:33702">33702</code> Spell Power</li>
       <li><strong>Undead:</strong> <code data-tip="spell:7744">7744</code> Will of the Forsaken</li>
       <li><strong>Night Elf:</strong> <code data-tip="spell:58984">58984</code> Shadowmeld</li>
+      <li><strong>Human:</strong> <code data-tip="spell:59752">59752</code> Every Man for Himself</li>
+      <li><strong>Tauren:</strong> <code data-tip="spell:20549">20549</code> War Stomp</li>
     </ul>
   </section>
 
@@ -268,86 +283,15 @@
         <p>Bots let you farm gear even when the population is low. They leave once a real player joins.</p>
       </article>
       <article class="about-card">
+        <h3>Arena</h3>
+        <p>You can queue for arena while you are in Warsong Gulch and wait for people who want to play.</p>
+      </article>
+      <article class="about-card wide">
         <h3>Warsong Queue Balance</h3>
         <p>The queue tries to keep teams balanced and may split big groups when there are not enough players to face them. There is no class-stacking limit yet, but we plan to add a maximum of two of each class per team.</p>
         <p
           style="margin-top: 8px;">Warsong is cross-faction, so you can play Horde or Alliance regardless of your starting faction. We still try to avoid switching people when possible.</p>
       </article>
-      <article class="about-card">
-        <h3>Arena</h3>
-        <p>You can queue for arena while you are in Warsong Gulch and wait for people who want to play.</p>
-      </article>
     </div>
   </section>
 </main>
-<script type="module" data-page-script>
-import database from '/db.json' with { type: 'json' }
-
-const entries = Object.entries(database)
-const items = entries.filter(([key]) => key.startsWith('item:'))
-const effectiveItem = (item) => ({ ...item, ...(item.custom || {}) })
-
-const make = (tag, className, content) => {
-  const element = document.createElement(tag)
-  if (className) element.className = className
-  if (content !== undefined) element.textContent = content
-  return element
-}
-
-const renderItem = ([key, item]) => {
-  const value = effectiveItem(item)
-  const id = key.slice('item:'.length)
-  const card = make('article', 'about-item-card')
-  card.dataset.tip = key
-  card.tabIndex = 0
-  card.setAttribute('aria-label', `${value.name || 'Item'} — hover for tooltip`)
-
-  const heading = make('div', 'about-item-heading')
-  const icon = make('span', 'icon-sprite about-item-icon')
-  icon.style.setProperty('--icon-index', String(value.icon || 0))
-  heading.append(icon, make('span', 'about-item-name', value.name || 'Unknown item'))
-  card.append(heading)
-  card.append(make('div', 'about-item-id', `Item ID ${id}`))
-  card.append(make('div', 'about-item-note', 'Hover to inspect generated stats'))
-  return card
-}
-
-const preferredItemIds = [13209, 19024, 10399, 6505, 12979, 5202]
-const customItems = preferredItemIds
-  .map((id) => [`item:${id}`, database[`item:${id}`]])
-  .filter(([, item]) => item)
-const fallbackItems = items.filter(([, item]) => item.custom).filter(([key]) =>
-  !customItems.some(([customKey]) => customKey === key)
-)
-const itemExamples = [...customItems, ...fallbackItems].slice(0, 6)
-const itemContainer = document.getElementById('customItemExamples')
-itemContainer.replaceChildren(...itemExamples.map(renderItem))
-
-const suffixes = entries
-  .filter(([key]) => key.startsWith('enchant-suffix:'))
-  .sort(([, left], [, right]) => String(left.name).localeCompare(String(right.name)))
-
-const renderSuffix = ([, suffix]) => {
-  const card = make('article', 'suffix-card')
-  card.append(make('span', 'suffix-name', suffix.name))
-  const stats = Object.entries(suffix)
-    .filter(([key]) => key.startsWith('stat_'))
-    .map(([key, value]) => `${key.slice(5)}: ${value}`)
-  card.append(make('span', 'suffix-stats', stats.join(' · ') || 'Stats from the generated enchant data'))
-  return card
-}
-
-const suffixContainer = document.getElementById('suffixExamples')
-suffixContainer.replaceChildren()
-for (const [label, count] of [['Single-stat options', 1], ['Two-stat options', 2], ['Three-stat options', 3]]) {
-  const group = make('div', 'suffix-group')
-  group.append(make('h3', '', label))
-  const grid = make('div', 'suffix-grid')
-  const groupSuffixes = suffixes.filter(([, suffix]) =>
-    Object.keys(suffix).filter((key) => key.startsWith('stat_')).length === count
-  )
-  grid.append(...groupSuffixes.map(renderSuffix))
-  group.append(grid)
-  suffixContainer.append(group)
-}
-</script>

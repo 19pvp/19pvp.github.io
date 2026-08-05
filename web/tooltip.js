@@ -147,19 +147,30 @@ const addDescription = (parent, value, className = 'tooltip-description') => {
   addLine(parent, value, className)
 }
 
+const enchantKey = (entry, enchantId) => entry.suffix !== undefined
+  ? `enchant-suffix:${enchantId}`
+  : `enchant-random:${enchantId}`
+
 const renderEnchant = (parent, entry, enchantId) => {
-  const key = entry.suffix !== undefined ? `enchant-suffix:${enchantId}` : `enchant-random:${enchantId}`
-  const enchant = database[key]
+  const enchant = database[enchantKey(entry, enchantId)]
   if (!enchant || typeof enchant !== 'object') return false
-  const factor = entry.suffix === undefined ? 1 : asNumber(entry.suffix)
   const stats = Object.entries(enchant)
     .filter(([key]) => key.startsWith('stat_'))
     .map(([key, value]) => {
-      const amount = asNumber(value) * factor
+      const amount = entry.suffix === undefined
+        ? asNumber(value)
+        : Math.floor(asNumber(value) / asNumber(entry.suffix))
       const label = statLabels[key.slice(5)] || `Stat ${key.slice(5)}`
       return `${amount > 0 ? '+' : ''}${formatNumber(amount)} ${label}`
     })
-  addLine(parent, `${enchant.name}${stats.length ? ` (${stats.join(', ')})` : ''}`, 'tooltip-stat')
+  for (const stat of stats) addLine(parent, stat, 'tooltip-stat')
+  return true
+}
+
+const renderPlayerEnchant = (parent, enchantId) => {
+  const enchant = database[`enchant:${enchantId}`]
+  if (typeof enchant !== 'string') return false
+  addLine(parent, `Enchanted: ${enchant}`, 'tooltip-enchant')
   return true
 }
 
@@ -220,7 +231,7 @@ const renderSpell = (content, entry) => {
   addDescription(content, value.auraDescription, 'tooltip-description tooltip-aura')
 }
 
-const renderItem = (content, entry, htmlEnchant) => {
+const renderItem = (content, entry, { enchantId, randomEnchantId, suffixId }) => {
   const value = effectiveEntry(entry)
   const isWeapon = asNumber(value.class) === 2
   const isArmor = asNumber(value.class) === 4
@@ -229,7 +240,13 @@ const renderItem = (content, entry, htmlEnchant) => {
   addIcon(header, value.icon, value.quality)
   const heading = document.createElement('div')
   heading.className = 'tooltip-heading'
+  const selectedSuffix = value.suffix !== undefined && suffixId
+    ? database[`enchant-suffix:${Number(suffixId)}`]
+    : undefined
   const name = text('div', value.name || 'Unknown item', 'tooltip-name')
+  if (selectedSuffix && typeof selectedSuffix === 'object' && selectedSuffix.name) {
+    name.style.setProperty('--enchant-name', JSON.stringify(` ${selectedSuffix.name}`))
+  }
   name.dataset.quality = String(asNumber(value.quality))
   heading.append(name)
   header.append(heading)
@@ -312,12 +329,15 @@ const renderItem = (content, entry, htmlEnchant) => {
 
   addDescription(content, value.description)
 
-  if (Array.isArray(value.enchant) || value.suffix !== undefined) {
-    const enchantId = Number(htmlEnchant)
-    if (!htmlEnchant || !Number.isInteger(enchantId) || !renderEnchant(content, value, enchantId)) {
-      addLine(content, '<Randomly enchanted>', 'tooltip-stat')
+  const hasRandomEnchant = Array.isArray(value.enchant) || value.suffix !== undefined
+  const randomId = value.suffix !== undefined ? suffixId : randomEnchantId
+  if (hasRandomEnchant) {
+    const selectedId = Number(randomId)
+    if (!randomId || !Number.isInteger(selectedId) || !renderEnchant(content, value, selectedId)) {
+      if (hasRandomEnchant) addLine(content, '<Randomly enchanted>', 'tooltip-stat')
     }
   }
+  if (enchantId) renderPlayerEnchant(content, Number(enchantId))
 
   for (const [spellId, metadata] of Object.entries(asRecord(value.spells))) {
     const spell = database[`spell:${spellId}`]
@@ -333,11 +353,11 @@ const renderItem = (content, entry, htmlEnchant) => {
   }
 }
 
-const renderEntry = (tooltip, key, entry, enchantId) => {
+const renderEntry = (tooltip, key, entry, enchantments) => {
   const content = document.createElement('div')
   content.className = 'tooltip-content'
   const kind = key.split(':', 1)[0]
-  if (kind === 'item') renderItem(content, entry, enchantId)
+  if (kind === 'item') renderItem(content, entry, enchantments)
   else if (kind === 'spell') renderSpell(content, entry)
   else return false
   const icon = content.querySelector('.tooltip-icon')
@@ -402,9 +422,9 @@ export const installTooltip = () => {
     tooltip.style.transform = `translate3d(${Math.round(position.left)}px, ${Math.round(position.top)}px, 0)`
   }
 
-  const updateEntry = (key, enchantId) => {
+  const updateEntry = (key, enchantments) => {
     const entry = database[key]
-    if (!entry || !renderEntry(tooltip, key, entry, enchantId)) {
+    if (!entry || !renderEntry(tooltip, key, entry, enchantments)) {
       hide()
       return
     }
@@ -420,11 +440,15 @@ export const installTooltip = () => {
       hide()
       return
     }
-    const enchantId = match?.getAttribute('data-enchant') || ''
-    const stateKey = `${key}:${enchantId}`
+    const enchantments = {
+      enchantId: match?.getAttribute('data-enchant') || '',
+      randomEnchantId: match?.getAttribute('data-random-enchant') || '',
+      suffixId: match?.getAttribute('data-suffix') || '',
+    }
+    const stateKey = `${key}:${Object.values(enchantments).join(':')}`
     if (stateKey !== currentKey) {
       currentKey = stateKey
-      updateEntry(key, enchantId)
+      updateEntry(key, enchantments)
     }
     redrawPosition()
   }

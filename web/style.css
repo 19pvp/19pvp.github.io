@@ -194,6 +194,10 @@
   font-weight: 700;
 }
 
+.tooltip-name::after {
+  content: var(--enchant-name, '');
+}
+
 .tooltip-name[data-quality="0"] {
   color: var(--gray-light-color);
 }
@@ -243,6 +247,10 @@
 
 .tooltip-stat {
   color: var(--green-color);
+}
+
+.tooltip-enchant {
+  color: var(--bright-blue-color);
 }
 
 .tooltip-item-detail {

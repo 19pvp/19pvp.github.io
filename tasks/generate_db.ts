@@ -30,6 +30,14 @@ const sheetId = Deno.env.get('SHEET_ID') || '1F1Re3VLtPuF5fXZ1wV79CpogaSgP-fS9r9
 const outputPath = 'web/db.json'
 const iconCacheDirectory = '.cache/db-icons'
 
+const suffixWeightByItemId: Record<number, number> = {
+  31270: 3333,
+  51964: 1000,
+  51968: 1000,
+  51978: 1000,
+  51994: 1300,
+}
+
 const asNumber = (value: unknown) => Number(value)
 const uniquePositiveIds = (rows: ItemSheetRow[]) => [
   ...new Set(
@@ -333,7 +341,7 @@ const enchantData = (row: ItemTemplateRow) => {
   for (const id of suffix) suffixEnchantIds.add(id)
   return {
     ...(random.size ? { enchant: [...random] } : {}),
-    ...(suffix.size ? { suffix: 0.1 } : {}),
+    ...(suffix.size ? { suffix: suffixWeightByItemId[asNumber(row.entry)] ?? 1000 } : {}),
   }
 }
 const flattenFields = (entry: ReturnType<typeof buildItemEntry>, custom: Record<string, unknown>) => {
@@ -341,7 +349,8 @@ const flattenFields = (entry: ReturnType<typeof buildItemEntry>, custom: Record<
   const result = { ...entry }
   delete result.custom
   delete result.description
-  delete result.spells
+  if (custom.spells !== undefined) delete result.spells
+  if (result.spells && Object.keys(result.spells).length === 0) delete result.spells
   if (Object.keys(custom).some((key) => /^stat_\d+$/.test(key))) {
     for (const key of Object.keys(result)) {
       if (/^stat_\d+$/.test(key)) delete result[key]
@@ -349,12 +358,40 @@ const flattenFields = (entry: ReturnType<typeof buildItemEntry>, custom: Record<
   }
   return { ...result, ...custom, custom: true }
 }
-const flattenCustom = (entry: ReturnType<typeof buildItemEntry>) => {
-  const custom = entry.custom && typeof entry.custom === 'object' && !Array.isArray(entry.custom)
-    ? entry.custom as Record<string, unknown>
-    : {}
-  return flattenFields(entry, custom)
+const includeCurrentStats = (
+  entry: ReturnType<typeof buildItemEntry>,
+  custom: Record<string, unknown>,
+) => {
+  if (!Object.keys(custom).some((key) => /^stat_\d+$/.test(key))) return custom
+  return {
+    ...custom,
+    ...Object.fromEntries(
+      Object.entries(entry).filter(([key]) => /^stat_\d+$/.test(key)),
+    ),
+  }
 }
+const normalizeUse = (
+  entry: ReturnType<typeof buildItemEntry>,
+  custom: Record<string, unknown>,
+) => {
+  const use = asNumber(custom.use)
+  if (!use) return custom
+  const spells = {
+    ...(entry.spells && typeof entry.spells === 'object' && !Array.isArray(entry.spells) ? entry.spells : {}),
+    ...(custom.spells && typeof custom.spells === 'object' && !Array.isArray(custom.spells) ? custom.spells : {}),
+  } as Record<string, Record<string, unknown>>
+  spells[String(use)] = {
+    ...spells[String(use)],
+    trigger: 'use',
+    ...(typeof custom.cooldown === 'number' ? { cooldown: custom.cooldown } : {}),
+  }
+  const result: Record<string, unknown> = { ...custom, spells }
+  delete result.use
+  delete result.cooldown
+  return result
+}
+const hasCustomData = (fields: Record<string, unknown>) =>
+  Object.keys(fields).some((key) => /^stat_\d+$/.test(key) || ['armor', 'spells'].includes(key))
 for (const id of itemIds) {
   const row = originalTemplatesById.get(id)
   if (!row) {
@@ -394,10 +431,13 @@ for (const id of itemIds) {
       const createdEntry = {
         ...currentEntry,
         ...fields,
-        spells,
+        spells: Object.keys(spells).length ? spells : undefined,
         created: true,
       }
-      return flattenFields(createdEntry, { ...fields, ...(use ? { spells } : {}) })
+      const custom = { ...fields, ...(use ? { spells } : {}) }
+      return hasCustomData(custom)
+        ? flattenFields(createdEntry, includeCurrentStats(createdEntry, custom))
+        : createdEntry
     })()
     : (() => {
       const dbCustom = Object.fromEntries(
@@ -405,7 +445,20 @@ for (const id of itemIds) {
           !['id', 'kind', 'icon'].includes(key) && JSON.stringify(value) !== JSON.stringify(baseEntry?.[key])
         ),
       )
-      return flattenCustom(buildItemEntry(dbcItem.get(id), row, { ...dbCustom, ...sheetCustom }, iconContext, dbcSpell))
+      const custom = normalizeUse(currentEntry, { ...dbCustom, ...sheetCustom })
+      if (Object.keys(custom).length === 0) return baseEntry!
+      if (!hasCustomData(custom)) {
+        const metadata = Object.fromEntries(
+          Object.entries(custom).filter(([key]) => key !== 'use' && key !== 'cooldown'),
+        )
+        return { ...currentEntry, ...metadata }
+      }
+      const source = currentEntry.spells
+        ? currentEntry
+        : baseEntry?.spells
+        ? { ...currentEntry, spells: baseEntry.spells }
+        : currentEntry
+      return flattenFields(source, includeCurrentStats(source, custom))
     })()
   dataset[`item:${id}`] = Object.assign(entry, enchantData(row))
   const effective = (entry as Record<string, unknown>).custom as Record<string, unknown> | undefined
