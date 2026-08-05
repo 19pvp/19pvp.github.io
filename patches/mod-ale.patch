@@ -307,7 +307,7 @@ index a21640d..5bcb01f 100644
      /* Ticket */
      void OnTicketCreate(GmTicket* ticket);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..c008574 100644
+index c0acc01..515a794 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -107,6 +107,8 @@ luaL_Reg GlobalMethods[] =
@@ -372,16 +372,17 @@ index c0acc01..c008574 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -625,6 +645,8 @@ ALERegister<Player> PlayerMethods[] =
+@@ -625,6 +645,9 @@ ALERegister<Player> PlayerMethods[] =
      { "GetBankItem", &LuaPlayer::GetBankItem },
      { "GetCreationTime", &LuaPlayer::GetCreationTime },
      { "SetCanFly", &LuaPlayer::SetCanFly },
 +    { "CreateArenaTeam", &LuaPlayer::CreateArenaTeam },
 +    { "SetArenaTeamRating", &LuaPlayer::SetArenaTeamRating },
++    { "UpdateArenaTeamStats", &LuaPlayer::UpdateArenaTeamStats },
  
      // Boolean
      { "HasTankSpec", &LuaPlayer::HasTankSpec },
-@@ -1088,6 +1110,7 @@ ALERegister<Aura> AuraMethods[] =
+@@ -1088,6 +1111,7 @@ ALERegister<Aura> AuraMethods[] =
      { "GetMaxDuration", &LuaAura::GetMaxDuration },
      { "GetAuraId", &LuaAura::GetAuraId },
      { "GetStackAmount", &LuaAura::GetStackAmount },
@@ -389,7 +390,7 @@ index c0acc01..c008574 100644
      { "GetOwner", &LuaAura::GetOwner },
  
      // Setters
-@@ -1380,6 +1403,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1404,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -400,7 +401,7 @@ index c0acc01..c008574 100644
  
      { NULL, NULL }
  };
-@@ -1481,6 +1508,7 @@ ALERegister<SpellInfo> SpellInfoMethods[] =
+@@ -1481,6 +1509,7 @@ ALERegister<SpellInfo> SpellInfoMethods[] =
      { "GetEffectMechanicMask", &LuaSpellInfo::GetEffectMechanicMask },
      { "GetSpellMechanicMaskByEffectMask", &LuaSpellInfo::GetSpellMechanicMaskByEffectMask },
      { "GetEffectMechanic", &LuaSpellInfo::GetEffectMechanic },
@@ -1117,7 +1118,7 @@ index 06ddf1d..6c57bbf 100644
      }
  
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..40b9249 100644
+index c39801f..4262139 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -7,9 +7,20 @@
@@ -1141,7 +1142,7 @@ index c39801f..40b9249 100644
  
  /***
   * Inherits all methods from: [Object], [WorldObject], [Unit]
-@@ -478,6 +489,95 @@ namespace LuaPlayer
+@@ -478,6 +489,159 @@ namespace LuaPlayer
          return 1;
      }
  
@@ -1234,10 +1235,74 @@ index c39801f..40b9249 100644
 +        return 1;
 +    }
 +
++    /**
++     * Records an arena game for the [Player]'s arena team.
++     *
++     * @param uint32 type : arena team type (2, 3, or 5)
++     * @param bool won
++     * @param uint32 teamRating = unchanged : new team and personal rating
++     * @return bool success
++     */
++    int UpdateArenaTeamStats(lua_State* L, Player* player)
++    {
++        uint32 type = ALE::CHECKVAL<uint32>(L, 2);
++        bool won = ALE::CHECKVAL<bool>(L, 3);
++        uint32 teamRating = ALE::CHECKVAL<uint32>(L, 4, std::numeric_limits<uint32>::max());
++        uint8 slot = ArenaTeam::GetSlotByType(type);
++
++        if (slot >= 3 || (teamRating != std::numeric_limits<uint32>::max() &&
++            teamRating > std::numeric_limits<uint16>::max()))
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        ArenaTeam* arenaTeam = sArenaTeamMgr->GetArenaTeamById(player->GetArenaTeamId(slot));
++        ArenaTeamMember* member = arenaTeam ? arenaTeam->GetMember(player->GetGUID()) : nullptr;
++        if (!arenaTeam || arenaTeam->GetType() != type || !member)
++        {
++            ALE::Push(L, false);
++            return 1;
++        }
++
++        ArenaTeamStats stats = arenaTeam->GetStats();
++        stats.WeekGames += 1;
++        stats.SeasonGames += 1;
++        if (won)
++        {
++            stats.WeekWins += 1;
++            stats.SeasonWins += 1;
++        }
++        if (teamRating != std::numeric_limits<uint32>::max())
++        {
++            stats.Rating = teamRating;
++            member->PersonalRating = teamRating;
++            player->SetArenaTeamInfoField(slot, ARENA_TEAM_PERSONAL_RATING, teamRating);
++        }
++        arenaTeam->SetArenaTeamStats(stats);
++
++        member->WeekGames += 1;
++        member->SeasonGames += 1;
++        if (won)
++        {
++            member->WeekWins += 1;
++            member->SeasonWins += 1;
++        }
++        player->SetArenaTeamInfoField(slot, ARENA_TEAM_GAMES_WEEK, member->WeekGames);
++        player->SetArenaTeamInfoField(slot, ARENA_TEAM_GAMES_SEASON, member->SeasonGames);
++        player->SetArenaTeamInfoField(slot, ARENA_TEAM_WINS_SEASON, member->SeasonWins);
++
++        arenaTeam->SaveToDB(true);
++        arenaTeam->NotifyStatsChanged();
++
++        ALE::Push(L, true);
++        return 1;
++    }
++
      /**
       * Returns `true` if the [Player] is immune to everything.
       *
-@@ -1556,6 +1656,33 @@ namespace LuaPlayer
+@@ -1556,6 +1720,33 @@ namespace LuaPlayer
          ALE::Push(L, player->GetTeamId());
          return 1;
      }
@@ -1271,7 +1336,7 @@ index c39801f..40b9249 100644
      
      /**
       * Returns amount of the specified [Item] the [Player] has.
-@@ -5149,7 +5276,7 @@ namespace LuaPlayer
+@@ -5149,7 +5340,7 @@ namespace LuaPlayer
      #endif
          return 1;
      }
@@ -1280,7 +1345,7 @@ index c39801f..40b9249 100644
      /**
       * Returns the [Player]s spent talent points in each talent tree for the active spec
       *
-@@ -5175,6 +5302,399 @@ namespace LuaPlayer
+@@ -5175,6 +5366,399 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }

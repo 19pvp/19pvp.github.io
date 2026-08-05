@@ -9,6 +9,7 @@ local activeAbsorbs = {}
 local flagCarryStartTimes = {}
 local WSG_MAP_ID = 489
 local WSG_BG_TYPE_ID = 2
+local WSG_ARENA_TEAM_TYPE = 5
 local PREPARATION_AURA = 44521
 local HORDE_FLAG = 23333
 local ALLIANCE_FLAG = 23335
@@ -169,6 +170,7 @@ local function finalizeMetricStats(stats)
     stats.timePlayed = math.floor(stats.timePlayed / 1000)
     stats._kind = nil
     stats._instanceId = nil
+    stats._guid = nil
     stats._updateTime = nil
 end
 
@@ -190,6 +192,7 @@ local function getWSGStats(player, instanceId)
     local guid = tostring(player:GetGUID())
     if not match.players[guid] then
         local stats = newMetricStats(player, "WSG")
+        stats._guid = player:GetGUID()
         stats._instanceId = instanceId
         match.players[guid] = stats
     end
@@ -257,7 +260,23 @@ end)
 RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
     local match = matches[instanceId]
     if not match or match.kind ~= "WSG" then return end
+
+    local map = GetMapById(bg:GetMapId(), instanceId)
+    if map then
+        for _, player in ipairs(map:GetPlayers()) do
+            snapshotPlayerScore(player, instanceId)
+        end
+    end
+
     local currentMatchStats = match.players
+
+    for _, stats in pairs(currentMatchStats) do
+        local player = GetPlayerByGUID(stats._guid)
+        if player then
+            local won = stats.deserted == nil and stats.team == winner
+            player:UpdateArenaTeamStats(WSG_ARENA_TEAM_TYPE, won)
+        end
+    end
 
     -- Format flag carrying time (convert ms to seconds) and CC duration
     for _, stats in pairs(currentMatchStats) do
@@ -333,6 +352,7 @@ local function finishArenaMatch(match, winner, duration)
             points = stats.team == winner and WINNER_ARENA_POINTS or LOSER_ARENA_POINTS
             local player = GetPlayerByGUID(stats._guid)
             if player then
+                player:UpdateArenaTeamStats(match.arenaType, stats.team == winner)
                 player:ModifyArenaPoints(points)
             else
                 points = 0
