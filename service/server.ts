@@ -221,6 +221,22 @@ const staticIconsJPG = staticFile('../web/assets/icons.jpg', {
   type: 'image/jpeg',
   cache: 'public, max-age=31536000, immutable',
 })
+const staticDiscordLogo = staticFile('../web/assets/discord-logo.avif', {
+  type: 'image/avif',
+  cache: 'public, max-age=31536000, immutable',
+})
+const staticResistances = staticFile('../web/assets/resistances.avif', {
+  type: 'image/avif',
+  cache: 'public, max-age=31536000, immutable',
+})
+const staticCrescentStaff = staticFile('../web/assets/crescent-staff.avif', {
+  type: 'image/avif',
+  cache: 'public, max-age=31536000, immutable',
+})
+const staticGems = staticFile('../web/assets/gems.avif', {
+  type: 'image/avif',
+  cache: 'public, max-age=31536000, immutable',
+})
 const staticLogo = staticFile('../web/logo.png', { type: 'image/png', cache: 'public, max-age=31536000, immutable' })
 const staticAddon = staticFile('../addons/PvP19/PvP19.lua', {
   type: 'text/x-lua; charset=utf-8',
@@ -255,6 +271,10 @@ export default {
       if (url.pathname === '/db.json') return staticDatabase(req)
       if (url.pathname === '/assets/icons.avif') return staticIconsAVIF(req)
       if (url.pathname === '/assets/icons.jpg') return staticIconsJPG(req)
+      if (url.pathname === '/assets/discord-logo.avif') return staticDiscordLogo(req)
+      if (url.pathname === '/assets/resistances.avif') return staticResistances(req)
+      if (url.pathname === '/assets/crescent-staff.avif') return staticCrescentStaff(req)
+      if (url.pathname === '/assets/gems.avif') return staticGems(req)
       if (url.pathname === '/logo.png') return staticLogo(req)
       if (url.pathname === '/addons/PvP19.lua') return staticAddon(req)
       if (url.pathname === '/addons/PvP19.zip') return staticAddonZip(req)

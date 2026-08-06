@@ -80,8 +80,75 @@ strong { white-space: nowrap; }
   justify-content: center;
   align-items: center;
 }
-.about-split-card > :last-child {
+.about-split-copy {
   max-width: 60%;
+}
+.about-art-card {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+}
+.about-art-copy {
+  position: relative;
+  z-index: 1;
+}
+.about-art-card > :not(.about-art-image) {
+  position: relative;
+  z-index: 1;
+}
+.about-art-image {
+  position: absolute;
+  z-index: 0;
+  width: 220px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  object-fit: contain;
+}
+.about-community-card {
+  min-height: 190px;
+  padding-right: 170px;
+  align-items: flex-start;
+  text-align: left;
+}
+.about-community-card .section-title,
+.about-gems-card .section-title {
+  justify-content: flex-start;
+  text-align: left;
+}
+.about-community-card .about-art-image {
+  right: -34px;
+  top: -46px;
+  width: 220px;
+  transform: rotate(8deg);
+}
+.about-custom-gear-card .about-art-image {
+  left: -36px;
+  bottom: -64px;
+  width: 250px;
+  transform: rotate(-8deg);
+  opacity: .78;
+}
+.about-resistance-card .about-art-image {
+  right: -38px;
+  bottom: -48px;
+  width: 220px;
+  transform: rotate(7deg);
+  opacity: .78;
+}
+.about-gems-card {
+  min-height: 150px;
+  align-items: center;
+}
+.about-gems-card .about-art-copy {
+  max-width: 68%;
+}
+.about-gems-card .about-art-image {
+  right: -34px;
+  bottom: -38px;
+  width: 230px;
+  transform: rotate(-7deg);
+  opacity: .82;
 }
 .about-racial-card > .about-racial-side {
   flex: 1;
@@ -242,6 +309,33 @@ html[data-auth] #communityGreeting {
   .about-split-card > :last-child {
     max-width: 100%;
   }
+  .about-split-copy {
+    max-width: 100%;
+  }
+  .about-community-card {
+    min-height: 0;
+    padding-right: 16px;
+    text-align: center;
+  }
+  .about-community-card .section-title {
+    justify-content: center;
+    text-align: center;
+  }
+  .about-community-card .about-art-image {
+    top: -30px;
+    right: -24px;
+    width: 140px;
+    opacity: .42;
+  }
+  .about-custom-gear-card .about-art-image,
+  .about-resistance-card .about-art-image,
+  .about-gems-card .about-art-image {
+    width: 160px;
+    right: -26px;
+    bottom: -34px;
+    left: auto;
+    opacity: .5;
+  }
   .about-racial-card > .about-racial-side {
     width: 100%;
   }
@@ -256,20 +350,23 @@ html[data-auth] #communityGreeting {
     <h1>About 19 PvP</h1>
     <p class="about-lede">Yet another 19 Twink 3.3.5 server.<br>So what's different ?</p>
   </section>
-  <section id="communityCard" class="about-section about-cta box">
-    <h2 class="section-title">🤝 Community First</h2>
-    <p>We associate your discord account with you game account, this allow us to share the general ingame channel into a specific discord channel and give us strong moderation tools to ensure the community stay healthy both ingame and outside.<br>Discord is central to all our communication and events organized</p>
-    <div data-auth-guest>
-      <a class="btn btn-discord" href="/auth/discord/login">Join Discord</a>
+  <section id="communityCard" class="about-section about-cta about-art-card about-community-card box">
+    <div class="about-art-copy">
+      <h2 class="section-title">🤝 Community First</h2>
+      <p>We have connected your discord account to your in-game account. The General Chat in-game is connected with the “slash-1” chat in the discord, allowing constant community interaction. This feature also gives us strong moderation tools to ensure the community stays healthy both in-game and out.</p>
+      <div data-auth-guest>
+        <a class="btn btn-discord" href="/auth/discord/login">Join Discord</a>
+      </div>
+      <p id="communityGreeting" aria-live="polite"></p>
     </div>
-    <p id="communityGreeting" aria-live="polite"></p>
+    <img class="about-art-image" src="/assets/discord-logo.avif" alt="" aria-hidden="true">
   </section>
   <section class="about-section">
     <h2 class="section-title">🛡️ Gearing</h2>
     <div class="about-grid">
       <article class="about-card box">
         <h3>Starter gear</h3>
-        <p>Starter gear should already let you be competitive. You should never feel useless when you start, but there are still interesting upgrades to chase.</p>
+        <p>Starter gear allows you to start off with the ability to be competitive. You should never feel useless when you start, but there are still interesting upgrades to chase.</p>
       </article>
       <article class="about-card box">
         <h3>Gold &amp; honor</h3>
@@ -277,7 +374,7 @@ html[data-auth] #communityGreeting {
         <p
           style="margin-top: 8px;">You can also give gold to friends and rerolls so they can skip part of the initial grind.</p>
       </article>
-      <article class="about-card wide about-split-card">
+      <article class="about-card wide about-split-card about-art-card about-custom-gear-card">
         <div>
           <ul>
             <li><a class="hand-drawn-link" href="#item:6505" data-tip="item:6505">[Cresent Staff]</a></li>
@@ -287,10 +384,11 @@ html[data-auth] #communityGreeting {
           </ul>
         </div>
         <div class="hand-drawn-divider vertical" style="height: 140px; --divider-color: var(--accent-border);"></div>
-        <div>
+        <div class="about-split-copy">
           <h3>Custom items</h3>
           <p>Some items have been tweaked, for example swapping Spirit for Hit, Crit, or Haste. Everyone starts with a lower version of the Arena Grand Master, which can be upgraded up to the normal <strong>+12 Stamina</strong> version.</p>
         </div>
+        <img class="about-art-image" src="/assets/crescent-staff.avif" alt="" aria-hidden="true">
       </article>
     </div>
     <div class="about-grid">
@@ -303,20 +401,25 @@ html[data-auth] #communityGreeting {
           </ul>
         </div>
         <div class="hand-drawn-divider vertical" style="height: 140px; --divider-color: var(--accent-border);"></div>
-        <div>
+        <div class="about-split-copy">
           <h3>🔮 New suffixes</h3>
           <p>More options were added to the random-suffix items from dungeon satchels. The in-game NPC lets you pick one for a few silvers.</p>
         </div>
       </article>
     </div>
-    <h3 class="section-title">💎 Gems</h3>
-    <p>Gems replace libram arcanums so we can apply the bonus only to head and legs. The gold gems give <strong>+8</strong> stats; the best ones cost honor and give <strong>+12</strong>.</p>
+    <article class="about-card box about-art-card about-gems-card">
+      <div class="about-art-copy">
+        <h3 class="section-title">💎 Gems</h3>
+        <p>Gems replace libram arcanums so we can apply the bonus only to head and legs. The gold gems give <strong>+8</strong> stats; the best ones cost honor and give <strong>+12</strong>.</p>
+      </div>
+      <img class="about-art-image" src="/assets/gems.avif" alt="" aria-hidden="true">
+    </article>
   </section>
   <div class="hand-drawn-divider horizontal"></div>
   <section class="about-section">
     <h2 class="section-title">🔥 Resistance change</h2>
     <div class="about-grid">
-      <article class="about-card wide about-split-card">
+      <article class="about-card wide about-split-card about-art-card about-resistance-card">
         <div>
           <ul>
             <li><a class="hand-drawn-link" href="#item:7002" data-tip="item:7002">[Arctic Buckler]</a></li>
@@ -325,12 +428,13 @@ html[data-auth] #communityGreeting {
           </ul>
         </div>
         <div class="hand-drawn-divider vertical" style="height: 140px; --divider-color: var(--accent-border);"></div>
-        <div>
+        <div class="about-split-copy">
           <p>Resistances never fully ignore a spell. They reduce the damage and/or duration instead.
             <br>We were carefull not too allow to stack too much resistance in a single element to avoid counter builds
 
           </p>
         </div>
+        <img class="about-art-image" src="/assets/resistances.avif" alt="" aria-hidden="true">
       </article>
     </div>
   </section>
