@@ -43,11 +43,55 @@
   color: var(--success-text);
   margin-top: 10px;
 }
+.installer-guest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 18px;
+  text-align: center;
+}
+.installer-guest p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.installer-guest .btn {
+  width: auto;
+  max-width: 100%;
+}
+.manual-install {
+  margin-top: 24px;
+}
+.manual-install ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 24px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.manual-install a {
+  color: var(--bright-blue-color);
+}
+.manual-install code {
+  color: var(--accent-color);
+  font-family: var(--font-mono);
+  font-size: .9em;
+}
 </style>
 <main id="page-content" data-page="install">
   <h1 class="page-title">Web Installer &amp; Patcher</h1>
   <p class="page-subtitle">WoW 3.3.5a Client Manager</p>
 
+  <div id="installerGuest" class="installer-guest box" hidden>
+    <h2 class="section-title">Login to use the Web Installer</h2>
+    <p>The installer needs your Discord account to access your game account and download the 19 PvP client files.</p>
+    <a class="btn btn-discord" href="/auth/discord/login">Login with Discord to continue</a>
+  </div>
+
+  <div id="installerApp" hidden>
   <div id="unsupportedAlert" class="status-banner status-error" style="display: none;">
         <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ Unsupported Browser Detected</strong>
         Your current browser does not support directory read/write access (File System Access API).<br>
@@ -152,9 +196,37 @@
           </ol>
         </div>
   </div>
+  <section class="manual-install box">
+    <h2 class="section-title">Manual installation</h2>
+    <ol>
+      <li>Download any clean <a class="hand-drawn-link" href="magnet:?xt=urn:btih:5b65d1928a3025a820b45e6db2451aaaabc5347c&amp;dn=World%20of%20Warcraft%203.3.5a&amp;tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce">3.3.5 client torrent</a>.</li>
+      <li>Download the <a class="hand-drawn-link" href="/patch-S.mpq">19 PvP patch</a> and copy <code>patch-S.mpq</code> to <code>Data/enUS/</code>.</li>
+      <li>Download the <a class="hand-drawn-link" href="/addons/PvP19.zip">PvP19 addon</a>, extract it, and move the <code>PvP19</code> directory to <code>Interface/AddOns/</code>.</li>
+      <li>Update <code>Data/enUS/realmlist.wtf</code> to contain <code id="manualRealmlist">set realmlist …</code>.</li>
+    </ol>
+  </section>
 </main>
 <script type="module" data-page-script>
 const api = location.origin
+const installerGuest = document.getElementById('installerGuest')
+const installerApp = document.getElementById('installerApp')
+let authenticated = true
+const setInstallerState = (isAuthenticated) => {
+  installerGuest.hidden = isAuthenticated
+  installerApp.hidden = !isAuthenticated
+}
+
+setInstallerState(authenticated)
+
+try {
+  const response = await fetch(`${api}/auth/me`, { credentials: 'include' })
+  if (response.ok) authenticated = (await response.json()).authenticated === true
+  if (!authenticated) globalThis.__clearDiscordUsername()
+} catch {}
+
+setInstallerState(authenticated)
+
+if (authenticated) {
 const unsupportedAlert = document.getElementById('unsupportedAlert')
 const selectDirectoryBtn = document.getElementById('selectDirectoryBtn')
 const directoryPath = document.getElementById('directoryPath')
@@ -204,6 +276,7 @@ const readyNotice = document.getElementById('readyNotice')
 // Embedded static client manifest & environment
 const EMBEDDED_MANIFEST = MANIFEST_PLACEHOLDER
 const EMBEDDED_REALMLIST = REALMLIST_PLACEHOLDER
+document.getElementById('manualRealmlist').textContent = `set realmlist ${EMBEDDED_REALMLIST.toLowerCase()}`
 
 let dirHandle = null
 // Set for any install failure; logs are uploaded once, after the install flow finishes.
@@ -1126,5 +1199,6 @@ async function startInstallation() {
     syncBtn.disabled = false
     selectDirectoryBtn.disabled = false
   }
+}
 }
 </script>

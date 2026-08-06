@@ -21,7 +21,7 @@ if (typeof Deno.addSignalListener === 'function') {
 import { cors, json, runCommand, sse } from './utils.ts'
 import { watch } from '../tasks/config.ts'
 import { ac } from './soap.ts'
-import { checkAuth, getSession, handleAuth } from './auth.ts'
+import { checkAuth, getSession, handleAuth, setWowUsernameCookie } from './auth.ts'
 import { getAccountDetails, setOrCreateAccount } from './account.ts'
 import { auth } from './db.ts'
 import { env } from './env.ts'
@@ -29,7 +29,6 @@ import { handleLog } from './logs.ts'
 import { getLeaderboards } from './leaderboards.ts'
 import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib'
 
-import indexHTMLRaw from '../web/index.html' with { type: 'text' }
 import templateHTMLRaw from '../web/template.html' with { type: 'text' }
 import leaderboardsHTMLRaw from '../web/leaderboards.html' with { type: 'text' }
 import accountHTMLRaw from '../web/account.html' with { type: 'text' }
@@ -175,7 +174,6 @@ const composePage = (content: string, title: string, prefetch = '', containerCla
     )
 }
 
-const indexHTMLBytes = new TextEncoder().encode(inlineAssets(indexHTMLRaw))
 const leaderboardsHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
   leaderboardsHTMLRaw,
   '19 PvP - Leaderboards',
@@ -229,6 +227,10 @@ const staticAddon = staticFile('../addons/PvP19/PvP19.lua', {
   cache: 'public, max-age=60',
   headers: { 'x-addon-version': pvp19AddonVersion },
 })
+const staticAddonZip = staticFile('../web/assets/PvP19-addon.zip', {
+  type: 'application/zip',
+  cache: 'public, max-age=3600',
+})
 
 void watch()
 
@@ -237,14 +239,13 @@ export default {
     try {
       const url = new URL(req.url)
       if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
-      if (url.pathname === '/') return respondText(indexHTMLBytes, 'text/html')
+      if (url.pathname === '/') {
+        const location = await getSession(req) ? '/leaderboards' : '/about'
+        return new Response(null, { status: 302, headers: { location, 'cache-control': 'no-store' } })
+      }
       if (url.pathname === '/leaderboards') return respondText(leaderboardsHTMLBytes, 'text/html')
       if (url.pathname === '/account') return respondText(accountHTMLBytes, 'text/html')
-      if (url.pathname === '/install') {
-        const session = await getSession(req)
-        if (!session) return new Response(null, { status: 302, headers: { location: '/' } })
-        return respondText(installHTMLBytes, 'text/html')
-      }
+      if (url.pathname === '/install') return respondText(installHTMLBytes, 'text/html')
       if (url.pathname === '/events') return respondText(eventsHTMLBytes, 'text/html')
       if (url.pathname === '/about' || url.pathname === '/about.html') return respondText(aboutHTMLBytes, 'text/html')
       if (url.pathname === '/tooltip-test' || url.pathname === '/tooltip-test.html') return staticTooltipTest(req)
@@ -256,6 +257,7 @@ export default {
       if (url.pathname === '/assets/icons.jpg') return staticIconsJPG(req)
       if (url.pathname === '/logo.png') return staticLogo(req)
       if (url.pathname === '/addons/PvP19.lua') return staticAddon(req)
+      if (url.pathname === '/addons/PvP19.zip') return staticAddonZip(req)
       if (url.pathname === '/patch-S.mpq') {
         const session = await getSession(req)
         if (!session) return json({ error: 'Unauthorized' }, { status: 401 })
@@ -400,12 +402,14 @@ export default {
 
         if (req.method === 'GET') {
           const details = await getAccountDetails(session.discordId)
-          return json({
+          const response = json({
             authenticated: true,
             user: session.user,
             gmLevel: session.gmLevel,
             ...details,
           }, { headers: corsHeaders })
+          setWowUsernameCookie(response.headers, details.wowAccount?.username)
+          return response
         }
 
         if (req.method === 'POST') {

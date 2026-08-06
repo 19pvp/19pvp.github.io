@@ -114,6 +114,24 @@ th span.badge {
 .character-list-icon {
   margin-right: 4px;
 }
+.installer-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 28px 0;
+  padding: 18px;
+  text-align: center;
+}
+.installer-link p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.installer-link .btn {
+  width: auto;
+  max-width: 100%;
+}
 </style>
 <main id="page-content" data-page="account">
   <h1 class="page-title">Account Management</h1>
@@ -163,6 +181,12 @@ th span.badge {
         <div class="hand-drawn-divider vertical" style="height: 69px; --divider-color: var(--accent-border);"></div>
         <div class="stat-card"><span>Total Gold</span><strong id="statGold">0</strong></div>
       </div>
+      <div class="hand-drawn-divider horizontal"></div>
+      <div class="installer-link box">
+        <h2 class="section-title">🛠️ Web Installer &amp; Patcher</h2>
+        <p>Install or update the 19 PvP client directly from your browser. Discord login is required to use it.</p>
+        <a class="btn btn-secondary" href="/install">Open Web Installer</a>
+      </div>
     </div>
   </div>
 </main>
@@ -182,6 +206,9 @@ const statGold = document.getElementById('statGold')
 const discordLoginBtn = document.getElementById('discordLoginBtn')
 const logoutBtn = document.getElementById('logoutBtn')
 const statusMsg = document.getElementById('statusMsg')
+const initialAuthenticated = Boolean(globalThis.__discordUsername)
+guestView.style.display = initialAuthenticated ? 'none' : 'block'
+memberView.style.display = initialAuthenticated ? 'block' : 'none'
 const classMap = {
   1: { name: 'Warrior', key: 'WARRIOR' },
   2: { name: 'Paladin', key: 'PALADIN' },
@@ -271,6 +298,7 @@ async function loadDashboard() {
     const res = await fetch(`${api}/api/account`, { credentials: 'include' })
     const data = await res.json()
     if (!data.authenticated) {
+      globalThis.__clearDiscordUsername()
       guestView.style.display = 'block'
       memberView.style.display = 'none'
       return

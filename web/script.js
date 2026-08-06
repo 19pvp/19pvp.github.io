@@ -8,6 +8,26 @@ const _variant = (border, fill) => `
 }
 `
 
+const readClientCookie = (name) => {
+  const prefix = `${name}=`
+  const raw = document.cookie.split('; ').find((cookie) => cookie.startsWith(prefix))?.slice(prefix.length)
+  if (!raw) return ''
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return raw
+  }
+}
+
+globalThis.__discordUsername = readClientCookie('discord_username')
+globalThis.__wowUsername = readClientCookie('wow_username')
+globalThis.__clearDiscordUsername = () => {
+  document.cookie = 'discord_username=; Max-Age=0; Path=/; SameSite=Lax'
+  document.cookie = 'wow_username=; Max-Age=0; Path=/; SameSite=Lax'
+  globalThis.__discordUsername = ''
+  globalThis.__wowUsername = ''
+}
+
 const generateBoxVariant = (className, color, fill = color, size = 10) => {
   const isNone = fill === 'none'
   return `
@@ -182,14 +202,19 @@ const updateSiteNavigation = (url = new URL(location.href)) => {
 
 const setupSiteNavigation = () => {
   updateSiteNavigation()
+  const nameElement = document.getElementById('siteNavAccountName')
+  if (globalThis.__discordUsername) nameElement.textContent = globalThis.__discordUsername
 
   fetch('/api/account', { credentials: 'include' })
     .then((response) => response.json())
     .then((data) => {
-      if (!data.authenticated) return
-      const name = data.user.global_name || data.user.username
+      if (!data.authenticated) {
+        globalThis.__clearDiscordUsername()
+        nameElement.textContent = 'Register or Login'
+        return
+      }
+      const name = data.user.username || data.user.global_name
       const avatar = document.getElementById('siteNavAccountAvatar')
-      const nameElement = document.getElementById('siteNavAccountName')
       nameElement.textContent = name
       avatar.src = data.user.avatar
         ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`

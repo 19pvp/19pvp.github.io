@@ -52,6 +52,17 @@ const removeStoredSession = (sessionId: string) => {
   localStorage.removeItem(`session:${sessionId}`)
 }
 
+export const setWowUsernameCookie = (headers: Headers, username?: string | null) => {
+  setCookie(headers, {
+    name: 'wow_username',
+    value: username || '',
+    path: '/',
+    secure: true,
+    sameSite: 'Lax',
+    maxAge: username ? 30 * 24 * 60 * 60 : 0,
+  })
+}
+
 export const getSession = async (req: Request) => {
   const cookies = getCookies(req.headers)
   const sessionId = cookies['logs_session']
@@ -206,6 +217,14 @@ export const handleAuth = async (req: Request) => {
       maxAge: 30 * 24 * 60 * 60,
     })
     setCookie(headers, {
+      name: 'discord_username',
+      value: user.username,
+      path: '/',
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: 30 * 24 * 60 * 60,
+    })
+    setCookie(headers, {
       name: 'discord_oauth_state',
       value: '',
       path: '/',
@@ -245,6 +264,14 @@ export const handleAuth = async (req: Request) => {
       httpOnly: true,
       secure: true,
       sameSite: 'None',
+      maxAge: 0,
+    })
+    setCookie(headers, {
+      name: 'discord_username',
+      value: '',
+      path: '/',
+      secure: true,
+      sameSite: 'Lax',
       maxAge: 0,
     })
     return new Response(null, {
