@@ -25,12 +25,12 @@
           <img id="siteNavAccountAvatar" class="avatar site-nav-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Account avatar">
           <span id="siteNavAccountName">Account</span>
         </a>
+        <span class="site-nav-separator" aria-hidden="true">|</span>
         <a data-nav-page="about" href="/about">About</a>
         <span class="site-nav-separator" aria-hidden="true">|</span>
         <a data-nav-page="leaderboards" href="/leaderboards">Leaderboards</a>
         <span class="site-nav-separator" aria-hidden="true">|</span>
         <a data-nav-page="install" href="/install">Installer &amp; Patcher</a>
-        <span class="site-nav-separator" aria-hidden="true">|</span>
       </nav>
     </header>
     <div class="container<!--@CONTAINER_CLASS@-->">
@@ -57,7 +57,11 @@
       </div>
       <!--@PAGE_CONTENT@-->
     </div>
-    <footer class="site-footer">19 PvP · A Twinking Battleground & Arena Server</footer>
+    <footer class="site-footer">
+      <div>19 PvP · A Twinking Battleground &amp; Arena Server</div>
+      <div><a href="https://github.com/19pvp/19pvp.github.io" target="_blank" rel="noreferrer">Open source on GitHub</a> · Built on AzerothCore, mod-playerbots, and mod-ale.</div>
+      <small>Non-commercial fan project for learning and fun; Blizzard and its assets belong to Blizzard Entertainment.</small>
+    </footer>
     <!--@PAGE_SCRIPT@-->
   </body>
 </html>

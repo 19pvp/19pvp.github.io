@@ -643,20 +643,32 @@ export const buildSpellEntry = (
   raceMask = 0,
 ): DbEntry =>
   compact({
+    ...(() => {
+      const textSpell = patch
+        ? {
+          ...spell,
+          ...patch,
+          Description_Lang_enUS: spell.Description_Lang_enUS,
+          AuraDescription_Lang_enUS: spell.AuraDescription_Lang_enUS,
+        }
+        : spell
+      const formatContext = textContext
+        ? patch ? textContext : { ...textContext, overrideById: undefined }
+        : undefined
+      return {
+        description: formatContext
+          ? formatSpellText(textSpell, String(spell.Description_Lang_enUS || ''), formatContext)
+          : spell.Description_Lang_enUS,
+        auraDescription: formatContext
+          ? formatSpellText(textSpell, String(spell.AuraDescription_Lang_enUS || ''), formatContext)
+          : spell.AuraDescription_Lang_enUS,
+      }
+    })(),
     id: toNumber(spell.ID),
     kind: 'spell' as const,
     name: spell.Name_Lang_enUS,
     icon: iconName(icons?.spellIconById.get(asNumber(spell.SpellIconID))?.File),
     nameSubtext: spell.NameSubtext_Lang_enUS,
-    description: textContext
-      ? formatSpellText(spell, String(spell.Description_Lang_enUS || ''), { ...textContext, overrideById: undefined })
-      : spell.Description_Lang_enUS,
-    auraDescription: textContext
-      ? formatSpellText(spell, String(spell.AuraDescription_Lang_enUS || ''), {
-        ...textContext,
-        overrideById: undefined,
-      })
-      : spell.AuraDescription_Lang_enUS,
     castTime: (() => {
       const row = castTimes.get(toNumber(spell.CastingTimeIndex))
       return row?.Base === undefined ? 0 : toNumber(row.Base)

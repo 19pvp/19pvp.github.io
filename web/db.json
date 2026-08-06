@@ -5129,9 +5129,9 @@
     "created": true
   },
   "spell:71": {
+    "description": "A defensive combat stance. Decreases damage taken by -10% and damage caused by -5%. Increases threat generated.",
     "name": "Defensive Stance",
     "icon": 55,
-    "description": "A defensive combat stance. Decreases damage taken by -10% and damage caused by -5%. Increases threat generated.",
     "school": 1,
     "resource": {
       "type": 1
@@ -5139,9 +5139,9 @@
     "classMask": 1
   },
   "spell:72": {
+    "description": "Bash the target with your shield dazing them and interrupting spellcasting, which prevents any spell in that school from being cast for 6 sec.",
     "name": "Shield Bash",
     "icon": 62,
-    "description": "Bash the target with your shield dazing them and interrupting spellcasting, which prevents any spell in that school from being cast for 6 sec.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -5150,27 +5150,27 @@
     "classMask": 1
   },
   "spell:75": {
-    "name": "Auto Shot",
-    "icon": 65,
     "description": "Automatically shoots the target until cancelled. Ranged attacks fired by a Hunter all have 15% increased attack speed.",
     "auraDescription": "Firing at the target.",
+    "name": "Auto Shot",
+    "icon": 65,
     "castTime": -1000000,
     "school": 1,
     "classMask": 4
   },
   "spell:81": {
+    "description": "Gives a chance to dodge enemy melee attacks.",
     "name": "Dodge",
     "icon": 351,
     "nameSubtext": "Passive",
-    "description": "Gives a chance to dodge enemy melee attacks.",
     "school": 1
   },
   "spell:99": {
+    "description": "The druid roars, decreasing nearby enemies' melee attack power by -31. Lasts 30 sec.",
+    "auraDescription": "Decreases melee attack power by -31.",
     "name": "Demoralizing Roar",
     "icon": 6,
     "nameSubtext": "Rank 1",
-    "description": "The druid roars, decreasing nearby enemies' melee attack power by -31. Lasts 30 sec.",
-    "auraDescription": "Decreases melee attack power by -31.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -5179,10 +5179,10 @@
     "classMask": 1024
   },
   "spell:100": {
+    "description": "Charge an enemy, generate 9 rage, and stun it for 1.5 sec. Cannot be used in combat.",
     "name": "Charge",
     "icon": 54,
     "nameSubtext": "Rank 1",
-    "description": "Charge an enemy, generate 9 rage, and stun it for 1.5 sec. Cannot be used in combat.",
     "school": 1,
     "resource": {
       "type": 1
@@ -5190,19 +5190,19 @@
     "classMask": 1
   },
   "spell:107": {
+    "description": "Gives a chance to block enemy melee and ranged attacks.",
     "name": "Block",
     "icon": 2,
     "nameSubtext": "Passive",
-    "description": "Gives a chance to block enemy melee and ranged attacks.",
     "school": 1,
     "classMask": 67
   },
   "spell:118": {
+    "description": "Transforms the enemy into a sheep, forcing it to wander around for up to 20 sec. While wandering, the sheep cannot attack or cast spells but will regenerate very quickly. Any damage will transform the target back into its normal form. Only one target can be polymorphed at a time. Only works on Beasts, Humanoids and Critters.",
+    "auraDescription": "Cannot attack or cast spells. Increased regeneration.",
     "name": "Polymorph",
     "icon": 358,
     "nameSubtext": "Rank 1",
-    "description": "Transforms the enemy into a sheep, forcing it to wander around for up to 20 sec. While wandering, the sheep cannot attack or cast spells but will regenerate very quickly. Any damage will transform the target back into its normal form. Only one target can be polymorphed at a time. Only works on Beasts, Humanoids and Critters.",
-    "auraDescription": "Cannot attack or cast spells. Increased regeneration.",
     "castTime": 1500,
     "school": 64,
     "resource": {
@@ -5211,11 +5211,11 @@
     "classMask": 128
   },
   "spell:122": {
+    "description": "Blasts enemies near the caster for 19 to 21 Frost damage and freezes them in place for up to 8 sec. Damage caused may interrupt the effect.",
+    "auraDescription": "Frozen in place.",
     "name": "Frost Nova",
     "icon": 307,
     "nameSubtext": "Rank 1",
-    "description": "Blasts enemies near the caster for 19 to 21 Frost damage and freezes them in place for up to 8 sec. Damage caused may interrupt the effect.",
-    "auraDescription": "Frozen in place.",
     "school": 16,
     "resource": {
       "percent": 7
@@ -5223,10 +5223,10 @@
     "classMask": 128
   },
   "spell:130": {
-    "name": "Slow Fall",
-    "icon": 340,
     "description": "Slows friendly party or raid target's falling speed for 30 sec.",
     "auraDescription": "Slows falling speed.",
+    "name": "Slow Fall",
+    "icon": 340,
     "school": 64,
     "resource": {
       "percent": 6
@@ -5234,11 +5234,11 @@
     "classMask": 128
   },
   "spell:136": {
+    "description": "Heals your pet for 125 health over 15 sec.",
+    "auraDescription": "Heals 25 every 3 sec.",
     "name": "Mend Pet",
     "icon": 21,
     "nameSubtext": "Rank 1",
-    "description": "Heals your pet for 125 health over 15 sec.",
-    "auraDescription": "Heals 25 every 3 sec.",
     "school": 8,
     "resource": {
       "percent": 9
@@ -5246,10 +5246,10 @@
     "classMask": 4
   },
   "spell:285": {
+    "description": "A strong attack that increases melee damage by 32 and causes a high amount of threat.",
     "name": "Heroic Strike",
     "icon": 38,
     "nameSubtext": "Rank 3",
-    "description": "A strong attack that increases melee damage by 32 and causes a high amount of threat.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -5258,19 +5258,19 @@
     "classMask": 1
   },
   "spell:325": {
+    "description": "The caster is surrounded by 3 balls of lightning. When a spell, melee or ranged attack hits the caster, the attacker will be struck for 29 Nature damage. This expends one lightning ball. Only one ball will fire every few seconds. Lasts 10 min. Only one Elemental Shield can be active on the Shaman at any one time.",
+    "auraDescription": "Causes 29 Nature damage to attacker on hit. 3 charges.",
     "name": "Lightning Shield",
     "icon": 353,
     "nameSubtext": "Rank 2",
-    "description": "The caster is surrounded by 3 balls of lightning. When a spell, melee or ranged attack hits the caster, the attacker will be struck for 29 Nature damage. This expends one lightning ball. Only one ball will fire every few seconds. Lasts 10 min. Only one Elemental Shield can be active on the Shaman at any one time.",
-    "auraDescription": "Causes 29 Nature damage to attacker on hit. 3 charges.",
     "school": 8,
     "classMask": 64
   },
   "spell:355": {
-    "name": "Taunt",
-    "icon": 363,
     "description": "Taunts the target to attack you, but has no effect if the target is already attacking you.",
     "auraDescription": "Taunted.",
+    "name": "Taunt",
+    "icon": 363,
     "school": 1,
     "resource": {
       "type": 1
@@ -5278,10 +5278,10 @@
     "classMask": 1
   },
   "spell:370": {
+    "description": "Purges the enemy target, removing 1 beneficial magic effect.",
     "name": "Purge",
     "icon": 359,
     "nameSubtext": "Rank 1",
-    "description": "Purges the enemy target, removing 1 beneficial magic effect.",
     "school": 8,
     "resource": {
       "percent": 8
@@ -5289,9 +5289,9 @@
     "classMask": 64
   },
   "spell:475": {
+    "description": "Removes 1 Curse from a friendly target.",
     "name": "Remove Curse",
     "icon": 365,
-    "description": "Removes 1 Curse from a friendly target.",
     "school": 64,
     "resource": {
       "percent": 8
@@ -5299,10 +5299,10 @@
     "classMask": 128
   },
   "spell:498": {
-    "name": "Divine Protection",
-    "icon": 330,
     "description": "Reduces all damage taken by -50% for 12 sec. Once protected, the target cannot be targeted by Divine Shield, Divine Protection, or Hand of Protection again for 2 min. Cannot be used within 30 sec of using Avenging Wrath.",
     "auraDescription": "Damage taken reduced by -50%.",
+    "name": "Divine Protection",
+    "icon": 330,
     "school": 2,
     "resource": {
       "percent": 3
@@ -5311,9 +5311,9 @@
     "classMask": 2
   },
   "spell:526": {
+    "description": "Cures 1 poison effect and 1 disease effect on a friendly target.",
     "name": "Cure Toxins",
     "icon": 357,
-    "description": "Cures 1 poison effect and 1 disease effect on a friendly target.",
     "school": 8,
     "resource": {
       "percent": 7
@@ -5321,10 +5321,10 @@
     "classMask": 64
   },
   "spell:527": {
+    "description": "Dispels magic on the target, removing 1 harmful spell from a friend or 1 beneficial spell from an enemy.",
     "name": "Dispel Magic",
     "icon": 312,
     "nameSubtext": "Rank 1",
-    "description": "Dispels magic on the target, removing 1 harmful spell from a friend or 1 beneficial spell from an enemy.",
     "school": 2,
     "resource": {
       "percent": 14
@@ -5332,9 +5332,9 @@
     "classMask": 16
   },
   "spell:528": {
+    "description": "Removes 1 disease from the friendly target.",
     "name": "Cure Disease",
     "icon": 325,
-    "description": "Removes 1 disease from the friendly target.",
     "school": 2,
     "resource": {
       "percent": 12
@@ -5342,10 +5342,10 @@
     "classMask": 16
   },
   "spell:548": {
+    "description": "Casts a bolt of lightning at the target for 45 Nature damage.",
     "name": "Lightning Bolt",
     "icon": 352,
     "nameSubtext": "Rank 3",
-    "description": "Casts a bolt of lightning at the target for 45 Nature damage.",
     "castTime": 2500,
     "school": 8,
     "resource": {
@@ -5354,10 +5354,10 @@
     "classMask": 64
   },
   "spell:586": {
-    "name": "Fade",
-    "icon": 341,
     "description": "Fade out, temporarily reducing all your threat for 10 sec.",
     "auraDescription": "Reduced threat level.",
+    "name": "Fade",
+    "icon": 341,
     "school": 32,
     "resource": {
       "percent": 15
@@ -5365,11 +5365,11 @@
     "classMask": 16
   },
   "spell:588": {
+    "description": "A burst of Holy energy fills the caster, increasing armor by 315. Each melee or ranged damage hit against the priest will remove one charge. Lasts 30 min or until 20 charges are used.",
+    "auraDescription": "Increases armor by 315.",
     "name": "Inner Fire",
     "icon": 320,
     "nameSubtext": "Rank 1",
-    "description": "A burst of Holy energy fills the caster, increasing armor by 315. Each melee or ranged damage hit against the priest will remove one charge. Lasts 30 min or until 20 charges are used.",
-    "auraDescription": "Increases armor by 315.",
     "school": 2,
     "resource": {
       "percent": 14
@@ -5377,10 +5377,10 @@
     "classMask": 16
   },
   "spell:598": {
+    "description": "Smite an enemy for 54 Holy damage.",
     "name": "Smite",
     "icon": 319,
     "nameSubtext": "Rank 3",
-    "description": "Smite an enemy for 54 Holy damage.",
     "castTime": 2500,
     "school": 2,
     "resource": {
@@ -5389,11 +5389,11 @@
     "classMask": 16
   },
   "spell:600": {
+    "description": "Draws on the soul of the friendly target to shield them, absorbing 158 damage. Lasts 30 sec. While the shield holds, spellcasting will not be interrupted by damage. Once shielded, the target cannot be shielded again for 15 sec.",
+    "auraDescription": "Absorbs damage.",
     "name": "Power Word: Shield",
     "icon": 326,
     "nameSubtext": "Rank 3",
-    "description": "Draws on the soul of the friendly target to shield them, absorbing 158 damage. Lasts 30 sec. While the shield holds, spellcasting will not be interrupted by damage. Once shielded, the target cannot be shielded again for 15 sec.",
-    "auraDescription": "Absorbs damage.",
     "school": 2,
     "resource": {
       "percent": 23
@@ -5401,11 +5401,11 @@
     "classMask": 16
   },
   "spell:604": {
+    "description": "Dampens magic used against the targeted party member, decreasing damage taken from spells by up to -10 and healing spells by up to -11. Lasts 10 min.",
+    "auraDescription": "Reduces magic damage taken by up to -10 and healing by up to -11.",
     "name": "Dampen Magic",
     "icon": 343,
     "nameSubtext": "Rank 1",
-    "description": "Dampens magic used against the targeted party member, decreasing damage taken from spells by up to -10 and healing spells by up to -11. Lasts 10 min.",
-    "auraDescription": "Reduces magic damage taken by up to -10 and healing by up to -11.",
     "school": 64,
     "resource": {
       "percent": 27
@@ -5413,18 +5413,18 @@
     "classMask": 128
   },
   "spell:633": {
+    "description": "Heals a friendly target for an amount equal to the Paladin's maximum health. If used on self, the Paladin cannot be targeted by Divine Shield, Divine Protection, Hand of Protection, or self-targeted Lay on Hands again for 2 min. Also cannot be used on self within 30 sec of using Avenging Wrath.",
     "name": "Lay on Hands",
     "icon": 321,
     "nameSubtext": "Rank 1",
-    "description": "Heals a friendly target for an amount equal to the Paladin's maximum health. If used on self, the Paladin cannot be targeted by Divine Shield, Divine Protection, Hand of Protection, or self-targeted Lay on Hands again for 2 min. Also cannot be used on self within 30 sec of using Avenging Wrath.",
     "school": 2,
     "classMask": 2
   },
   "spell:647": {
+    "description": "Heals a friendly target for 203.",
     "name": "Holy Light",
     "icon": 317,
     "nameSubtext": "Rank 3",
-    "description": "Heals a friendly target for 203.",
     "castTime": 2500,
     "school": 2,
     "resource": {
@@ -5433,18 +5433,18 @@
     "classMask": 2
   },
   "spell:674": {
+    "description": "Allows one-hand and off-hand weapons to be equipped in the off-hand.",
     "name": "Dual Wield",
     "icon": 11,
     "nameSubtext": "Passive",
-    "description": "Allows one-hand and off-hand weapons to be equipped in the off-hand.",
     "school": 1,
     "classMask": 109
   },
   "spell:676": {
-    "name": "Disarm",
-    "icon": 57,
     "description": "Disarm the enemy's main hand and ranged weapons for 10 sec.",
     "auraDescription": "Disarmed!",
+    "name": "Disarm",
+    "icon": 57,
     "school": 1,
     "resource": {
       "type": 1,
@@ -5453,10 +5453,10 @@
     "classMask": 1
   },
   "spell:688": {
+    "description": "Summons an Imp under the command of the Warlock.",
     "name": "Summon Imp",
     "icon": 403,
     "nameSubtext": "Summon",
-    "description": "Summons an Imp under the command of the Warlock.",
     "castTime": 10000,
     "school": 32,
     "resource": {
@@ -5465,11 +5465,11 @@
     "classMask": 256
   },
   "spell:689": {
+    "description": "Transfers 10 health every 1 sec from the target to the caster. Lasts 5 sec.",
+    "auraDescription": "Drains 10 health every 1 sec to the caster.",
     "name": "Drain Life",
     "icon": 393,
     "nameSubtext": "Rank 1",
-    "description": "Transfers 10 health every 1 sec from the target to the caster. Lasts 5 sec.",
-    "auraDescription": "Drains 10 health every 1 sec to the caster.",
     "school": 32,
     "resource": {
       "percent": 17
@@ -5477,10 +5477,10 @@
     "classMask": 256
   },
   "spell:693": {
+    "description": "Creates a Minor Soulstone. The Soulstone can be used to store one target's soul. If the target dies while his soul is stored, he will be able to resurrect with -400 health and 700 mana.\r\n\r\nConjured items disappear if logged out for more than 15 minutes.",
     "name": "Create Soulstone",
     "icon": 402,
     "nameSubtext": "Rank 1",
-    "description": "Creates a Minor Soulstone. The Soulstone can be used to store one target's soul. If the target dies while his soul is stored, he will be able to resurrect with -400 health and 700 mana.\r\n\r\nConjured items disappear if logged out for more than 15 minutes.",
     "castTime": 3000,
     "school": 32,
     "resource": {
@@ -5489,10 +5489,10 @@
     "classMask": 256
   },
   "spell:694": {
-    "name": "Mocking Blow",
-    "icon": 59,
     "description": "A mocking attack that causes a moderate amount of threat and forces the target to focus attacks on you for 6 sec. If the target is tauntable, also deals weapon damage.",
     "auraDescription": "Taunted.",
+    "name": "Mocking Blow",
+    "icon": 59,
     "school": 1,
     "resource": {
       "type": 1,
@@ -5501,11 +5501,11 @@
     "classMask": 1
   },
   "spell:696": {
+    "description": "Protects the caster, increasing armor by 265, and increasing the amount of health generated through spells and effects by 20%. Only one type of Armor spell can be active on the Warlock at any time. Lasts 30 min.",
+    "auraDescription": "Increases armor by 265, and amount of health generated through spells and effects by 20%",
     "name": "Demon Skin",
     "icon": 396,
     "nameSubtext": "Rank 2",
-    "description": "Protects the caster, increasing armor by 265, and increasing the amount of health generated through spells and effects by 20%. Only one type of Armor spell can be active on the Warlock at any time. Lasts 30 min.",
-    "auraDescription": "Increases armor by 265, and amount of health generated through spells and effects by 20%",
     "school": 32,
     "resource": {
       "percent": 31
@@ -5513,10 +5513,10 @@
     "classMask": 256
   },
   "spell:697": {
+    "description": "Summons a Voidwalker under the command of the Warlock.",
     "name": "Summon Voidwalker",
     "icon": 404,
     "nameSubtext": "Summon",
-    "description": "Summons a Voidwalker under the command of the Warlock.",
     "castTime": 10000,
     "school": 32,
     "resource": {
@@ -5525,11 +5525,11 @@
     "classMask": 256
   },
   "spell:703": {
+    "description": "Garrote the enemy, causing 204 damage over 18 sec, increased by your attack power. Must be stealthed and behind the target. Awards 1 combo point.",
+    "auraDescription": "20 damage every 3 seconds.",
     "name": "Garrote",
     "icon": 41,
     "nameSubtext": "Rank 1",
-    "description": "Garrote the enemy, causing 204 damage over 18 sec, increased by your attack power. Must be stealthed and behind the target. Awards 1 combo point.",
-    "auraDescription": "20 damage every 3 seconds.",
     "school": 1,
     "resource": {
       "type": 3,
@@ -5538,10 +5538,10 @@
     "classMask": 8
   },
   "spell:705": {
+    "description": "Sends a shadowy bolt at the enemy, causing 48 Shadow damage.",
     "name": "Shadow Bolt",
     "icon": 399,
     "nameSubtext": "Rank 3",
-    "description": "Sends a shadowy bolt at the enemy, causing 48 Shadow damage.",
     "castTime": 2800,
     "school": 32,
     "resource": {
@@ -5550,11 +5550,11 @@
     "classMask": 256
   },
   "spell:707": {
+    "description": "Burns the enemy for 19 Fire damage and then an additional 40 Fire damage over 15 sec.",
+    "auraDescription": "8 Fire damage every 3 seconds.",
     "name": "Immolate",
     "icon": 300,
     "nameSubtext": "Rank 2",
-    "description": "Burns the enemy for 19 Fire damage and then an additional 40 Fire damage over 15 sec.",
-    "auraDescription": "8 Fire damage every 3 seconds.",
     "castTime": 2000,
     "school": 4,
     "resource": {
@@ -5563,11 +5563,11 @@
     "classMask": 256
   },
   "spell:755": {
+    "description": "Gives 12 health to the caster's pet every second for 10 sec as long as the caster channels.",
+    "auraDescription": "Transferring Life.",
     "name": "Health Funnel",
     "icon": 392,
     "nameSubtext": "Rank 1",
-    "description": "Gives 12 health to the caster's pet every second for 10 sec as long as the caster channels.",
-    "auraDescription": "Transferring Life.",
     "school": 32,
     "resource": {
       "type": -2,
@@ -5577,10 +5577,10 @@
     "classMask": 256
   },
   "spell:770": {
-    "name": "Faerie Fire",
-    "icon": 349,
     "description": "Decrease the armor of the target by -5% for 5 min. While affected, the target cannot stealth or turn invisible.",
     "auraDescription": "Decreases armor by -5%. Cannot stealth or turn invisible.",
+    "name": "Faerie Fire",
+    "icon": 349,
     "school": 8,
     "resource": {
       "percent": 8
@@ -5588,10 +5588,10 @@
     "classMask": 1024
   },
   "spell:779": {
+    "description": "Swipe nearby enemies, inflicting 9 damage. Damage increased by attack power.",
     "name": "Swipe (Bear)",
     "icon": 192,
     "nameSubtext": "Rank 1",
-    "description": "Swipe nearby enemies, inflicting 9 damage. Damage increased by attack power.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -5600,11 +5600,11 @@
     "classMask": 1024
   },
   "spell:782": {
+    "description": "Thorns sprout from the friendly target causing 6 Nature damage to attackers when hit. Lasts 10 min.",
+    "auraDescription": "Causes 6 Nature damage to attackers.",
     "name": "Thorns",
     "icon": 376,
     "nameSubtext": "Rank 2",
-    "description": "Thorns sprout from the friendly target causing 6 Nature damage to attackers when hit. Lasts 10 min.",
-    "auraDescription": "Causes 6 Nature damage to attackers.",
     "school": 8,
     "resource": {
       "percent": 17
@@ -5612,11 +5612,11 @@
     "classMask": 1024
   },
   "spell:783": {
+    "description": "Shapeshift into travel form, increasing movement speed by 40%. Also protects the caster from Polymorph effects. Only useable outdoors.\r\n\r\nThe act of shapeshifting frees the caster of Polymorph and Movement Impairing effects.",
+    "auraDescription": "Immune to Polymorph effects. Movement speed increased by 40%.",
     "name": "Travel Form",
     "icon": 10,
     "nameSubtext": "Shapeshift",
-    "description": "Shapeshift into travel form, increasing movement speed by 40%. Also protects the caster from Polymorph effects. Only useable outdoors.\r\n\r\nThe act of shapeshifting frees the caster of Polymorph and Movement Impairing effects.",
-    "auraDescription": "Immune to Polymorph effects. Movement speed increased by 40%.",
     "school": 1,
     "resource": {
       "percent": 13
@@ -5624,19 +5624,19 @@
     "classMask": 1024
   },
   "spell:822": {
+    "description": "Reduces the chance you will be hit by spells by -2%.",
     "name": "Magic Resistance",
     "icon": 382,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by spells by -2%.",
     "school": 1,
     "raceMask": 512
   },
   "spell:837": {
+    "description": "Launches a bolt of frost at the enemy, causing 51 to 57 Frost damage and slowing movement speed by -40% for 6 sec.",
+    "auraDescription": "Movement slowed by -40%.",
     "name": "Frostbolt",
     "icon": 306,
     "nameSubtext": "Rank 3",
-    "description": "Launches a bolt of frost at the enemy, causing 51 to 57 Frost damage and slowing movement speed by -40% for 6 sec.",
-    "auraDescription": "Movement slowed by -40%.",
     "castTime": 2200,
     "school": 16,
     "resource": {
@@ -5645,11 +5645,11 @@
     "classMask": 128
   },
   "spell:853": {
+    "description": "Stuns the target for 3 sec and interrupts non-player spellcasting for 3 sec.",
+    "auraDescription": "Stunned.",
     "name": "Hammer of Justice",
     "icon": 334,
     "nameSubtext": "Rank 1",
-    "description": "Stuns the target for 3 sec and interrupts non-player spellcasting for 3 sec.",
-    "auraDescription": "Stunned.",
     "school": 2,
     "resource": {
       "percent": 3
@@ -5657,17 +5657,17 @@
     "classMask": 2
   },
   "spell:883": {
+    "description": "Summons your pet to you.",
     "name": "Call Pet",
     "icon": 16,
-    "description": "Summons your pet to you.",
     "school": 1,
     "classMask": 4
   },
   "spell:913": {
+    "description": "Heals a friendly target for 268.",
     "name": "Healing Wave",
     "icon": 354,
     "nameSubtext": "Rank 4",
-    "description": "Heals a friendly target for 268.",
     "castTime": 3000,
     "school": 8,
     "resource": {
@@ -5676,18 +5676,18 @@
     "classMask": 64
   },
   "spell:921": {
+    "description": "Pick the target's pocket.",
     "name": "Pick Pocket",
     "icon": 168,
-    "description": "Pick the target's pocket.",
     "school": 1,
     "classMask": 8
   },
   "spell:970": {
+    "description": "A word of darkness that causes 120 Shadow damage over 18 sec.",
+    "auraDescription": "20 Shadow damage every 3 seconds.",
     "name": "Shadow Word: Pain",
     "icon": 401,
     "nameSubtext": "Rank 3",
-    "description": "A word of darkness that causes 120 Shadow damage over 18 sec.",
-    "auraDescription": "20 Shadow damage every 3 seconds.",
     "school": 32,
     "resource": {
       "percent": 22
@@ -5695,9 +5695,9 @@
     "classMask": 16
   },
   "spell:982": {
+    "description": "Revive your pet, returning it to life with 15% of its base health.",
     "name": "Revive Pet",
     "icon": 17,
-    "description": "Revive your pet, returning it to life with 15% of its base health.",
     "castTime": 10000,
     "school": 8,
     "resource": {
@@ -5706,10 +5706,10 @@
     "classMask": 4
   },
   "spell:990": {
+    "description": "Conjures 2 loaves of rye, providing the mage and his allies with something to eat.\r\n\r\nConjured items disappear if logged out for more than 15 minutes.",
     "name": "Conjure Food",
     "icon": 187,
     "nameSubtext": "Rank 3",
-    "description": "Conjures 2 loaves of rye, providing the mage and his allies with something to eat.\r\n\r\nConjured items disappear if logged out for more than 15 minutes.",
     "castTime": 3000,
     "school": 64,
     "resource": {
@@ -5718,10 +5718,10 @@
     "classMask": 128
   },
   "spell:1002": {
-    "name": "Eyes of the Beast",
-    "icon": 12,
     "description": "Take direct control of your pet and see through its eyes for 1 min.",
     "auraDescription": "Directly controlling pet.",
+    "name": "Eyes of the Beast",
+    "icon": 12,
     "castTime": 2000,
     "school": 8,
     "resource": {
@@ -5730,11 +5730,11 @@
     "classMask": 4
   },
   "spell:1008": {
+    "description": "Amplifies magic used against the targeted party member, increasing damage taken from spells by up to 15 and healing spells by up to 16. Lasts 10 min.",
+    "auraDescription": "Increases magic damage taken by up to 15 and healing by up to 16.",
     "name": "Amplify Magic",
     "icon": 314,
     "nameSubtext": "Rank 1",
-    "description": "Amplifies magic used against the targeted party member, increasing damage taken from spells by up to 15 and healing spells by up to 16. Lasts 10 min.",
-    "auraDescription": "Increases magic damage taken by up to 15 and healing by up to 16.",
     "school": 64,
     "resource": {
       "percent": 27
@@ -5742,11 +5742,11 @@
     "classMask": 128
   },
   "spell:1014": {
+    "description": "Curses the target with agony, causing 180 Shadow damage over 24 sec. This damage is dealt slowly at first, and builds up as the Curse reaches its full duration. Only one Curse per Warlock can be active on any one target.",
+    "auraDescription": "180 Shadow damage over 24 sec.",
     "name": "Curse of Agony",
     "icon": 386,
     "nameSubtext": "Rank 2",
-    "description": "Curses the target with agony, causing 180 Shadow damage over 24 sec. This damage is dealt slowly at first, and builds up as the Curse reaches its full duration. Only one Curse per Warlock can be active on any one target.",
-    "auraDescription": "180 Shadow damage over 24 sec.",
     "school": 32,
     "resource": {
       "percent": 10
@@ -5754,11 +5754,11 @@
     "classMask": 256
   },
   "spell:1022": {
+    "description": "A targeted party or raid member is protected from all physical attacks for 6 sec, but during that time they cannot attack or use physical abilities. Players may only have one Hand on them per Paladin at any one time. Once protected, the target cannot be targeted by Divine Shield, Divine Protection, or Hand of Protection again for 2 min. Cannot be targeted on players who have used Avenging Wrath within the last 30 sec.",
+    "auraDescription": "Immune to physical attacks. Cannot attack or use physical abilities.",
     "name": "Hand of Protection",
     "icon": 335,
     "nameSubtext": "Rank 1",
-    "description": "A targeted party or raid member is protected from all physical attacks for 6 sec, but during that time they cannot attack or use physical abilities. Players may only have one Hand on them per Paladin at any one time. Once protected, the target cannot be targeted by Divine Shield, Divine Protection, or Hand of Protection again for 2 min. Cannot be targeted on players who have used Avenging Wrath within the last 30 sec.",
-    "auraDescription": "Immune to physical attacks. Cannot attack or use physical abilities.",
     "school": 2,
     "resource": {
       "percent": 6
@@ -5766,10 +5766,10 @@
     "classMask": 2
   },
   "spell:1044": {
-    "name": "Hand of Freedom",
-    "icon": 336,
     "description": "Places a Hand on the friendly target, granting immunity to movement impairing effects for 6 sec. Players may only have one Hand on them per Paladin at any one time.",
     "auraDescription": "Immune to movement impairing effects.",
+    "name": "Hand of Freedom",
+    "icon": 336,
     "school": 2,
     "resource": {
       "percent": 6
@@ -5778,11 +5778,11 @@
     "classMask": 2
   },
   "spell:1062": {
+    "description": "Roots the target in place and causes 50 Nature damage over 15 sec. Damage caused may interrupt the effect.",
+    "auraDescription": "Rooted. Causes 10 Nature damage every 3 seconds.",
     "name": "Entangling Roots",
     "icon": 374,
     "nameSubtext": "Rank 2",
-    "description": "Roots the target in place and causes 50 Nature damage over 15 sec. Damage caused may interrupt the effect.",
-    "auraDescription": "Rooted. Causes 10 Nature damage every 3 seconds.",
     "castTime": 1500,
     "school": 8,
     "resource": {
@@ -5791,11 +5791,11 @@
     "classMask": 1024
   },
   "spell:1066": {
+    "description": "Shapeshift into aquatic form, increasing swim speed by 50% and allowing the druid to breathe underwater. Also protects the caster from Polymorph effects.\r\n\r\nThe act of shapeshifting frees the caster of Polymorph and Movement Impairing effects.",
+    "auraDescription": "Immune to Polymorph effects. Increases swim speed by 50% and allows underwater breathing.",
     "name": "Aquatic Form",
     "icon": 3,
     "nameSubtext": "Shapeshift",
-    "description": "Shapeshift into aquatic form, increasing swim speed by 50% and allowing the druid to breathe underwater. Also protects the caster from Polymorph effects.\r\n\r\nThe act of shapeshifting frees the caster of Polymorph and Movement Impairing effects.",
-    "auraDescription": "Immune to Polymorph effects. Increases swim speed by 50% and allows underwater breathing.",
     "school": 1,
     "resource": {
       "percent": 13
@@ -5803,11 +5803,11 @@
     "classMask": 1024
   },
   "spell:1108": {
+    "description": "Target's melee attack power is reduced by -41 and armor is reduced by -5% for 2 min. Only one Curse per Warlock can be active on any one target.",
+    "auraDescription": "Melee attack power reduced by -41, and armor is reduced by -5%.",
     "name": "Curse of Weakness",
     "icon": 385,
     "nameSubtext": "Rank 2",
-    "description": "Target's melee attack power is reduced by -41 and armor is reduced by -5% for 2 min. Only one Curse per Warlock can be active on any one target.",
-    "auraDescription": "Melee attack power reduced by -41, and armor is reduced by -5%.",
     "school": 32,
     "resource": {
       "percent": 10
@@ -5815,11 +5815,11 @@
     "classMask": 256
   },
   "spell:1120": {
+    "description": "Drains the soul of the target, causing 55 Shadow damage over 15 sec. If the target is at or below 25% health, Drain Soul causes four times the normal damage. If the target dies while being drained, and yields experience or honor, the caster gains a Soul Shard. Each time the Drain Soul damages the target, it also has a chance to generate a Soul Shard. Soul Shards are required for other spells.",
+    "auraDescription": "11 Shadow damage every 3 seconds.",
     "name": "Drain Soul",
     "icon": 391,
     "nameSubtext": "Rank 1",
-    "description": "Drains the soul of the target, causing 55 Shadow damage over 15 sec. If the target is at or below 25% health, Drain Soul causes four times the normal damage. If the target dies while being drained, and yields experience or honor, the caster gains a Soul Shard. Each time the Drain Soul damages the target, it also has a chance to generate a Soul Shard. Soul Shards are required for other spells.",
-    "auraDescription": "11 Shadow damage every 3 seconds.",
     "school": 32,
     "resource": {
       "percent": 14
@@ -5827,11 +5827,11 @@
     "classMask": 256
   },
   "spell:1130": {
+    "description": "Places the Hunter's Mark on the target, increasing the ranged attack power of all attackers against that target by 20. In addition, the target of this ability can always be seen by the hunter whether it stealths or turns invisible. The target also appears on the mini-map. Lasts for 5 min.",
+    "auraDescription": "All attackers gain 20 ranged attack power against this target.",
     "name": "Hunter's Mark",
     "icon": 23,
     "nameSubtext": "Rank 1",
-    "description": "Places the Hunter's Mark on the target, increasing the ranged attack power of all attackers against that target by 20. In addition, the target of this ability can always be seen by the hunter whether it stealths or turns invisible. The target also appears on the mini-map. Lasts for 5 min.",
-    "auraDescription": "All attackers gain 20 ranged attack power against this target.",
     "school": 64,
     "resource": {
       "percent": 2
@@ -5839,9 +5839,9 @@
     "classMask": 4
   },
   "spell:1152": {
+    "description": "Purifies the friendly target, removing 1 disease effect and 1 poison effect.",
     "name": "Purify",
     "icon": 328,
-    "description": "Purifies the friendly target, removing 1 disease effect and 1 poison effect.",
     "school": 2,
     "resource": {
       "percent": 6
@@ -5849,11 +5849,11 @@
     "classMask": 2
   },
   "spell:1160": {
+    "description": "Reduces the melee attack power of all enemies within 10 yards by -35 for 30 sec.",
+    "auraDescription": "Reduces melee attack power by -35.",
     "name": "Demoralizing Shout",
     "icon": 64,
     "nameSubtext": "Rank 1",
-    "description": "Reduces the melee attack power of all enemies within 10 yards by -35 for 30 sec.",
-    "auraDescription": "Reduces melee attack power by -35.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -5862,11 +5862,11 @@
     "classMask": 1
   },
   "spell:1244": {
+    "description": "Power infuses the target, increasing their Stamina by 8 for 30 min.",
+    "auraDescription": "Increases Stamina by 8.",
     "name": "Power Word: Fortitude",
     "icon": 339,
     "nameSubtext": "Rank 2",
-    "description": "Power infuses the target, increasing their Stamina by 8 for 30 min.",
-    "auraDescription": "Increases Stamina by 8.",
     "school": 2,
     "resource": {
       "percent": 27
@@ -5874,11 +5874,11 @@
     "classMask": 16
   },
   "spell:1430": {
+    "description": "Heals the target for 145 over 15 sec.",
+    "auraDescription": "Heals 29 damage every 3 seconds.",
     "name": "Rejuvenation",
     "icon": 364,
     "nameSubtext": "Rank 3",
-    "description": "Heals the target for 145 over 15 sec.",
-    "auraDescription": "Heals 29 damage every 3 seconds.",
     "school": 8,
     "resource": {
       "percent": 18
@@ -5886,10 +5886,10 @@
     "classMask": 1024
   },
   "spell:1449": {
+    "description": "Causes an explosion of arcane magic around the caster, causing 32 Arcane damage to all targets within 10 yards.",
     "name": "Arcane Explosion",
     "icon": 380,
     "nameSubtext": "Rank 1",
-    "description": "Causes an explosion of arcane magic around the caster, causing 32 Arcane damage to all targets within 10 yards.",
     "school": 64,
     "resource": {
       "percent": 22
@@ -5897,10 +5897,10 @@
     "classMask": 128
   },
   "spell:1455": {
+    "description": "Converts 216 health into 116 mana. Spell power increases the amount of mana returned.",
     "name": "Life Tap",
     "icon": 383,
     "nameSubtext": "Rank 2",
-    "description": "Converts 216 health into 116 mana. Spell power increases the amount of mana returned.",
     "school": 32,
     "resource": {
       "type": -2
@@ -5908,11 +5908,11 @@
     "classMask": 256
   },
   "spell:1460": {
+    "description": "Increases the target's Intellect by 7 for 30 min.",
+    "auraDescription": "Increases Intellect by 7.",
     "name": "Arcane Intellect",
     "icon": 323,
     "nameSubtext": "Rank 2",
-    "description": "Increases the target's Intellect by 7 for 30 min.",
-    "auraDescription": "Increases Intellect by 7.",
     "school": 64,
     "resource": {
       "percent": 31
@@ -5920,18 +5920,18 @@
     "classMask": 128
   },
   "spell:1494": {
-    "name": "Track Beasts",
-    "icon": 50,
     "description": "Shows the location of all nearby beasts on the minimap. Only one form of tracking can be active at a time.",
     "auraDescription": "Tracking Beasts.",
+    "name": "Track Beasts",
+    "icon": 50,
     "school": 1,
     "classMask": 4
   },
   "spell:1495": {
+    "description": "Attack the enemy for 65 damage.",
     "name": "Mongoose Bite",
     "icon": 24,
     "nameSubtext": "Rank 1",
-    "description": "Attack the enemy for 65 damage.",
     "school": 1,
     "resource": {
       "percent": 3
@@ -5939,11 +5939,11 @@
     "classMask": 4
   },
   "spell:1513": {
+    "description": "Scares a beast, causing it to run in fear for up to 10 sec. Damage caused may interrupt the effect. Only one beast can be feared at a time.",
+    "auraDescription": "Feared.",
     "name": "Scare Beast",
     "icon": 5,
     "nameSubtext": "Rank 1",
-    "description": "Scares a beast, causing it to run in fear for up to 10 sec. Damage caused may interrupt the effect. Only one beast can be feared at a time.",
-    "auraDescription": "Feared.",
     "castTime": 1500,
     "school": 8,
     "resource": {
@@ -5952,10 +5952,10 @@
     "classMask": 4
   },
   "spell:1515": {
-    "name": "Tame Beast",
-    "icon": 18,
     "description": "Begins taming a beast to be your companion. Your armor is reduced by -100% while you focus on taming the beast for 20 sec. If you lose the beast's attention for any reason, the taming process will fail. Once tamed, the beast will be very unhappy and disloyal. Try feeding the pet immediately to make it happy.",
     "auraDescription": "Taming pet.",
+    "name": "Tame Beast",
+    "icon": 18,
     "school": 8,
     "resource": {
       "percent": 48
@@ -5963,10 +5963,10 @@
     "classMask": 4
   },
   "spell:1535": {
+    "description": "Causes the shaman's active Fire totem to emit a wave of flames, inflicting 48 Fire damage to enemies within 10 yards of the totem.",
     "name": "Fire Nova",
     "icon": 301,
     "nameSubtext": "Rank 1",
-    "description": "Causes the shaman's active Fire totem to emit a wave of flames, inflicting 48 Fire damage to enemies within 10 yards of the totem.",
     "school": 4,
     "resource": {
       "percent": 22
@@ -5974,10 +5974,10 @@
     "classMask": 64
   },
   "spell:1715": {
-    "name": "Hamstring",
-    "icon": 46,
     "description": "Maims the enemy, reducing movement speed by -50% for 15 sec.",
     "auraDescription": "Movement slowed by -50%.",
+    "name": "Hamstring",
+    "icon": 46,
     "school": 1,
     "resource": {
       "type": 1,
@@ -5986,10 +5986,10 @@
     "classMask": 1
   },
   "spell:1758": {
+    "description": "An instant strike that causes 10 damage in addition to 100% of your normal weapon damage. Awards 1 combo point.",
     "name": "Sinister Strike",
     "icon": 398,
     "nameSubtext": "Rank 3",
-    "description": "An instant strike that causes 10 damage in addition to 100% of your normal weapon damage. Awards 1 combo point.",
     "school": 1,
     "resource": {
       "type": 3,
@@ -5998,9 +5998,9 @@
     "classMask": 8
   },
   "spell:1766": {
+    "description": "A quick kick that interrupts spellcasting and prevents any spell in that school from being cast for 5 sec.",
     "name": "Kick",
     "icon": 26,
-    "description": "A quick kick that interrupts spellcasting and prevents any spell in that school from being cast for 5 sec.",
     "school": 1,
     "resource": {
       "type": 3,
@@ -6009,10 +6009,10 @@
     "classMask": 8
   },
   "spell:1776": {
-    "name": "Gouge",
-    "icon": 14,
     "description": "Causes 43 damage, incapacitating the opponent for 4 sec, and turns off your attack. Target must be facing you. Any damage caused will revive the target. Awards 1 combo point.",
     "auraDescription": "Incapacitated.",
+    "name": "Gouge",
+    "icon": 14,
     "school": 1,
     "resource": {
       "type": 3,
@@ -6021,26 +6021,26 @@
     "classMask": 8
   },
   "spell:1784": {
-    "name": "Stealth",
-    "icon": 48,
     "description": "Allows the rogue to sneak around, but reduces your speed by -30%. Lasts until cancelled.",
     "auraDescription": "Stealthed. Movement slowed by -30%.",
+    "name": "Stealth",
+    "icon": 48,
     "school": 1,
     "classMask": 8
   },
   "spell:1804": {
+    "description": "Allows opening of locked chests and doors.",
     "name": "Pick Lock",
     "icon": 355,
-    "description": "Allows opening of locked chests and doors.",
     "castTime": 5000,
     "school": 1,
     "classMask": 8
   },
   "spell:1966": {
+    "description": "Performs a feint, causing no damage but lowering your threat by a small amount, making the enemy less likely to attack you.",
     "name": "Feint",
     "icon": 40,
     "nameSubtext": "Rank 1",
-    "description": "Performs a feint, causing no damage but lowering your threat by a small amount, making the enemy less likely to attack you.",
     "school": 1,
     "resource": {
       "type": 3,
@@ -6049,10 +6049,10 @@
     "classMask": 8
   },
   "spell:2006": {
+    "description": "Brings a dead player back to life with 70 health and 135 mana. Cannot be cast when in combat.",
     "name": "Resurrection",
     "icon": 331,
     "nameSubtext": "Rank 1",
-    "description": "Brings a dead player back to life with 70 health and 135 mana. Cannot be cast when in combat.",
     "castTime": 10000,
     "school": 2,
     "resource": {
@@ -6061,10 +6061,10 @@
     "classMask": 16
   },
   "spell:2008": {
+    "description": "Returns the spirit to the body, restoring a dead target to life with 65 health and 120 mana. Cannot be cast when in combat.",
     "name": "Ancestral Spirit",
     "icon": 361,
     "nameSubtext": "Rank 1",
-    "description": "Returns the spirit to the body, restoring a dead target to life with 65 health and 120 mana. Cannot be cast when in combat.",
     "castTime": 10000,
     "school": 8,
     "resource": {
@@ -6073,10 +6073,10 @@
     "classMask": 64
   },
   "spell:2053": {
+    "description": "Heal your target for 135.",
     "name": "Lesser Heal",
     "icon": 322,
     "nameSubtext": "Rank 3",
-    "description": "Heal your target for 135.",
     "castTime": 2500,
     "school": 2,
     "resource": {
@@ -6085,10 +6085,10 @@
     "classMask": 16
   },
   "spell:2054": {
+    "description": "Heal your target for 295.",
     "name": "Heal",
     "icon": 316,
     "nameSubtext": "Rank 1",
-    "description": "Heal your target for 295.",
     "castTime": 3000,
     "school": 2,
     "resource": {
@@ -6097,11 +6097,11 @@
     "classMask": 16
   },
   "spell:2120": {
+    "description": "Calls down a pillar of fire, burning all enemies within the area for 52 Fire damage and an additional 48 Fire damage over 8 sec.",
+    "auraDescription": "12 Fire damage every 2 seconds.",
     "name": "Flamestrike",
     "icon": 303,
     "nameSubtext": "Rank 1",
-    "description": "Calls down a pillar of fire, burning all enemies within the area for 52 Fire damage and an additional 48 Fire damage over 8 sec.",
-    "auraDescription": "12 Fire damage every 2 seconds.",
     "castTime": 2000,
     "school": 4,
     "resource": {
@@ -6110,10 +6110,10 @@
     "classMask": 128
   },
   "spell:2137": {
+    "description": "Blasts the enemy for 57 Fire damage.",
     "name": "Fire Blast",
     "icon": 296,
     "nameSubtext": "Rank 2",
-    "description": "Blasts the enemy for 57 Fire damage.",
     "school": 4,
     "resource": {
       "percent": 21
@@ -6121,9 +6121,9 @@
     "classMask": 128
   },
   "spell:2457": {
+    "description": "A balanced combat stance that increases the armor penetration of all of your attacks by 10%.",
     "name": "Battle Stance",
     "icon": 58,
-    "description": "A balanced combat stance that increases the armor penetration of all of your attacks by 10%.",
     "school": 1,
     "resource": {
       "type": 1
@@ -6131,24 +6131,24 @@
     "classMask": 1
   },
   "spell:2479": {
+    "auraDescription": "You are currently worth no honor points to the enemy.",
     "name": "Honorless Target",
     "icon": 341,
-    "auraDescription": "You are currently worth no honor points to the enemy.",
     "school": 1
   },
   "spell:2481": {
+    "description": "Allows the dwarf to sense nearby treasure, making it appear on the minimap. Lasts until cancelled.",
+    "auraDescription": "Finding treasure.",
     "name": "Find Treasure",
     "icon": 290,
     "nameSubtext": "Racial",
-    "description": "Allows the dwarf to sense nearby treasure, making it appear on the minimap. Lasts until cancelled.",
-    "auraDescription": "Finding treasure.",
     "school": 1,
     "raceMask": 4
   },
   "spell:2484": {
+    "description": "Summons an Earthbind Totem with 5 health at the feet of the caster for 45 sec that slows the movement speed of enemies within 10 yards.",
     "name": "Earthbind Totem",
     "icon": 375,
-    "description": "Summons an Earthbind Totem with 5 health at the feet of the caster for 45 sec that slows the movement speed of enemies within 10 yards.",
     "school": 1,
     "resource": {
       "percent": 5
@@ -6157,10 +6157,10 @@
     "classMask": 64
   },
   "spell:2565": {
-    "name": "Shield Block",
-    "icon": 2,
     "description": "Increases your chance to block and block value by 100% for 10 sec.",
     "auraDescription": "Block chance and block value increased by 100%.",
+    "name": "Shield Block",
+    "icon": 2,
     "school": 1,
     "resource": {
       "type": 1
@@ -6169,10 +6169,10 @@
     "classMask": 1
   },
   "spell:2589": {
+    "description": "Backstab the target, causing 150% weapon damage plus 30 to the target. Must be behind the target. Requires a dagger in the main hand. Awards 1 combo point.",
     "name": "Backstab",
     "icon": 1,
     "nameSubtext": "Rank 2",
-    "description": "Backstab the target, causing 150% weapon damage plus 30 to the target. Must be behind the target. Requires a dagger in the main hand. Awards 1 combo point.",
     "school": 1,
     "resource": {
       "type": 3,
@@ -6181,11 +6181,11 @@
     "classMask": 8
   },
   "spell:2637": {
+    "description": "Forces the enemy target to sleep for up to 20 sec. Any damage will awaken the target. Only one target can be forced to hibernate at a time. Only works on Beasts and Dragonkin.",
+    "auraDescription": "Asleep.",
     "name": "Hibernate",
     "icon": 368,
     "nameSubtext": "Rank 1",
-    "description": "Forces the enemy target to sleep for up to 20 sec. Any damage will awaken the target. Only one target can be forced to hibernate at a time. Only works on Beasts and Dragonkin.",
-    "auraDescription": "Asleep.",
     "castTime": 1500,
     "school": 8,
     "resource": {
@@ -6194,18 +6194,18 @@
     "classMask": 1024
   },
   "spell:2641": {
+    "description": "Dismiss your pet. Dismissing your pet will reduce its happiness by 50.",
     "name": "Dismiss Pet",
     "icon": 370,
-    "description": "Dismiss your pet. Dismissing your pet will reduce its happiness by 50.",
     "castTime": 5000,
     "school": 1,
     "classMask": 4
   },
   "spell:2643": {
+    "description": "Fires several missiles, hitting 3 targets.",
     "name": "Multi-Shot",
     "icon": 51,
     "nameSubtext": "Rank 1",
-    "description": "Fires several missiles, hitting 3 targets.",
     "school": 1,
     "resource": {
       "percent": 9
@@ -6213,10 +6213,10 @@
     "classMask": 4
   },
   "spell:2645": {
-    "name": "Ghost Wolf",
-    "icon": 370,
     "description": "Turns the Shaman into a Ghost Wolf, increasing speed by 40%. As a Ghost Wolf, the Shaman is less hindered by effects that would reduce movement speed. Only useable outdoors.",
     "auraDescription": "Increases movement speed by 40%.\r\nEffects that reduce movement speed may not bring you below your normal movement speed.",
+    "name": "Ghost Wolf",
+    "icon": 370,
     "castTime": 2000,
     "school": 8,
     "resource": {
@@ -6225,9 +6225,9 @@
     "classMask": 64
   },
   "spell:2687": {
+    "description": "Generates 20 rage at the cost of health, and then generates an additional 10 rage over 10 sec.",
     "name": "Bloodrage",
     "icon": 34,
-    "description": "Generates 20 rage at the cost of health, and then generates an additional 10 rage over 10 sec.",
     "school": 1,
     "resource": {
       "type": -2,
@@ -6237,10 +6237,10 @@
     "classMask": 1
   },
   "spell:2974": {
-    "name": "Wing Clip",
-    "icon": 44,
     "description": "Maims the enemy, reducing the target's movement speed by -50% for 10 sec.",
     "auraDescription": "Movement speed reduced by -50%.",
+    "name": "Wing Clip",
+    "icon": 44,
     "school": 1,
     "resource": {
       "percent": 6
@@ -6248,11 +6248,11 @@
     "classMask": 4
   },
   "spell:2983": {
+    "description": "Increases the rogue's movement speed by 50% for 15 sec. Does not break stealth.",
+    "auraDescription": "Movement speed increased by 50%.",
     "name": "Sprint",
     "icon": 43,
     "nameSubtext": "Rank 1",
-    "description": "Increases the rogue's movement speed by 50% for 15 sec. Does not break stealth.",
-    "auraDescription": "Movement speed increased by 50%.",
     "school": 1,
     "resource": {
       "type": 3
@@ -6260,19 +6260,19 @@
     "classMask": 8
   },
   "spell:3127": {
+    "description": "Gives a chance to parry enemy melee attacks.",
     "name": "Parry",
     "icon": 31,
     "nameSubtext": "Passive",
-    "description": "Gives a chance to parry enemy melee attacks.",
     "school": 1,
     "classMask": 15
   },
   "spell:3140": {
+    "description": "Hurls a fiery ball that causes 84 Fire damage and an additional 12 Fire damage over 8 sec.",
+    "auraDescription": "3 Fire damage every 2 seconds.",
     "name": "Fireball",
     "icon": 297,
     "nameSubtext": "Rank 4",
-    "description": "Hurls a fiery ball that causes 84 Fire damage and an additional 12 Fire damage over 8 sec.",
-    "auraDescription": "3 Fire damage every 2 seconds.",
     "castTime": 3000,
     "school": 4,
     "resource": {
@@ -6281,10 +6281,10 @@
     "classMask": 128
   },
   "spell:3599": {
+    "description": "Summons a Searing Totem with 5 health at your feet for 30 sec that repeatedly attacks an enemy within 20 yards for 9 Fire damage.",
     "name": "Searing Totem",
     "icon": 302,
     "nameSubtext": "Rank 1",
-    "description": "Summons a Searing Totem with 5 health at your feet for 30 sec that repeatedly attacks an enemy within 20 yards for 9 Fire damage.",
     "school": 1,
     "resource": {
       "percent": 7
@@ -6292,24 +6292,24 @@
     "classMask": 64
   },
   "spell:3975": {
+    "description": "Attaches a permanent scope to a bow or gun that increases its damage by 2.",
     "name": "Standard Scope",
     "icon": 409,
-    "description": "Attaches a permanent scope to a bow or gun that increases its damage by 2.",
     "castTime": 3000,
     "school": 1
   },
   "spell:5019": {
+    "description": "Attack with an equipped wand.",
     "name": "Shoot",
     "icon": 47,
-    "description": "Attack with an equipped wand.",
     "school": 1,
     "classMask": 400
   },
   "spell:5116": {
-    "name": "Concussive Shot",
-    "icon": 308,
     "description": "Dazes the target, slowing movement speed by -50% for 4 sec.",
     "auraDescription": "Movement slowed by -50%.",
+    "name": "Concussive Shot",
+    "icon": 308,
     "castTime": -1000000,
     "school": 64,
     "resource": {
@@ -6318,18 +6318,18 @@
     "classMask": 4
   },
   "spell:5118": {
-    "name": "Aspect of the Cheetah",
-    "icon": 28,
     "description": "The hunter takes on the aspects of a cheetah, increasing movement speed by 30%. If the hunter is struck, he will be dazed for 4 sec. Only one Aspect can be active at a time.",
     "auraDescription": "30% increased movement speed. Dazed if struck.",
+    "name": "Aspect of the Cheetah",
+    "icon": 28,
     "school": 8,
     "classMask": 4
   },
   "spell:5144": {
+    "description": "Launches Arcane Missiles at the enemy, causing 36 Arcane damage every 1 sec for 4 sec.",
     "name": "Arcane Missiles",
     "icon": 371,
     "nameSubtext": "Rank 2",
-    "description": "Launches Arcane Missiles at the enemy, causing 36 Arcane damage every 1 sec for 4 sec.",
     "school": 64,
     "resource": {
       "percent": 31
@@ -6337,11 +6337,11 @@
     "classMask": 128
   },
   "spell:5171": {
+    "description": "Finishing move that increases melee attack speed by 20%. Lasts longer per combo point:\r\n   1 point  : 10.1 seconds\r\n   2 points: 13.13 seconds\r\n   3 points: 16.16 seconds\r\n   4 points: 19.19 seconds\r\n   5 points: 22.22 seconds",
+    "auraDescription": "Melee attack speed increased by 20%.",
     "name": "Slice and Dice",
     "icon": 42,
     "nameSubtext": "Rank 1",
-    "description": "Finishing move that increases melee attack speed by 20%. Lasts longer per combo point:\r\n   1 point  : 10.1 seconds\r\n   2 points: 13.13 seconds\r\n   3 points: 16.16 seconds\r\n   4 points: 19.19 seconds\r\n   5 points: 22.22 seconds",
-    "auraDescription": "Melee attack speed increased by 20%.",
     "school": 1,
     "resource": {
       "type": 3,
@@ -6350,10 +6350,10 @@
     "classMask": 8
   },
   "spell:5178": {
+    "description": "Causes 49 Nature damage to the target.",
     "name": "Wrath",
     "icon": 343,
     "nameSubtext": "Rank 3",
-    "description": "Causes 49 Nature damage to the target.",
     "castTime": 2000,
     "school": 8,
     "resource": {
@@ -6362,10 +6362,10 @@
     "classMask": 1024
   },
   "spell:5187": {
+    "description": "Heals a friendly target for 195 to 243.",
     "name": "Healing Touch",
     "icon": 350,
     "nameSubtext": "Rank 3",
-    "description": "Heals a friendly target for 195 to 243.",
     "castTime": 2500,
     "school": 8,
     "resource": {
@@ -6374,11 +6374,11 @@
     "classMask": 1024
   },
   "spell:5211": {
+    "description": "Stuns the target for 2 sec and interrupts non-player spellcasting for 3 sec.",
+    "auraDescription": "Stunned.",
     "name": "Bash",
     "icon": 4,
     "nameSubtext": "Rank 1",
-    "description": "Stuns the target for 2 sec and interrupts non-player spellcasting for 3 sec.",
-    "auraDescription": "Stunned.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -6387,18 +6387,18 @@
     "classMask": 1024
   },
   "spell:5227": {
+    "description": "Underwater breath lasts 233% longer than normal.",
     "name": "Underwater Breathing",
     "icon": 388,
     "nameSubtext": "Racial Passive",
-    "description": "Underwater breath lasts 233% longer than normal.",
     "school": 1,
     "raceMask": 16
   },
   "spell:5229": {
-    "name": "Enrage",
-    "icon": 7,
     "description": "Generates 20 rage, and then generates an additional 10 rage over 10 sec, but reduces base armor by 27% in Bear Form and 16% in Dire Bear Form.",
     "auraDescription": "Gain 1 rage per second. Base armor reduced.",
+    "name": "Enrage",
+    "icon": 7,
     "school": 1,
     "resource": {
       "type": 1
@@ -6407,11 +6407,11 @@
     "classMask": 1024
   },
   "spell:5232": {
+    "description": "Increases the friendly target's armor by 65 and all attributes by 2 for 30 min.",
+    "auraDescription": "Increases armor by 65 and all attributes by 2.",
     "name": "Mark of the Wild",
     "icon": 362,
     "nameSubtext": "Rank 2",
-    "description": "Increases the friendly target's armor by 65 and all attributes by 2 for 30 min.",
-    "auraDescription": "Increases armor by 65 and all attributes by 2.",
     "school": 8,
     "resource": {
       "percent": 24
@@ -6419,11 +6419,11 @@
     "classMask": 1024
   },
   "spell:5242": {
+    "description": "The warrior shouts, increasing attack power of all raid and party members within 30 yards by 35. Lasts 2 min.",
+    "auraDescription": "Increases your attack power by 35.",
     "name": "Battle Shout",
     "icon": 53,
     "nameSubtext": "Rank 2",
-    "description": "The warrior shouts, increasing attack power of all raid and party members within 30 yards by 35. Lasts 2 min.",
-    "auraDescription": "Increases your attack power by 35.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -6432,11 +6432,11 @@
     "classMask": 1
   },
   "spell:5277": {
+    "description": "The rogue's dodge chance will increase by 50% for 15 sec.",
+    "auraDescription": "Increases dodge chance by 50%.",
     "name": "Evasion",
     "icon": 400,
     "nameSubtext": "Rank 1",
-    "description": "The rogue's dodge chance will increase by 50% for 15 sec.",
-    "auraDescription": "Increases dodge chance by 50%.",
     "school": 1,
     "resource": {
       "type": 3
@@ -6444,11 +6444,11 @@
     "classMask": 8
   },
   "spell:5487": {
+    "description": "Shapeshift into bear form, increasing melee attack power by 30, armor contribution from cloth and leather items by 180%, and Stamina by 25%. Also protects the caster from Polymorph effects and allows the use of various bear abilities.\r\n\r\nThe act of shapeshifting frees the caster of Polymorph and Movement Impairing effects.",
+    "auraDescription": "Immune to Polymorph effects. Increases melee attack power by 30, armor contribution from cloth and leather items by 180%, and Stamina by 25%.",
     "name": "Bear Form",
     "icon": 33,
     "nameSubtext": "Shapeshift",
-    "description": "Shapeshift into bear form, increasing melee attack power by 30, armor contribution from cloth and leather items by 180%, and Stamina by 25%. Also protects the caster from Polymorph effects and allows the use of various bear abilities.\r\n\r\nThe act of shapeshifting frees the caster of Polymorph and Movement Impairing effects.",
-    "auraDescription": "Immune to Polymorph effects. Increases melee attack power by 30, armor contribution from cloth and leather items by 180%, and Stamina by 25%.",
     "school": 1,
     "resource": {
       "percent": 35
@@ -6456,10 +6456,10 @@
     "classMask": 1024
   },
   "spell:5506": {
+    "description": "Conjures 2 bottles of purified water, providing the mage and his allies with something to drink.\r\n\r\nConjured items disappear if logged out for more than 15 minutes.",
     "name": "Conjure Water",
     "icon": 118,
     "nameSubtext": "Rank 3",
-    "description": "Conjures 2 bottles of purified water, providing the mage and his allies with something to drink.\r\n\r\nConjured items disappear if logged out for more than 15 minutes.",
     "castTime": 3000,
     "school": 64,
     "resource": {
@@ -6468,10 +6468,10 @@
     "classMask": 128
   },
   "spell:5676": {
+    "description": "Inflict searing pain on the enemy target, causing 34 Fire damage. Causes a high amount of threat.",
     "name": "Searing Pain",
     "icon": 304,
     "nameSubtext": "Rank 1",
-    "description": "Inflict searing pain on the enemy target, causing 34 Fire damage. Causes a high amount of threat.",
     "castTime": 1500,
     "school": 4,
     "resource": {
@@ -6480,10 +6480,10 @@
     "classMask": 256
   },
   "spell:5697": {
-    "name": "Unending Breath",
-    "icon": 388,
     "description": "Allows the target to breathe underwater for 10 min.",
     "auraDescription": "Underwater Breathing.",
+    "name": "Unending Breath",
+    "icon": 388,
     "school": 32,
     "resource": {
       "percent": 2
@@ -6491,11 +6491,11 @@
     "classMask": 256
   },
   "spell:5782": {
+    "description": "Strikes fear in the enemy, causing it to run in fear for up to 10 sec. Damage caused may interrupt the effect. Only 1 target can be feared at a time.",
+    "auraDescription": "Feared.",
     "name": "Fear",
     "icon": 394,
     "nameSubtext": "Rank 1",
-    "description": "Strikes fear in the enemy, causing it to run in fear for up to 10 sec. Damage caused may interrupt the effect. Only 1 target can be feared at a time.",
-    "auraDescription": "Feared.",
     "castTime": 1500,
     "school": 32,
     "resource": {
@@ -6504,11 +6504,11 @@
     "classMask": 256
   },
   "spell:6074": {
+    "description": "Heals the target for 100 over 15 sec.",
+    "auraDescription": "Healing 20 damage every 3 seconds.",
     "name": "Renew",
     "icon": 329,
     "nameSubtext": "Rank 2",
-    "description": "Heals the target for 100 over 15 sec.",
-    "auraDescription": "Healing 20 damage every 3 seconds.",
     "school": 2,
     "resource": {
       "percent": 17
@@ -6516,10 +6516,10 @@
     "classMask": 16
   },
   "spell:6197": {
-    "name": "Eagle Eye",
-    "icon": 20,
     "description": "Zooms in the hunter's vision. Only usable outdoors. Lasts 1 min.",
     "auraDescription": "Vision is enhanced.",
+    "name": "Eagle Eye",
+    "icon": 20,
     "school": 64,
     "resource": {
       "percent": 1
@@ -6527,10 +6527,10 @@
     "classMask": 4
   },
   "spell:6201": {
+    "description": "Creates a Minor Healthstone that can be used to instantly restore 100 health.\r\n\r\nConjured items disappear if logged out for more than 15 minutes.",
     "name": "Create Healthstone",
     "icon": 249,
     "nameSubtext": "Rank 1",
-    "description": "Creates a Minor Healthstone that can be used to instantly restore 100 health.\r\n\r\nConjured items disappear if logged out for more than 15 minutes.",
     "castTime": 3000,
     "school": 32,
     "resource": {
@@ -6539,11 +6539,11 @@
     "classMask": 256
   },
   "spell:6222": {
+    "description": "Corrupts the target, causing 90 Shadow damage over 15 sec.",
+    "auraDescription": "18 Shadow damage every 3 seconds.",
     "name": "Corruption",
     "icon": 381,
     "nameSubtext": "Rank 2",
-    "description": "Corrupts the target, causing 90 Shadow damage over 15 sec.",
-    "auraDescription": "18 Shadow damage every 3 seconds.",
     "school": 32,
     "resource": {
       "percent": 12
@@ -6551,11 +6551,11 @@
     "classMask": 256
   },
   "spell:6390": {
+    "description": "Summons a Stoneclaw Totem with 150 health at the feet of the caster for 15 sec that taunts creatures within 8 yards to attack it. Enemies attacking the Stoneclaw Totem have a 50% chance to be stunned for 3 sec. Stoneclaw totem also protects all your totems, causing them to absorb 58 damage.",
+    "auraDescription": "Taunting creatures.",
     "name": "Stoneclaw Totem",
     "icon": 372,
     "nameSubtext": "Rank 2",
-    "description": "Summons a Stoneclaw Totem with 150 health at the feet of the caster for 15 sec that taunts creatures within 8 yards to attack it. Enemies attacking the Stoneclaw Totem have a 50% chance to be stunned for 3 sec. Stoneclaw totem also protects all your totems, causing them to absorb 58 damage.",
-    "auraDescription": "Taunting creatures.",
     "school": 1,
     "resource": {
       "percent": 6
@@ -6563,11 +6563,11 @@
     "classMask": 64
   },
   "spell:6546": {
+    "description": "Wounds the target causing them to bleed for 40 damage plus an additional 1528.571 (based on weapon damage) over 15 sec.",
+    "auraDescription": "Bleeding for 8 plus a percentage of weapon damage every 3 seconds.",
     "name": "Rend",
     "icon": 14,
     "nameSubtext": "Rank 2",
-    "description": "Wounds the target causing them to bleed for 40 damage plus an additional 1528.571 (based on weapon damage) over 15 sec.",
-    "auraDescription": "Bleeding for 8 plus a percentage of weapon damage every 3 seconds.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -6576,20 +6576,20 @@
     "classMask": 1
   },
   "spell:6562": {
+    "description": "Increases chance to hit with all spells and attacks by 1% for you and all party members within 30 yards.",
+    "auraDescription": "Chance to hit increased by 1%.",
     "name": "Heroic Presence",
     "icon": 135,
     "nameSubtext": "Racial Passive",
-    "description": "Increases chance to hit with all spells and attacks by 1% for you and all party members within 30 yards.",
-    "auraDescription": "Chance to hit increased by 1%.",
     "school": 1,
     "classMask": 39,
     "raceMask": 1024
   },
   "spell:6572": {
+    "description": "Instantly counterattack an enemy for 161 to 183 damage. Revenge is only usable after the warrior blocks, dodges or parries an attack.",
     "name": "Revenge",
     "icon": 60,
     "nameSubtext": "Rank 1",
-    "description": "Instantly counterattack an enemy for 161 to 183 damage. Revenge is only usable after the warrior blocks, dodges or parries an attack.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -6598,16 +6598,16 @@
     "classMask": 1
   },
   "spell:6603": {
+    "description": "Automatically attacks a target in melee with an equipped weapon until cancelled.",
     "name": "Auto Attack",
     "icon": 251,
-    "description": "Automatically attacks a target in melee with an equipped weapon until cancelled.",
     "school": 1
   },
   "spell:6761": {
+    "description": "Finishing move that causes damage per combo point:\r\n   1 point  : 31-53 damage\r\n   2 points: 56-86 damage\r\n   3 points: 81-119 damage\r\n   4 points: 106-152 damage\r\n   5 points: 131-185 damage",
     "name": "Eviscerate",
     "icon": 39,
     "nameSubtext": "Rank 3",
-    "description": "Finishing move that causes damage per combo point:\r\n   1 point  : 31-53 damage\r\n   2 points: 56-86 damage\r\n   3 points: 81-119 damage\r\n   4 points: 106-152 damage\r\n   5 points: 131-185 damage",
     "school": 1,
     "resource": {
       "type": 3,
@@ -6616,11 +6616,11 @@
     "classMask": 8
   },
   "spell:6770": {
+    "description": "Incapacitates the target for up to 25 sec. Must be stealthed. Only works on Humanoids that are not in combat. Any damage caused will revive the target. Only 1 target may be sapped at a time.",
+    "auraDescription": "Sapped.",
     "name": "Sap",
     "icon": 45,
     "nameSubtext": "Rank 1",
-    "description": "Incapacitates the target for up to 25 sec. Must be stealthed. Only works on Humanoids that are not in combat. Any damage caused will revive the target. Only 1 target may be sapped at a time.",
-    "auraDescription": "Sapped.",
     "school": 1,
     "resource": {
       "type": 3,
@@ -6629,10 +6629,10 @@
     "classMask": 8
   },
   "spell:6795": {
-    "name": "Growl",
-    "icon": 32,
     "description": "Taunts the target to attack you, but has no effect if the target is already attacking you.",
     "auraDescription": "Taunted.",
+    "name": "Growl",
+    "icon": 32,
     "school": 1,
     "resource": {
       "type": 1
@@ -6640,10 +6640,10 @@
     "classMask": 1024
   },
   "spell:6808": {
+    "description": "A strong attack that increases melee damage by 27 and causes a high amount of threat. Effects which increase Bleed damage also increase Maul damage.",
     "name": "Maul",
     "icon": 9,
     "nameSubtext": "Rank 2",
-    "description": "A strong attack that increases melee damage by 27 and causes a high amount of threat. Effects which increase Bleed damage also increase Maul damage.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -6652,35 +6652,35 @@
     "classMask": 1024
   },
   "spell:6991": {
+    "description": "Feed your pet the selected item. Feeding your pet increases happiness. Using food close to the pet's level will have a better result.",
     "name": "Feed Pet",
     "icon": 19,
-    "description": "Feed your pet the selected item. Feeding your pet increases happiness. Using food close to the pet's level will have a better result.",
     "school": 1,
     "cooldown": 10000,
     "classMask": 4
   },
   "spell:7218": {
+    "description": "Attaches a counterweight to a two-handed sword, mace, axe or polearm increasing the wielder's haste rating by 20.",
     "name": "Weapon Counterweight",
     "icon": 409,
-    "description": "Attaches a counterweight to a two-handed sword, mace, axe or polearm increasing the wielder's haste rating by 20.",
     "castTime": 3000,
     "school": 1
   },
   "spell:7294": {
+    "description": "Causes 10 Holy damage to any enemy that strikes a party or raid member within 40 yards. Players may only have one Aura on them per Paladin at any one time.",
+    "auraDescription": "Does 10 Holy damage to anyone who strikes you.",
     "name": "Retribution Aura",
     "icon": 310,
     "nameSubtext": "Rank 1",
-    "description": "Causes 10 Holy damage to any enemy that strikes a party or raid member within 40 yards. Players may only have one Aura on them per Paladin at any one time.",
-    "auraDescription": "Does 10 Holy damage to anyone who strikes you.",
     "school": 2,
     "classMask": 2
   },
   "spell:7300": {
+    "description": "Increases Armor by 110. If an enemy strikes the caster, they may have their movement slowed by -30% and the time between their attacks increased by -25% for 5 sec. Only one type of Armor spell can be active on the Mage at any time. Lasts 30 min.",
+    "auraDescription": "Increases Armor by 110 and may slow attackers.",
     "name": "Frost Armor",
     "icon": 305,
     "nameSubtext": "Rank 2",
-    "description": "Increases Armor by 110. If an enemy strikes the caster, they may have their movement slowed by -30% and the time between their attacks increased by -25% for 5 sec. Only one type of Armor spell can be active on the Mage at any time. Lasts 30 min.",
-    "auraDescription": "Increases Armor by 110 and may slow attackers.",
     "school": 16,
     "resource": {
       "percent": 24
@@ -6688,10 +6688,10 @@
     "classMask": 128
   },
   "spell:7328": {
+    "description": "Brings a dead player back to life with 65 health and 120 mana. Cannot be cast when in combat.",
     "name": "Redemption",
     "icon": 331,
     "nameSubtext": "Rank 1",
-    "description": "Brings a dead player back to life with 65 health and 120 mana. Cannot be cast when in combat.",
     "castTime": 10000,
     "school": 2,
     "resource": {
@@ -6700,9 +6700,9 @@
     "classMask": 2
   },
   "spell:7384": {
+    "description": "Instantly overpower the enemy, causing weapon damage. Only useable after the target dodges. The Overpower cannot be blocked, dodged or parried.",
     "name": "Overpower",
     "icon": 27,
-    "description": "Instantly overpower the enemy, causing weapon damage. Only useable after the target dodges. The Overpower cannot be blocked, dodged or parried.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -6711,10 +6711,10 @@
     "classMask": 1
   },
   "spell:7386": {
-    "name": "Sunder Armor",
-    "icon": 63,
     "description": "Sunders the target's armor, reducing it by -4% per Sunder Armor and causes a high amount of threat. Threat increased by attack power. Can be applied up to 5 times. Lasts 30 sec.",
     "auraDescription": "Armor decreased by -4%.",
+    "name": "Sunder Armor",
+    "icon": 63,
     "school": 1,
     "resource": {
       "type": 1,
@@ -6723,23 +6723,23 @@
     "classMask": 1
   },
   "spell:7517": {
+    "description": "Increases defense rating by 6.",
     "name": "Increased Defense",
     "icon": 409,
-    "description": "Increases defense rating by 6.",
     "school": 1
   },
   "spell:7617": {
+    "description": "When struck in combat has a 1% chance of inflicting 75 Shadow damage to the attacker.",
     "name": "Shadow Bolt",
     "icon": 409,
-    "description": "When struck in combat has a 1% chance of inflicting 75 Shadow damage to the attacker.",
     "school": 32,
     "classMask": 256
   },
   "spell:7744": {
+    "description": "Removes any Charm, Fear and Sleep effect. This effect shares a 45 sec cooldown with other similar effects.",
     "name": "Will of the Forsaken",
     "icon": 397,
     "nameSubtext": "Racial",
-    "description": "Removes any Charm, Fear and Sleep effect. This effect shares a 45 sec cooldown with other similar effects.",
     "school": 1,
     "cooldown": 120000,
     "raceMask": 16,
@@ -6755,16 +6755,16 @@
     }
   },
   "spell:7823": {
+    "description": "Fishing skill increased by 5.",
     "name": "Fishing Skill +5",
     "icon": 410,
-    "description": "Fishing skill increased by 5.",
     "school": 1
   },
   "spell:8019": {
+    "description": "Imbue the Shaman's weapon, increasing its damage per second by 6. Lasts 30 minutes.",
     "name": "Rockbiter Weapon",
     "icon": 367,
     "nameSubtext": "Rank 3",
-    "description": "Imbue the Shaman's weapon, increasing its damage per second by 6. Lasts 30 minutes.",
     "school": 8,
     "resource": {
       "percent": 8
@@ -6772,10 +6772,10 @@
     "classMask": 64
   },
   "spell:8027": {
+    "description": "Imbue the Shaman's weapon with fire, increasing total spell damage by 13. Each hit causes 6.221 to 19.16 additional Fire damage, based on the speed of the weapon. Slower weapons cause more fire damage per swing. Lasts 30 minutes.",
     "name": "Flametongue Weapon",
     "icon": 299,
     "nameSubtext": "Rank 2",
-    "description": "Imbue the Shaman's weapon with fire, increasing total spell damage by 13. Each hit causes 6.221 to 19.16 additional Fire damage, based on the speed of the weapon. Slower weapons cause more fire damage per swing. Lasts 30 minutes.",
     "school": 4,
     "resource": {
       "percent": 6
@@ -6783,11 +6783,11 @@
     "classMask": 64
   },
   "spell:8045": {
+    "description": "Instantly shocks the target with concussive force, causing 60 Nature damage and reducing melee attack speed by -10% for 8 sec.",
+    "auraDescription": "Time between attacks increased by -10%.",
     "name": "Earth Shock",
     "icon": 347,
     "nameSubtext": "Rank 3",
-    "description": "Instantly shocks the target with concussive force, causing 60 Nature damage and reducing melee attack speed by -10% for 8 sec.",
-    "auraDescription": "Time between attacks increased by -10%.",
     "school": 8,
     "resource": {
       "percent": 18
@@ -6795,11 +6795,11 @@
     "classMask": 64
   },
   "spell:8052": {
+    "description": "Instantly sears the target with fire, causing 45 Fire damage immediately and 72 Fire damage over 18 sec. This periodic damage may critically strike and will occur more rapidly based on the caster's spell haste.",
+    "auraDescription": "12 Fire damage every 3 seconds.",
     "name": "Flame Shock",
     "icon": 298,
     "nameSubtext": "Rank 2",
-    "description": "Instantly sears the target with fire, causing 45 Fire damage immediately and 72 Fire damage over 18 sec. This periodic damage may critically strike and will occur more rapidly based on the caster's spell haste.",
-    "auraDescription": "12 Fire damage every 3 seconds.",
     "school": 4,
     "resource": {
       "percent": 17
@@ -6807,10 +6807,10 @@
     "classMask": 64
   },
   "spell:8075": {
+    "description": "Summons a Strength of Earth Totem with 5 health at the feet of the caster. The totem increases the strength and agility of all party and raid members within 30 yards by 10. Lasts 5 min.",
     "name": "Strength of Earth Totem",
     "icon": 346,
     "nameSubtext": "Rank 1",
-    "description": "Summons a Strength of Earth Totem with 5 health at the feet of the caster. The totem increases the strength and agility of all party and raid members within 30 yards by 10. Lasts 5 min.",
     "school": 1,
     "resource": {
       "percent": 10
@@ -6818,10 +6818,10 @@
     "classMask": 64
   },
   "spell:8102": {
+    "description": "Blasts the target for 72 Shadow damage.",
     "name": "Mind Blast",
     "icon": 406,
     "nameSubtext": "Rank 2",
-    "description": "Blasts the target for 72 Shadow damage.",
     "castTime": 1500,
     "school": 32,
     "resource": {
@@ -6830,11 +6830,11 @@
     "classMask": 16
   },
   "spell:8122": {
+    "description": "The caster lets out a psychic scream, causing 2 enemies within 8 yards to flee for 8 sec. Damage caused may interrupt the effect.",
+    "auraDescription": "Running in Fear.",
     "name": "Psychic Scream",
     "icon": 395,
     "nameSubtext": "Rank 1",
-    "description": "The caster lets out a psychic scream, causing 2 enemies within 8 yards to flee for 8 sec. Damage caused may interrupt the effect.",
-    "auraDescription": "Running in Fear.",
     "school": 32,
     "resource": {
       "percent": 15
@@ -6842,9 +6842,9 @@
     "classMask": 16
   },
   "spell:8143": {
+    "description": "Summons a Tremor Totem with 5 health at the feet of the caster that shakes the ground around it, removing Fear, Charm and Sleep effects from party members within 30 yards. Lasts 5 min.",
     "name": "Tremor Totem",
     "icon": 378,
-    "description": "Summons a Tremor Totem with 5 health at the feet of the caster that shakes the ground around it, removing Fear, Charm and Sleep effects from party members within 30 yards. Lasts 5 min.",
     "school": 1,
     "resource": {
       "percent": 2
@@ -6852,10 +6852,10 @@
     "classMask": 64
   },
   "spell:8154": {
+    "description": "Summons a Stoneskin Totem with 5 health at the feet of the caster. The totem protects party and raid members within 30 yards, increasing armor by 200. Lasts 5 min.",
     "name": "Stoneskin Totem",
     "icon": 373,
     "nameSubtext": "Rank 2",
-    "description": "Summons a Stoneskin Totem with 5 health at the feet of the caster. The totem protects party and raid members within 30 yards, increasing armor by 200. Lasts 5 min.",
     "school": 1,
     "resource": {
       "percent": 10
@@ -6863,11 +6863,11 @@
     "classMask": 64
   },
   "spell:8198": {
+    "description": "Blasts nearby enemies increasing the time between their attacks by -10% for 14 sec and doing 34 damage to them. Damage increased by attack power. This ability causes additional threat.",
+    "auraDescription": "Time between attacks increased by -10%.",
     "name": "Thunder Clap",
     "icon": 377,
     "nameSubtext": "Rank 2",
-    "description": "Blasts nearby enemies increasing the time between their attacks by -10% for 14 sec and doing 34 damage to them. Damage increased by attack power. This ability causes additional threat.",
-    "auraDescription": "Time between attacks increased by -10%.",
     "school": 1,
     "resource": {
       "type": 1,
@@ -6876,10 +6876,10 @@
     "classMask": 1
   },
   "spell:8647": {
-    "name": "Expose Armor",
-    "icon": 61,
     "description": "Finishing move that exposes the target, reducing armor by -20% and lasting longer per combo point:\r\n   1 point  : 6 sec.\r\n   2 points: 12 sec.\r\n   3 points: 18 sec.\r\n   4 points: 24 sec.\r\n   5 points: 30 sec.",
     "auraDescription": "Armor decreased by -20%.",
+    "name": "Expose Armor",
+    "icon": 61,
     "school": 1,
     "resource": {
       "type": 3,
@@ -6888,10 +6888,10 @@
     "classMask": 8
   },
   "spell:8676": {
+    "description": "Ambush the target, causing 275% weapon damage plus 77 to the target. Must be stealthed and behind the target. Requires a dagger in the main hand. Awards 2 combo points.",
     "name": "Ambush",
     "icon": 38,
     "nameSubtext": "Rank 1",
-    "description": "Ambush the target, causing 275% weapon damage plus 77 to the target. Must be stealthed and behind the target. Requires a dagger in the main hand. Awards 2 combo points.",
     "school": 1,
     "resource": {
       "type": 3,
@@ -6900,11 +6900,11 @@
     "classMask": 8
   },
   "spell:8925": {
+    "description": "Burns the enemy for 25 Arcane damage and then an additional 52 Arcane damage over 12 sec.",
+    "auraDescription": "13 Arcane damage every 3 seconds.",
     "name": "Moonfire",
     "icon": 371,
     "nameSubtext": "Rank 3",
-    "description": "Burns the enemy for 25 Arcane damage and then an additional 52 Arcane damage over 12 sec.",
-    "auraDescription": "13 Arcane damage every 3 seconds.",
     "school": 64,
     "resource": {
       "percent": 21
@@ -6912,11 +6912,11 @@
     "classMask": 1024
   },
   "spell:8938": {
+    "description": "Heals a friendly target for 164 and another 175 over 21 sec.",
+    "auraDescription": "Heals 25 every 3 seconds.",
     "name": "Regrowth",
     "icon": 366,
     "nameSubtext": "Rank 2",
-    "description": "Heals a friendly target for 164 and another 175 over 21 sec.",
-    "auraDescription": "Heals 25 every 3 seconds.",
     "castTime": 2000,
     "school": 8,
     "resource": {
@@ -6925,9 +6925,9 @@
     "classMask": 1024
   },
   "spell:8946": {
+    "description": "Cures 1 poison effect on the target.",
     "name": "Cure Poison",
     "icon": 357,
-    "description": "Cures 1 poison effect on the target.",
     "school": 8,
     "resource": {
       "percent": 13
@@ -6935,56 +6935,56 @@
     "classMask": 1024
   },
   "spell:9233": {
+    "description": "5% chance of dealing 15 Fire damage on a successful melee attack.",
     "name": "Firebolt",
     "icon": 324,
-    "description": "5% chance of dealing 15 Fire damage on a successful melee attack.",
     "school": 4
   },
   "spell:10290": {
+    "description": "Gives 160 additional armor to party and raid members within 40 yards. Players may only have one Aura on them per Paladin at any one time.",
+    "auraDescription": "Increases armor by 160.",
     "name": "Devotion Aura",
     "icon": 311,
     "nameSubtext": "Rank 2",
-    "description": "Gives 160 additional armor to party and raid members within 40 yards. Players may only have one Aura on them per Paladin at any one time.",
-    "auraDescription": "Increases armor by 160.",
     "school": 2,
     "classMask": 2
   },
   "spell:10839": {
+    "description": "Heals 1104 damage over 8 sec.",
+    "auraDescription": "Healing 138 damage every 1 seconds.",
     "name": "First Aid",
     "icon": 316,
     "nameSubtext": "Rank 8",
-    "description": "Heals 1104 damage over 8 sec.",
-    "auraDescription": "Healing 138 damage every 1 seconds.",
     "school": 1
   },
   "spell:12351": {
+    "description": "Reduces the pushback suffered from damaging attacks while casting Fire spells by 70% and reduces the threat caused by your Fire spells by -20%.",
     "name": "Burning Soul",
     "icon": 294,
     "nameSubtext": "Rank 2",
-    "description": "Reduces the pushback suffered from damaging attacks while casting Fire spells by 70% and reduces the threat caused by your Fire spells by -20%.",
     "school": 4,
     "classMask": 128
   },
   "spell:12678": {
+    "description": "You retain up to 10 of your rage points when you change stances.",
     "name": "Stance Mastery",
     "icon": 348,
     "nameSubtext": "Passive",
-    "description": "You retain up to 10 of your rage points when you change stances.",
     "school": 1,
     "classMask": 1
   },
   "spell:13163": {
-    "name": "Aspect of the Monkey",
-    "icon": 15,
     "description": "The hunter takes on the aspects of a monkey, increasing chance to dodge by 18%. Only one Aspect can be active at a time.",
     "auraDescription": "Increases chance to dodge by 18%.",
+    "name": "Aspect of the Monkey",
+    "icon": 15,
     "school": 8,
     "classMask": 4
   },
   "spell:13440": {
+    "description": "Sends a shadowy bolt at the enemy causing 30 Shadow damage.",
     "name": "Shadow Bolt",
     "icon": 399,
-    "description": "Sends a shadowy bolt at the enemy causing 30 Shadow damage.",
     "castTime": 2200,
     "school": 32,
     "resource": {
@@ -6993,9 +6993,9 @@
     "classMask": 256
   },
   "spell:13480": {
+    "description": "Sends a shadowy bolt at the enemy causing 60 Shadow damage.",
     "name": "Shadow Bolt",
     "icon": 399,
-    "description": "Sends a shadowy bolt at the enemy causing 60 Shadow damage.",
     "castTime": 2200,
     "school": 32,
     "resource": {
@@ -7004,11 +7004,11 @@
     "classMask": 256
   },
   "spell:13550": {
+    "description": "Stings the target, causing 553.333 Nature damage over 15 sec. Only one Sting per Hunter can be active on any one target.",
+    "auraDescription": "Causes 16 Nature damage every 3 seconds.",
     "name": "Serpent Sting",
     "icon": 22,
     "nameSubtext": "Rank 3",
-    "description": "Stings the target, causing 553.333 Nature damage over 15 sec. Only one Sting per Hunter can be active on any one target.",
-    "auraDescription": "Causes 16 Nature damage every 3 seconds.",
     "castTime": -1000000,
     "school": 8,
     "resource": {
@@ -7017,38 +7017,38 @@
     "classMask": 4
   },
   "spell:13659": {
+    "description": "Permanently enchant a shield to give 5 Spirit.",
     "name": "Enchant Shield - Spirit",
     "icon": 315,
-    "description": "Permanently enchant a shield to give 5 Spirit.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13689": {
+    "description": "Permanently enchant a shield to increase block rating by 10.",
     "name": "Enchant Shield - Lesser Block",
     "icon": 315,
-    "description": "Permanently enchant a shield to increase block rating by 10.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13746": {
+    "description": "Permanently enchant a cloak to give 50 additional armor.",
     "name": "Enchant Cloak - Greater Defense",
     "icon": 315,
-    "description": "Permanently enchant a cloak to give 50 additional armor.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13794": {
+    "description": "Permanently enchant a cloak to give 3 to all resistances.",
     "name": "Enchant Cloak - Resistance",
     "icon": 315,
-    "description": "Permanently enchant a cloak to give 3 to all resistances.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13795": {
+    "description": "Place a fire trap that will burn the first enemy to approach for 110 Fire damage over 15 sec. Trap will exist for 30 sec. Only one trap can be active at a time.",
     "name": "Immolation Trap",
     "icon": 298,
     "nameSubtext": "Rank 1",
-    "description": "Place a fire trap that will burn the first enemy to approach for 110 Fire damage over 15 sec. Trap will exist for 30 sec. Only one trap can be active at a time.",
     "school": 4,
     "resource": {
       "percent": 9
@@ -7056,109 +7056,109 @@
     "classMask": 4
   },
   "spell:13817": {
+    "description": "Permanently enchant a shield to increase Stamina by 5.",
     "name": "Enchant Shield - Stamina",
     "icon": 315,
-    "description": "Permanently enchant a shield to increase Stamina by 5.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13836": {
+    "description": "Permanently enchant boots to give +5 Stamina.",
     "name": "Enchant Boots - Stamina",
     "icon": 315,
-    "description": "Permanently enchant boots to give +5 Stamina.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13858": {
+    "description": "Permanently enchant a piece of chest armor to grant +50 health.",
     "name": "Enchant Chest - Superior Health",
     "icon": 315,
-    "description": "Permanently enchant a piece of chest armor to grant +50 health.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13872": {
+    "description": "Reduces the cooldown of your Sprint and Evasion abilities by -60 sec and increases your total Stamina by 4%.",
     "name": "Endurance",
     "icon": 400,
     "nameSubtext": "Rank 2",
-    "description": "Reduces the cooldown of your Sprint and Evasion abilities by -60 sec and increases your total Stamina by 4%.",
     "school": 1,
     "classMask": 8
   },
   "spell:13882": {
+    "description": "Permanently enchant a cloak to increase Agility by 3.",
     "name": "Enchant Cloak - Lesser Agility",
     "icon": 315,
-    "description": "Permanently enchant a cloak to increase Agility by 3.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13890": {
+    "description": "Permanently enchant boots to give a slight movement speed increase.",
     "name": "Enchant Boots - Minor Speed",
     "icon": 315,
-    "description": "Permanently enchant boots to give a slight movement speed increase.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13898": {
+    "description": "Permanently enchant a melee weapon to often strike for 40 additional fire damage.",
     "name": "Enchant Weapon - Fiery Weapon",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to often strike for 40 additional fire damage.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13905": {
+    "description": "Permanently enchant a shield to give +7 Spirit.",
     "name": "Enchant Shield - Greater Spirit",
     "icon": 315,
-    "description": "Permanently enchant a shield to give +7 Spirit.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13935": {
+    "description": "Permanently enchant boots to give +5 Agility.",
     "name": "Enchant Boots - Agility",
     "icon": 315,
-    "description": "Permanently enchant boots to give +5 Agility.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13939": {
+    "description": "Permanently enchants bracers to give +7 Strength.",
     "name": "Enchant Bracer - Greater Strength",
     "icon": 315,
-    "description": "Permanently enchants bracers to give +7 Strength.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13941": {
+    "description": "Permanently enchant a piece of chest armor to grant +3 to all stats.",
     "name": "Enchant Chest - Stats",
     "icon": 315,
-    "description": "Permanently enchant a piece of chest armor to grant +3 to all stats.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13943": {
+    "description": "Permanently enchant a melee weapon to do 4 additional points of damage.",
     "name": "Enchant Weapon - Greater Striking",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to do 4 additional points of damage.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13945": {
+    "description": "Permanently enchant bracers to increase Stamina by 7.",
     "name": "Enchant Bracer - Greater Stamina",
     "icon": 315,
-    "description": "Permanently enchant bracers to increase Stamina by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:13948": {
+    "description": "Permanently enchant gloves to increase haste rating by 10.",
     "name": "Enchant Gloves - Minor Haste",
     "icon": 315,
-    "description": "Permanently enchant gloves to increase haste rating by 10.",
     "castTime": 5000,
     "school": 1
   },
   "spell:14261": {
+    "description": "A strong attack that increases melee damage by 21.",
     "name": "Raptor Strike",
     "icon": 27,
     "nameSubtext": "Rank 3",
-    "description": "A strong attack that increases melee damage by 21.",
     "school": 1,
     "resource": {
       "percent": 4
@@ -7166,10 +7166,10 @@
     "classMask": 4
   },
   "spell:14281": {
+    "description": "An instant shot that causes 38 Arcane damage.",
     "name": "Arcane Shot",
     "icon": 25,
     "nameSubtext": "Rank 2",
-    "description": "An instant shot that causes 38 Arcane damage.",
     "castTime": -1000000,
     "school": 64,
     "resource": {
@@ -7178,26 +7178,26 @@
     "classMask": 4
   },
   "spell:14318": {
+    "description": "The hunter takes on the aspects of a hawk, increasing ranged attack power by 35. Only one Aspect can be active at a time.",
+    "auraDescription": "Increases ranged attack power by 35.",
     "name": "Aspect of the Hawk",
     "icon": 360,
     "nameSubtext": "Rank 2",
-    "description": "The hunter takes on the aspects of a hawk, increasing ranged attack power by 35. Only one Aspect can be active at a time.",
-    "auraDescription": "Increases ranged attack power by 35.",
     "school": 8,
     "classMask": 4
   },
   "spell:16130": {
+    "description": "Increases the health of your Stoneclaw Totem by 50% and the radius of your Earthbind Totem by 20%, and reduces the cooldown of both totems by -30%.",
     "name": "Earth's Grasp",
     "icon": 372,
     "nameSubtext": "Rank 2",
-    "description": "Increases the health of your Stoneclaw Totem by 50% and the radius of your Earthbind Totem by 20%, and reduces the cooldown of both totems by -30%.",
     "school": 1,
     "classMask": 64
   },
   "spell:16409": {
+    "description": "Sends a shadowy bolt at the enemy causing 35 Shadow damage.",
     "name": "Shadow Bolt",
     "icon": 399,
-    "description": "Sends a shadowy bolt at the enemy causing 35 Shadow damage.",
     "castTime": 2200,
     "school": 32,
     "resource": {
@@ -7206,10 +7206,10 @@
     "classMask": 256
   },
   "spell:16413": {
-    "name": "Fireball",
-    "icon": 295,
     "description": "Hurls a fiery ball that causes 70 Fire damage and an additional 9 damage over 6 sec.",
     "auraDescription": "3 Fire damage every 2 sec.",
+    "name": "Fireball",
+    "icon": 295,
     "castTime": 2000,
     "school": 4,
     "resource": {
@@ -7218,34 +7218,34 @@
     "classMask": 128
   },
   "spell:16623": {
+    "description": "Attaches a Thorium Spike to your shield that deals damage every time you block with it.",
     "name": "Thorium Shield Spike",
     "icon": 409,
-    "description": "Attaches a Thorium Spike to your shield that deals damage every time you block with it.",
     "castTime": 3000,
     "school": 1
   },
   "spell:16769": {
+    "description": "Reduces the pushback suffered from damaging attacks while casting Arcane Missiles and Arcane Blast by 80%.",
     "name": "Arcane Stability",
     "icon": 371,
     "nameSubtext": "Rank 4",
-    "description": "Reduces the pushback suffered from damaging attacks while casting Arcane Missiles and Arcane Blast by 80%.",
     "school": 1,
     "classMask": 128
   },
   "spell:16810": {
+    "description": "While active, any time an enemy strikes the caster they have a 100% chance to become afflicted by Entangling Roots (Rank 2). 3 charges. Lasts 45 sec.",
+    "auraDescription": "Melee damage you take has a chance to entangle the enemy.",
     "name": "Nature's Grasp",
     "icon": 356,
     "nameSubtext": "Rank 2",
-    "description": "While active, any time an enemy strikes the caster they have a 100% chance to become afflicted by Entangling Roots (Rank 2). 3 charges. Lasts 45 sec.",
-    "auraDescription": "Melee damage you take has a chance to entangle the enemy.",
     "school": 8,
     "classMask": 1024
   },
   "spell:16857": {
-    "name": "Faerie Fire (Feral)",
-    "icon": 349,
     "description": "Decrease the armor of the target by -5% for 5 min. While affected, the target cannot stealth or turn invisible. Deals 31 damage and additional threat when used in Bear Form or Dire Bear Form.",
     "auraDescription": "Decreases armor by -5%. Cannot stealth or turn invisible.",
+    "name": "Faerie Fire (Feral)",
+    "icon": 349,
     "school": 8,
     "resource": {
       "type": 3
@@ -7253,24 +7253,24 @@
     "classMask": 1024
   },
   "spell:16909": {
+    "description": "Increases the critical strike damage bonus of your Starfire, Starfall, Moonfire, and Wrath spells by 20%.",
     "name": "Vengeance",
     "icon": 359,
     "nameSubtext": "Rank 1",
-    "description": "Increases the critical strike damage bonus of your Starfire, Starfall, Moonfire, and Wrath spells by 20%.",
     "school": 1,
     "classMask": 1024
   },
   "spell:18197": {
-    "name": "Poison",
-    "icon": 344,
     "description": "Poisons target for 7 Nature damage every 3 sec for 15 sec.",
     "auraDescription": "7 Nature damage inflicted every 3 sec.",
+    "name": "Poison",
+    "icon": 344,
     "school": 8
   },
   "spell:18205": {
+    "description": "Sends a shadowy bolt at the enemy causing 55 Shadow damage.",
     "name": "Shadow Bolt",
     "icon": 399,
-    "description": "Sends a shadowy bolt at the enemy causing 55 Shadow damage.",
     "castTime": 2200,
     "school": 32,
     "resource": {
@@ -7279,52 +7279,52 @@
     "classMask": 256
   },
   "spell:18381": {
+    "description": "Reduces target enemy's attack power by -25 for 30 sec.",
+    "auraDescription": "Reduced attack power.",
     "name": "Cripple",
     "icon": 385,
     "nameSubtext": "Rank 1",
-    "description": "Reduces target enemy's attack power by -25 for 30 sec.",
-    "auraDescription": "Reduced attack power.",
     "school": 1,
     "resource": {
       "type": 3
     }
   },
   "spell:18608": {
+    "description": "Heals 1360 damage over 8 sec.",
+    "auraDescription": "Healing 170 damage every 1 seconds.",
     "name": "First Aid",
     "icon": 316,
     "nameSubtext": "Rank 9",
-    "description": "Heals 1360 damage over 8 sec.",
-    "auraDescription": "Healing 170 damage every 1 seconds.",
     "school": 1
   },
   "spell:18610": {
+    "description": "Heals 2000 damage over 8 sec.",
+    "auraDescription": "Healing 250 damage every 1 seconds.",
     "name": "First Aid",
     "icon": 316,
     "nameSubtext": "Rank 10",
-    "description": "Heals 2000 damage over 8 sec.",
-    "auraDescription": "Healing 250 damage every 1 seconds.",
     "school": 1
   },
   "spell:18805": {
+    "description": "Restores 150 health and mana to a friendly target and attempts to dispel any polymorph effects from them. Reduced effectiveness against polymorph effects from casters of level 31 and higher.",
     "name": "Recombobulate",
     "icon": 409,
-    "description": "Restores 150 health and mana to a friendly target and attempts to dispel any polymorph effects from them. Reduced effectiveness against polymorph effects from casters of level 31 and higher.",
     "school": 64
   },
   "spell:18822": {
+    "description": "Reduces the Attack Speed and Casting Speed penalty of your Enslave Demon spell by 0% and reduces the resist chance by 10%.",
     "name": "Improved Enslave Demon",
     "icon": 390,
     "nameSubtext": "Rank 2",
-    "description": "Reduces the Attack Speed and Casting Speed penalty of your Enslave Demon spell by 0% and reduces the resist chance by 10%.",
     "school": 1,
     "classMask": 256
   },
   "spell:19742": {
+    "description": "Places a Blessing on the friendly target, restoring 10 mana every 5 seconds for 10 min. Players may only have one Blessing on them per Paladin at any one time.",
+    "auraDescription": "Restores 10 mana every 5 seconds.",
     "name": "Blessing of Wisdom",
     "icon": 337,
     "nameSubtext": "Rank 1",
-    "description": "Places a Blessing on the friendly target, restoring 10 mana every 5 seconds for 10 min. Players may only have one Blessing on them per Paladin at any one time.",
-    "auraDescription": "Restores 10 mana every 5 seconds.",
     "school": 2,
     "resource": {
       "percent": 5
@@ -7332,11 +7332,11 @@
     "classMask": 2
   },
   "spell:19834": {
+    "description": "Places a Blessing on the friendly target, increasing attack power by 35 for 10 min. Players may only have one Blessing on them per Paladin at any one time.",
+    "auraDescription": "Increases attack power by 35.",
     "name": "Blessing of Might",
     "icon": 313,
     "nameSubtext": "Rank 2",
-    "description": "Places a Blessing on the friendly target, increasing attack power by 35 for 10 min. Players may only have one Blessing on them per Paladin at any one time.",
-    "auraDescription": "Increases attack power by 35.",
     "school": 2,
     "resource": {
       "percent": 5
@@ -7344,180 +7344,180 @@
     "classMask": 2
   },
   "spell:19883": {
-    "name": "Track Humanoids",
-    "icon": 327,
     "description": "Shows the location of all nearby humanoids on the minimap. Only one form of tracking can be active at a time.",
     "auraDescription": "Tracking Humanoids.",
+    "name": "Track Humanoids",
+    "icon": 327,
     "school": 1,
     "classMask": 4
   },
   "spell:19884": {
-    "name": "Track Undead",
-    "icon": 387,
     "description": "Shows the location of all nearby undead on the minimap. Only one form of tracking can be active at a time.",
     "auraDescription": "Tracking Undead.",
+    "name": "Track Undead",
+    "icon": 387,
     "school": 1,
     "classMask": 4
   },
   "spell:20008": {
+    "description": "Permanently enchant bracers to increase Intellect by 7.",
     "name": "Enchant Bracer - Greater Intellect",
     "icon": 315,
-    "description": "Permanently enchant bracers to increase Intellect by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20009": {
+    "description": "Permanently enchant bracers to increase Spirit by 9.",
     "name": "Enchant Bracer - Superior Spirit",
     "icon": 315,
-    "description": "Permanently enchant bracers to increase Spirit by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20010": {
+    "description": "Permanently enchant bracers to increase Strength by 9.",
     "name": "Enchant Bracer - Superior Strength",
     "icon": 315,
-    "description": "Permanently enchant bracers to increase Strength by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20011": {
+    "description": "Permanently enchant bracers to increase Stamina by 9.",
     "name": "Enchant Bracer - Superior Stamina",
     "icon": 315,
-    "description": "Permanently enchant bracers to increase Stamina by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20012": {
+    "description": "Permanently enchant gloves to increase Agility by 7.",
     "name": "Enchant Gloves - Greater Agility",
     "icon": 315,
-    "description": "Permanently enchant gloves to increase Agility by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20013": {
+    "description": "Permanently enchant gloves to increase Strength by 7.",
     "name": "Enchant Gloves - Greater Strength",
     "icon": 315,
-    "description": "Permanently enchant gloves to increase Strength by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20014": {
+    "description": "Permanently enchant a cloak to increase all resistances by 5.",
     "name": "Enchant Cloak - Greater Resistance",
     "icon": 315,
-    "description": "Permanently enchant a cloak to increase all resistances by 5.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20015": {
+    "description": "Permanently enchant a cloak to increase armor by 70.",
     "name": "Enchant Cloak - Superior Defense",
     "icon": 315,
-    "description": "Permanently enchant a cloak to increase armor by 70.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20016": {
+    "description": "Permanently enchant a shield to regenerate 4 mana and health every 5 sec.",
     "name": "Enchant Shield - Vitality",
     "icon": 315,
-    "description": "Permanently enchant a shield to regenerate 4 mana and health every 5 sec.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20017": {
+    "description": "Permanently enchant a shield to increase Stamina by 7.",
     "name": "Enchant Shield - Greater Stamina",
     "icon": 315,
-    "description": "Permanently enchant a shield to increase Stamina by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20020": {
+    "description": "Permanently enchant boots to increase Stamina by 7.",
     "name": "Enchant Boots - Greater Stamina",
     "icon": 315,
-    "description": "Permanently enchant boots to increase Stamina by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20023": {
+    "description": "Permanently enchant boots to increase Agility by 7.",
     "name": "Enchant Boots - Greater Agility",
     "icon": 315,
-    "description": "Permanently enchant boots to increase Agility by 7.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20025": {
+    "description": "Permanently enchant chest armor to increase all stats by 4.",
     "name": "Enchant Chest - Greater Stats",
     "icon": 315,
-    "description": "Permanently enchant chest armor to increase all stats by 4.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20026": {
+    "description": "Permanently enchant chest armor to increase health by 100.",
     "name": "Enchant Chest - Major Health",
     "icon": 315,
-    "description": "Permanently enchant chest armor to increase health by 100.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20029": {
+    "description": "Permanently enchant a melee weapon to often chill the target, reducing their movement and attack speed. Has a reduced effect for players above level 60.",
     "name": "Enchant Weapon - Icy Chill",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to often chill the target, reducing their movement and attack speed. Has a reduced effect for players above level 60.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20030": {
+    "description": "Permanently enchant a two-handed melee weapon to increase its damage by 9.",
     "name": "Enchant 2H Weapon - Superior Impact",
     "icon": 315,
-    "description": "Permanently enchant a two-handed melee weapon to increase its damage by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20031": {
+    "description": "Permanently enchant a melee weapon to increase its damage by 5.",
     "name": "Enchant Weapon - Superior Striking",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to increase its damage by 5.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20032": {
+    "description": "Permanently enchant a melee weapon to often steal life from the enemy and give it to the wielder. Has a reduced effect for players above level 60.",
     "name": "Enchant Weapon - Lifestealing",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to often steal life from the enemy and give it to the wielder. Has a reduced effect for players above level 60.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20033": {
+    "description": "Permanently enchant a melee weapon to often inflict a curse on the target, inflicting Shadow damage and reducing their melee damage.",
     "name": "Enchant Weapon - Unholy Weapon",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to often inflict a curse on the target, inflicting Shadow damage and reducing their melee damage.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20034": {
+    "description": "Permanently enchant a melee weapon to often heal for 75 to 125 and increase Strength by 100 for 15 sec. when attacking in melee. Has a reduced effect for players above level 60.",
     "name": "Enchant Weapon - Crusader",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to often heal for 75 to 125 and increase Strength by 100 for 15 sec. when attacking in melee. Has a reduced effect for players above level 60.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20035": {
+    "description": "Permanently enchant a two-handed melee weapon to increase Spirit by 9.",
     "name": "Enchant 2H Weapon - Major Spirit",
     "icon": 315,
-    "description": "Permanently enchant a two-handed melee weapon to increase Spirit by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20036": {
+    "description": "Permanently enchant a two-handed melee weapon to increase Intellect by 9.",
     "name": "Enchant 2H Weapon - Major Intellect",
     "icon": 315,
-    "description": "Permanently enchant a two-handed melee weapon to increase Intellect by 9.",
     "castTime": 5000,
     "school": 1
   },
   "spell:20154": {
-    "name": "Seal of Righteousness",
-    "icon": 49,
     "description": "Fills the Paladin with holy spirit for 30 min, granting each melee attack 880 additional Holy damage. Only one Seal can be active on the Paladin at any one time.",
     "auraDescription": "Melee attacks cause an additional 880 Holy damage.",
+    "name": "Seal of Righteousness",
+    "icon": 49,
     "school": 2,
     "resource": {
       "percent": 14
@@ -7525,9 +7525,9 @@
     "classMask": 2
   },
   "spell:20271": {
+    "description": "Unleashes the energy of a Seal spell to judge an enemy for 20 sec, granting attacks made against the judged enemy a chance of healing the attacker for 2% of their maximum health. Refer to individual Seals for additional Judgement effect. Only one Judgement per Paladin can be active at any one time.",
     "name": "Judgement of Light",
     "icon": 332,
-    "description": "Unleashes the energy of a Seal spell to judge an enemy for 20 sec, granting attacks made against the judged enemy a chance of healing the attacker for 2% of their maximum health. Refer to individual Seals for additional Judgement effect. Only one Judgement per Paladin can be active at any one time.",
     "school": 2,
     "resource": {
       "percent": 5
@@ -7536,11 +7536,11 @@
     "classMask": 2
   },
   "spell:20549": {
+    "description": "Stuns up to 5 enemies within 8 yds for 2 sec.",
+    "auraDescription": "Stunned.",
     "name": "War Stomp",
     "icon": 52,
     "nameSubtext": "Racial",
-    "description": "Stuns up to 5 enemies within 8 yds for 2 sec.",
-    "auraDescription": "Stunned.",
     "castTime": 500,
     "school": 1,
     "cooldown": 120000,
@@ -7553,59 +7553,59 @@
     }
   },
   "spell:20550": {
+    "description": "Base Health increased by 5%.",
     "name": "Endurance",
     "icon": 379,
     "nameSubtext": "Racial Passive",
-    "description": "Base Health increased by 5%.",
     "school": 1,
     "raceMask": 32
   },
   "spell:20551": {
+    "description": "Reduces the chance you will be hit by Nature spells by -2%.",
     "name": "Nature Resistance",
     "icon": 369,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Nature spells by -2%.",
     "school": 1,
     "raceMask": 32
   },
   "spell:20552": {
+    "description": "Herbalism skill increased by 15.",
     "name": "Cultivation",
     "icon": 186,
     "nameSubtext": "Racial Passive",
-    "description": "Herbalism skill increased by 15.",
     "school": 1,
     "raceMask": 32
   },
   "spell:20555": {
+    "description": "Health regeneration rate increased by 10%. 10% of total Health regeneration may continue during combat.",
     "name": "Regeneration",
     "icon": 361,
     "nameSubtext": "Racial Passive",
-    "description": "Health regeneration rate increased by 10%. 10% of total Health regeneration may continue during combat.",
     "school": 1,
     "raceMask": 128
   },
   "spell:20557": {
+    "description": "Damage dealt versus Beasts increased by 5%.",
     "name": "Beast Slaying",
     "icon": 197,
     "nameSubtext": "Racial Passive",
-    "description": "Damage dealt versus Beasts increased by 5%.",
     "school": 1,
     "raceMask": 128
   },
   "spell:20558": {
+    "description": "Your chance to critically hit with Throwing Weapons is increased by 1%.",
     "name": "Throwing Specialization",
     "icon": 263,
     "nameSubtext": "Racial Passive",
-    "description": "Your chance to critically hit with Throwing Weapons is increased by 1%.",
     "school": 1,
     "raceMask": 128
   },
   "spell:20572": {
+    "description": "Increases attack power by 6. Lasts 30 sec.",
+    "auraDescription": "Attack power increased by 6.",
     "name": "Blood Fury",
     "icon": 291,
     "nameSubtext": "Racial",
-    "description": "Increases attack power by 6. Lasts 15 sec.",
-    "auraDescription": "Attack power increased by 6.",
     "school": 1,
     "cooldown": 120000,
     "classMask": 45,
@@ -7617,85 +7617,85 @@
     }
   },
   "spell:20573": {
+    "description": "Duration of Stun effects reduced by an additional -15%.",
     "name": "Hardiness",
     "icon": 136,
     "nameSubtext": "Racial Passive",
-    "description": "Duration of Stun effects reduced by an additional -15%.",
     "school": 1,
     "raceMask": 2
   },
   "spell:20574": {
+    "description": "Expertise with Fist Weapons, Axes and Two-Handed Axes increased by 5.",
     "name": "Axe Specialization",
     "icon": 69,
     "nameSubtext": "Racial Passive",
-    "description": "Expertise with Fist Weapons, Axes and Two-Handed Axes increased by 5.",
     "school": 1,
     "raceMask": 2
   },
   "spell:20575": {
+    "description": "Damage dealt by pets increased by 5%.",
     "name": "Command",
     "icon": 64,
     "nameSubtext": "Racial Passive",
-    "description": "Damage dealt by pets increased by 5%.",
     "school": 1,
     "classMask": 256,
     "raceMask": 2
   },
   "spell:20576": {
+    "description": "Damage dealt by pets increased by 5%.",
     "name": "Command",
     "icon": 64,
     "nameSubtext": "Racial Passive",
-    "description": "Damage dealt by pets increased by 5%.",
     "school": 1,
     "classMask": 4,
     "raceMask": 2
   },
   "spell:20577": {
+    "description": "When activated, regenerates 7% of total health every 2 sec for 10 sec. Only works on Humanoid or Undead corpses within 5 yds. Any movement, action, or damage taken while Cannibalizing will cancel the effect.",
     "name": "Cannibalize",
     "icon": 35,
     "nameSubtext": "Racial",
-    "description": "When activated, regenerates 7% of total health every 2 sec for 10 sec. Only works on Humanoid or Undead corpses within 5 yds. Any movement, action, or damage taken while Cannibalizing will cancel the effect.",
     "school": 1,
     "cooldown": 120000,
     "raceMask": 16
   },
   "spell:20579": {
+    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "name": "Shadow Resistance",
     "icon": 389,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
     "raceMask": 16
   },
   "spell:20582": {
+    "description": "Reduces the chance that melee and ranged attackers will hit you by -2%.",
     "name": "Quickness",
     "icon": 36,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance that melee and ranged attackers will hit you by -2%.",
     "school": 1,
     "raceMask": 8
   },
   "spell:20583": {
+    "description": "Reduces the chance you will be hit by Nature spells by -2%.",
     "name": "Nature Resistance",
     "icon": 369,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Nature spells by -2%.",
     "school": 1,
     "raceMask": 8
   },
   "spell:20585": {
+    "description": "Transform into a wisp upon death, increasing speed by 75%.",
     "name": "Wisp Spirit",
     "icon": 380,
     "nameSubtext": "Racial Passive",
-    "description": "Transform into a wisp upon death, increasing speed by 75%.",
     "school": 1,
     "raceMask": 8
   },
   "spell:20589": {
+    "description": "Escape the effects of any immobilization or movement speed reduction effect.",
     "name": "Escape Artist",
     "icon": 44,
     "nameSubtext": "Racial",
-    "description": "Escape the effects of any immobilization or movement speed reduction effect.",
     "school": 1,
     "cooldown": 105000,
     "raceMask": 64,
@@ -7709,34 +7709,34 @@
     }
   },
   "spell:20591": {
+    "description": "Intellect increased by 5%.",
     "name": "Expansive Mind",
     "icon": 119,
     "nameSubtext": "Racial Passive",
-    "description": "Intellect increased by 5%.",
     "school": 1,
     "raceMask": 64
   },
   "spell:20592": {
+    "description": "Reduces the chance you will be hit by Arcane spells by -2%.",
     "name": "Arcane Resistance",
     "icon": 380,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Arcane spells by -2%.",
     "school": 1,
     "raceMask": 64
   },
   "spell:20593": {
+    "description": "Engineering skill increased by 15.",
     "name": "Engineering Specialization",
     "icon": 188,
     "nameSubtext": "Racial Passive",
-    "description": "Engineering skill increased by 15.",
     "school": 1,
     "raceMask": 64
   },
   "spell:20594": {
+    "description": "Removes all poison, disease and bleed effects and increases your armor by 10% for 8 sec.",
     "name": "Stoneform",
     "icon": 407,
     "nameSubtext": "Racial",
-    "description": "Removes all poison, disease and bleed effects and increases your armor by 10% for 8 sec.",
     "school": 1,
     "cooldown": 120000,
     "raceMask": 4,
@@ -7748,51 +7748,51 @@
     }
   },
   "spell:20595": {
+    "description": "Your chance to critically hit with Guns is increased by 1%.",
     "name": "Gun Specialization",
     "icon": 201,
     "nameSubtext": "Racial Passive",
-    "description": "Your chance to critically hit with Guns is increased by 1%.",
     "school": 1,
     "raceMask": 4
   },
   "spell:20596": {
+    "description": "Reduces the chance you will be hit by Frost spells by -2%.",
     "name": "Frost Resistance",
     "icon": 309,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Frost spells by -2%.",
     "school": 1,
     "raceMask": 4
   },
   "spell:20597": {
+    "description": "Expertise with Swords and Two-Handed Swords increased by 3.",
     "name": "Sword Specialization",
     "icon": 27,
     "nameSubtext": "Racial Passive",
-    "description": "Expertise with Swords and Two-Handed Swords increased by 3.",
     "school": 1,
     "raceMask": 1
   },
   "spell:20598": {
+    "description": "Spirit increased by 3%.",
     "name": "The Human Spirit",
     "icon": 120,
     "nameSubtext": "Racial Passive",
-    "description": "Spirit increased by 3%.",
     "school": 1,
     "raceMask": 1
   },
   "spell:20599": {
+    "description": "Reputation gains increased by 10%.",
     "name": "Diplomacy",
     "icon": 193,
     "nameSubtext": "Racial Passive",
-    "description": "Reputation gains increased by 10%.",
     "school": 1,
     "raceMask": 1
   },
   "spell:20736": {
+    "description": "Distracts the target to attack you, but has no effect if the target is already attacking you. Lasts 6 sec.",
+    "auraDescription": "Distracted.",
     "name": "Distracting Shot",
     "icon": 293,
     "nameSubtext": "Rank 1",
-    "description": "Distracts the target to attack you, but has no effect if the target is already attacking you. Lasts 6 sec.",
-    "auraDescription": "Distracted.",
     "castTime": -1000000,
     "school": 64,
     "resource": {
@@ -7801,36 +7801,36 @@
     "classMask": 4
   },
   "spell:20864": {
+    "description": "Expertise with Maces and Two-Handed Maces increased by 3.",
     "name": "Mace Specialization",
     "icon": 132,
     "nameSubtext": "Racial Passive",
-    "description": "Expertise with Maces and Two-Handed Maces increased by 3.",
     "school": 1,
     "raceMask": 1
   },
   "spell:20869": {
+    "description": "Blasts a target for 75 Frost damage.",
     "name": "Frost Blast",
     "icon": 306,
-    "description": "Blasts a target for 75 Frost damage.",
     "school": 16,
     "resource": {
       "cost": 80
     }
   },
   "spell:21009": {
+    "description": "Reduces the chance enemies have to detect you while Shadowmelded or Stealthed.",
     "name": "Elusiveness",
     "icon": 37,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance enemies have to detect you while Shadowmelded or Stealthed.",
     "school": 1,
     "classMask": 1085,
     "raceMask": 8
   },
   "spell:21084": {
-    "name": "Seal of Righteousness",
-    "icon": 49,
     "description": "Fills the Paladin with holy spirit for 30 min, granting each melee attack 880 additional Holy damage. Only one Seal can be active on the Paladin at any one time.\r\n\r\nUnleashing this Seal's energy will cause 73 Holy damage to an enemy.",
     "auraDescription": "Melee attacks cause an additional  880 Holy damage.",
+    "name": "Seal of Righteousness",
+    "icon": 49,
     "school": 2,
     "resource": {
       "percent": 14
@@ -7838,82 +7838,82 @@
     "classMask": 2
   },
   "spell:21184": {
+    "description": "Decreases threat generated by -29%.",
     "name": "Rogue Passive (DND)",
     "icon": 48,
-    "description": "Decreases threat generated by -29%.",
     "school": 1,
     "classMask": 8
   },
   "spell:21563": {
+    "description": "Damage dealt by Death Knight, Hunter and Warlock pets increased by 5%.",
     "name": "Command",
     "icon": 64,
     "nameSubtext": "Racial Passive",
-    "description": "Damage dealt by Death Knight, Hunter and Warlock pets increased by 5%.",
     "school": 1,
     "classMask": 1179,
     "raceMask": 2
   },
   "spell:22749": {
+    "description": "Permanently enchant a melee weapon to increase spell power by 30.",
     "name": "Enchant Weapon - Spellpower",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to increase spell power by 30.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23799": {
+    "description": "Permanently enchant a melee weapon to increase Strength by 15.",
     "name": "Enchant Weapon - Strength",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to increase Strength by 15.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23800": {
+    "description": "Permanently enchant a melee weapon to increase Agility by 15.",
     "name": "Enchant Weapon - Agility",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to increase Agility by 15.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23801": {
+    "description": "Permanently enchant bracers to restore 5 mana every 5 seconds.",
     "name": "Enchant Bracer - Mana Regeneration",
     "icon": 315,
-    "description": "Permanently enchant bracers to restore 5 mana every 5 seconds.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23802": {
+    "description": "Permanently enchant bracers to increase spell power by 15.",
     "name": "Enchant Bracer - Healing Power",
     "icon": 315,
-    "description": "Permanently enchant bracers to increase spell power by 15.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23803": {
+    "description": "Permanently enchant a melee weapon to increase Spirit by 20.",
     "name": "Enchant Weapon - Mighty Spirit",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to increase Spirit by 20.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23804": {
+    "description": "Permanently enchant a melee weapon to increase Intellect by 22.",
     "name": "Enchant Weapon - Mighty Intellect",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to increase Intellect by 22.",
     "castTime": 5000,
     "school": 1
   },
   "spell:23990": {
+    "description": "Run speed increased slightly.",
     "name": "Item - Minor Run Speed",
     "icon": 409,
-    "description": "Run speed increased slightly.",
     "school": 1
   },
   "spell:25046": {
+    "description": "Silence all enemies within 8 yards for 2 sec and restores 30 of your Energy. Non-player victim spellcasting is also interrupted for 3 sec.",
+    "auraDescription": "Silenced.",
     "name": "Arcane Torrent",
     "icon": 405,
     "nameSubtext": "Racial",
-    "description": "Silence all enemies within 8 yards for 2 sec and restores 15 of your Energy. Non-player victim spellcasting is also interrupted for 3 sec.",
-    "auraDescription": "Silenced.",
     "school": 64,
     "cooldown": 120000,
     "classMask": 8,
@@ -7925,48 +7925,48 @@
     }
   },
   "spell:25079": {
+    "description": "Permanently enchant gloves to increase spell power by 16.",
     "name": "Enchant Gloves - Healing Power",
     "icon": 315,
-    "description": "Permanently enchant gloves to increase spell power by 16.",
     "castTime": 5000,
     "school": 1
   },
   "spell:25080": {
+    "description": "Permanently enchant gloves to increase Agility by 15.",
     "name": "Enchant Gloves - Superior Agility",
     "icon": 315,
-    "description": "Permanently enchant gloves to increase Agility by 15.",
     "castTime": 5000,
     "school": 1
   },
   "spell:25083": {
+    "description": "Permanently enchant a cloak to increase stealth.",
     "name": "Enchant Cloak - Stealth",
     "icon": 315,
-    "description": "Permanently enchant a cloak to increase stealth.",
     "castTime": 5000,
     "school": 1
   },
   "spell:25780": {
-    "name": "Righteous Fury",
-    "icon": 333,
     "description": "Increases the threat generated by your Holy spells by 80%. Lasts until cancelled.",
     "auraDescription": "Increases the threat generated by your Holy spells by 80%.",
+    "name": "Righteous Fury",
+    "icon": 333,
     "school": 2,
     "classMask": 2
   },
   "spell:26290": {
+    "description": "Your chance to critically hit with Bows is increased by 1%.",
     "name": "Bow Specialization",
     "icon": 276,
     "nameSubtext": "Racial Passive",
-    "description": "Your chance to critically hit with Bows is increased by 1%.",
     "school": 1,
     "raceMask": 128
   },
   "spell:26297": {
+    "description": "Increases your attack and casting speed by 20% for 10 sec.",
+    "auraDescription": "Attack and casting speed increased.",
     "name": "Berserking",
     "icon": 292,
     "nameSubtext": "Racial",
-    "description": "Increases your attack and casting speed by 20% for 10 sec.",
-    "auraDescription": "Attack and casting speed increased.",
     "school": 1,
     "resource": {
       "type": 3
@@ -7983,22 +7983,22 @@
     }
   },
   "spell:26596": {
+    "description": "+1 Weapon Damage.",
     "name": "Weapon Damage",
     "icon": 409,
-    "description": "+1 Weapon Damage.",
     "school": 1
   },
   "spell:27837": {
+    "description": "Permanently enchant a two-handed melee weapon to increase Agility by 25.",
     "name": "Enchant 2H Weapon - Agility",
     "icon": 315,
-    "description": "Permanently enchant a two-handed melee weapon to increase Agility by 25.",
     "castTime": 5000,
     "school": 1
   },
   "spell:27975": {
+    "description": "Permanently enchant a melee weapon to increase spell power by 40. Requires a level 35 or higher item.",
     "name": "Enchant Weapon - Major Spellpower",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to increase spell power by 40. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
     "custom": {
@@ -8009,11 +8009,11 @@
     }
   },
   "spell:28730": {
+    "description": "Silence all enemies within 8 yards for 2 sec and restores 12% of your Mana. Non-player victim spellcasting is also interrupted for 3 sec.",
+    "auraDescription": "Silenced.",
     "name": "Arcane Torrent",
     "icon": 405,
     "nameSubtext": "Racial",
-    "description": "Silence all enemies within 8 yards for 2 sec and restores 6% of your Mana. Non-player victim spellcasting is also interrupted for 3 sec.",
-    "auraDescription": "Silenced.",
     "school": 64,
     "cooldown": 120000,
     "classMask": 406,
@@ -8025,54 +8025,54 @@
     }
   },
   "spell:28875": {
+    "description": "Jewelcrafting skill increased by 5.",
     "name": "Gemcutting",
     "icon": 342,
     "nameSubtext": "Racial Passive",
-    "description": "Jewelcrafting skill increased by 5.",
     "school": 1,
     "raceMask": 1024
   },
   "spell:28877": {
+    "description": "Enchanting skill increased by 10.",
     "name": "Arcane Affinity",
     "icon": 121,
     "nameSubtext": "Racial Passive",
-    "description": "Enchanting skill increased by 10.",
     "school": 1,
     "raceMask": 512
   },
   "spell:28878": {
+    "description": "Increases chance to hit with all spells and attacks by 1% for you and all party members within 30 yards.",
+    "auraDescription": "Chance to hit increased by 1%.",
     "name": "Heroic Presence",
     "icon": 135,
     "nameSubtext": "Racial Passive",
-    "description": "Increases chance to hit with all spells and attacks by 1% for you and all party members within 30 yards.",
-    "auraDescription": "Chance to hit increased by 1%.",
     "school": 1,
     "classMask": 208,
     "raceMask": 1024
   },
   "spell:28880": {
+    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your attack power.",
+    "auraDescription": "Healing 10 every 3 seconds.",
     "name": "Gift of the Naaru",
     "icon": 318,
     "nameSubtext": "Racial",
-    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your attack power.",
-    "auraDescription": "Healing 10 every 3 seconds.",
     "school": 2,
     "cooldown": 180000,
     "classMask": 1,
     "raceMask": 1024
   },
   "spell:29454": {
+    "description": "Attaches a Felsteel Spike to your shield that deals 26-38 damage every time you block with it.",
     "name": "Felsteel Shield Spike",
     "icon": 409,
-    "description": "Attaches a Felsteel Spike to your shield that deals 26-38 damage every time you block with it.",
     "castTime": 3000,
     "school": 1
   },
   "spell:29506": {
-    "name": "The Burrower's Shell",
-    "icon": 311,
     "description": "Absorbs 900 damage. Lasts 20 sec.",
     "auraDescription": "Absorbs 900 damage.",
+    "name": "The Burrower's Shell",
+    "icon": 311,
     "school": 2,
     "custom": {
       "dbc": {
@@ -8082,25 +8082,25 @@
     }
   },
   "spell:29636": {
+    "description": "Chance to strike your ranged target with a Venom Shot for 31 Nature damage.",
     "name": "Venom Shot",
     "icon": 324,
-    "description": "Chance to strike your ranged target with a Venom Shot for 31 Nature damage.",
     "school": 8
   },
   "spell:31789": {
+    "description": "Come to the defense of a friendly target, commanding up to 3 enemies attacking the target to attack the Paladin instead.",
     "name": "Righteous Defense",
     "icon": 237,
-    "description": "Come to the defense of a friendly target, commanding up to 3 enemies attacking the target to attack the Paladin instead.",
     "school": 2,
     "cooldown": 8000,
     "classMask": 2
   },
   "spell:33697": {
+    "description": "Increases melee attack power by 6 and your spell damage by 5. Lasts 30 sec.",
+    "auraDescription": "Melee attack power increased by 6 and spell damage increased by 5.",
     "name": "Blood Fury",
     "icon": 291,
     "nameSubtext": "Racial",
-    "description": "Increases melee attack power by 6 and your spell damage by 5. Lasts 15 sec.",
-    "auraDescription": "Melee attack power increased by 6 and spell damage increased by 5.",
     "school": 1,
     "cooldown": 120000,
     "classMask": 64,
@@ -8112,11 +8112,11 @@
     }
   },
   "spell:33702": {
+    "description": "Increases your spell power by 5. Lasts 30 sec.",
+    "auraDescription": "Spell power increased by 5.",
     "name": "Blood Fury",
     "icon": 291,
     "nameSubtext": "Racial",
-    "description": "Increases your spell power by 5. Lasts 15 sec.",
-    "auraDescription": "Spell power increased by 5.",
     "school": 1,
     "cooldown": 120000,
     "classMask": 256,
@@ -8128,9 +8128,9 @@
     }
   },
   "spell:33991": {
+    "description": "Permanently enchant a piece of chest armor to grant 7 Mana every 5 seconds. Requires a level 35 or higher item.",
     "name": "Enchant Chest - Restore Mana Prime",
     "icon": 315,
-    "description": "Permanently enchant a piece of chest armor to grant 7 Mana every 5 seconds. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
     "custom": {
@@ -8141,9 +8141,9 @@
     }
   },
   "spell:33993": {
+    "description": "Permanently enchant gloves to grant 10 critical strike rating. Requires a level 35 or higher item.",
     "name": "Enchant Gloves - Blasting",
     "icon": 315,
-    "description": "Permanently enchant gloves to grant 10 critical strike rating. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
     "custom": {
@@ -8154,9 +8154,9 @@
     }
   },
   "spell:33994": {
+    "description": "Permanently enchant gloves to increase hit rating by 15. Requires a level 35 or higher item.",
     "name": "Enchant Gloves - Precise Strikes",
     "icon": 315,
-    "description": "Permanently enchant gloves to increase hit rating by 15. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
     "custom": {
@@ -8167,9 +8167,9 @@
     }
   },
   "spell:33995": {
+    "description": "Permanently enchant gloves to grant +15 Strength. Requires a level 35 or higher item.",
     "name": "Enchant Gloves - Major Strength",
     "icon": 315,
-    "description": "Permanently enchant gloves to grant +15 Strength. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
     "custom": {
@@ -8180,9 +8180,9 @@
     }
   },
   "spell:33996": {
+    "description": "Permanently enchant gloves to grant 26 attack power. Requires a level 35 or higher item.",
     "name": "Enchant Gloves - Assault",
     "icon": 315,
-    "description": "Permanently enchant gloves to grant 26 attack power. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
     "custom": {
@@ -8193,9 +8193,9 @@
     }
   },
   "spell:33999": {
+    "description": "Permanently enchant gloves to increase spell power by 19. Requires a level 35 or higher item.",
     "name": "Enchant Gloves - Major Healing",
     "icon": 315,
-    "description": "Permanently enchant gloves to increase spell power by 19. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
     "custom": {
@@ -8206,9 +8206,9 @@
     }
   },
   "spell:34010": {
+    "description": "Permanently enchant a melee weapon to increase spell power by 40. Requires a level 35 or higher item.",
     "name": "Enchant Weapon - Major Healing",
     "icon": 315,
-    "description": "Permanently enchant a melee weapon to increase spell power by 40. Requires a level 35 or higher item.",
     "castTime": 5000,
     "school": 1,
     "custom": {
@@ -8219,9 +8219,9 @@
     }
   },
   "spell:34428": {
+    "description": "Instantly attack the target causing 90 damage. Can only be used within 20 sec after you kill an enemy that yields experience or honor. Damage is based on your attack power.",
     "name": "Victory Rush",
     "icon": 56,
-    "description": "Instantly attack the target causing 90 damage. Can only be used within 20 sec after you kill an enemy that yields experience or honor. Damage is based on your attack power.",
     "school": 1,
     "resource": {
       "type": 1
@@ -8229,9 +8229,9 @@
     "classMask": 1
   },
   "spell:42292": {
+    "description": "Removes all movement impairing effects and all effects which cause loss of control of your character.",
     "name": "PvP Trinket",
     "icon": 312,
-    "description": "Removes all movement impairing effects and all effects which cause loss of control of your character.",
     "school": 1,
     "custom": {
       "dbc": {
@@ -8241,18 +8241,18 @@
     }
   },
   "spell:45927": {
+    "description": "Allows you to summon your Refer-A-Friend.",
     "name": "Summon Friend",
     "icon": 408,
-    "description": "Allows you to summon your Refer-A-Friend.",
     "castTime": 10000,
     "school": 1,
     "cooldown": 3600000
   },
   "spell:50769": {
+    "description": "Returns the spirit to the body, restoring a dead target to life with 65 health and 120 mana. Cannot be cast when in combat.",
     "name": "Revive",
     "icon": 8,
     "nameSubtext": "Rank 1",
-    "description": "Returns the spirit to the body, restoring a dead target to life with 65 health and 120 mana. Cannot be cast when in combat.",
     "castTime": 10000,
     "school": 8,
     "resource": {
@@ -8261,17 +8261,17 @@
     "classMask": 1024
   },
   "spell:53122": {
+    "description": "All your hard work spent mining has made you exceptionally tough, increasing your Stamina by 7.",
     "name": "Toughness",
     "icon": 13,
     "nameSubtext": "Rank 3",
-    "description": "All your hard work spent mining has made you exceptionally tough, increasing your Stamina by 7.",
     "school": 1,
     "classMask": 1503
   },
   "spell:53407": {
+    "description": "Unleashes the energy of a Seal spell to judge an enemy for 20 sec, preventing them from fleeing and limiting their movement speed. Refer to individual Seals for additional Judgement effect. Only one Judgement per Paladin can be active at any one time.",
     "name": "Judgement of Justice",
     "icon": 30,
-    "description": "Unleashes the energy of a Seal spell to judge an enemy for 20 sec, preventing them from fleeing and limiting their movement speed. Refer to individual Seals for additional Judgement effect. Only one Judgement per Paladin can be active at any one time.",
     "school": 2,
     "resource": {
       "percent": 5
@@ -8280,9 +8280,9 @@
     "classMask": 2
   },
   "spell:53408": {
+    "description": "Unleashes the energy of a Seal spell to judge an enemy for 20 sec, giving each attack a chance to restore 2% of the attacker's base mana. Refer to individual Seals for additional Judgement effect. Only one Judgement per Paladin can be active at any one time.",
     "name": "Judgement of Wisdom",
     "icon": 29,
-    "description": "Unleashes the energy of a Seal spell to judge an enemy for 20 sec, giving each attack a chance to restore 2% of the attacker's base mana. Refer to individual Seals for additional Judgement effect. Only one Judgement per Paladin can be active at any one time.",
     "school": 2,
     "resource": {
       "percent": 5
@@ -8291,17 +8291,17 @@
     "classMask": 2
   },
   "spell:53663": {
+    "description": "Skinning all those dead animals has broadened your anatomical knowledge, increasing your critical strike rating by 9.",
     "name": "Master of Anatomy",
     "icon": 196,
     "nameSubtext": "Rank 3",
-    "description": "Skinning all those dead animals has broadened your anatomical knowledge, increasing your critical strike rating by 9.",
     "school": 1,
     "classMask": 1503
   },
   "spell:57994": {
+    "description": "Instantly blasts the target with a gust of wind, causing no damage but interrupting spellcasting and preventing any spell in that school from being cast for 2 sec. Also lowers your threat, making the enemy less likely to attack you.",
     "name": "Wind Shear",
     "icon": 345,
-    "description": "Instantly blasts the target with a gust of wind, causing no damage but interrupting spellcasting and preventing any spell in that school from being cast for 2 sec. Also lowers your threat, making the enemy less likely to attack you.",
     "school": 8,
     "resource": {
       "percent": 8
@@ -8310,19 +8310,19 @@
     "classMask": 64
   },
   "spell:58943": {
+    "description": "Reduces the duration of all movement impairing effects by -15%. Trolls be flippin' out mon!",
     "name": "Da Voodoo Shuffle",
     "icon": 190,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the duration of all movement impairing effects by -15%. Trolls be flippin' out mon!",
     "school": 1,
     "raceMask": 128
   },
   "spell:58984": {
+    "description": "Activate to slip into the shadows, reducing the chance for enemies to detect your presence. Lasts until cancelled or upon moving. Any threat is restored versus enemies still in combat upon cancellation of this effect.",
+    "auraDescription": "Shadowmelded.",
     "name": "Shadowmeld",
     "icon": 0,
     "nameSubtext": "Racial",
-    "description": "Activate to slip into the shadows, reducing the chance for enemies to detect your presence. Lasts until cancelled or upon moving. Any threat is restored versus enemies still in combat upon cancellation of this effect.",
-    "auraDescription": "Shadowmelded.",
     "school": 1,
     "cooldown": 120000,
     "raceMask": 8,
@@ -8334,135 +8334,135 @@
     }
   },
   "spell:58985": {
+    "description": "Increases your Stealth detection.",
     "name": "Perception",
     "icon": 368,
     "nameSubtext": "Racial Passive",
-    "description": "Increases your Stealth detection.",
     "school": 1,
     "raceMask": 1
   },
   "spell:59221": {
+    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "name": "Shadow Resistance",
     "icon": 389,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
     "classMask": 1,
     "raceMask": 1024
   },
   "spell:59224": {
+    "description": "Expertise with Maces and Two-Handed Maces increased by 5.",
     "name": "Mace Specialization",
     "icon": 132,
     "nameSubtext": "Racial Passive",
-    "description": "Expertise with Maces and Two-Handed Maces increased by 5.",
     "school": 1,
     "raceMask": 4
   },
   "spell:59535": {
+    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "name": "Shadow Resistance",
     "icon": 389,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
     "classMask": 2,
     "raceMask": 1024
   },
   "spell:59536": {
+    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "name": "Shadow Resistance",
     "icon": 389,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
     "classMask": 4,
     "raceMask": 1024
   },
   "spell:59538": {
+    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "name": "Shadow Resistance",
     "icon": 389,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
     "classMask": 16,
     "raceMask": 1024
   },
   "spell:59540": {
+    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "name": "Shadow Resistance",
     "icon": 389,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
     "classMask": 64,
     "raceMask": 1024
   },
   "spell:59541": {
+    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "name": "Shadow Resistance",
     "icon": 389,
     "nameSubtext": "Racial Passive",
-    "description": "Reduces the chance you will be hit by Shadow spells by -2%.",
     "school": 1,
     "classMask": 128,
     "raceMask": 1024
   },
   "spell:59542": {
+    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power or attack power, whichever is higher.",
+    "auraDescription": "Healing 10 every 3 seconds.",
     "name": "Gift of the Naaru",
     "icon": 318,
     "nameSubtext": "Racial",
-    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power or attack power, whichever is higher.",
-    "auraDescription": "Healing 10 every 3 seconds.",
     "school": 2,
     "cooldown": 180000,
     "classMask": 2,
     "raceMask": 1024
   },
   "spell:59543": {
+    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your attack power.",
+    "auraDescription": "Healing 10 damage every 3 seconds.",
     "name": "Gift of the Naaru",
     "icon": 318,
     "nameSubtext": "Racial",
-    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your attack power.",
-    "auraDescription": "Healing 10 damage every 3 seconds.",
     "school": 2,
     "cooldown": 180000,
     "classMask": 4,
     "raceMask": 1024
   },
   "spell:59544": {
+    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power.",
+    "auraDescription": "Healing 10 every 3 seconds.",
     "name": "Gift of the Naaru",
     "icon": 318,
     "nameSubtext": "Racial",
-    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power.",
-    "auraDescription": "Healing 10 every 3 seconds.",
     "school": 2,
     "cooldown": 180000,
     "classMask": 16,
     "raceMask": 1024
   },
   "spell:59547": {
+    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power or attack power, whichever is higher.",
+    "auraDescription": "Healing 10 every 3 seconds.",
     "name": "Gift of the Naaru",
     "icon": 318,
     "nameSubtext": "Racial",
-    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power or attack power, whichever is higher.",
-    "auraDescription": "Healing 10 every 3 seconds.",
     "school": 2,
     "cooldown": 180000,
     "classMask": 64,
     "raceMask": 1024
   },
   "spell:59548": {
+    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power.",
+    "auraDescription": "Healing 10 damage every 3 seconds.",
     "name": "Gift of the Naaru",
     "icon": 318,
     "nameSubtext": "Racial",
-    "description": "Heals the target for 50 over 15 sec. The amount healed is increased by your spell power.",
-    "auraDescription": "Healing 10 damage every 3 seconds.",
     "school": 2,
     "cooldown": 180000,
     "classMask": 128,
     "raceMask": 1024
   },
   "spell:59752": {
+    "description": "Removes all movement impairing effects and all effects which cause loss of control of your character. This effect shares a cooldown with other similar effects.",
     "name": "Every Man for Himself",
     "icon": 384,
     "nameSubtext": "Racial",
-    "description": "Removes all movement impairing effects and all effects which cause loss of control of your character. This effect shares a cooldown with other similar effects.",
     "school": 1,
     "raceMask": 1,
     "custom": {
@@ -8473,17 +8473,17 @@
     }
   },
   "spell:61700": {
-    "name": "Honor Points +2000",
-    "icon": 77,
     "description": "Grants you 2000 honor.",
     "auraDescription": "Grants you 2000 honor.",
+    "name": "Honor Points +2000",
+    "icon": 77,
     "school": 1
   },
   "spell:62124": {
-    "name": "Hand of Reckoning",
-    "icon": 338,
     "description": "Taunts the target to attack you. If the target is tauntable and not currently targeting you, causes 101 Holy damage.",
     "auraDescription": "Taunted.",
+    "name": "Hand of Reckoning",
+    "icon": 338,
     "school": 2,
     "resource": {
       "percent": 3
@@ -8492,9 +8492,9 @@
     "classMask": 2
   },
   "spell:62352": {
+    "description": "Restores 280 health.",
     "name": "Heal",
     "icon": 409,
-    "description": "Restores 280 health.",
     "school": 1,
     "resource": {
       "type": 3
@@ -8502,52 +8502,58 @@
     "classMask": 16
   },
   "spell:63644": {
-    "name": "Activate Secondary Spec",
-    "icon": 66,
     "description": "Switch to your Secondary Talent Specialization.",
     "auraDescription": "Switch to your Secondary Talent Specialization.",
+    "name": "Activate Secondary Spec",
+    "icon": 66,
     "castTime": 5000,
     "school": 1,
     "classMask": 1535,
     "raceMask": 4095
   },
   "spell:63645": {
-    "name": "Activate Primary Spec",
-    "icon": 66,
     "description": "Switch to your Primary Talent Specialization.",
     "auraDescription": "Switch to your Primary Talent Specialization.",
+    "name": "Activate Primary Spec",
+    "icon": 66,
     "castTime": 5000,
     "school": 1,
     "classMask": 1535,
     "raceMask": 4095
   },
   "spell:63746": {
+    "description": "Permanently enchant boots to increase your hit rating by 5.",
     "name": "Enchant Boots - Lesser Accuracy",
     "icon": 315,
-    "description": "Permanently enchant boots to increase your hit rating by 5.",
     "castTime": 5000,
     "school": 1
   },
   "spell:65222": {
+    "description": "Damage dealt by pets increased by 5%.",
     "name": "Command",
     "icon": 64,
     "nameSubtext": "Racial Passive",
-    "description": "Damage dealt by pets increased by 5%.",
     "school": 1,
     "classMask": 64,
     "raceMask": 2
   },
   "spell:67125": {
+    "description": "Your Moonfire ability now has a chance for its periodic damage to be critical strikes.",
     "name": "Item - Druid T9 Balance 2P Bonus (Moonfire)",
     "icon": 409,
-    "description": "Your Moonfire ability now has a chance for its periodic damage to be critical strikes.",
     "school": 1,
-    "classMask": 1024
+    "classMask": 1024,
+    "custom": {
+      "dbc": {
+        "Name_Lang_enUS": "Improved Moonfire"
+      },
+      "name": "Improved Moonfire"
+    }
   },
   "spell:75461": {
+    "description": "The damage dealt by your Flame Shock can now be critical strikes.",
     "name": "Flame Shock Passive",
     "icon": 409,
-    "description": "The damage dealt by your Flame Shock can now be critical strikes.",
     "school": 1,
     "classMask": 64,
     "raceMask": 1791

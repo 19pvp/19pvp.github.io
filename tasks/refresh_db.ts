@@ -2548,6 +2548,7 @@ const scrollPatch = buildScrollPatch(
 )
 const spellPatchRows = [...(scrollPatch.edit?.rows ?? [])]
 spellPatchRows.push({ ID: 29506, Name_Lang_enUS: 'Aura of Protection' })
+spellPatchRows.push({ ID: 67125, Name_Lang_enUS: 'Improved Moonfire' })
 spellPatchRows.push({
   ID: 26297,
   Description_Lang_enUS:
