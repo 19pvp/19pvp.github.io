@@ -86,17 +86,22 @@
   margin: 0;
 }
 .about-class-heading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  margin: 0 0 7px;
 }
-.about-class-heading + p {
+.about-class-card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 14px;
+}
+.about-class-card .about-class-icon {
+  width: 72px;
+  height: auto;
+  min-height: 72px;
+  align-self: stretch;
+}
+.about-class-content p {
   color: var(--text-primary);
-}
-.about-class-icon {
-  flex: 0 0 32px;
-  width: 32px;
-  height: 32px;
 }
 .about-item-card {
   cursor: help;
@@ -256,25 +261,40 @@
   <section class="about-section">
     <h2 class="section-title">✨ Class changes</h2>
     <div class="about-grid">
-      <article class="about-card box">
-        <h3 class="about-class-heading DRUID"><span class="class-icon about-class-icon DRUID" role="img" aria-label="Druid" title="Druid"></span>Druid</h3>
-        <p><span data-tip="spell:67125">[Improved Moonfire]</span><br><span data-tip="spell:16909">[Vengeance]</span></p>
+      <article class="about-card box about-class-card">
+        <span class="class-icon about-class-icon DRUID" role="img" aria-label="Druid" title="Druid"></span>
+        <div class="about-class-content">
+          <h3 class="about-class-heading DRUID">Druid</h3>
+          <p><span data-tip="spell:67125">[Improved Moonfire]</span><br><span data-tip="spell:16909">[Vengeance]</span></p>
+        </div>
       </article>
-      <article class="about-card box">
-        <h3 class="about-class-heading PALADIN"><span class="class-icon about-class-icon PALADIN" role="img" aria-label="Paladin" title="Paladin"></span>Paladin</h3>
-        <p><span data-tip="spell:53407">[Judgement of Justice]</span><br><span data-tip="spell:53408">[Judgement of Wisdom]</span></p>
+      <article class="about-card box about-class-card">
+        <span class="class-icon about-class-icon PALADIN" role="img" aria-label="Paladin" title="Paladin"></span>
+        <div class="about-class-content">
+          <h3 class="about-class-heading PALADIN">Paladin</h3>
+          <p><span data-tip="spell:53407">[Judgement of Justice]</span><br><span data-tip="spell:53408">[Judgement of Wisdom]</span></p>
+        </div>
       </article>
-      <article class="about-card box">
-        <h3 class="about-class-heading MAGE"><span class="class-icon about-class-icon MAGE" role="img" aria-label="Mage" title="Mage"></span>Mage</h3>
-        <p><span data-tip="spell:16769">[Arcane Stability]</span><br><span data-tip="spell:12351">[Burning Soul]</span></p>
+      <article class="about-card box about-class-card">
+        <span class="class-icon about-class-icon MAGE" role="img" aria-label="Mage" title="Mage"></span>
+        <div class="about-class-content">
+          <h3 class="about-class-heading MAGE">Mage</h3>
+          <p><span data-tip="spell:16769">[Arcane Stability]</span><br><span data-tip="spell:12351">[Burning Soul]</span></p>
+        </div>
       </article>
-      <article class="about-card box">
-        <h3 class="about-class-heading ROGUE"><span class="class-icon about-class-icon ROGUE" role="img" aria-label="Rogue" title="Rogue"></span>Rogue</h3>
-        <p><span data-tip="spell:13872">[Endurance]</span></p>
+      <article class="about-card box about-class-card">
+        <span class="class-icon about-class-icon ROGUE" role="img" aria-label="Rogue" title="Rogue"></span>
+        <div class="about-class-content">
+          <h3 class="about-class-heading ROGUE">Rogue</h3>
+          <p><span data-tip="spell:13872">[Endurance]</span></p>
+        </div>
       </article>
-      <article class="about-card box">
-        <h3 class="about-class-heading WARRIOR"><span class="class-icon about-class-icon WARRIOR" role="img" aria-label="Warrior" title="Warrior"></span>Warrior</h3>
-        <p><span data-tip="spell:12678">[Stance Mastery]</span></p>
+      <article class="about-card box about-class-card">
+        <span class="class-icon about-class-icon WARRIOR" role="img" aria-label="Warrior" title="Warrior"></span>
+        <div class="about-class-content">
+          <h3 class="about-class-heading WARRIOR">Warrior</h3>
+          <p><span data-tip="spell:12678">[Stance Mastery]</span></p>
+        </div>
       </article>
       <article class="about-card">
         <p>Not all the classes where touched, no big changes, we want to keep the classes feeling as close as possible while increase the range of choices to the players</p>
