@@ -21,7 +21,6 @@
   padding-top: 4px;
 }
 .about-section > p {
-  color: var(--text-secondary);
   line-height: 1.65;
 }
 strong { white-space: nowrap; }
@@ -38,9 +37,6 @@ strong { white-space: nowrap; }
   color: var(--accent-color);
   font-family: var(--font-mono);
   font-size: .9em;
-}
-.about-section a:not(.hand-drawn-link) {
-  color: var(--bright-blue-color);
 }
 .about-section a:not(.hand-drawn-link):hover {
   color: var(--accent-hover);
@@ -109,7 +105,6 @@ strong { white-space: nowrap; }
   margin-bottom: 7px;
 }
 .about-card p {
-  color: var(--text-secondary);
   line-height: 1.55;
   margin: 0;
 }
@@ -217,23 +212,20 @@ strong { white-space: nowrap; }
   max-width: 100%;
   text-align: center;
 }
-#communityMember {
-  display: none;
-  width: 100%;
-}
-#communityGreeting::before {
-  content: 'Welcome to the community 👋';
-}
-html[data-auth] #communityGuest,
-html[data-auth] .about-cta[data-auth-guest] {
+
+html[data-auth] [data-auth-guest] {
   display: none;
 }
-html[data-auth] #communityMember {
+#communityGreeting {
+  display: none;
+}
+html[data-auth] #communityGreeting {
   display: block;
 }
-html[data-auth]:not([data-auth="authenticated"]) #communityGreeting::before {
+#communityGreeting::before {
   content: 'Hello @' var(--auth-username) ' 👋';
 }
+
 @media (max-width: 680px) {
   .about-grid,
   .item-grid,
@@ -265,16 +257,12 @@ html[data-auth]:not([data-auth="authenticated"]) #communityGreeting::before {
     <p class="about-lede">Yet another 19 Twink 3.3.5 server.<br>So what's different ?</p>
   </section>
   <section id="communityCard" class="about-section about-cta box">
-    <div id="communityGuest" data-auth-guest>
-      <h2 class="section-title">🤝 Community First</h2>
-      <p>Login with Discord to create your account and play. We use Discord so the people playing can stay connected as a community, and so we can invite you to the server where we share updates and organize games.</p>
-      <a class="btn btn-discord" href="/auth/discord/login">Login with Discord to create your account and play</a>
+    <h2 class="section-title">🤝 Community First</h2>
+    <p>We associate your discord account with you game account, this allow us to share the general ingame channel into a specific discord channel and give us strong moderation tools to ensure the community stay healthy both ingame and outside.<br>Discord is central to all our communication and events organized</p>
+    <div data-auth-guest>
+      <a class="btn btn-discord" href="/auth/discord/login">Join Discord</a>
     </div>
-    <div id="communityMember">
-      <h2 class="section-title">🤝 Community First</h2>
-      <p id="communityGreeting" aria-live="polite"></p>
-      <p>Discord keeps the people playing connected as a community, and is where we share updates and organize games.</p>
-    </div>
+    <p id="communityGreeting" aria-live="polite"></p>
   </section>
   <section class="about-section">
     <h2 class="section-title">🛡️ Gearing</h2>
@@ -440,7 +428,7 @@ html[data-auth]:not([data-auth="authenticated"]) #communityGreeting::before {
   <section class="about-section about-cta box" data-auth-guest>
     <h2 class="section-title">Ready to play?</h2>
     <p>Create your account with Discord, then jump in and play now.</p>
-    <a class="btn btn-discord" href="/auth/discord/login">Create your account with Discord &amp; Play Now!</a>
+    <a class="btn btn-discord" href="/auth/discord/login">Play Now</a>
   </section>
 </main>
 <script type="module" data-page-script>

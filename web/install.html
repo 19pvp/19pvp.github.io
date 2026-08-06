@@ -92,6 +92,32 @@ html[data-auth] #installerApp {
   font-family: var(--font-mono);
   font-size: .9em;
 }
+.manual-install [data-copy] {
+  cursor: copy;
+}
+.copy-toast {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 20;
+  padding: 8px 14px;
+  color: var(--text-primary);
+  background: var(--surface2);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 6px));
+}
+.copy-toast.is-visible {
+  animation: copy-toast 1.3s ease both;
+}
+@keyframes copy-toast {
+  0% { opacity: 0; transform: translate(-50%, calc(-100% + 2px)); }
+  15%, 70% { opacity: 1; transform: translate(-50%, calc(-100% - 6px)); }
+  100% { opacity: 0; transform: translate(-50%, calc(-100% - 20px)); }
+}
 </style>
 <main id="page-content" data-page="install">
   <h1 class="page-title">Web Installer &amp; Patcher</h1>
@@ -105,16 +131,17 @@ html[data-auth] #installerApp {
 
   <div id="installerApp">
   <div id="unsupportedAlert" class="status-banner status-error" style="display: none;">
-        <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ Unsupported Browser Detected</strong>
-        Your current browser does not support directory read/write access (File System Access API).<br>
-        Please use a Chromium-based browser to manage or install your client:
-        <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
-          <a href="https://www.google.com/chrome/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Google Chrome ↗</a>
-          <a href="https://brave.com/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Brave Browser ↗</a>
-          <a href="https://www.microsoft.com/edge" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Microsoft Edge ↗</a>
-        </div>
-      </div>
+    <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ Unsupported Browser Detected</strong>
+    Your current browser does not support directory read/write access (File System Access API).<br>
+    Please use a Chromium-based browser to manage or install your client:
+    <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+      <a href="https://www.google.com/chrome/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Google Chrome ↗</a>
+      <a href="https://brave.com/" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Brave Browser ↗</a>
+      <a href="https://www.microsoft.com/edge" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">Microsoft Edge ↗</a>
+    </div>
+  </div>
 
+  <h2 class="section-title">💫 Automatic Install</h2>
   <div class="box" style="padding: 8px;">
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div>
@@ -123,8 +150,8 @@ html[data-auth] #installerApp {
           style="font-size: 0.9rem; color: var(--text-secondary); word-break: break-all;">No directory selected</span>
       </div>
       <button id="selectDirectoryBtn" class="btn btn-secondary">
-            📁 Select Directory
-          </button>
+        📁 Select Directory
+      </button>
     </div>
 
     <div id="progressSection" style="display: none; flex-direction: column; gap: 14px; padding-top: 18px;">
@@ -194,33 +221,77 @@ html[data-auth] #installerApp {
 
   <details style="margin-top: 10px; padding-top: 10px;">
     <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; user-select: none;">
-            📋 Show Technical Logs
-          </summary>
+      📋 Show Technical Logs
+    </summary>
     <div id="logBox" class="log-box"></div>
   </details>
 
   <div id="readyNotice" class="status-banner status-success"
     style="display: none; text-align: center; margin-bottom: 0;">
-          🎉 <strong>Client Ready!</strong>
-          <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
-            <li>Open the client directory you selected.</li>
-            <li>Start the game.</li>
-          </ol>
-        </div>
+      🎉 <strong>Client Ready!</strong>
+      <ol style="text-align: left; margin: 12px auto 0; max-width: 520px;">
+        <li>Open the client directory you selected.</li>
+        <li>Start the game.</li>
+      </ol>
+    </div>
   </div>
+  <div class="hand-drawn-divider horizontal" style="margin: 40px 0;"></div>
+  <h2 class="section-title">🪛 Manual installation</h2>
   <section class="manual-install box">
-    <h2 class="section-title">Manual installation</h2>
     <ol>
-      <li>Download any clean <a class="hand-drawn-link" href="magnet:?xt=urn:btih:5b65d1928a3025a820b45e6db2451aaaabc5347c&amp;dn=World%20of%20Warcraft%203.3.5a&amp;tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce">3.3.5 client torrent</a>.</li>
-      <li>Download the <a class="hand-drawn-link" href="/patch-S.mpq">19 PvP patch</a> and copy <code>patch-S.mpq</code> to <code>Data/enUS/</code>.</li>
-      <li>Download the <a class="hand-drawn-link" href="/addons/PvP19.zip">PvP19 addon</a>, extract it, and move the <code>PvP19</code> directory to <code>Interface/AddOns/</code>.</li>
-      <li>Update <code>Data/enUS/realmlist.wtf</code> to contain <code id="manualRealmlist">set realmlist …</code>.</li>
+      <li>Download any clean <a class="hand-drawn-link" href="magnet:?xt=urn:btih:5b65d1928a3025a820b45e6db2451aaaabc5347c&amp;dn=World%20of%20Warcraft%203.3.5a&amp;tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&amp;tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce" data-copy-magnet title="Click to copy">3.3.5 client torrent</a>.</li>
+      <li>Download the <a class="hand-drawn-link" href="/patch-S.mpq" download="patch-S.mpq">19 PvP patch</a> and copy <code>patch-S.mpq</code> to <code>Data/enUS/</code>.</li>
+      <li>Download the <a class="hand-drawn-link" href="/addons/PvP19.zip" download="PvP19-addon.zip">PvP19 addon</a>, extract it, and move the <code>PvP19</code> directory to <code>Interface/AddOns/</code>.</li>
+      <li>Update <code>Data/enUS/realmlist.wtf</code> to contain <code id="manualRealmlist" data-copy title="Click to copy">set realmlist …</code>.</li>
     </ol>
   </section>
+  <div id="copyToast" class="copy-toast" role="status" aria-live="polite">Copied!</div>
 </main>
 <script type="module" data-page-script>
 const api = location.origin
 let authenticated = Boolean(globalThis.__discordUsername)
+
+// Embedded static client manifest & environment
+const EMBEDDED_MANIFEST = MANIFEST_PLACEHOLDER
+const EMBEDDED_REALMLIST = REALMLIST_PLACEHOLDER
+const manualRealmlist = document.getElementById('manualRealmlist')
+manualRealmlist.textContent = `set realmlist ${EMBEDDED_REALMLIST.toLowerCase()}`
+
+const copyToast = document.getElementById('copyToast')
+document.body.append(copyToast)
+let copyToastTimer
+const showCopied = (target) => {
+  const rect = target.getBoundingClientRect()
+  copyToast.style.left = `${rect.left + rect.width / 2}px`
+  copyToast.style.top = `${rect.top}px`
+  clearTimeout(copyToastTimer)
+  copyToast.classList.remove('is-visible')
+  void copyToast.offsetWidth
+  copyToast.classList.add('is-visible')
+  copyToastTimer = setTimeout(() => copyToast.classList.remove('is-visible'), 1300)
+}
+const copyText = async (text, target) => {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.append(textarea)
+      textarea.select()
+      if (!document.execCommand('copy')) throw Error('Clipboard unavailable')
+      textarea.remove()
+    }
+    showCopied(target)
+  } catch {}
+}
+document.querySelector('[data-copy-magnet]')?.addEventListener('click', (event) => {
+  event.preventDefault()
+  void copyText(event.currentTarget.getAttribute('href'), event.currentTarget)
+})
+manualRealmlist.addEventListener('click', () => void copyText(manualRealmlist.textContent, manualRealmlist))
 
 try {
   const response = await fetch(`${api}/auth/me`, { credentials: 'include' })
@@ -278,11 +349,6 @@ const stepRealmlist = document.getElementById('stepRealmlist')
 const stepConfig = document.getElementById('stepConfig')
 const logBox = document.getElementById('logBox')
 const readyNotice = document.getElementById('readyNotice')
-
-// Embedded static client manifest & environment
-const EMBEDDED_MANIFEST = MANIFEST_PLACEHOLDER
-const EMBEDDED_REALMLIST = REALMLIST_PLACEHOLDER
-document.getElementById('manualRealmlist').textContent = `set realmlist ${EMBEDDED_REALMLIST.toLowerCase()}`
 
 let dirHandle = null
 // Set for any install failure; logs are uploaded once, after the install flow finishes.
