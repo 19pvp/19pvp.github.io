@@ -217,6 +217,23 @@ strong { white-space: nowrap; }
   max-width: 100%;
   text-align: center;
 }
+#communityMember {
+  display: none;
+  width: 100%;
+}
+#communityGreeting::before {
+  content: 'Welcome to the community 👋';
+}
+html[data-auth] #communityGuest,
+html[data-auth] .about-cta[data-auth-guest] {
+  display: none;
+}
+html[data-auth] #communityMember {
+  display: block;
+}
+html[data-auth]:not([data-auth="authenticated"]) #communityGreeting::before {
+  content: 'Hello @' var(--auth-username) ' 👋';
+}
 @media (max-width: 680px) {
   .about-grid,
   .item-grid,
@@ -247,15 +264,15 @@ strong { white-space: nowrap; }
     <h1>About 19 PvP</h1>
     <p class="about-lede">Yet another 19 Twink 3.3.5 server.<br>So what's different ?</p>
   </section>
-  <section id="communityCard" class="about-section about-cta box" hidden>
-    <div id="communityGuest" data-auth-guest hidden>
+  <section id="communityCard" class="about-section about-cta box">
+    <div id="communityGuest" data-auth-guest>
       <h2 class="section-title">🤝 Community First</h2>
       <p>Login with Discord to create your account and play. We use Discord so the people playing can stay connected as a community, and so we can invite you to the server where we share updates and organize games.</p>
       <a class="btn btn-discord" href="/auth/discord/login">Login with Discord to create your account and play</a>
     </div>
-    <div id="communityMember" hidden>
+    <div id="communityMember">
       <h2 class="section-title">🤝 Community First</h2>
-      <p id="communityGreeting"></p>
+      <p id="communityGreeting" aria-live="polite"></p>
       <p>Discord keeps the people playing connected as a community, and is where we share updates and organize games.</p>
     </div>
   </section>
@@ -420,48 +437,24 @@ strong { white-space: nowrap; }
       </article>
     </div>
   </section>
-  <section class="about-section about-cta box" data-auth-guest hidden>
+  <section class="about-section about-cta box" data-auth-guest>
     <h2 class="section-title">Ready to play?</h2>
     <p>Create your account with Discord, then jump in and play now.</p>
     <a class="btn btn-discord" href="/auth/discord/login">Create your account with Discord &amp; Play Now!</a>
   </section>
 </main>
 <script type="module" data-page-script>
-const communityCard = document.getElementById('communityCard')
-const communityGuest = document.getElementById('communityGuest')
-const communityMember = document.getElementById('communityMember')
-const communityGreeting = document.getElementById('communityGreeting')
-const guestCtas = document.querySelectorAll('[data-auth-guest]')
-const showGuestState = () => {
-  globalThis.__clearDiscordUsername()
-  communityCard.hidden = false
-  communityGuest.hidden = false
-  communityMember.hidden = true
-  guestCtas.forEach((cta) => cta.hidden = false)
-}
-const showMemberState = (username) => {
-  communityCard.hidden = false
-  communityGuest.hidden = true
-  communityMember.hidden = false
-  communityGreeting.textContent = username ? `Hello @${username} 👋` : 'Welcome to the community 👋'
-  guestCtas.forEach((cta) => cta.hidden = true)
-}
-
-if (globalThis.__discordUsername) showMemberState(globalThis.__wowUsername)
-else showGuestState()
-
 fetch('/api/account', { credentials: 'include' })
   .then(async (response) => {
     if (!response.ok) {
-      showGuestState()
+      globalThis.__clearDiscordUsername()
       return
     }
     const data = await response.json()
     if (data.authenticated) {
-      const username = data.wowAccount?.username || ''
-      globalThis.__wowUsername = username
-      showMemberState(username)
-    } else showGuestState()
+      globalThis.__wowUsername = data.wowAccount?.username || ''
+      globalThis.__setAuthState(true, globalThis.__wowUsername)
+    } else globalThis.__clearDiscordUsername()
   })
-  .catch(showGuestState)
+  .catch(() => {})
 </script>

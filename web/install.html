@@ -61,6 +61,15 @@
   width: auto;
   max-width: 100%;
 }
+html:not([data-auth]) #installerApp {
+  display: none;
+}
+html[data-auth] #installerGuest {
+  display: none;
+}
+html[data-auth] #installerApp {
+  display: block;
+}
 .manual-install {
   margin-top: 24px;
 }
@@ -74,6 +83,9 @@
 }
 .manual-install a {
   color: var(--bright-blue-color);
+  border-width: 0 0 3px 0;
+  font-size: 1em;
+  line-height: 0.95em;
 }
 .manual-install code {
   color: var(--accent-color);
@@ -85,13 +97,13 @@
   <h1 class="page-title">Web Installer &amp; Patcher</h1>
   <p class="page-subtitle">WoW 3.3.5a Client Manager</p>
 
-  <div id="installerGuest" class="installer-guest box" hidden>
+  <div id="installerGuest" class="installer-guest box">
     <h2 class="section-title">Login to use the Web Installer</h2>
     <p>The installer needs your Discord account to access your game account and download the 19 PvP client files.</p>
     <a class="btn btn-discord" href="/auth/discord/login">Login with Discord to continue</a>
   </div>
 
-  <div id="installerApp" hidden>
+  <div id="installerApp">
   <div id="unsupportedAlert" class="status-banner status-error" style="display: none;">
         <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">⚠️ Unsupported Browser Detected</strong>
         Your current browser does not support directory read/write access (File System Access API).<br>
@@ -208,23 +220,17 @@
 </main>
 <script type="module" data-page-script>
 const api = location.origin
-const installerGuest = document.getElementById('installerGuest')
-const installerApp = document.getElementById('installerApp')
-let authenticated = true
-const setInstallerState = (isAuthenticated) => {
-  installerGuest.hidden = isAuthenticated
-  installerApp.hidden = !isAuthenticated
-}
-
-setInstallerState(authenticated)
+let authenticated = Boolean(globalThis.__discordUsername)
 
 try {
   const response = await fetch(`${api}/auth/me`, { credentials: 'include' })
-  if (response.ok) authenticated = (await response.json()).authenticated === true
-  if (!authenticated) globalThis.__clearDiscordUsername()
+  if (response.ok) {
+    const data = await response.json()
+    authenticated = data.authenticated === true
+    if (authenticated) globalThis.__setAuthState(true, globalThis.__wowUsername)
+    else globalThis.__clearDiscordUsername()
+  }
 } catch {}
-
-setInstallerState(authenticated)
 
 if (authenticated) {
 const unsupportedAlert = document.getElementById('unsupportedAlert')

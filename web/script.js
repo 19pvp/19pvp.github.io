@@ -21,12 +21,28 @@ const readClientCookie = (name) => {
 
 globalThis.__discordUsername = readClientCookie('discord_username')
 globalThis.__wowUsername = readClientCookie('wow_username')
+globalThis.__setAuthState = (authenticated, wowUsername = '') => {
+  const authValue = authenticated ? wowUsername || 'authenticated' : ''
+  const root = document.documentElement
+  root.style.setProperty('--auth-username', wowUsername ? JSON.stringify(wowUsername) : '""')
+  if (authValue) root.dataset.auth = authValue
+  else delete root.dataset.auth
+  if (document.body) {
+    if (authValue) document.body.dataset.auth = authValue
+    else delete document.body.dataset.auth
+  }
+}
 globalThis.__clearDiscordUsername = () => {
   document.cookie = 'discord_username=; Max-Age=0; Path=/; SameSite=Lax'
   document.cookie = 'wow_username=; Max-Age=0; Path=/; SameSite=Lax'
   globalThis.__discordUsername = ''
   globalThis.__wowUsername = ''
+  globalThis.__setAuthState(false)
 }
+globalThis.__setAuthState(Boolean(globalThis.__discordUsername), globalThis.__wowUsername)
+document.addEventListener('DOMContentLoaded', () => {
+  globalThis.__setAuthState(Boolean(globalThis.__discordUsername), globalThis.__wowUsername)
+}, { once: true })
 
 const generateBoxVariant = (className, color, fill = color, size = 10) => {
   const isNone = fill === 'none'
