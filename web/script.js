@@ -3,7 +3,7 @@ const _variant = (border, fill) => `
   border-style: solid;
   border-width: 10px 10px 10px 10px;
   background-color: #${fill};
-  background-clip: border-box;
+  background-clip: padding-box;
   border-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="263.1" height="140.1" viewBox="0 0 246.7 131.3"><path fill="%23${fill}" stroke="%23${border}" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M2.1 21.6c-.2 12.5 2 25 .9 37.4q-.5 12.3.1 24.4c0 12.7-.7 24.4.1 37.1 3.3 5.8 10.1 7.6 16 8.2 4.6 0 9.1-.7 13.7 0 6.8.8 14 1.4 20.8.7 8.3-.5 13.7-.1 22 0l7.2-.5L82.1 129c14.3-.7 28.6-.3 43-.4 14-.8 28.2 1 42.2-.6 13.3-1 26.7.2 40.1-.5 7.2-.7 14.4.2 21.6-.4 6.8-.5 11.8-.2 13.2-6q.3-7.3 1.2-14.5l0-.2q.5-10.5 1.4-21c.7-10.6-.4-21.2-.7-31.8q-1.1-20.2-1-40.6c1.7-7.4-4.3-12.8-11.5-11l-24.5 1.5c-6 .9-12-.1-18 .3-6.5-.4-13.1-1.6-19.6 0-10.7.5-21.3-1-32-.5-8.6.1-17.1 1-25.7 0h-5l-.2.1c-8.3-.1-16.6 0-24.9-1.3-11.5-.8-23 1.4-34.6 1.4q-12.2.3-24.4-.5c-6-.3-12-1.2-18-1.1-3.8 1.8-3 6.9-3 10.4q0 4.5.4 8.8"/></svg>') 10 10 10 10 stretch stretch;
 }
 `
@@ -14,7 +14,7 @@ const generateBoxVariant = (className, color, fill = color, size = 10) => {
 .${className} {
   border-style: solid;
   background-color: ${isNone ? 'transparent' : '#' + fill};
-  background-clip: border-box;
+  background-clip: padding-box;
   border-width: ${size}px;
   border-radius: ${size + 2}px;
   border-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="263.1" height="140.1" viewBox="0 0 246.7 131.3"><path fill="${
@@ -33,7 +33,7 @@ const generateBoxVariantMulti = (selectors, color, fill = color, size = 10) => {
 ${selectorStr} {
   border-style: solid;
   background-color: ${isNone ? 'transparent' : '#' + fill};
-  background-clip: border-box;
+  background-clip: padding-box;
   border-width: ${size}px;
   border-radius: ${size + 2}px;
   border-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="263.1" height="140.1" viewBox="0 0 246.7 131.3"><path fill="${
@@ -181,20 +181,6 @@ const updateSiteNavigation = (url = new URL(location.href)) => {
 }
 
 const setupSiteNavigation = () => {
-  const navigation = document.getElementById('siteNavigation')
-  if (!navigation) return
-  navigation.innerHTML = `
-    <a class="site-nav-account" data-nav-page="account" href="/account">
-      <img id="siteNavAccountAvatar" class="avatar site-nav-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Account avatar">
-      <span id="siteNavAccountName">Account</span>
-    </a>
-    <span class="site-nav-separator" aria-hidden="true">|</span>
-    <a data-nav-page="leaderboards" href="/leaderboards">Leaderboards</a>
-    <span class="site-nav-separator" aria-hidden="true">|</span>
-    <a data-nav-page="install" href="/install">Installer &amp; Patcher</a>
-    <span class="site-nav-separator" aria-hidden="true">|</span>
-    <a data-nav-page="about" href="/about">About</a>
-  `
   updateSiteNavigation()
 
   fetch('/api/account', { credentials: 'include' })

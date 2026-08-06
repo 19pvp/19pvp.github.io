@@ -410,8 +410,8 @@ h1 {
   letter-spacing: -0.5px;
   text-align: center;
   background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
   margin-bottom: 8px;
 }
 
@@ -782,6 +782,39 @@ tbody tr td::after {
 
 tbody tr:last-child td::after {
   display: none !important;
+}
+
+/* Shared unordered-list styling */
+ul {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+ul > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 0;
+}
+
+ul > li::before {
+  content: '';
+  flex: 0 0 .72em;
+  width: .72em;
+  height: .72em;
+  margin-top: .4em;
+  background: #f8c84e;
+  border-radius: 36% 67% 70% 40% / 45% 63% 46% 46%;
+}
+
+ul > li:nth-child(odd)::before {
+  transform: rotate(-8deg);
+}
+
+ul > li:nth-child(even)::before {
+  transform: rotate(7deg);
 }
 
 /* WoW Stuff */
