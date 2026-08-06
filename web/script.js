@@ -336,6 +336,7 @@ const swapPageContent = (doc) => {
   const next = doc.getElementById('page-content')
   if (!current || !next) throw new Error('Navigation response has no page content')
 
+  document.querySelectorAll('.copy-toast').forEach((toast) => toast.remove())
   document.title = doc.title
   updatePageStyles(doc)
 

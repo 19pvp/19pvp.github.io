@@ -237,6 +237,10 @@ const staticGems = staticFile('../web/assets/gems.avif', {
   type: 'image/avif',
   cache: 'public, max-age=31536000, immutable',
 })
+const staticFlags = staticFile('../web/assets/flags.avif', {
+  type: 'image/avif',
+  cache: 'public, max-age=31536000, immutable',
+})
 const staticLogo = staticFile('../web/logo.png', { type: 'image/png', cache: 'public, max-age=31536000, immutable' })
 const staticAddon = staticFile('../addons/PvP19/PvP19.lua', {
   type: 'text/x-lua; charset=utf-8',
@@ -275,6 +279,7 @@ export default {
       if (url.pathname === '/assets/resistances.avif') return staticResistances(req)
       if (url.pathname === '/assets/crescent-staff.avif') return staticCrescentStaff(req)
       if (url.pathname === '/assets/gems.avif') return staticGems(req)
+      if (url.pathname === '/assets/flags.avif') return staticFlags(req)
       if (url.pathname === '/logo.png') return staticLogo(req)
       if (url.pathname === '/addons/PvP19.lua') return staticAddon(req)
       if (url.pathname === '/addons/PvP19.zip') return staticAddonZip(req)
