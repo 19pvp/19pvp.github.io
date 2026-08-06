@@ -20,8 +20,7 @@
 .about-section {
   padding-top: 4px;
 }
-.about-section > p,
-.about-section > ul {
+.about-section > p {
   color: var(--text-secondary);
   line-height: 1.65;
 }
@@ -36,11 +35,17 @@
   font-family: var(--font-mono);
   font-size: .9em;
 }
-.about-section a {
+.about-section a:not(.hand-drawn-link) {
   color: var(--bright-blue-color);
 }
-.about-section a:hover {
+.about-section a:not(.hand-drawn-link):hover {
   color: var(--accent-hover);
+}
+.about-section a.hand-drawn-link {
+  font-size: inherit;
+  font-weight: inherit;
+  padding-bottom: 2px;
+  border-width: 0 0 3px;
 }
 .about-grid,
 .item-grid,
@@ -69,7 +74,7 @@
 .about-grid .wide {
   grid-column: span 2;
 }
-.about-card h3,
+.about-card > h3:not(.about-class-heading),
 .suffix-group h3 {
   color: var(--accent-color);
   font-size: 1rem;
@@ -84,6 +89,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.about-class-heading + p {
+  color: var(--text-primary);
 }
 .about-class-icon {
   flex: 0 0 32px;
@@ -187,7 +195,6 @@
     <h1>About 19 PvP</h1>
     <p class="about-lede">Yet another 19 Twink 3.3.5 server.<br>So what's different ?</p>
   </section>
-
   <section class="about-section">
     <h2 class="section-title">🛡️ Gearing</h2>
     <div class="about-grid">
@@ -201,18 +208,21 @@
         <p
           style="margin-top: 8px;">You can also give gold to friends and rerolls so they can skip part of the initial grind.</p>
       </article>
-      <article class="about-card box">
-        <h3>Custom items</h3>
-        <p>Some items have been tweaked, for example swapping Spirit for Hit, Crit, or Haste. Everyone starts with a lower version of the Arena Grand Master, which can be upgraded up to the normal <strong>+12 Stamina</strong> version.</p>
-      </article>
-      <article class="about-card box">
-        <h3>Examples</h3>
-        <ul>
-          <li><a href="#item:6505" data-tip="item:6505">[Cresent Staff]</a></li>
-          <li><a href="#item:5202" data-tip="item:5202">[Corsair Shirt]</a></li>
-          <li><a href="#item:6383" data-tip="item:6383">[Forest Buckler]</a></li>
-          <li><a href="#item:5444" data-tip="item:5444">[Miner's Cape]</a></li>
-        </ul>
+      <article class="about-card wide" style="display: flex;">
+        <div style="max-width: 60%;">
+          <h3>Custom items</h3>
+          <p>Some items have been tweaked, for example swapping Spirit for Hit, Crit, or Haste. Everyone starts with a lower version of the Arena Grand Master, which can be upgraded up to the normal <strong>+12 Stamina</strong> version.</p>
+        </div>
+        <div class="hand-drawn-divider vertical" style="height: 69px; --divider-color: var(--accent-border);"></div>
+        <div>
+          <h4>Examples</h4>
+          <ul>
+          <li><a class="hand-drawn-link" href="#item:6505" data-tip="item:6505">[Cresent Staff]</a></li>
+          <li><a class="hand-drawn-link" href="#item:5202" data-tip="item:5202">[Corsair Shirt]</a></li>
+          <li><a class="hand-drawn-link" href="#item:6383" data-tip="item:6383">[Forest Buckler]</a></li>
+          <li><a class="hand-drawn-link" href="#item:5444" data-tip="item:5444">[Miner's Cape]</a></li>
+          </ul>
+        <div>
       </article>
     </div>
   </section>
@@ -222,9 +232,9 @@
     <p>More options were added to the random-suffix items from dungeon satchels. The in-game NPC lets you pick one for a few silvers.</p>
     <div class="about-card box">
       <ul>
-        <li><a href="#item:51994" data-tip="item:51994" data-suffix="88">[Tumultuous Cloak of the Foreseer]</a></li>
-        <li><a href="#item:51978" data-tip="item:51978" data-suffix="26">[Earthbound Girdle of Spell Power]</a></li>
-        <li><a href="#item:51964" data-tip="item:51964" data-suffix="50">[Vigorous Belt of the Hunt]</a></li>
+        <li><a class="hand-drawn-link" href="#item:51994" data-tip="item:51994" data-suffix="88">[Tumultuous Cloak of the Foreseer]</a></li>
+        <li><a class="hand-drawn-link" href="#item:51978" data-tip="item:51978" data-suffix="26">[Earthbound Girdle of Spell Power]</a></li>
+        <li><a class="hand-drawn-link" href="#item:51964" data-tip="item:51964" data-suffix="50">[Vigorous Belt of the Hunt]</a></li>
       </ul>
     </div>
   </section>
@@ -243,48 +253,47 @@
       <span class="resistance-example" data-tip="item:7001">Gravestone Scepter · +5 Shadow Resistance</span>
     </div>
   </section>
-
+  <div class="hand-drawn-divider horizontal"></div>
   <section class="about-section">
     <h2 class="section-title">✨ Class changes</h2>
     <div class="about-grid">
       <article class="about-card box">
-        <h3 class="about-class-heading"><span class="class-icon about-class-icon DRUID" role="img" aria-label="Druid" title="Druid"></span>Druid</h3>
+        <h3 class="about-class-heading DRUID"><span class="class-icon about-class-icon DRUID" role="img" aria-label="Druid" title="Druid"></span>Druid</h3>
         <p><span data-tip="spell:67125">[Improved Moonfire]</span><br><span data-tip="spell:16909">[Vengeance]</span></p>
       </article>
       <article class="about-card box">
-        <h3 class="about-class-heading"><span class="class-icon about-class-icon PALADIN" role="img" aria-label="Paladin" title="Paladin"></span>Paladin</h3>
+        <h3 class="about-class-heading PALADIN"><span class="class-icon about-class-icon PALADIN" role="img" aria-label="Paladin" title="Paladin"></span>Paladin</h3>
         <p><span data-tip="spell:53407">[Judgement of Justice]</span><br><span data-tip="spell:53408">[Judgement of Wisdom]</span></p>
       </article>
       <article class="about-card box">
-        <h3 class="about-class-heading"><span class="class-icon about-class-icon MAGE" role="img" aria-label="Mage" title="Mage"></span>Mage</h3>
+        <h3 class="about-class-heading MAGE"><span class="class-icon about-class-icon MAGE" role="img" aria-label="Mage" title="Mage"></span>Mage</h3>
         <p><span data-tip="spell:16769">[Arcane Stability]</span><br><span data-tip="spell:12351">[Burning Soul]</span></p>
       </article>
       <article class="about-card box">
-        <h3 class="about-class-heading"><span class="class-icon about-class-icon ROGUE" role="img" aria-label="Rogue" title="Rogue"></span>Rogue</h3>
+        <h3 class="about-class-heading ROGUE"><span class="class-icon about-class-icon ROGUE" role="img" aria-label="Rogue" title="Rogue"></span>Rogue</h3>
         <p><span data-tip="spell:13872">[Endurance]</span></p>
       </article>
       <article class="about-card box">
-        <h3 class="about-class-heading"><span class="class-icon about-class-icon WARRIOR" role="img" aria-label="Warrior" title="Warrior"></span>Warrior</h3>
+        <h3 class="about-class-heading WARRIOR"><span class="class-icon about-class-icon WARRIOR" role="img" aria-label="Warrior" title="Warrior"></span>Warrior</h3>
         <p><span data-tip="spell:12678">[Stance Mastery]</span></p>
       </article>
     </div>
   </section>
-
   <section class="about-section">
     <h2 class="section-title">🧬 Racial changes</h2>
     <ul>
-      <li><strong>Troll:</strong> <code data-tip="spell:26297">26297</code> Berserking</li>
-      <li><strong>Dwarf:</strong> <code data-tip="spell:20594">20594</code> Stoneform</li>
-      <li><strong>Gnome:</strong> <code data-tip="spell:20589">20589</code> Escape Artist</li>
-      <li><strong>Blood Elf:</strong> <code data-tip="spell:25046">25046</code> / <code data-tip="spell:28730">28730</code> Arcane Torrent</li>
-      <li><strong>Orc:</strong> <code data-tip="spell:20572">20572</code> Attack Power / <code data-tip="spell:33702">33702</code> Spell Power</li>
-      <li><strong>Undead:</strong> <code data-tip="spell:7744">7744</code> Will of the Forsaken</li>
-      <li><strong>Night Elf:</strong> <code data-tip="spell:58984">58984</code> Shadowmeld</li>
-      <li><strong>Human:</strong> <code data-tip="spell:59752">59752</code> Every Man for Himself</li>
-      <li><strong>Tauren:</strong> <code data-tip="spell:20549">20549</code> War Stomp</li>
+      <li><strong>Troll:</strong> <span data-tip="spell:26297">Berserking</span></li>
+      <li><strong>Dwarf:</strong> <span data-tip="spell:20594">Stoneform</span></li>
+      <li><strong>Gnome:</strong> <span data-tip="spell:20589">Escape Artist</span></li>
+      <li><strong>Blood Elf:</strong> <span data-tip="spell:25046">Arcane Torrent</span> / <span data-tip="spell:28730">Arcane Torrent</span></li>
+      <li><strong>Orc:</strong> <span data-tip="spell:20572">Blood Fury</span> / <span data-tip="spell:33702">Blood Fury</span></li>
+      <li><strong>Undead:</strong> <span data-tip="spell:7744">Will of the Forsaken</span></li>
+      <li><strong>Night Elf:</strong> <span data-tip="spell:58984">Shadowmeld</span></li>
+      <li><strong>Human:</strong> <span data-tip="spell:59752">Every Man for Himself</span></li>
+      <li><strong>Tauren:</strong> <span data-tip="spell:20549">War Stomp</span></li>
     </ul>
   </section>
-
+  <div class="hand-drawn-divider horizontal"></div>
   <section class="about-section">
     <h2 class="section-title">🏹 PvP</h2>
     <div class="about-grid">

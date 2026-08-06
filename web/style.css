@@ -96,6 +96,10 @@
   gap: 12px;
 }
 
+.tooltip-shell.tooltip-inverted {
+  flex-direction: row-reverse;
+}
+
 .tooltip-content {
   position: relative;
   isolation: isolate;
@@ -805,7 +809,7 @@ ul > li::before {
   width: .72em;
   height: .72em;
   margin-top: .4em;
-  background: #f8c84e;
+  background: currentColor;
   border-radius: 36% 67% 70% 40% / 45% 63% 46% 46%;
 }
 

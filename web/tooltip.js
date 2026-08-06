@@ -114,7 +114,10 @@ const asNumber = (value) => typeof value === 'number' && Number.isFinite(value) 
 const asRecord = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 const formatMilliseconds = (value) => {
   const seconds = asNumber(value) / 1000
-  return seconds >= 60 ? `${Math.floor(seconds / 60)} min ${Math.round(seconds % 60)} sec` : `${seconds} sec`
+  if (seconds < 60) return `${seconds} sec`
+  const minutes = Math.floor(seconds / 60)
+  const remaining = Math.round(seconds % 60)
+  return remaining ? `${minutes} min ${remaining} sec` : `${minutes} min`
 }
 const formatNumber = (value) => {
   const rounded = Math.round(value * 100) / 100
@@ -369,18 +372,18 @@ const renderEntry = (tooltip, key, entry, enchantments) => {
   return true
 }
 
-export const calculateTooltipPosition = ({ x, y, height, innerWidth, innerHeight }) => {
-  const tooltipWidth = Math.min(MAX_WIDTH, Math.max(0, innerWidth - MARGIN * 2))
-  let left = x + MARGIN
+export const calculateTooltipPosition = ({ x, y, width = MAX_WIDTH, height, innerWidth, innerHeight }) => {
+  const tooltipWidth = Math.min(width, MAX_WIDTH, Math.max(0, innerWidth - MARGIN * 2))
+  const inverted = x + MARGIN + tooltipWidth + MARGIN > innerWidth
+  let left = inverted ? x - tooltipWidth - MARGIN : x + MARGIN
   let top = y - 52
-  if (left + tooltipWidth + MARGIN > innerWidth) left = x - tooltipWidth - MARGIN
   left = Math.max(MARGIN, Math.min(left, innerWidth - tooltipWidth - MARGIN))
   const maxHeight = Math.max(0, innerHeight - MARGIN * 2)
   top = Math.max(
     MARGIN,
     Math.min(top, innerHeight - Math.min(height, maxHeight) - MARGIN),
   )
-  return { left, top, width: tooltipWidth, maxHeight }
+  return { left, top, width: tooltipWidth, maxHeight, inverted }
 }
 
 export const installTooltip = () => {
@@ -410,15 +413,22 @@ export const installTooltip = () => {
 
   const redrawPosition = () => {
     if (tooltip.hidden) return
+    const maxWidth = Math.min(MAX_WIDTH, Math.max(0, viewportWidth - MARGIN * 2))
+    tooltip.style.width = 'max-content'
+    tooltip.style.maxWidth = `${maxWidth}px`
+    tooltip.style.maxHeight = `${Math.max(0, viewportHeight - MARGIN * 2)}px`
+    const size = tooltip.getBoundingClientRect()
     const position = calculateTooltipPosition({
       x: mouseX,
       y: mouseY,
-      height: tooltip.getBoundingClientRect().height,
+      width: size.width,
+      height: size.height,
       innerWidth: viewportWidth,
       innerHeight: viewportHeight,
     })
     tooltip.style.width = `${position.width}px`
     tooltip.style.maxHeight = `${position.maxHeight}px`
+    tooltip.querySelector('.tooltip-shell')?.classList.toggle('tooltip-inverted', position.inverted)
     tooltip.style.transform = `translate3d(${Math.round(position.left)}px, ${Math.round(position.top)}px, 0)`
   }
 
