@@ -271,3 +271,20 @@ CreateLuaEvent(function()
     updateSanctuaryState(player)
   end
 end, 1000, 0)
+
+
+-- Fix searing totem bug
+local SEARING_TOTEM_ENTRY = 2523
+local SHADOWMELD_SPELL = 58984
+
+-- Cancel an in-progress cast when Shadowmeld is applied to its target.
+RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
+    if not player or not aura or aura:GetAuraId() ~= SHADOWMELD_SPELL then return end
+
+    for _, creature in ipairs(player:GetCreaturesInRange(30, SEARING_TOTEM_ENTRY)) do
+        if creature:GetVictim() == player then
+            creature:StopSpellCast()
+            creature:CombatStop()
+        end
+    end
+end)
