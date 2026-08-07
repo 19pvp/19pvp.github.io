@@ -80,12 +80,17 @@ try {
   patchSha1 = Array.from(new Uint8Array(rootBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
 } catch {}
 
-const iconFile = await Deno.readFile(new URL('../web/assets/icons.avif', import.meta.url))
-const iconFileHash = Array.from(
-  new Uint8Array(await crypto.subtle.digest('SHA-1', iconFile)),
-  (byte) => byte.toString(16).padStart(2, '0'),
-).join('').slice(0, 10)
+const shortSha1 = async (filePath: URL) => {
+  const file = await Deno.readFile(filePath)
+  return Array.from(
+    new Uint8Array(await crypto.subtle.digest('SHA-1', file)),
+    (byte) => byte.toString(16).padStart(2, '0'),
+  ).join('').slice(0, 10)
+}
+const iconFileHash = await shortSha1(new URL('../web/assets/icons.avif', import.meta.url))
+const dbFileHash = await shortSha1(new URL('../web/db.json', import.meta.url))
 const styleCSS = styleCSSRaw.replaceAll('?v=icon-file-hash', `?v=${iconFileHash}`)
+const tooltipJS = tooltipJSRaw.replaceAll('?v=db-file-hash', `?v=${dbFileHash}`)
 
 type StaticOptions = {
   type: string
@@ -160,7 +165,7 @@ const staticFile = (filePath: string, options: StaticOptions) => {
 const inlineAssets = (html: string) => {
   return html
     .replace(/<link rel="stylesheet" href="\/style\.css(\?v=\d+)?"\s*\/?>/, `<style>${styleCSS}</style>`)
-    .replace('</head>', `<script type="module">\n${scriptJSRaw}\n${tooltipJSRaw}\n</script>\n</head>`)
+    .replace('</head>', `<script type="module">\n${scriptJSRaw}\n${tooltipJS}\n</script>\n</head>`)
 }
 
 const composePage = (content: string, title: string, prefetch = '', containerClass = '') => {

@@ -1,4 +1,4 @@
-import database from './db.json' with { type: 'json' }
+import database from './db.json?v=db-file-hash' with { type: 'json' }
 
 const TOOLTIP_ID = 'tooltip'
 const MARGIN = 8
