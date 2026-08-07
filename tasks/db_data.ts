@@ -177,28 +177,47 @@ const RANGE = /\$(?:(\d+))?r([1-3])/g
 const SPECIAL_VALUE = /\$(?:(\d+))?([qi])([1-3])?/g
 
 const asNumber = (value: unknown) => Number(value) || 0
+const tooltipPlayerLevel = 19
+const tooltipAttackPower = 300
+const tooltipSpellPower = 150
 
 const formatNumber = (value: number) => {
   const rounded = Math.round(value * 1000) / 1000
   return String(rounded)
 }
 
-const getEffectValue = (spell: DBCRow, kind: string, effectIndex: string) => {
-  const base = asNumber(spell[`EffectBasePoints_${effectIndex}`])
-  const dieSides = asNumber(spell[`EffectDieSides_${effectIndex}`])
-  const value = base === 0 && dieSides === 0 ? 0 : base + 1
+const formatTooltipValue = (value: number) => String(Math.floor(Math.abs(value)))
 
-  switch (kind) {
-    case 'm':
-    case 's':
-      return value
-    case 'M':
-      return base + Math.max(1, dieSides)
-    case 'S':
-      return Math.abs(value)
-    default:
-      return 0
+const getEffectValue = (spell: DBCRow, kind: string, effectIndex: string, absolute = true) => {
+  const base = asNumber(spell[`EffectBasePoints_${effectIndex}`])
+  const realPointsPerLevel = asNumber(spell[`EffectRealPointsPerLevel_${effectIndex}`])
+  const dieSides = asNumber(spell[`EffectDieSides_${effectIndex}`])
+  let scaledBase = base
+  if (realPointsPerLevel !== 0) {
+    let playerLevel = tooltipPlayerLevel
+    const maxLevel = asNumber(spell.MaxLevel)
+    const baseLevel = asNumber(spell.BaseLevel)
+    const spellLevel = asNumber(spell.SpellLevel)
+    if (maxLevel > 0 && playerLevel > maxLevel) playerLevel = maxLevel
+    else if (playerLevel < baseLevel) playerLevel = baseLevel
+    scaledBase += (playerLevel - Math.max(baseLevel, spellLevel)) * realPointsPerLevel
   }
+  const value = scaledBase === 0 && dieSides === 0 ? 0 : scaledBase + 1
+
+  const result = (() => {
+    switch (kind) {
+      case 'm':
+      case 's':
+        return value
+      case 'M':
+        return scaledBase + Math.max(1, dieSides)
+      case 'S':
+        return value
+      default:
+        return 0
+    }
+  })()
+  return absolute ? Math.floor(Math.abs(result)) : result
 }
 
 const calculate = (left: number, operator: string, right: number) => {
@@ -295,12 +314,17 @@ const formatExpression = (spell: DBCRow, expression: string, context: SpellTextC
       if (kind.toLowerCase() === 'x') return String(asNumber(source[`EffectChainTargets_${effectIndex}`]))
       return String(getValue(source, kind, effectIndex, context))
     })
-    .replace(/\$([A-Za-z]+)/g, (_, name) => name === 'AP' ? '200' : '100')
+    .replace(/\$([A-Za-z]+)/g, (_, name) => {
+      const normalized = String(name).toUpperCase()
+      if (normalized === 'AP') return String(tooltipAttackPower)
+      if (normalized.startsWith('SP')) return String(tooltipSpellPower)
+      return '100'
+    })
     .replace(/\s*(?:ms|secs?|seconds?)\b/gi, '')
 
   if (!/^[\d\s.+\-*/()]+$/.test(jsExpression)) return `\${${expression}}`
   try {
-    return formatNumber(Function(`return ${jsExpression}`)())
+    return formatTooltipValue(Function(`return ${jsExpression}`)())
   } catch {
     return `\${${expression}}`
   }
@@ -315,7 +339,7 @@ export const formatSpellText = (spell: DBCRow, text: string, context: SpellTextC
     .replace(PERCENT_VALUE, '100')
     .replace(BRACED_EXPRESSION, (_, expression) => formatExpression(spell, expression, context))
     .replace(EFFECT_FORMULA, (_, operator, operand, spellId, kind, effectIndex) => {
-      const value = formatNumber(
+      const value = formatTooltipValue(
         calculate(
           getValue(getReferencedSpell(spell, spellId, context), kind, effectIndex, context),
           operator,
@@ -408,7 +432,7 @@ const itemSpellStat = (spell: DBCRow) => {
       : aura === 85 && misc === 0
       ? 'stat_43'
       : undefined
-    const value = stat ? getEffectValue(spell, 's', String(index)) : 0
+    const value = stat ? getEffectValue(spell, 's', String(index), false) : 0
     if (stat && value > 0) return { stat, value }
   }
   return undefined
@@ -603,8 +627,7 @@ const spellCustomFields = (
   castTimes: DBCMap,
   textContext?: SpellTextContext,
 ) => {
-  const custom: Record<string, unknown> = { dbc: { ...patch } }
-  delete (custom.dbc as Record<string, unknown>).ID
+  const custom: Record<string, unknown> = {}
   const castTimeIndex = patch.CastingTimeIndex
   const castTimeRow = castTimeIndex === undefined ? undefined : castTimes.get(toNumber(castTimeIndex))
   const castTime = castTimeRow?.Base === undefined ? undefined : toNumber(castTimeRow.Base)
@@ -652,9 +675,7 @@ export const buildSpellEntry = (
           AuraDescription_Lang_enUS: spell.AuraDescription_Lang_enUS,
         }
         : spell
-      const formatContext = textContext
-        ? patch ? textContext : { ...textContext, overrideById: undefined }
-        : undefined
+      const formatContext = textContext ? patch ? textContext : { ...textContext, overrideById: undefined } : undefined
       return {
         description: formatContext
           ? formatSpellText(textSpell, String(spell.Description_Lang_enUS || ''), formatContext)
@@ -667,7 +688,7 @@ export const buildSpellEntry = (
     id: toNumber(spell.ID),
     kind: 'spell' as const,
     name: spell.Name_Lang_enUS,
-    icon: iconName(icons?.spellIconById.get(asNumber(spell.SpellIconID))?.File),
+    icon: iconName(icons?.spellIconById.get(asNumber(patch?.SpellIconID ?? spell.SpellIconID))?.File),
     nameSubtext: spell.NameSubtext_Lang_enUS,
     castTime: (() => {
       const row = castTimes.get(toNumber(spell.CastingTimeIndex))
@@ -708,4 +729,11 @@ export const highestRankSpellIds = (spellIds: number[], spellById: DBCMap) => {
   })
 }
 
-export const patchById = (patches: readonly SpellPatch[]) => new Map(patches.map((patch) => [Number(patch.ID), patch]))
+export const patchById = (patches: readonly SpellPatch[]) => {
+  const merged = new Map<number, SpellPatch>()
+  for (const patch of patches) {
+    const id = Number(patch.ID)
+    merged.set(id, { ...merged.get(id), ...patch })
+  }
+  return merged
+}

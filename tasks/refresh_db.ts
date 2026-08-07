@@ -27,6 +27,7 @@ type ItemSheetRow = {
 }
 
 type NpcSheetRow = {
+  FACTION?: string
   GUID?: string
   ID?: string
   LEVEL?: string
@@ -198,7 +199,10 @@ const vendorNpcFlag = 128
 const vendorTrainerNpcFlags = 16 | 32 | 64
 const vendorNpcFlagsWithoutTrainer = 4294967295 - vendorTrainerNpcFlags
 const vendorNpcFlagsWithoutVendorOrTrainer = 4294967295 - (vendorNpcFlag | vendorTrainerNpcFlags)
+const nonCombatNpcUnitFlags = (1 << 1) | (1 << 8) | (1 << 9) | (1 << 17) // NON_ATTACKABLE | IMMUNE_TO_PC | IMMUNE_TO_NPC | PACIFIED
 const consortiumFaction = 1731
+const guildTabardItemId = 5976
+const guildTabardVendorSubname = 'guild tabard vendor'
 const satchelAlwaysDropItemIds = [
   5740, // fireworks
   9313, // green fireworks
@@ -819,6 +823,7 @@ const vendorGoldDiscount = (item: VendorItem) => {
 }
 
 const vendorNpcSubname = (currency: VendorCurrency, category: VendorCategory, itemId?: number) => {
+  if (itemId === guildTabardItemId) return guildTabardVendorSubname
   if (currency === 'arena' || currency === 'heroism') return 'former gladiator'
   if (category === 'enchant') return `enchant ${currency === 'gold' ? 'merchant' : 'quartermaster'}`
   const prefix = category === 'weapon' ? 'weapons' : category
@@ -854,7 +859,7 @@ const parseVendorItems = (
       continue
     }
 
-    const category = vendorCategoryFromItemInfo(itemInfo)
+    const category = itemId === guildTabardItemId ? 'accessory' : vendorCategoryFromItemInfo(itemInfo)
     if (!category) {
       questWarnings.push(
         `${rowLabel}: ignored vendor item, unsupported class ${itemInfo.classId} subclass ${itemInfo.subclassId} inventory type ${itemInfo.inventoryType}`,
@@ -877,27 +882,33 @@ const parseVendorItems = (
     }
 
     const npcSubname = vendorNpcSubname(currency, category, itemId)
-    const npc = npcEntriesBySubname.get(npcSubname.toLowerCase())
-    if (!npc) {
+    const npcs = itemId === guildTabardItemId
+      ? [...npcSubnames.entries()]
+        .filter(([, subname]) => subname.trim().toLowerCase() === guildTabardVendorSubname)
+        .map(([npc]) => npc)
+      : [npcEntriesBySubname.get(npcSubname.toLowerCase())].filter((npc): npc is number => npc !== undefined)
+    if (npcs.length === 0) {
       questWarnings.push(`${rowLabel}: ignored vendor item, NPC subname ${JSON.stringify(npcSubname)} not found`)
       continue
     }
 
-    const key = `${npc}:${itemId}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    items.push({
-      category,
-      classes,
-      currency,
-      glyphType: itemInfo.glyphType,
-      inventoryType: itemInfo.inventoryType,
-      itemId,
-      name: row.NAME?.trim() || itemInfo.name || String(itemId),
-      npc,
-      special: rawValue?.toLowerCase() === 'special',
-      value,
-    })
+    for (const npc of npcs) {
+      const key = `${npc}:${itemId}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      items.push({
+        category,
+        classes,
+        currency,
+        glyphType: itemInfo.glyphType,
+        inventoryType: itemInfo.inventoryType,
+        itemId,
+        name: row.NAME?.trim() || itemInfo.name || String(itemId),
+        npc,
+        special: rawValue?.toLowerCase() === 'special',
+        value,
+      })
+    }
   }
 
   return items.sort((a, b) => a.npc - b.npc || a.itemId - b.itemId)
@@ -1038,6 +1049,7 @@ const dbc = {
   enchant: openDBC('SpellItemEnchantment'),
   glyphProperties: openDBC('GlyphProperties'),
   spell: openDBC('Spell'),
+  skillLineAbility: openDBC('SkillLineAbility'),
 }
 
 const glyphTypeForItem = (classId: number, spellIds: number[]): VendorGlyphType | undefined => {
@@ -1292,8 +1304,9 @@ const buildNpcEntryBySubname = (subnames: Map<number, string>) => {
   for (const [entry, subname] of subnames) {
     const normalized = subname.trim().toLowerCase()
     if (!normalized) continue
-    if (entries.has(normalized)) questWarnings.push(`NPC subname ${JSON.stringify(subname)} is duplicated`)
-    else entries.set(normalized, entry)
+    if (entries.has(normalized) && normalized !== guildTabardVendorSubname) {
+      questWarnings.push(`NPC subname ${JSON.stringify(subname)} is duplicated`)
+    } else entries.set(normalized, entry)
   }
   return entries
 }
@@ -1324,6 +1337,24 @@ const parseNpcLevels = (rows: NpcSheetRow[] | undefined) => {
     levels.set(id, level)
   }
   return levels
+}
+
+const parseNpcFactionEntries = (rows: NpcSheetRow[] | undefined) => {
+  const entries = new Set<number>()
+  for (const [index, row] of (rows ?? []).entries()) {
+    const faction = row.FACTION?.trim().toLowerCase()
+    if (!faction) continue
+
+    const rowLabel = `NPC row ${index + 2}${row.ID ? ` (${row.ID})` : ''}`
+    const id = parseRequiredInt(row.ID, 'ID', rowLabel)
+    if (!id) continue
+    if (faction !== 'alliance' && faction !== 'horde') {
+      questWarnings.push(`${rowLabel}: ignored FACTION ${JSON.stringify(row.FACTION)}, expected Alliance or Horde`)
+      continue
+    }
+    entries.add(id)
+  }
+  return entries
 }
 
 const parseNpcSpawnSwaps = (rows: NpcSheetRow[] | undefined) => {
@@ -1594,6 +1625,20 @@ WHERE \`ID\` = ${quest.id};`
     })
     .join('\n')
 
+const questItemColumns: { item: string; count?: string }[] = [
+  { item: 'StartItem' },
+  ...Array.from({ length: 4 }, (_, index) => ({ item: `RewardItem${index + 1}`, count: `RewardAmount${index + 1}` })),
+  ...Array.from({ length: 4 }, (_, index) => ({ item: `ItemDrop${index + 1}`, count: `ItemDropQuantity${index + 1}` })),
+  ...Array.from({ length: 6 }, (_, index) => ({
+    item: `RewardChoiceItemID${index + 1}`,
+    count: `RewardChoiceItemQuantity${index + 1}`,
+  })),
+  ...Array.from(
+    { length: 6 },
+    (_, index) => ({ item: `RequiredItemId${index + 1}`, count: `RequiredItemCount${index + 1}` }),
+  ),
+]
+
 const costs = {
   gold: {
     '★☆☆☆☆': 55_00,
@@ -1646,6 +1691,12 @@ const satchelAlwaysDropReference = 10065
 const satchelClassReference = (classId: number) => satchelLegacyChoiceReference + classId
 const satchelMinMoneyLoot = 50 * 100
 const satchelMaxMoneyLoot = 75 * 100
+const lootTables = [
+  'creature_loot_template',
+  'pickpocketing_loot_template',
+  'skinning_loot_template',
+  'gameobject_loot_template',
+]
 
 const getCost = (item: VendorItem) => {
   const baseCost = item.value
@@ -1667,10 +1718,12 @@ const generateQuestSql = (
   npcNames: Map<number, string>,
   npcSubnames: Map<number, string>,
   npcLevels: Map<number, number>,
+  npcFactionEntries: Set<number>,
   npcSpawnSwaps: NpcSpawnSwap[],
   satchelItems: SatchelItem[],
   satchelAlwaysDropItems: SatchelDropItem[],
   vendorItems: VendorItem[],
+  projectItemIds: number[],
 ) => {
   const questIds = quests.map((quest) => quest.id)
   const minQuestId = Math.min(...questIds)
@@ -1678,6 +1731,30 @@ const generateQuestSql = (
   const rangeWhere = `ID >= ${minQuestId} AND ID <= ${maxQuestId}`
   const questWhere = `quest >= ${minQuestId} AND quest <= ${maxQuestId}`
   const poiWhere = `QuestId >= ${minQuestId} AND QuestId <= ${maxQuestId}`
+  const projectItemIdList = [...new Set(projectItemIds)].sort((a, b) => a - b).join(', ')
+  const nonProjectItemWhere = `(itemRow.class = 0 OR itemRow.InventoryType <> 0)${
+    projectItemIdList ? ` AND itemRow.entry NOT IN (${projectItemIdList})` : ''
+  }`
+  const projectQuestIdList = [...new Set(questIds)].sort((a, b) => a - b).join(', ')
+  const nonProjectQuestWhere = `questRow.ID NOT IN (${projectQuestIdList})`
+  const lootCleanup = lootTables.map((table) => `
+DELETE lootRow
+FROM ${table} lootRow
+JOIN item_template itemRow ON itemRow.entry = lootRow.Item
+WHERE ${nonProjectItemWhere};`).join('')
+  const referenceLootCleanup = lootTables.map((table) => `
+DELETE referenceRow
+FROM reference_loot_template referenceRow
+JOIN ${table} lootRow ON lootRow.Reference = referenceRow.Entry
+JOIN item_template itemRow ON itemRow.entry = referenceRow.Item
+WHERE ${nonProjectItemWhere};`).join('')
+  const questItemCleanup = questItemColumns.map(({ item, count }) => `
+UPDATE quest_template questRow
+JOIN item_template itemRow ON itemRow.entry = questRow.${item}
+SET questRow.${item} = 0${count ? `, questRow.${count} = 0` : ''}
+WHERE ${nonProjectQuestWhere}
+  AND ${nonProjectItemWhere}
+  AND questRow.${item} <> 0;`).join('')
   const questPoiRows = quests.flatMap((quest) => {
     const poi = positionsByNpc.get(quest.taker)
     return poi ? [`(${quest.id}, 1, -1, ${poi.map}, 105, 0, 0, 0, 0)`] : []
@@ -1700,6 +1777,13 @@ const generateQuestSql = (
   const npcSubnameCase = npcSubnameRows.map(([id, subname]) => `  WHEN ${id} THEN ${sqlString(subname)}`).join('\n')
   const npcLevelRows = [...npcLevels.entries()].sort(([a], [b]) => a - b)
   const npcLevelCase = npcLevelRows.map(([id, level]) => `  WHEN ${id} THEN ${level}`).join('\n')
+  const npcFactionIds = [...npcFactionEntries].sort((a, b) => a - b)
+  const npcFactionSql = npcFactionIds.length
+    ? `-- Keep sheet-defined Alliance and Horde NPCs out of combat.
+UPDATE \`creature_template\`
+SET \`unit_flags\` = \`unit_flags\` | ${nonCombatNpcUnitFlags}
+WHERE \`entry\` IN (${npcFactionIds.join(', ')});`
+    : '-- No sheet-defined faction NPCs.'
   const npcSpawnSwapRows = npcSpawnSwaps
     .map((swap) => `UPDATE \`creature\` SET \`id\` = ${swap.id} WHERE \`guid\` = ${swap.guid};`)
     .join('\n')
@@ -1908,6 +1992,21 @@ DELETE FROM quest_template WHERE ${rangeWhere};
 DELETE FROM quest_poi WHERE ${poiWhere};
 DELETE FROM quest_poi_points WHERE ${poiWhere};
 
+-- Remove consumable and equippable items from NPC and game object loot unless the ITEM sheet owns them.
+${lootCleanup}
+
+-- Reference loot tables are shared by these loot entries, so clean only references used by them.
+${referenceLootCleanup}
+
+-- Remove consumable and equippable items from vendor inventories unless the ITEM sheet owns them.
+DELETE vendorRow
+FROM npc_vendor vendorRow
+JOIN item_template itemRow ON itemRow.entry = vendorRow.item
+WHERE ${nonProjectItemWhere};
+
+-- Remove item rewards and requirements from quests outside the project quest sheet.
+${questItemCleanup}
+
 UPDATE item_template SET \`RequiredReputationFaction\` = 0, \`RequiredReputationRank\` = 0, \`AllowableRace\` = -1 WHERE \`RequiredReputationFaction\` <> 0 OR AllowableRace <> -1 OR \`RequiredReputationRank\` <> 0;
 UPDATE item_template SET \`AllowableClass\` = -1 WHERE (\`entry\` = 18468);
 UPDATE item_template SET \`socketColor_1\` = 4, \`socketContent_1\` = 1 WHERE (\`InventoryType\` IN (1, 7));
@@ -1960,6 +2059,8 @@ WHERE \`entry\` IN (${npcLevelRows.map(([id]) => id).join(', ')});`
   }
 
 ${npcSpawnSwapRows || '-- No NPC spawn swaps.'}
+
+${npcFactionSql}
 
 ${unlistedVendorCleanup}
 
@@ -2522,6 +2623,7 @@ const quests = parseQuests(gsheetData.QUEST)
 const npcSubnames = parseNpcSubnames(gsheetData.NPC)
 const npcNames = parseNpcNames(gsheetData.NPC)
 const npcLevels = parseNpcLevels(gsheetData.NPC)
+const npcFactionEntries = parseNpcFactionEntries(gsheetData.NPC)
 const npcSpawnSwaps = parseNpcSpawnSwaps(gsheetData.NPC)
 const npcEntriesBySubname = buildNpcEntryBySubname(npcSubnames)
 const satchelItems = parseSatchelItems(gsheetData.ITEM, itemInfoById)
@@ -2535,6 +2637,7 @@ const satchelAlwaysDropItems = satchelAlwaysDropItemIds.flatMap((itemId) => {
 })
 const vendorItems = parseVendorItems(gsheetData.ITEM, itemInfoById)
 const spellSchema = getDBCSchema('Spell')
+const skillLineAbilitySchema = getDBCSchema('SkillLineAbility')
 const scrollPatch = buildScrollPatch(
   gsheetData.ITEM
     .filter((row) => vendorCurrencyFromSource(row.SOURCE) && /^scroll of enchant/i.test(row.NAME?.trim() ?? ''))
@@ -2546,7 +2649,7 @@ const scrollPatch = buildScrollPatch(
   dbc.spell,
   spellSchema,
 )
-const spellPatchRows = [...(scrollPatch.edit?.rows ?? [])]
+const spellPatchRows: Record<string, unknown>[] = [...(scrollPatch.edit?.rows ?? [])]
 spellPatchRows.push({ ID: 29506, Name_Lang_enUS: 'Aura of Protection' })
 spellPatchRows.push({ ID: 67125, Name_Lang_enUS: 'Improved Moonfire' })
 spellPatchRows.push({
@@ -2620,19 +2723,80 @@ spellPatchRows.push({
 })
 spellPatchRows.push({
   ID: 20549,
-  Description_Lang_enUS:
-    'Stuns up to $i enemies within $a1 yds for $d, reduces their armor by $55196s2% for $55196d, and increases your movement speed by $4083s1% for $4083d.',
+  Description_Lang_enUS: 'Stuns up to $i enemies within $a1 yds for $d, reduces their armor by $55196s2% for $55196d',
+})
+type SpellbookEntry = {
+  ID: number
+  SkillLine: number
+  ClassMask: number
+  SpellIconID?: number
+}
+
+const spellbookEntries: SpellbookEntry[] = [
+  {
+    ID: 16769, // Arcane Stability
+    SkillLine: 237, // Arcane
+    ClassMask: 1 << playerClassIdByName.mage,
+    SpellIconID: 2120,
+  },
+  {
+    ID: 12351, // Burning Soul
+    SkillLine: 8, // Fire
+    ClassMask: 1 << playerClassIdByName.mage,
+  },
+  {
+    ID: 67125, // Improved Moonfire
+    SkillLine: 574, // Balance
+    ClassMask: 1 << playerClassIdByName.druid,
+    SpellIconID: 1485,
+  },
+  {
+    ID: 16909, // Vengeance
+    SkillLine: 574, // Balance
+    ClassMask: 1 << playerClassIdByName.druid,
+  },
+  {
+    ID: 13872, // Endurance
+    SkillLine: 38, // Combat
+    ClassMask: 1 << playerClassIdByName.rogue,
+  },
+] as const
+
+for (const { ID, SpellIconID } of spellbookEntries) {
+  const spell = dbc.spell.get(ID)
+  if (!spell) throw Error(`spell ${ID} is missing from Spell.dbc`)
+  spellPatchRows.push({
+    ID,
+    Attributes: (Number(spell.Attributes) & ~(1 << 7)) >>> 0, // SPELL_ATTR0_DO_NOT_DISPLAY
+    AttributesEx4: (Number(spell.AttributesEx4) & ~(1 << 15)) >>> 0, // SPELL_ATTR4_NOT_IN_SPELLBOOK
+    ...(SpellIconID === undefined ? {} : { SpellIconID }),
+  })
+}
+let nextSkillLineAbilityId = Math.max(...dbc.skillLineAbility.keys()) + 1
+const skillLineAbilityPatchRows: Record<string, unknown>[] = spellbookEntries.map((entry) => {
+  const ability = [...dbc.skillLineAbility.values()].find((row) => row.Spell === entry.ID)
+  return ability
+    ? { ID: ability.ID, SkillLine: entry.SkillLine, ClassMask: entry.ClassMask }
+    : { ID: nextSkillLineAbilityId++, SkillLine: entry.SkillLine, Spell: entry.ID, ClassMask: entry.ClassMask }
 })
 await Deno.writeTextFile(
   'launcher/patch.json',
-  JSON.stringify([{ filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows }], null, 2) + '\n',
+  JSON.stringify(
+    [
+      { filename: 'Spell.dbc', schema: spellSchema, rows: spellPatchRows },
+      { filename: 'SkillLineAbility.dbc', schema: skillLineAbilitySchema, rows: skillLineAbilityPatchRows },
+    ],
+    null,
+    2,
+  ) + '\n',
 )
 console.log(
   `wrote ${spellPatchRows.length} Spell.dbc edits (${
     scrollPatch.edit?.rows.length ?? 0
   } scroll descriptions and 1 spell name); ` +
     `${scrollPatch.missingSpellIds.length} spell IDs were missing from Spell.dbc and ` +
-    `${scrollPatch.unchangedSpellIds.length} had no lower item-level requirement`,
+    `${scrollPatch.unchangedSpellIds.length} had no lower item-level requirement; ` +
+    `wrote ${skillLineAbilityPatchRows.length} SkillLineAbility.dbc class-mask edits`,
 )
 const wsgBotRoster = parseWsgBotRoster()
 const wsgBotItems = parseWsgBotItems([], wsgBotRoster, starterItems, botStarterItems)
@@ -2747,10 +2911,12 @@ ORDER BY npc
         npcNames,
         npcSubnames,
         npcLevels,
+        npcFactionEntries,
         npcSpawnSwaps,
         satchelItems,
         satchelAlwaysDropItems,
         vendorItems,
+        itemIds,
       ),
     ),
   )
