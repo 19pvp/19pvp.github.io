@@ -348,6 +348,33 @@ WsgBalance.scoreLess = scoreLess
 WsgBalance.groupCandidates = groupCandidates
 WsgBalance.MAX_CLASS_PER_TEAM = MAX_CLASS_PER_TEAM
 
+function WsgBalance.selectQueuedPlayers(queuedPlayers, currentClassCounts)
+    local availableByClass = {}
+    local selected = {}
+    local excluded = {}
+    local current = currentClassCounts or { [0] = {}, [1] = {} }
+
+    for _, queuedPlayer in ipairs(queuedPlayers or {}) do
+        local classId = queuedPlayer.classId or queuedPlayer.class or getClassId(queuedPlayer.player or queuedPlayer)
+        if classId > 0 and availableByClass[classId] == nil then
+            availableByClass[classId] = 0
+            for team = 0, 1 do
+                availableByClass[classId] = availableByClass[classId]
+                    + math.max(0, MAX_CLASS_PER_TEAM - ((current[team] or {})[classId] or 0))
+            end
+        end
+
+        if classId <= 0 or availableByClass[classId] > 0 then
+            table.insert(selected, queuedPlayer)
+            if classId > 0 then availableByClass[classId] = availableByClass[classId] - 1 end
+        else
+            table.insert(excluded, queuedPlayer)
+        end
+    end
+
+    return selected, excluded
+end
+
 function WsgBalance.groupQueuedPlayers(queuedPlayers)
     local groupsByKey = {}
     local groups = {}

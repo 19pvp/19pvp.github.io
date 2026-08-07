@@ -111,6 +111,54 @@ assert(classHeavyMatch.w1 ~= classHeavyMatch.w2 or classHeavyMatch.w2 ~= classHe
     "Four players of one class must be distributed across both teams")
 print("  -> PASSED: Class-heavy queue respects the 2-per-class team cap.")
 
+-- 1c. Class-cap overflow keeps the oldest queued players and defers the newest.
+print("[Test 1c] Class-cap overflow keeps queue order...")
+local orderedWarriors = {}
+for i = 1, 5 do table.insert(orderedWarriors, player("queuedWarr" .. i, i % 2, 1)) end
+local selectedWarriors, excludedWarriors = balance.selectQueuedPlayers(orderedWarriors)
+assert(#selectedWarriors == 4 and #excludedWarriors == 1, "Only four same-class players fit in a fresh WSG")
+for i = 1, 4 do
+    assert(selectedWarriors[i].player == "queuedWarr" .. i, "Older same-class players must be selected first")
+end
+assert(excludedWarriors[1].player == "queuedWarr5", "The latest same-class player must wait for the next match")
+
+local activeSelected, activeExcluded = balance.selectQueuedPlayers(
+    { player("activeWarr1", 0, 1), player("activeWarr2", 1, 1) },
+    { [0] = { [1] = 2 }, [1] = { [1] = 1 } }
+)
+assert(#activeSelected == 1 and activeSelected[1].player == "activeWarr1", "Active-BG class capacity must keep the oldest eligible player")
+assert(#activeExcluded == 1 and activeExcluded[1].player == "activeWarr2", "Active-BG class overflow must defer the newest player")
+
+local unknownSelected, unknownExcluded = balance.selectQueuedPlayers({ player("unknown", 0, 0) })
+assert(#unknownSelected == 1 and #unknownExcluded == 0, "Unknown class data must never be excluded by the class cap")
+print("  -> PASSED: Class-cap overflow is deterministic and oldest-first.")
+
+-- 1d. When one of four in-BG same-class players leaves, the oldest waiting player gets the slot.
+print("[Test 1d] Oldest waiting player fills a freed class slot...")
+local waitingAfterLeave = {
+    player("waitingWarr1", 0, 1),
+    player("waitingWarr2", 1, 1),
+}
+local selectedAfterLeave, excludedAfterLeave = balance.selectQueuedPlayers(waitingAfterLeave, {
+    [0] = { [1] = 1 }, -- One Alliance warrior remains after the leave.
+    [1] = { [1] = 2 }, -- Horde still has two warriors.
+})
+assert(#selectedAfterLeave == 1 and selectedAfterLeave[1].player == "waitingWarr1",
+    "The oldest waiting same-class player must get the freed slot")
+assert(#excludedAfterLeave == 1 and excludedAfterLeave[1].player == "waitingWarr2",
+    "The newer waiting same-class player must remain queued")
+
+local leaveReplacementAssignments = balance.assign(
+    { { players = { selectedAfterLeave[1] } } },
+    1,
+    2,
+    nil,
+    { [0] = { [1] = 1 }, [1] = { [1] = 2 } }
+)
+assert(#leaveReplacementAssignments == 1 and leaveReplacementAssignments[1].team == 0,
+    "The oldest waiting player must join the team that lost its class member")
+print("  -> PASSED: Oldest waiting player fills the freed class slot.")
+
 -- 2. Prefer keeping groups intact when balance permits
 print("[Test 2] Keep groups intact when team balance permits...")
 

@@ -62,17 +62,44 @@ local bgTypeId = 2 -- Warsong Gulch
 local WSG_MAP_ID = 489
 local level = 19
 local minPlayersPerTeam = 5
-local queueDelayTime = 10
+local queueDelayTime = 120
 local annouceFreq = math.floor(queueDelayTime / 2)
 local activeBGQueueDelayMs = 5000
 local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
 local pendingInvites = {}
+local classCapWarnings = {}
 local activeQueueRetryAt = {}
 local activeBGInstances = {}
 local PVP19_SERVER_ID = "19PVP"
 local PVP19_ADDON_VERSION = "1.1"
 local ProcessActiveBGQueuePlayer
+
+local function getQueueJoinTime(player)
+    local joinTime = player:GetBattlegroundQueueJoinTime(bgTypeId)
+    return joinTime > 0 and joinTime or math.huge
+end
+
+local function sortQueuedPlayers(players)
+    table.sort(players, function(left, right)
+        local leftTime = getQueueJoinTime(left)
+        local rightTime = getQueueJoinTime(right)
+        if leftTime ~= rightTime then return leftTime < rightTime end
+        return left:GetGUIDLow() < right:GetGUIDLow()
+    end)
+    return players
+end
+
+local function warnClassCapPlayers(players)
+    for _, player in ipairs(players or {}) do
+        local guidLow = player:GetGUIDLow()
+        if not classCapWarnings[guidLow] then
+            classCapWarnings[guidLow] = true
+            player:SendBroadcastMessage("[WSG Queue] Your class has reached its limit for this match. Earlier queued players have priority; you will remain queued for the next available WSG.")
+            print("[WSG Queue] Player deferred by class cap " .. inspect({ player = player:GetName(), class = player:GetClass() }))
+        end
+    end
+end
 
 local function isWsgQueuePlayer(player)
     for _, queuedPlayer in ipairs(GetPlayersInQueue(bgTypeId, bracketId)) do
@@ -278,6 +305,10 @@ CreateLuaEvent(function ()
         end
     end
 
+    sortQueuedPlayers(eligiblePlayers)
+    local _, likelyExcludedPlayers = WsgBalance.selectQueuedPlayers(eligiblePlayers)
+    warnClassCapPlayers(likelyExcludedPlayers)
+
     local waitSeconds = math.floor(longestWait / 1000)
     if realPlayersCount > 0 and waitSeconds > 0 and waitSeconds % annouceFreq == 0 then
         local timeLeft = queueDelayTime - waitSeconds
@@ -288,10 +319,17 @@ CreateLuaEvent(function ()
     end
 
     if shouldProc and realPlayersCount > 0 then
-        for _, p in ipairs(eligiblePlayers) do pendingInvites[p:GetGUIDLow()] = true end
+        local selectedPlayers, excludedPlayers = WsgBalance.selectQueuedPlayers(eligiblePlayers)
+        warnClassCapPlayers(excludedPlayers)
+        if #selectedPlayers == 0 then return end
+
+        for _, p in ipairs(selectedPlayers) do
+            pendingInvites[p:GetGUIDLow()] = true
+            classCapWarnings[p:GetGUIDLow()] = nil
+        end
 
         local balancedRealPlayers = { [0] = {}, [1] = {} }
-        local assignments = WsgBalance.assign(WsgBalance.groupQueuedPlayers(eligiblePlayers))
+        local assignments = WsgBalance.assign(WsgBalance.groupQueuedPlayers(selectedPlayers))
         local bg = CreateBattleground(bgTypeId, bracketId)
         if bg then
             bg:StartBattleground()
@@ -434,6 +472,14 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                         table.insert(queueGroup, player)
                     end
 
+                    sortQueuedPlayers(queueGroup)
+                    local selectedQueueGroup, excludedQueueGroup = WsgBalance.selectQueuedPlayers(queueGroup, {
+                        [0] = roster[0].classCounts,
+                        [1] = roster[1].classCounts,
+                    })
+                    warnClassCapPlayers(excludedQueueGroup)
+                    queueGroup = selectedQueueGroup
+
                     if #queueGroup > 0 then
                         local allianceCount = roster[0].realCount
                         local hordeCount = roster[1].realCount
@@ -479,6 +525,7 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                             }))
                             if p:InviteToBattleground(bg, teamId) then
                                 pendingInvites[pGuid] = instanceId
+                                classCapWarnings[pGuid] = nil
                                 activeQueueRetryAt[pGuid] = nil
                                 invitedCount = invitedCount + 1
                             end
@@ -499,6 +546,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     if not player or player:IsBot() or not isWsgQueuePlayer(player) then return end
     local guidLow = player:GetGUIDLow()
     pendingInvites[guidLow] = nil
+    classCapWarnings[guidLow] = nil
     activeQueueRetryAt[guidLow] = GetCurrTime() + activeBGQueueDelayMs
     print("[WSG Queue] Player queued " .. inspect({ player = player:GetName(), isBot = false }))
 end)
@@ -511,6 +559,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
     if (not bg or bg:GetMapId() ~= WSG_MAP_ID) and not pendingInvites[guidLow] and not isWsgQueuePlayer(player) then return end
     local invitedInstanceId = pendingInvites[guidLow]
     pendingInvites[guidLow] = nil
+    classCapWarnings[guidLow] = nil
     activeQueueRetryAt[guidLow] = nil
 
     print("[WSG Queue] Player left queue " .. inspect({ player = player:GetName(), isBot = player:IsBot() }))
@@ -601,7 +650,6 @@ BalanceBGBots = function(map, bg, triggerEvent, playerName)
     if #msgs > 0 then
         msgText = prefix .. " " .. table.concat(msgs, " | ")
         print(msgText)
-        SendWorldMessage(msgText)
     end
 end
 
