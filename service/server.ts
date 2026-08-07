@@ -284,8 +284,6 @@ export default {
       if (url.pathname === '/addons/PvP19.lua') return staticAddon(req)
       if (url.pathname === '/addons/PvP19.zip') return staticAddonZip(req)
       if (url.pathname === '/patch-S.mpq') {
-        const session = await getSession(req)
-        if (!session) return json({ error: 'Unauthorized' }, { status: 401 })
         try {
           const file = await Deno.open(patchPath, { read: true })
           const stat = await file.stat()

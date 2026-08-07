@@ -399,12 +399,12 @@ html[data-auth] #communityGreeting {
 </style>
 <main id="page-content" class="about-page" data-page="about">
   <section class="about-hero">
-    <h1>About 19 PvP</h1>
+    <h1 id="about">About 19 PvP</h1>
     <p class="about-lede">Yet another 19 Twink 3.3.5 server.<br>So what's different ?</p>
   </section>
   <section id="communityCard" class="about-section about-cta about-art-card about-community-card box">
     <div class="about-art-copy">
-      <h2 class="section-title">🤝 Community First</h2>
+      <h2 id="community-first" class="section-title">🤝 Community First</h2>
       <p>We have connected your discord account to your in-game account. The General Chat in-game is connected with the “slash-1” chat in the discord, allowing constant community interaction. This feature also gives us strong moderation tools to ensure the community stays healthy both in-game and out.</p>
       <div data-auth-guest>
         <a class="btn btn-discord" href="/auth/discord/login">Join Discord</a>
@@ -414,14 +414,14 @@ html[data-auth] #communityGreeting {
     <img class="about-art-image" src="/assets/discord-logo.avif" alt="" aria-hidden="true">
   </section>
   <section class="about-section">
-    <h2 class="section-title">🛡️ Gearing</h2>
+    <h2 id="gearing" class="section-title">🛡️ Gearing</h2>
     <div class="about-grid">
       <article class="about-card box">
-        <h3>Starter gear</h3>
+        <h3 id="starter-gear">Starter gear</h3>
         <p>Starter gear allows you to start off with the ability to be competitive. You should never feel useless when you start, but there are still interesting upgrades to chase.</p>
       </article>
       <article class="about-card box">
-        <h3>Gold &amp; honor</h3>
+        <h3 id="gold-and-honor">Gold &amp; honor</h3>
         <p>You get gold and honor from Warsong Gulch and can buy gear with them. Honor gear is usually BiS; gold gear is easier to grab and more situational.</p>
         <p
           style="margin-top: 8px;">You can also give gold to friends and rerolls so they can skip part of the initial grind.</p>
@@ -437,7 +437,7 @@ html[data-auth] #communityGreeting {
         </div>
         <div class="hand-drawn-divider vertical" style="height: 140px; --divider-color: var(--accent-border);"></div>
         <div class="about-split-copy">
-          <h3>Custom items</h3>
+          <h3 id="custom-items">Custom items</h3>
           <p>Some items have been tweaked, for example swapping Spirit for Hit, Crit, or Haste. Everyone starts with a lower version of the Arena Grand Master, which can be upgraded up to the normal <strong>+12 Stamina</strong> version.</p>
         </div>
         <img class="about-art-image" src="/assets/crescent-staff.avif" alt="" aria-hidden="true">
@@ -454,14 +454,14 @@ html[data-auth] #communityGreeting {
         </div>
         <div class="hand-drawn-divider vertical" style="height: 140px; --divider-color: var(--accent-border);"></div>
         <div class="about-split-copy">
-          <h3>🔮 New suffixes</h3>
+          <h3 id="new-suffixes">🔮 New suffixes</h3>
           <p>More options were added to the random-suffix items from dungeon satchels. The in-game NPC lets you pick one for a few silvers.</p>
         </div>
       </article>
     </div>
     <article class="about-card box about-art-card about-gems-card">
       <div class="about-art-copy">
-        <h3 class="section-title">💎 Gems</h3>
+        <h3 id="gems" class="section-title">💎 Gems</h3>
         <p>Gems replace libram arcanums so we can apply the bonus only to head and legs. The gold gems give <strong>+8</strong> stats; the best ones cost honor and give <strong>+12</strong>.</p>
       </div>
       <img class="about-art-image" src="/assets/gems.avif" alt="" aria-hidden="true">
@@ -469,7 +469,7 @@ html[data-auth] #communityGreeting {
   </section>
   <div class="hand-drawn-divider horizontal"></div>
   <section class="about-section">
-    <h2 class="section-title">🔥 Resistance change</h2>
+    <h2 id="resistance-change" class="section-title">🔥 Resistance change</h2>
     <div class="about-grid">
       <article class="about-card wide about-split-card about-art-card about-resistance-card">
         <div>
@@ -491,40 +491,40 @@ html[data-auth] #communityGreeting {
     </div>
   </section>
   <section class="about-section">
-    <h2 class="section-title">✨ Class changes</h2>
+    <h2 id="class-changes" class="section-title">✨ Class changes</h2>
     <div class="about-grid">
       <article class="about-card box about-class-card">
         <span class="class-icon about-class-icon DRUID" role="img" aria-label="Druid" title="Druid"></span>
         <div class="about-class-content">
-          <h3 class="about-class-heading DRUID">Druid</h3>
+          <h3 id="druid" class="about-class-heading DRUID">Druid</h3>
           <p><a class="hand-drawn-link" href="#spell:67125" data-tip="spell:67125">[Improved Moonfire]</a><br><a class="hand-drawn-link" href="#spell:16909" data-tip="spell:16909">[Vengeance]</a></p>
         </div>
       </article>
       <article class="about-card box about-class-card">
         <span class="class-icon about-class-icon PALADIN" role="img" aria-label="Paladin" title="Paladin"></span>
         <div class="about-class-content">
-          <h3 class="about-class-heading PALADIN">Paladin</h3>
+          <h3 id="paladin" class="about-class-heading PALADIN">Paladin</h3>
           <p><a class="hand-drawn-link" href="#spell:53407" data-tip="spell:53407">[Judgement of Justice]</a><br><a class="hand-drawn-link" href="#spell:53408" data-tip="spell:53408">[Judgement of Wisdom]</a></p>
         </div>
       </article>
       <article class="about-card box about-class-card">
         <span class="class-icon about-class-icon MAGE" role="img" aria-label="Mage" title="Mage"></span>
         <div class="about-class-content">
-          <h3 class="about-class-heading MAGE">Mage</h3>
+          <h3 id="mage" class="about-class-heading MAGE">Mage</h3>
           <p><a class="hand-drawn-link" href="#spell:16769" data-tip="spell:16769">[Arcane Stability]</a><br><a class="hand-drawn-link" href="#spell:12351" data-tip="spell:12351">[Burning Soul]</a></p>
         </div>
       </article>
       <article class="about-card box about-class-card">
         <span class="class-icon about-class-icon ROGUE" role="img" aria-label="Rogue" title="Rogue"></span>
         <div class="about-class-content">
-          <h3 class="about-class-heading ROGUE">Rogue</h3>
+          <h3 id="rogue" class="about-class-heading ROGUE">Rogue</h3>
           <p><a class="hand-drawn-link" href="#spell:13872" data-tip="spell:13872">[Endurance]</a></p>
         </div>
       </article>
       <article class="about-card box about-class-card">
         <span class="class-icon about-class-icon WARRIOR" role="img" aria-label="Warrior" title="Warrior"></span>
         <div class="about-class-content">
-          <h3 class="about-class-heading WARRIOR">Warrior</h3>
+          <h3 id="warrior" class="about-class-heading WARRIOR">Warrior</h3>
           <p><a class="hand-drawn-link" href="#spell:12678" data-tip="spell:12678">[Stance Mastery]</a></p>
         </div>
       </article>
@@ -534,11 +534,11 @@ html[data-auth] #communityGreeting {
     </div>
   </section>
   <section class="about-section">
-    <h2 class="section-title">🧬 Racial changes</h2>
+    <h2 id="racial-changes" class="section-title">🧬 Racial changes</h2>
     <div class="about-grid">
       <article class="about-card wide about-split-card about-racial-card" style="align-items: normal;">
         <div class="about-racial-side">
-          <h3>Horde</h3>
+          <h3 id="horde">Horde</h3>
           <ul>
             <li><strong>Troll:</strong> <a class="hand-drawn-link" href="#spell:26297" data-tip="spell:26297">[Berserking]</a></li>
             <li><strong>Blood Elf:</strong> <a class="hand-drawn-link" href="#spell:25046" data-tip="spell:25046">[Arcane Torrent]</a> / <a class="hand-drawn-link" href="#spell:28730" data-tip="spell:28730">[Arcane Torrent]</a></li>
@@ -549,7 +549,7 @@ html[data-auth] #communityGreeting {
         </div>
         <div class="hand-drawn-divider vertical" style="height: 190px; --divider-color: var(--accent-border);"></div>
         <div class="about-racial-side">
-          <h3>Alliance</h3>
+          <h3 id="alliance">Alliance</h3>
           <ul>
             <li><strong>Dwarf:</strong> <a class="hand-drawn-link" href="#spell:20594" data-tip="spell:20594">[Stoneform]</a></li>
             <li><strong>Gnome:</strong> <a class="hand-drawn-link" href="#spell:20589" data-tip="spell:20589">[Escape Artist]</a></li>
@@ -563,20 +563,20 @@ html[data-auth] #communityGreeting {
   </section>
   <div class="hand-drawn-divider horizontal"></div>
   <section class="about-section">
-    <h2 class="section-title">🏹 PvP</h2>
+    <h2 id="pvp" class="section-title">🏹 PvP</h2>
     <div class="about-grid">
       <article class="about-card box">
-        <h3>Bots</h3>
+        <h3 id="bots">Bots</h3>
         <p>Bots let you farm gear even when the population is low. They leave once a real player joins.</p>
       </article>
       <article class="about-card box">
-        <h3>Arena</h3>
+        <h3 id="arena">Arena</h3>
         <p>You can queue for arena while you are in Warsong Gulch and wait for people who want to play.</p>
       </article>
       <article class="about-card box wide about-art-card about-warsong-card">
         <img class="about-art-image" src="/assets/flags.avif" alt="" aria-hidden="true">
         <div class="about-warsong-copy">
-          <h3>Warsong Queue Balance</h3>
+          <h3 id="warsong-queue-balance">Warsong Queue Balance</h3>
           <p>The queue tries to keep teams balanced and may split big groups when there are not enough players to face them. There is no class-stacking limit yet, but we plan to add a maximum of two of each class per team.</p>
           <p
             style="margin-top: 8px;">Warsong is cross-faction, so you can play Horde or Alliance regardless of your starting faction. We still try to avoid switching people when possible.</p>
@@ -585,7 +585,7 @@ html[data-auth] #communityGreeting {
     </div>
   </section>
   <section class="about-section about-cta box" data-auth-guest>
-    <h2 class="section-title">Ready to play?</h2>
+    <h2 id="ready-to-play" class="section-title">Ready to play?</h2>
     <p>Create your account with Discord, then jump in and play now.</p>
     <a class="btn btn-discord" href="/auth/discord/login">Play Now</a>
   </section>

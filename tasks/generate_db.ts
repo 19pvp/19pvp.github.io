@@ -161,7 +161,8 @@ ORDER BY entry
   ` as ItemTemplateDbRow[]
 }
 
-const spellPatchRows = (launcherPatch as { rows?: SpellPatch[] }[])
+const spellPatchRows = (launcherPatch as { filename?: string; rows?: SpellPatch[] }[])
+  .filter((patch) => patch.filename === 'Spell.dbc')
   .flatMap((patch) => patch.rows ?? [])
 
 const clientDirectory = async () => {

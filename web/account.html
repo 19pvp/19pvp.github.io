@@ -134,7 +134,7 @@ th span.badge {
 }
 </style>
 <main id="page-content" data-page="account">
-  <h1 class="page-title">Account Management</h1>
+  <h1 id="account" class="page-title">Account Management</h1>
   <div id="guestView" style="display: none;">
     <div class="login-section">
       <button id="discordLoginBtn"
@@ -153,14 +153,14 @@ th span.badge {
       <div class="hand-drawn-divider horizontal"></div>
       <div id="statusMsg" class="status-banner"></div>
       <div>
-        <h2 class="section-title">🛡️ WoW Game Account</h2>
+        <h2 id="wow-account" class="section-title">🛡️ WoW Game Account</h2>
         <form id="accountForm"><div class="form-grid">
       <div class="input-group"><label for="wowUsername">Account Username</label><input type="text" id="wowUsername" placeholder="CHOOSE A USERNAME" required minlength="3" maxlength="16" pattern="^[a-zA-Z0-9]+$" title="Only alphanumeric characters allowed"></div>
       <div class="input-group"><label for="wowPassword">Account Password</label><input type="password" id="wowPassword" placeholder="••••••••••••" required minlength="4"></div>
     </div><button type="submit" class="btn btn-primary" style="margin-top: 20px;">Save Account Credentials</button></form>
       </div>
       <div id="charactersSection">
-        <h2 class="section-title">⚔️ Your Characters</h2>
+        <h2 id="characters" class="section-title">⚔️ Your Characters</h2>
         <div class="char-table-wrapper">
           <table>
             <thead>
@@ -183,7 +183,7 @@ th span.badge {
       </div>
       <div class="hand-drawn-divider horizontal"></div>
       <div class="installer-link box">
-        <h2 class="section-title">🛠️ Web Installer &amp; Patcher</h2>
+        <h2 id="web-installer" class="section-title">🛠️ Web Installer &amp; Patcher</h2>
         <p>Install or update the 19 PvP client directly from your browser. Discord login is required to use it.</p>
         <a class="btn btn-secondary" href="/install">Open Web Installer</a>
       </div>
