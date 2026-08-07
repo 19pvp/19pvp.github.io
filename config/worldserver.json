@@ -417,7 +417,7 @@
   "Guild.EventLogRecordsCount": "100",
   "Guild.ResetHour": "6",
   "Guild.BankEventLogRecordsCount": "25",
-  "MinPetitionSigns": "9",
+  "MinPetitionSigns": "3",
   "Guild.CharterCost": "1000",
   "Guild.AllowMultipleGuildMaster": "0",
   "Guild.BankInitialTabs": "0",
