@@ -418,6 +418,8 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     end
 end)
 
+local SyncBGPlayerData, BalanceBGBots
+
 RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapId, instanceId, bg, teamId)
     if not player then return end
     local guidLow = player:GetGUIDLow()
@@ -441,7 +443,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
     end
 end)
 
-local function SyncBGPlayerData(map)
+SyncBGPlayerData = function(map)
     if not map then return end
     local bots, hordePlayers, alliancePlayers, realPlayers = {}, {}, {}, {}
     for _, p in ipairs(map:GetPlayers()) do
@@ -453,7 +455,7 @@ local function SyncBGPlayerData(map)
     for _, p in ipairs(realPlayers) do p:SendAddonMessage("PVP19_SYNC", payload, 7, p) end
 end
 
-local function BalanceBGBots(map, bg, triggerEvent, playerName)
+BalanceBGBots = function(map, bg, triggerEvent, playerName)
     if not map or not bg then return end
 
     local instId = (type(bg.GetInstanceId) == "function") and bg:GetInstanceId() or 0
