@@ -217,53 +217,44 @@ local SPELL_DESERTER_LFG = 71041
 local DESERTER_DURATION_MS = 5 * 60 * 1000 -- 5 minutes (120,000 ms)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
-    if not player or not aura then return end
-    if player:InBattleground() then return end
-    local auraId = aura:GetAuraId()
+  if not player or not aura then return end
+  if player:InBattleground() then return end
+  local auraId = aura:GetAuraId()
 
-    if auraId == SPELL_DESERTER_BG or auraId == SPELL_DESERTER_LFG then
-      local duration = player:IsBot() and 1500 or DESERTER_DURATION_MS
-      aura:SetDuration(duration)
-      aura:SetMaxDuration(duration)
+  if auraId == SPELL_DESERTER_BG or auraId == SPELL_DESERTER_LFG then
+    local duration = player:IsBot() and 1500 or DESERTER_DURATION_MS
+    aura:SetDuration(duration)
+    aura:SetMaxDuration(duration)
+    return
+  end
+
+  if auraId ~= SPELL_SPEED_BOOST then return end
+
+  local pGuid = player:GetGUIDLow()
+  local fallStartTime = nil
+  local timerId
+  timerId = CreateLuaEvent(function()
+    local p = GetPlayerByGUID(pGuid)
+    if not p or not p:HasAura(SPELL_SPEED_BOOST) then
+      RemoveEventById(timerId)
       return
     end
 
-    if auraId ~= SPELL_SPEED_BOOST then return end
-
-    print("[Rocket Boots Debug] Speed aura 23451 applied to " .. player:GetName())
-
-    local pGuid = player:GetGUIDLow()
-    local fallStartTime = nil
-
-    local timerId
-    timerId = CreateLuaEvent(function()
-        local p = GetPlayerByGUID(pGuid)
-        if not p or not p:HasAura(SPELL_SPEED_BOOST) then
-            print("[Rocket Boots Debug] Speed aura 23451 ended or player offline for GUID " .. pGuid .. ", stopping timer.")
-            RemoveEventById(timerId)
-            return
+    local isFalling = p:IsFalling()
+    if isFalling then
+      local now = GetCurrTime()
+      if not fallStartTime then
+        fallStartTime = now
+      else
+        local fallDuration = now - fallStartTime
+        if fallDuration >= 3500 and not p:HasAura(SPELL_PARACHUTE) then
+          p:CastSpell(p, SPELL_PARACHUTE, true)
         end
-
-        local isFalling = p:IsFalling()
-        if isFalling then
-            local now = GetCurrTime()
-            if not fallStartTime then
-                fallStartTime = now
-                print("[Rocket Boots Debug] " .. p:GetName() .. " started falling at time " .. now .. " (Z: " .. p:GetZ() .. ")")
-            else
-                local fallDuration = now - fallStartTime
-                if fallDuration >= 3500 and not p:HasAura(SPELL_PARACHUTE) then
-                    print("[Rocket Boots Debug] " .. p:GetName() .. " fell for " .. fallDuration .. "ms! Casting parachute " .. SPELL_PARACHUTE)
-                    p:CastSpell(p, SPELL_PARACHUTE, true)
-                end
-            end
-        else
-            if fallStartTime then
-                print("[Rocket Boots Debug] " .. p:GetName() .. " landed. Resetting fall timer.")
-            end
-            fallStartTime = nil
-        end
-    end, 100, 0)
+      end
+    else
+      fallStartTime = nil
+    end
+  end, 100, 0)
 end)
 
 CreateLuaEvent(function()
@@ -279,12 +270,23 @@ local SHADOWMELD_SPELL = 58984
 
 -- Cancel an in-progress cast when Shadowmeld is applied to its target.
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
-    if not player or not aura or aura:GetAuraId() ~= SHADOWMELD_SPELL then return end
+  if not player or not aura or aura:GetAuraId() ~= SHADOWMELD_SPELL then return end
 
-    for _, creature in ipairs(player:GetCreaturesInRange(30, SEARING_TOTEM_ENTRY)) do
-        if creature:GetVictim() == player then
-            creature:StopSpellCast()
-            creature:CombatStop()
-        end
+  for _, creature in ipairs(player:GetCreaturesInRange(30, SEARING_TOTEM_ENTRY)) do
+    if creature:GetVictim() == player then
+      creature:StopSpellCast()
+      creature:CombatStop()
     end
+  end
+end)
+
+-- Remove Judgement of Justice on trinket and racial
+local JUDGEMENT_OF_JUSTICE = 20184
+local ESCAPE_ARTIST = 20589
+local PVP_TRINKET = 42292
+RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(_, player, spell)
+  local spellId = spell:GetEntry()
+  if spellId == ESCAPE_ARTIST or spellId == PVP_TRINKET then
+    player:RemoveAura(JUDGEMENT_OF_JUSTICE)
+  end
 end)
