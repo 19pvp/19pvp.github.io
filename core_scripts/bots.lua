@@ -65,15 +65,32 @@ local minPlayersPerTeam = 5
 local queueDelayTime = 120
 local annouceFreq = math.floor(queueDelayTime / 2)
 local activeBGQueueDelayMs = 5000
+local maxWsgPlayersPerTeam = 10
 local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
 local pendingInvites = {}
 local classCapWarnings = {}
+local groupSplitWarnings = {}
 local activeQueueRetryAt = {}
 local activeBGInstances = {}
 local PVP19_SERVER_ID = "19PVP"
 local PVP19_ADDON_VERSION = "1.1"
 local ProcessActiveBGQueuePlayer
+local queueMidpointAlertSent = false
+local queueProjectionDirty = true
+
+local classNames = {
+    [1] = "Warrior",
+    [2] = "Paladin",
+    [3] = "Hunter",
+    [4] = "Rogue",
+    [5] = "Priest",
+    [6] = "Death Knight",
+    [7] = "Shaman",
+    [8] = "Mage",
+    [9] = "Warlock",
+    [11] = "Druid",
+}
 
 local function getQueueJoinTime(player)
     local joinTime = player:GetBattlegroundQueueJoinTime(bgTypeId)
@@ -99,6 +116,65 @@ local function warnClassCapPlayers(players)
             print("[WSG Queue] Player deferred by class cap " .. inspect({ player = player:GetName(), class = player:GetClass() }))
         end
     end
+end
+
+local function formatClassCounts(classCounts)
+    local classIds = {}
+    for classId, count in pairs(classCounts or {}) do
+        if count > 0 then table.insert(classIds, classId) end
+    end
+    table.sort(classIds)
+
+    local values = {}
+    for _, classId in ipairs(classIds) do
+        table.insert(values, (classNames[classId] or ("Class " .. tostring(classId))) .. " x" .. tostring(classCounts[classId]))
+    end
+    return #values > 0 and table.concat(values, ", ") or "none"
+end
+
+local function projectQueuedPlayers(players)
+    local selectedPlayers, excludedPlayers = WsgBalance.selectQueuedPlayers(players)
+    local groups = WsgBalance.groupQueuedPlayers(selectedPlayers)
+    local assignments, _, decision = WsgBalance.assign(groups)
+    return selectedPlayers, excludedPlayers, groups, assignments, decision, WsgBalance.describeAssignments(groups, assignments)
+end
+
+local function warnSplitGroups(splitGroups)
+    for _, group in ipairs(splitGroups or {}) do
+        for _, queuedPlayer in ipairs(group.players) do
+            local player = queuedPlayer.player
+            local guidLow = player:GetGUIDLow()
+            if not groupSplitWarnings[guidLow] then
+                groupSplitWarnings[guidLow] = true
+                player:SendBroadcastMessage("[WSG Queue] Your group is currently expected to be split between teams to keep WSG balanced. More players queueing may allow your group to stay together.")
+                print("[WSG Queue] Group expected to split " .. inspect({ player = player:GetName(), groupSize = #group.players }))
+            end
+        end
+    end
+end
+
+local function sendQueueMidpointStatus(selectedPlayers, excludedPlayers, decision, summary)
+    local totalPlayers = summary.teamCounts[0] + summary.teamCounts[1]
+    local slotsRemaining = math.max(0, (maxWsgPlayersPerTeam * 2) - totalPlayers)
+    local message = string.format(
+        "[WSG Queue] Midpoint update: projected teams are %d Alliance vs %d Horde; still slots for %d player(s). Classes — Alliance: %s. Horde: %s.",
+        summary.teamCounts[0],
+        summary.teamCounts[1],
+        slotsRemaining,
+        formatClassCounts(summary.classCounts[0]),
+        formatClassCounts(summary.classCounts[1])
+    )
+    if #excludedPlayers > 0 then
+        message = message .. " " .. tostring(#excludedPlayers) .. " player(s) are waiting for the next class-available slot."
+    end
+    SendWorldMessage(message)
+    print("[WSG Queue] Midpoint projection " .. inspect({
+        selected = #selectedPlayers,
+        excluded = #excludedPlayers,
+        alliance = summary.teamCounts[0],
+        horde = summary.teamCounts[1],
+        decision = decision,
+    }))
 end
 
 local function isWsgQueuePlayer(player)
@@ -309,6 +385,21 @@ CreateLuaEvent(function ()
     local _, likelyExcludedPlayers = WsgBalance.selectQueuedPlayers(eligiblePlayers)
     warnClassCapPlayers(likelyExcludedPlayers)
 
+    if realPlayersCount == 0 then
+        queueMidpointAlertSent = false
+    elseif longestWait >= (annouceFreq * 1000) and queueProjectionDirty then
+        local selectedPlayers, excludedPlayers, _, _, decision, summary = projectQueuedPlayers(eligiblePlayers)
+        warnClassCapPlayers(excludedPlayers)
+        warnSplitGroups(summary.splitGroups)
+        if not queueMidpointAlertSent then
+            sendQueueMidpointStatus(selectedPlayers, excludedPlayers, decision, summary)
+            queueMidpointAlertSent = true
+        end
+        queueProjectionDirty = false
+    elseif longestWait < (annouceFreq * 1000) then
+        queueMidpointAlertSent = false
+    end
+
     local waitSeconds = math.floor(longestWait / 1000)
     if realPlayersCount > 0 and waitSeconds > 0 and waitSeconds % annouceFreq == 0 then
         local timeLeft = queueDelayTime - waitSeconds
@@ -326,6 +417,7 @@ CreateLuaEvent(function ()
         for _, p in ipairs(selectedPlayers) do
             pendingInvites[p:GetGUIDLow()] = true
             classCapWarnings[p:GetGUIDLow()] = nil
+            groupSplitWarnings[p:GetGUIDLow()] = nil
         end
 
         local balancedRealPlayers = { [0] = {}, [1] = {} }
@@ -526,6 +618,7 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                             if p:InviteToBattleground(bg, teamId) then
                                 pendingInvites[pGuid] = instanceId
                                 classCapWarnings[pGuid] = nil
+                                groupSplitWarnings[pGuid] = nil
                                 activeQueueRetryAt[pGuid] = nil
                                 invitedCount = invitedCount + 1
                             end
@@ -547,7 +640,9 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     local guidLow = player:GetGUIDLow()
     pendingInvites[guidLow] = nil
     classCapWarnings[guidLow] = nil
+    groupSplitWarnings[guidLow] = nil
     activeQueueRetryAt[guidLow] = GetCurrTime() + activeBGQueueDelayMs
+    queueProjectionDirty = true
     print("[WSG Queue] Player queued " .. inspect({ player = player:GetName(), isBot = false }))
 end)
 
@@ -560,7 +655,9 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
     local invitedInstanceId = pendingInvites[guidLow]
     pendingInvites[guidLow] = nil
     classCapWarnings[guidLow] = nil
+    groupSplitWarnings[guidLow] = nil
     activeQueueRetryAt[guidLow] = nil
+    queueProjectionDirty = true
 
     print("[WSG Queue] Player left queue " .. inspect({ player = player:GetName(), isBot = player:IsBot() }))
 

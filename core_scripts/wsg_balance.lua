@@ -375,6 +375,42 @@ function WsgBalance.selectQueuedPlayers(queuedPlayers, currentClassCounts)
     return selected, excluded
 end
 
+function WsgBalance.describeAssignments(groups, assignments)
+    local teamCounts = { [0] = 0, [1] = 0 }
+    local classCounts = { [0] = {}, [1] = {} }
+    local teamByPlayer = {}
+
+    for _, assignment in ipairs(assignments or {}) do
+        teamCounts[assignment.team] = teamCounts[assignment.team] + 1
+        teamByPlayer[assignment.player] = assignment.team
+        if assignment.classId and assignment.classId > 0 then
+            local counts = classCounts[assignment.team]
+            counts[assignment.classId] = (counts[assignment.classId] or 0) + 1
+        end
+    end
+
+    local splitGroups = {}
+    for _, group in ipairs(groups or {}) do
+        local firstTeam = nil
+        local split = false
+        local assignedPlayers = 0
+        for _, queuedPlayer in ipairs(group.players) do
+            local team = teamByPlayer[queuedPlayer.player]
+            if team ~= nil then
+                assignedPlayers = assignedPlayers + 1
+                if firstTeam == nil then firstTeam = team elseif firstTeam ~= team then split = true end
+            end
+        end
+        if assignedPlayers == #group.players and split then table.insert(splitGroups, group) end
+    end
+
+    return {
+        teamCounts = teamCounts,
+        classCounts = classCounts,
+        splitGroups = splitGroups,
+    }
+end
+
 function WsgBalance.groupQueuedPlayers(queuedPlayers)
     local groupsByKey = {}
     local groups = {}
