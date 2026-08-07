@@ -2,16 +2,22 @@ package.path = "core_scripts/?.lua;" .. package.path
 
 local balance = require("wsg_balance")
 
-local function player(name, nativeTeam)
-    return { player = name, nativeTeam = nativeTeam }
+local function player(name, nativeTeam, classId)
+    return { player = name, nativeTeam = nativeTeam, classId = classId }
 end
 
 local function run(groups)
     local assignments = balance.assign(groups)
     local counts = { [0] = 0, [1] = 0 }
+    local classCounts = { [0] = {}, [1] = {} }
     local teams = {}
     for _, assignment in ipairs(assignments) do
         counts[assignment.team] = counts[assignment.team] + 1
+        if assignment.classId and assignment.classId > 0 then
+            classCounts[assignment.team][assignment.classId] = (classCounts[assignment.team][assignment.classId] or 0) + 1
+            assert(classCounts[assignment.team][assignment.classId] <= balance.MAX_CLASS_PER_TEAM,
+                string.format("Class cap failed: class %d has %d players on team %d", assignment.classId, classCounts[assignment.team][assignment.classId], assignment.team))
+        end
         teams[assignment.player] = assignment.team
     end
 
@@ -20,6 +26,46 @@ local function run(groups)
     assert(diff <= 1, string.format("Team difference failed: Alliance %d vs Horde %d (diff %d > 1)", counts[0], counts[1], diff))
     
     return teams, counts
+end
+
+local function runWithCurrentRoster(groups, currentAlliance, currentHorde, lastFavoredTeam, currentClassCounts)
+    local assignments, nextFavored, decision = balance.assign(
+        groups,
+        currentAlliance,
+        currentHorde,
+        lastFavoredTeam,
+        currentClassCounts
+    )
+    local counts = { [0] = currentAlliance, [1] = currentHorde }
+    local classCounts = {
+        [0] = {},
+        [1] = {},
+    }
+    for team = 0, 1 do
+        for classId, count in pairs((currentClassCounts and currentClassCounts[team]) or {}) do
+            classCounts[team][classId] = count
+        end
+    end
+
+    local teams = {}
+    local expectedAssignments = 0
+    for _, group in ipairs(groups) do expectedAssignments = expectedAssignments + #group.players end
+    assert(#assignments == expectedAssignments, "All feasible queued players must receive an assignment")
+
+    for _, assignment in ipairs(assignments) do
+        counts[assignment.team] = counts[assignment.team] + 1
+        teams[assignment.player] = assignment.team
+        if assignment.classId and assignment.classId > 0 then
+            local classId = assignment.classId
+            classCounts[assignment.team][classId] = (classCounts[assignment.team][classId] or 0) + 1
+            assert(classCounts[assignment.team][classId] <= balance.MAX_CLASS_PER_TEAM,
+                string.format("Ongoing class cap failed: class %d has %d players on team %d", classId, classCounts[assignment.team][classId], assignment.team))
+        end
+    end
+
+    local diff = math.abs(counts[0] - counts[1])
+    assert(diff <= 1, string.format("Ongoing team difference failed: %dA vs %dH", counts[0], counts[1]))
+    return teams, counts, nextFavored, decision, assignments, classCounts
 end
 
 math.randomseed(19)
@@ -48,6 +94,22 @@ for seed = 1, 100 do
     assert(math.abs(counts[0] - counts[1]) <= 1)
 end
 print("  -> PASSED: All 100 setups respected max 1 player difference.")
+
+-- 1b. Unbreakable Rule: No more than 2 players of one class per team
+print("[Test 1b] Max 2 players of each class per team...")
+local classHeavyMatch = run({
+    { players = { player("w1", 0, 1) } },
+    { players = { player("w2", 0, 1) } },
+    { players = { player("w3", 0, 1) } },
+    { players = { player("w4", 0, 1) } },
+    { players = { player("d1", 1, 11) } },
+    { players = { player("d2", 1, 11) } },
+    { players = { player("d3", 1, 11) } },
+    { players = { player("d4", 1, 11) } },
+})
+assert(classHeavyMatch.w1 ~= classHeavyMatch.w2 or classHeavyMatch.w2 ~= classHeavyMatch.w3,
+    "Four players of one class must be distributed across both teams")
+print("  -> PASSED: Class-heavy queue respects the 2-per-class team cap.")
 
 -- 2. Prefer keeping groups intact when balance permits
 print("[Test 2] Keep groups intact when team balance permits...")
@@ -180,6 +242,77 @@ local lateQueueAssignments, _, lateQueueDecision = balance.assign(
 assert(#lateQueueAssignments == 1 and lateQueueAssignments[1].team == 1, "1A vs 0H late queue player must be assigned to Horde")
 assert(lateQueueDecision.finalAlliance == 1 and lateQueueDecision.finalHorde == 1, "Late queue assignment must produce a balanced 1A vs 1H roster")
 
+-- 6f: Existing team already has 2 Warriors; equal teams and Alliance preference must still assign the new Warrior to Horde.
+local cappedJoinAssignments = balance.assign(
+    { { players = { player("cappedWarrior", 0, 1) } } },
+    2,
+    2,
+    0,
+    { [0] = { [1] = 2 }, [1] = {} }
+)
+assert(#cappedJoinAssignments == 1 and cappedJoinAssignments[1].team == 1,
+    "A third Warrior cannot join the team that already has 2 Warriors")
+
+-- 6g: In-progress BG with existing real-player class counts. The incoming group must place
+-- the capped Warrior on Horde and the capped Mage on Alliance while still ending 6v6.
+local activeTeams, activeCounts = runWithCurrentRoster(
+    { { players = {
+        player("activeWarrior", 0, 1),
+        player("activeDruid", 0, 11),
+        player("activeMage", 1, 8),
+    } } },
+    4,
+    5,
+    nil,
+    { [0] = { [1] = 2, [11] = 1 }, [1] = { [1] = 1, [8] = 2 } }
+)
+assert(activeCounts[0] == 6 and activeCounts[1] == 6, "Active BG class-constrained join must remain balanced at 6v6")
+assert(activeTeams.activeWarrior == 1, "Incoming Warrior must avoid Alliance's two Warriors")
+assert(activeTeams.activeMage == 0, "Incoming Mage must avoid Horde's two Mages")
+
+-- 6h: A class capped on one side must be excluded even when the favored side would otherwise win the tie.
+local excludedClassTeams = runWithCurrentRoster(
+    { { players = { player("excludedMage", 0, 8) } } },
+    5,
+    5,
+    0,
+    { [0] = { [8] = 2 }, [1] = {} }
+)
+assert(excludedClassTeams.excludedMage == 1, "A capped class must be assigned to the other team")
+
+-- 6i: If both teams already have two players of a class, the class-cap rule has no feasible assignment.
+local impossibleClassJoin = balance.assign(
+    { { players = { player("impossibleWarrior", 0, 1) } } },
+    5,
+    5,
+    nil,
+    { [0] = { [1] = 2 }, [1] = { [1] = 2 } }
+)
+assert(#impossibleClassJoin == 0, "A class capped on both teams must not be assigned")
+
+-- 6j: Empty BG, 10-player group with five class pairs -> Must split 5v5 without breaking the cap.
+local largeClassGroup = { players = {} }
+for i, classId in ipairs({ 1, 1, 11, 11, 8, 8, 5, 5, 4, 4 }) do
+    table.insert(largeClassGroup.players, player("large" .. i, 0, classId))
+end
+local _, largeCounts = run({ largeClassGroup })
+assert(largeCounts[0] == 5 and largeCounts[1] == 5, "Large class-composed group must split into 5v5")
+
+-- 6k: Queue groups of every common size together; all players must be assigned and both hard rules hold.
+local variedSizeGroups = {}
+local variedId = 1
+for size = 1, 5 do
+    local groupPlayers = {}
+    for _ = 1, size do
+        local classId = ({ 1, 11, 8, 5, 4 })[((variedId - 1) % 5) + 1]
+        table.insert(groupPlayers, player("varied" .. variedId, size % 2, classId))
+        variedId = variedId + 1
+    end
+    table.insert(variedSizeGroups, { players = groupPlayers })
+end
+local _, variedCounts = run(variedSizeGroups)
+assert(variedCounts[0] + variedCounts[1] == 15, "All varied-size group players must be assigned")
+
 -- 7. Exposed Helper API Functions
 print("[Test 7] Exposed API Functions (groupCandidates, scoreLess, groupQueuedPlayers, assignOngoing)...")
 
@@ -194,11 +327,12 @@ assert(#candidates == 3, "2-player group must generate 3 candidates (0, 1, 2 all
 
 -- 7c: Test balance.groupQueuedPlayers
 local fakePlayers = {
-    { player = "p1", nativeTeam = 0 },
-    { player = "p2", nativeTeam = 1 },
+    { player = "p1", nativeTeam = 0, class = 1 },
+    { player = "p2", nativeTeam = 1, class = 11 },
 }
 local grouped = balance.groupQueuedPlayers(fakePlayers)
 assert(#grouped == 2, "Solo players should form 2 distinct group buckets")
+assert(grouped[1].players[1].classId == 1 and grouped[2].players[1].classId == 11, "Queued grouping preserves player class IDs")
 
 -- 7d: Test balance.assignOngoing alias
 local ongoingAssignments = balance.assignOngoing({ { players = { player("p1", 0) } } }, 4, 5)
@@ -364,6 +498,9 @@ assert(#emptyAssigns == 0, "Empty queue returns empty assignments")
 local singleAssigns, _ = balance.assign({ { players = { player("lonely", 0) } } })
 assert(#singleAssigns == 1, "Single player queue assigns correctly")
 
+local emptyGroupAssigns, _ = balance.assign({ { players = {} } })
+assert(#emptyGroupAssigns == 0, "An empty queue group returns no assignments")
+
 print("  -> PASSED: Boundary cases (empty queue, single player) passed.")
 
 -- 14. Extract Roster & Compute Map Bot Actions Helpers
@@ -371,14 +508,15 @@ print("[Test 14] Extract Roster & Compute Map Bot Actions Helpers...")
 local mockMap = {
     GetPlayers = function()
         return {
-            { GetBgTeamId = function() return 0 end, IsBot = function() return false end },
-            { GetBgTeamId = function() return 0 end, IsBot = function() return true end, GetName = function() return "BotA1" end },
-            { GetBgTeamId = function() return 1 end, IsBot = function() return true end, GetName = function() return "BotH1" end },
+            { GetBgTeamId = function() return 0 end, IsBot = function() return false end, GetClass = function() return 1 end },
+            { GetBgTeamId = function() return 0 end, IsBot = function() return true end, GetClass = function() return 1 end, GetName = function() return "BotA1" end },
+            { GetBgTeamId = function() return 1 end, IsBot = function() return true end, GetClass = function() return 8 end, GetName = function() return "BotH1" end },
         }
     end
 }
 local extracted = balance.extractRoster(mockMap)
 assert(extracted[0].realCount == 1 and #extracted[0].bots == 1 and #extracted[1].bots == 1, "extractRoster parses real vs bot counts correctly")
+assert(extracted[0].classCounts[1] == 1 and not extracted[1].classCounts[8], "extractRoster counts real-player classes only")
 
 local mapPlan = balance.computeMapBotActions(mockMap, 5)
 assert(#mapPlan.toAdd[0] == 3 and #mapPlan.toAdd[1] == 4, "computeMapBotActions returns correct bot target additions")
@@ -445,6 +583,12 @@ assert(added5[5] == 4, "5th bot added to empty team is Rogue (4)")
 local addedWithWarriorBot = balance.selectClassesToAdd(emptyTeam, 1, { { class = 1 } })
 assert(addedWithWarriorBot[1] == 11, "Existing Warrior bot is skipped in favor of Druid")
 
+local cappedClassAdd = balance.selectClassesToAdd({ { class = 1 }, { class = 1 } }, 1)
+assert(cappedClassAdd[1] ~= 1, "Bot filler must not add a third player of a class")
+
+local botClassDoesNotCount = balance.selectClassesToAdd({ { class = 1 }, { class = 1, isBot = true } }, 1)
+assert(botClassDoesNotCount[1] == 1, "Bot classes must not consume the real-player class cap")
+
 print("  -> PASSED: Bot addition selection sequence across diverse team compositions verified.")
 
 -- 17. Bot Removal Class Priority & Order
@@ -503,4 +647,109 @@ assert(dupRemovalOrder[#dupRemovalOrder].class == 11, "Single Druid (11) is pres
 
 print("  -> PASSED: Bot removal order across diverse real player join scenarios verified.")
 
-print("\nwsg_balance_test: ok (All 17 test suites passed cleanly)")
+-- 18. Randomized feasible class-cap stress matrix
+print("[Test 18] Randomized feasible class-cap stress matrix...")
+local stressClasses = { 1, 2, 3, 4, 5 }
+for seed = 201, 300 do
+    math.randomseed(seed)
+    local totalPlayers = math.random(1, 20)
+    local groups = {}
+    local remaining = totalPlayers
+    local playerId = 1
+    while remaining > 0 do
+        local groupSize = math.min(remaining, math.random(1, 5))
+        local groupPlayers = {}
+        for _ = 1, groupSize do
+            local classId = stressClasses[((playerId - 1) % #stressClasses) + 1]
+            table.insert(groupPlayers, player("stress" .. playerId, math.random(0, 1), classId))
+            playerId = playerId + 1
+        end
+        table.insert(groups, { players = groupPlayers })
+        remaining = remaining - groupSize
+    end
+    local _, counts = run(groups)
+    assert(math.abs(counts[0] - counts[1]) <= 1, "Random stress setup violated the team-size rule")
+end
+print("  -> PASSED: 100 feasible randomized class compositions respected both hard rules.")
+
+-- 19. Same-class group boundaries and mixed unknown classes
+print("[Test 19] Same-class group boundaries and unknown class compatibility...")
+local fourWarriorGroup = { players = {} }
+for i = 1, 4 do table.insert(fourWarriorGroup.players, player("fourWarr" .. i, 0, 1)) end
+local fourWarriorTeams, fourWarriorCounts = run({ fourWarriorGroup })
+assert(fourWarriorCounts[0] == 2 and fourWarriorCounts[1] == 2, "Four same-class players must split exactly 2v2")
+assert(fourWarriorTeams.fourWarr1 ~= fourWarriorTeams.fourWarr2
+    or fourWarriorTeams.fourWarr2 ~= fourWarriorTeams.fourWarr3,
+    "Four same-class players must not remain on one team")
+
+local fiveWarriorGroup = { players = {} }
+for i = 1, 5 do table.insert(fiveWarriorGroup.players, player("fiveWarr" .. i, 0, 1)) end
+assert(#balance.assign({ fiveWarriorGroup }) == 0, "Five same-class players have no valid 2-per-team assignment")
+
+local mixedUnknownTeams, mixedUnknownCounts = run({
+    { players = {
+        player("known1", 0, 1),
+        player("known2", 0, 1),
+        player("known3", 0, 1),
+        player("known4", 0, 1),
+        player("unknown", 1),
+    } },
+})
+assert(mixedUnknownCounts[0] + mixedUnknownCounts[1] == 5, "Unknown class data must not drop an otherwise assignable player")
+assert(mixedUnknownTeams.unknown == 0 or mixedUnknownTeams.unknown == 1, "Unknown class player receives a normal team assignment")
+print("  -> PASSED: Same-class boundaries and unknown class data behave safely.")
+
+-- 20. Active-BG group splitting and exact cap boundary
+print("[Test 20] Active-BG group splitting at the exact class-cap boundary...")
+local splitAtCapTeams, splitAtCapCounts = runWithCurrentRoster(
+    { { players = { player("splitWarr1", 0, 1), player("splitWarr2", 0, 1) } } },
+    1,
+    1,
+    0,
+    { [0] = { [1] = 1 }, [1] = {} }
+)
+assert(splitAtCapCounts[0] == 2 and splitAtCapCounts[1] == 2, "Cap-aware active-BG split must remain 2v2")
+assert(splitAtCapTeams.splitWarr1 ~= splitAtCapTeams.splitWarr2, "Two-player class group must split when team balance requires it")
+
+local exactCapTeams = runWithCurrentRoster(
+    { { players = { player("secondWarr", 0, 1) } } },
+    2,
+    2,
+    0,
+    { [0] = { [1] = 1 }, [1] = {} }
+)
+assert(exactCapTeams.secondWarr == 0, "A player may join a team when it reaches exactly two of that class")
+print("  -> PASSED: Active-BG cap boundary and split behavior verified.")
+
+-- 21. Social-group aggregation must preserve class data before assignment.
+print("[Test 21] Social-group aggregation with class-aware assignment...")
+local socialGroup = { GetGUID = function() return 91021 end }
+local socialPlayers = {}
+for i, classId in ipairs({ 1, 1, 11, 11 }) do
+    table.insert(socialPlayers, {
+        GetGroup = function() return socialGroup end,
+        GetGUID = function() return 91021 + i end,
+        GetTeam = function() return i <= 2 and 0 or 1 end,
+        GetClass = function() return classId end,
+    })
+end
+local socialGrouped = balance.groupQueuedPlayers(socialPlayers)
+assert(#socialGrouped == 1 and #socialGrouped[1].players == 4, "Social group members must remain one assignment group")
+assert(socialGrouped[1].players[1].classId == 1 and socialGrouped[1].players[3].classId == 11,
+    "Social-group aggregation must preserve every member's class")
+local _, socialCounts = run(socialGrouped)
+assert(socialCounts[0] == 2 and socialCounts[1] == 2, "Class-aware social group must remain balanced")
+print("  -> PASSED: Social-group aggregation preserves classes and balance.")
+
+-- 22. One large 20-player group with four of each class.
+print("[Test 22] 20-player class-complete premade...")
+local twentyPlayerGroup = { players = {} }
+for i = 1, 20 do
+    local classId = stressClasses[((i - 1) % #stressClasses) + 1]
+    table.insert(twentyPlayerGroup.players, player("twenty" .. i, i % 2, classId))
+end
+local _, twentyCounts = run({ twentyPlayerGroup })
+assert(twentyCounts[0] == 10 and twentyCounts[1] == 10, "20-player premade must split 10v10 under class caps")
+print("  -> PASSED: 20-player class-complete premade respects both hard rules.")
+
+print("\nwsg_balance_test: ok (All 22 test suites passed cleanly)")

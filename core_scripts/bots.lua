@@ -311,6 +311,14 @@ CreateLuaEvent(function ()
     end
 end, 1000, 0)
 
+local function HasPendingBGInvite(instanceId)
+    if not instanceId or instanceId <= 0 then return false end
+    for _, invitedInstanceId in pairs(pendingInvites) do
+        if invitedInstanceId == instanceId or invitedInstanceId == true then return true end
+    end
+    return false
+end
+
 local function CheckBGEmpty(player, mapId, instanceId)
     local instId = (instanceId and instanceId > 0) and instanceId or 0
     local bg = instId > 0 and GetBattleground(instId, bgTypeId) or nil
@@ -326,6 +334,11 @@ local function CheckBGEmpty(player, mapId, instanceId)
                 return false
             end
         end
+    end
+
+    if HasPendingBGInvite(instId) then
+        print("[WSG Queue] Keeping BG open while real-player invites are pending " .. inspect({ instanceId = instId }))
+        return false
     end
 
     for guidLow, invInstId in pairs(pendingInvites) do
@@ -382,7 +395,13 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
                         local allianceCount = roster[0].realCount
                         local hordeCount = roster[1].realCount
                         local grouped = WsgBalance.groupQueuedPlayers(queueGroup)
-                        local assignments, _, decision = WsgBalance.assign(grouped, allianceCount, hordeCount)
+                        local assignments, _, decision = WsgBalance.assign(
+                            grouped,
+                            allianceCount,
+                            hordeCount,
+                            nil,
+                            { [0] = roster[0].classCounts, [1] = roster[1].classCounts }
+                        )
 
                         print("[WSG Queue Debug] Late-queue team decision " .. inspect({
                             instanceId = instanceId,
@@ -467,7 +486,12 @@ BalanceBGBots = function(map, bg, triggerEvent, playerName)
         end
     end
 
+    local hasPendingInvites = HasPendingBGInvite(instId)
     local plan = WsgBalance.computeMapBotActions(map, minPlayersPerTeam)
+    if hasPendingInvites then
+        plan.toRemove = {}
+        print("[WSG Bot Balance] Keeping bots while real-player invites are pending " .. inspect({ instanceId = instId }))
+    end
 
     local removedBotNames = {}
     for _, bot in ipairs(plan.toRemove) do
@@ -651,7 +675,8 @@ RegisterBGEvent(BG_EVENT_ON_START, function(event, bg, bgTypeIdVal, instanceId)
         end
     end
 
-    if not hasRealPlayers then
+    local hasPendingInvites = HasPendingBGInvite(instId)
+    if not hasRealPlayers and not hasPendingInvites then
         print("[WSG Queue] Doors opened for BG, but 0 real players are inside. Retracting invites and closing BG " .. inspect({ instanceId = instId }))
 
         -- Retract any remaining pending invites
@@ -671,6 +696,8 @@ RegisterBGEvent(BG_EVENT_ON_START, function(event, bg, bgTypeIdVal, instanceId)
             bg:SetEndTime(1)
         end)
         activeBGInstances[instId] = nil
+    elseif not hasRealPlayers then
+        print("[WSG Queue] Doors opened with no real players inside; keeping BG open for pending invites " .. inspect({ instanceId = instId }))
     end
 end)
 
