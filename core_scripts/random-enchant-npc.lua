@@ -12,14 +12,8 @@ local ITEM_MENU_SENDER = 100
 local ENCHANT_MENU_SENDER = 101
 local BACK_MENU_SENDER = 102
 local PAGE_MENU_SENDER = 103
-local BETA_GEAR_MENU_SENDER = 104
 local ENCHANT_MENU_OFFSET = 10000
 local ITEMS_PER_PAGE = 20
-
-local BETA_GEAR_GOLD = 1000 * 10000
-local BETA_GEAR_HONOR = 75000
-local BETA_GEAR_ITEM = 51999
-local BETA_GEAR_ITEM_COUNT = 5
 
 local suffix_options = {
   -- Single stats
@@ -50,7 +44,7 @@ local suffix_options = {
   [73] = { id = 73, name = "Elder (Intellect / Mana Per 5 sec. / Stamina)" },
   [50] = { id = 50, name = "Hunt (Attack Power / Agility / Intellect)" },
   [59] = { id = 59, name = "Moon (Intellect / Spirit / Stamina)" },
-  -- Strenght
+  -- Strength
   [86] = { id = 86, name = "Soldier (Strength / Crit / Stamina)" },
   [74] = { id = 74, name = "Beast (Strength / Agility / Stamina)" },
   [75] = { id = 75, name = "Champion (Strength / Defense / Stamina)" },
@@ -60,7 +54,7 @@ local suffix_options = {
   [39] = { id = 39, name = "Invoker (Spell Power / Intellect / Crit)" },
   [77] = { id = 77, name = "Knight (Spell Power / Defense / Stamina)" },
   [38] = { id = 38, name = "Prophet (Spell Power /Intellect / Spirit)" },
-  [57] = { id = 57, name = "Shadow (Attack Power, Agility / Stamina)" },
+  -- [57] = { id = 57, name = "Shadow (Attack Power, Agility / Stamina)" },?? verify that ingame
   [58] = { id = 58, name = "Sun (Spell Power / Intellect / Stamina)" },
 }
 
@@ -132,7 +126,6 @@ end
 
 local function showItems(player, creature)
   player:GossipClearMenu()
-  player:GossipMenuAddItem(ICON_GOSSIP, "[BETA] give me full gear already", BETA_GEAR_MENU_SENDER, 0)
 
   local items = equippedRandomItems(player)
   if #items == 0 then
@@ -358,15 +351,6 @@ RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_HELLO, function(event, play
 end)
 
 RegisterCreatureGossipEvent(NPC_RANDOM_ENCHANTER, ON_SELECT, function(event, player, creature, sender, intid)
-  if sender == BETA_GEAR_MENU_SENDER then
-    player:AddItem(BETA_GEAR_ITEM, BETA_GEAR_ITEM_COUNT)
-    player:ModifyMoney(BETA_GEAR_GOLD)
-    player:ModifyHonorPoints(BETA_GEAR_HONOR)
-    player:SendBroadcastMessage("You received 1,000 gold, 75,000 honor, and 25 of item 51999.")
-    player:GossipComplete()
-    return
-  end
-
   if sender == BACK_MENU_SENDER then
     showItems(player, creature)
     return
