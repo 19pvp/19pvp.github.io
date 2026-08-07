@@ -357,9 +357,18 @@ index 85752ae..9ceb577 100644
      // For config
      // = false so LoadConfig's disable-transition read is well-defined on the
 diff --git a/src/CFBG_SC.cpp b/src/CFBG_SC.cpp
-index 769f7de..a78ebaf 100644
+index 769f7de..ea51315 100644
 --- a/src/CFBG_SC.cpp
 +++ b/src/CFBG_SC.cpp
+@@ -194,7 +194,7 @@ public:
+             if (!group)
+                 return true;
+ 
+-            if (group->isRaidGroup() || group->GetMembersCount() > sCFBG->GetMaxPlayersCountInGroup())
++            if (group->GetMembersCount() > sCFBG->GetMaxPlayersCountInGroup())
+             {
+                 // The client shows only a generic "Join as a group failed.";
+                 // name the actual limit so the leader knows what to change.
 @@ -335,7 +335,7 @@ public:
  
          std::optional<TeamId> locked = sCFBG->GetWGWarAssignment(player->GetGUID());
