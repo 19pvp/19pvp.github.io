@@ -64,12 +64,15 @@ local level = 19
 local minPlayersPerTeam = 5
 local queueDelayTime = 10
 local annouceFreq = math.floor(queueDelayTime / 2)
+local activeBGQueueDelayMs = 5000
 local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
 local pendingInvites = {}
+local activeQueueRetryAt = {}
 local activeBGInstances = {}
 local PVP19_SERVER_ID = "19PVP"
 local PVP19_ADDON_VERSION = "1.1"
+local ProcessActiveBGQueuePlayer
 
 local function isWsgQueuePlayer(player)
     for _, queuedPlayer in ipairs(GetPlayersInQueue(bgTypeId, bracketId)) do
@@ -242,6 +245,25 @@ CreateLuaEvent(function ()
     local shouldProc = false
     local longestWait = 0
     local eligiblePlayers = {}
+    local queuedByGuid = {}
+
+    for _, player in ipairs(queuedPlayers) do
+        queuedByGuid[player:GetGUIDLow()] = player
+    end
+
+    if ProcessActiveBGQueuePlayer then
+        for _, player in ipairs(queuedPlayers) do
+            local guidLow = player:GetGUIDLow()
+            local retryAt = activeQueueRetryAt[guidLow]
+            if retryAt and retryAt <= currentTime then
+                if ProcessActiveBGQueuePlayer(player, queuedByGuid) then
+                    activeQueueRetryAt[guidLow] = nil
+                else
+                    activeQueueRetryAt[guidLow] = currentTime + 1000
+                end
+            end
+        end
+    end
 
     for _, player in ipairs(queuedPlayers) do
         if not pendingInvites[player:GetGUIDLow()] then
@@ -364,26 +386,47 @@ local function CheckBGEmpty(player, mapId, instanceId)
     return true
 end
 
-RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
-    if not player or player:IsBot() or not isWsgQueuePlayer(player) then return end
-    local guidLow = player:GetGUIDLow()
-    pendingInvites[guidLow] = nil
-    print("[WSG Queue] Player queued " .. inspect({ player = player:GetName(), isBot = false }))
+ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
+    if not player or player:IsBot() or not queuedByGuid[player:GetGUIDLow()] then return false end
+    if not next(activeBGInstances) then
+        activeQueueRetryAt[player:GetGUIDLow()] = nil
+        return false
+    end
 
-    -- Check if there is an active running BG instance to immediately invite into
+    local group = player:GetGroup()
+    if group then
+        local missingMembers = {}
+        for _, member in ipairs(group:GetMembers()) do
+            if member and not member:IsBot() and not member:InBattleground() then
+                local memberGuid = member:GetGUIDLow()
+                if not pendingInvites[memberGuid] and not queuedByGuid[memberGuid] then
+                    table.insert(missingMembers, member:GetName())
+                end
+            end
+        end
+        if #missingMembers > 0 then
+            print("[WSG Queue] Waiting for all group members to enter the queue before processing the group " .. inspect({
+                player = player:GetName(),
+                missing = missingMembers,
+            }))
+            return false
+        end
+    end
+
     for instanceId, _ in pairs(activeBGInstances) do
         local bg = GetBattleground(instanceId, bgTypeId)
         if bg then
             activeBGInstances[instanceId] = bg
-            local map = GetMapById(489, instanceId)
+            local map = GetMapById(WSG_MAP_ID, instanceId)
             if map then
                 local roster = WsgBalance.extractRoster(map)
                 if roster then
-                    local group = player:GetGroup()
                     local queueGroup = {}
                     if group then
                         for _, member in ipairs(group:GetMembers()) do
-                            if member and not member:IsBot() and not pendingInvites[member:GetGUIDLow()] and not member:InBattleground() then
+                            local memberGuid = member and member:GetGUIDLow()
+                            if member and not member:IsBot() and queuedByGuid[memberGuid]
+                                and not pendingInvites[memberGuid] and not member:InBattleground() then
                                 table.insert(queueGroup, member)
                             end
                         end
@@ -403,6 +446,16 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
                             { [0] = roster[0].classCounts, [1] = roster[1].classCounts }
                         )
 
+                        if #assignments ~= #queueGroup then
+                            print("[WSG Queue] Delaying active BG invitation because the complete group cannot be assigned " .. inspect({
+                                instanceId = instanceId,
+                                queued = #queueGroup,
+                                assigned = #assignments,
+                                decision = decision,
+                            }))
+                            return false
+                        end
+
                         print("[WSG Queue Debug] Late-queue team decision " .. inspect({
                             instanceId = instanceId,
                             current = { alliance = allianceCount, horde = hordeCount },
@@ -413,6 +466,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
                             score = decision.score,
                         }))
 
+                        local invitedCount = 0
                         for _, assignment in ipairs(assignments) do
                             local p = assignment.player
                             local teamId = assignment.team
@@ -425,9 +479,11 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
                             }))
                             if p:InviteToBattleground(bg, teamId) then
                                 pendingInvites[pGuid] = instanceId
+                                activeQueueRetryAt[pGuid] = nil
+                                invitedCount = invitedCount + 1
                             end
                         end
-                        break
+                        return invitedCount == #assignments
                     end
                 end
             end
@@ -435,6 +491,16 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
             activeBGInstances[instanceId] = nil
         end
     end
+
+    return false
+end
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
+    if not player or player:IsBot() or not isWsgQueuePlayer(player) then return end
+    local guidLow = player:GetGUIDLow()
+    pendingInvites[guidLow] = nil
+    activeQueueRetryAt[guidLow] = GetCurrTime() + activeBGQueueDelayMs
+    print("[WSG Queue] Player queued " .. inspect({ player = player:GetName(), isBot = false }))
 end)
 
 local SyncBGPlayerData, BalanceBGBots
@@ -445,6 +511,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
     if (not bg or bg:GetMapId() ~= WSG_MAP_ID) and not pendingInvites[guidLow] and not isWsgQueuePlayer(player) then return end
     local invitedInstanceId = pendingInvites[guidLow]
     pendingInvites[guidLow] = nil
+    activeQueueRetryAt[guidLow] = nil
 
     print("[WSG Queue] Player left queue " .. inspect({ player = player:GetName(), isBot = player:IsBot() }))
 
