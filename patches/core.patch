@@ -1025,7 +1025,7 @@ index a30b6c16a..c2a068ad6 100644
  
  void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
 diff --git a/src/server/game/Spells/SpellInfoCorrections.cpp b/src/server/game/Spells/SpellInfoCorrections.cpp
-index 0f71208b0..d52fd0610 100644
+index 0f71208b0..8edafab5a 100644
 --- a/src/server/game/Spells/SpellInfoCorrections.cpp
 +++ b/src/server/game/Spells/SpellInfoCorrections.cpp
 @@ -40,6 +40,109 @@ void SpellMgr::LoadSpellInfoCorrections()
@@ -1138,6 +1138,19 @@ index 0f71208b0..d52fd0610 100644
      ApplySpellFix({
          467,    // Thorns (Rank 1)
          782,    // Thorns (Rank 2)
+@@ -574,6 +677,12 @@ void SpellMgr::LoadSpellInfoCorrections()
+         spellInfo->AttributesEx3 |= SPELL_ATTR3_SUPPRESS_CASTER_PROCS;
+     });
+ 
++    // Judgement of Justice: its speed cap is a movement impairment for movement-clearing effects.
++    ApplySpellFix({ 20184 }, [](SpellInfo* spellInfo)
++    {
++        spellInfo->Effects[EFFECT_2].Mechanic = MECHANIC_SNARE;
++    });
++
+     ApplySpellFix({
+         6940, // Hand of Sacrifice
+         64205 // Divine Sacrifice
 diff --git a/src/server/scripts/Spells/spell_generic.cpp b/src/server/scripts/Spells/spell_generic.cpp
 index fb63ef229..d16e72e91 100644
 --- a/src/server/scripts/Spells/spell_generic.cpp

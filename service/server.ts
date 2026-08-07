@@ -80,6 +80,13 @@ try {
   patchSha1 = Array.from(new Uint8Array(rootBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
 } catch {}
 
+const iconFile = await Deno.readFile(new URL('../web/assets/icons.avif', import.meta.url))
+const iconFileHash = Array.from(
+  new Uint8Array(await crypto.subtle.digest('SHA-1', iconFile)),
+  (byte) => byte.toString(16).padStart(2, '0'),
+).join('').slice(0, 10)
+const styleCSS = styleCSSRaw.replaceAll('?v=icon-file-hash', `?v=${iconFileHash}`)
+
 type StaticOptions = {
   type: string
   cache?: string
@@ -152,7 +159,7 @@ const staticFile = (filePath: string, options: StaticOptions) => {
 
 const inlineAssets = (html: string) => {
   return html
-    .replace(/<link rel="stylesheet" href="\/style\.css(\?v=\d+)?"\s*\/?>/, `<style>${styleCSSRaw}</style>`)
+    .replace(/<link rel="stylesheet" href="\/style\.css(\?v=\d+)?"\s*\/?>/, `<style>${styleCSS}</style>`)
     .replace('</head>', `<script type="module">\n${scriptJSRaw}\n${tooltipJSRaw}\n</script>\n</head>`)
 }
 
