@@ -69,6 +69,7 @@ local maxWsgPlayersPerTeam = 10
 local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
 local pendingInvites = {}
+local pendingInviteTeams = {}
 local classCapWarnings = {}
 local groupSplitWarnings = {}
 local activeQueueRetryAt = {}
@@ -83,6 +84,51 @@ local function isJoinableBattleground(bg)
     if not bg then return false end
     local status = bg:GetStatus()
     return status > STATUS_WAIT_QUEUE and status < STATUS_WAIT_LEAVE
+end
+
+local bgStatusNames = {
+    [STATUS_NONE] = "NONE",
+    [STATUS_WAIT_QUEUE] = "WAIT_QUEUE",
+    [STATUS_WAIT_JOIN] = "WAIT_JOIN",
+    [STATUS_IN_PROGRESS] = "IN_PROGRESS",
+    [STATUS_WAIT_LEAVE] = "WAIT_LEAVE",
+}
+
+local function debugBGState(label, bg, map, instanceId)
+    local state = {
+        label = label,
+        instanceId = instanceId or (bg and bg:GetInstanceId()),
+        bgFound = bg ~= nil,
+        activeCached = instanceId and activeBGInstances[instanceId] ~= nil or false,
+    }
+    if bg then
+        local status = bg:GetStatus()
+        state.status = status
+        state.statusName = bgStatusNames[status] or "UNKNOWN"
+        state.mapId = bg:GetMapId()
+    end
+
+    local counts = { [0] = 0, [1] = 0 }
+    if map and type(map.GetPlayers) == "function" then
+        for _, player in ipairs(map:GetPlayers()) do
+            local teamId = player:GetBgTeamId()
+            if teamId == 0 or teamId == 1 then counts[teamId] = counts[teamId] + 1 end
+        end
+    end
+    state.mapPlayers = counts
+
+    local pending = {}
+    for guidLow, invitedInstanceId in pairs(pendingInvites) do
+        if invitedInstanceId == state.instanceId or invitedInstanceId == true then
+            table.insert(pending, {
+                guidLow = guidLow,
+                instanceId = invitedInstanceId,
+                teamId = pendingInviteTeams[guidLow],
+            })
+        end
+    end
+    state.pendingInvites = pending
+    print("[WSG BG DEBUG] " .. inspect(state))
 end
 
 local classNames = {
@@ -421,6 +467,13 @@ CreateLuaEvent(function ()
     if shouldProc and realPlayersCount > 0 then
         local selectedPlayers, excludedPlayers = WsgBalance.selectQueuedPlayers(eligiblePlayers)
         warnClassCapPlayers(excludedPlayers)
+        print("[WSG Queue Debug] Match candidate " .. inspect({
+            queued = #queuedPlayers,
+            eligible = #eligiblePlayers,
+            selected = #selectedPlayers,
+            excluded = #excludedPlayers,
+            longestWaitMs = longestWait,
+        }))
         if #selectedPlayers == 0 then return end
 
         for _, p in ipairs(selectedPlayers) do
@@ -435,6 +488,7 @@ CreateLuaEvent(function ()
         if bg then
             bg:StartBattleground()
             activeBGInstances[bg:GetInstanceId()] = bg
+            debugBGState("new match after StartBattleground", bg, nil, bg:GetInstanceId())
 
             print("[WSG Queue Debug] Match procced! Assignments:")
             for _, assignment in ipairs(assignments) do
@@ -447,12 +501,23 @@ CreateLuaEvent(function ()
                 print("[WSG Queue Debug] " .. player:GetName() .. " [" .. groupLabel .. "] " .. teamName)
                 player:SendBroadcastMessage("[WSG Queue Debug] Assigned to " .. teamName .. " (" .. groupLabel .. ")")
 
+                print("[WSG Invite Debug] Attempting fresh-match invite " .. inspect({
+                    player = player:GetName(),
+                    guidLow = player:GetGUIDLow(),
+                    instanceId = bg:GetInstanceId(),
+                    status = bg:GetStatus(),
+                    statusName = bgStatusNames[bg:GetStatus()],
+                    teamId = teamId,
+                }))
                 if player:InviteToBattleground(bg, teamId) then
                     pendingInvites[player:GetGUIDLow()] = bg:GetInstanceId()
+                    pendingInviteTeams[player:GetGUIDLow()] = teamId
+                    print("[WSG Invite Debug] Fresh-match invite accepted by Lua API " .. inspect({ player = player:GetName(), instanceId = bg:GetInstanceId(), teamId = teamId }))
                     table.insert(balancedRealPlayers[teamId], player)
                 else
-                    print("[WSG Queue] Failed to invite " .. inspect({ player = player:GetName() }))
+                    print("[WSG Invite Debug] Fresh-match invite rejected by Lua API " .. inspect({ player = player:GetName(), instanceId = bg:GetInstanceId(), teamId = teamId }))
                     pendingInvites[player:GetGUIDLow()] = nil
+                    pendingInviteTeams[player:GetGUIDLow()] = nil
                 end
             end
 
@@ -478,6 +543,35 @@ local function HasPendingBGInvite(instanceId)
         if invitedInstanceId == instanceId or invitedInstanceId == true then return true end
     end
     return false
+end
+
+local function canFitBGInvites(map, instanceId, assignments)
+    local teamCounts = { [0] = 0, [1] = 0 }
+    for _, player in ipairs(map:GetPlayers()) do
+        local teamId = player:GetBgTeamId()
+        if teamId == 0 or teamId == 1 then teamCounts[teamId] = teamCounts[teamId] + 1 end
+    end
+
+    for guidLow, invitedInstanceId in pairs(pendingInvites) do
+        if invitedInstanceId == instanceId then
+            local teamId = pendingInviteTeams[guidLow]
+            if teamId == 0 or teamId == 1 then teamCounts[teamId] = teamCounts[teamId] + 1 end
+        end
+    end
+
+    for _, assignment in ipairs(assignments or {}) do
+        teamCounts[assignment.team] = teamCounts[assignment.team] + 1
+    end
+
+    local fits = teamCounts[0] <= maxWsgPlayersPerTeam and teamCounts[1] <= maxWsgPlayersPerTeam
+    print("[WSG Capacity Debug] Checking active invite capacity " .. inspect({
+        instanceId = instanceId,
+        mapPlayers = { [0] = teamCounts[0], [1] = teamCounts[1] },
+        assignments = #assignments,
+        fits = fits,
+        maxPerTeam = maxWsgPlayersPerTeam,
+    }))
+    return fits, teamCounts
 end
 
 local function CheckBGEmpty(player, mapId, instanceId)
@@ -532,9 +626,16 @@ end
 ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
     if not player or player:IsBot() or not queuedByGuid[player:GetGUIDLow()] then return false end
     if not next(activeBGInstances) then
+        print("[WSG Queue Debug] No active BG instances for queued player " .. inspect({ player = player:GetName(), guidLow = player:GetGUIDLow() }))
         activeQueueRetryAt[player:GetGUIDLow()] = nil
         return false
     end
+
+    print("[WSG Queue Debug] Processing queued player for active BG " .. inspect({
+        player = player:GetName(),
+        guidLow = player:GetGUIDLow(),
+        queued = true,
+    }))
 
     local group = player:GetGroup()
     if group then
@@ -558,12 +659,19 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
 
     for instanceId, _ in pairs(activeBGInstances) do
         local bg = GetBattleground(instanceId, bgTypeId)
+        debugBGState("active-join candidate", bg, nil, instanceId)
         if isJoinableBattleground(bg) then
             activeBGInstances[instanceId] = bg
             local map = GetMapById(WSG_MAP_ID, instanceId)
             if map then
+                debugBGState("active-join candidate with map", bg, map, instanceId)
                 local roster = WsgBalance.extractRoster(map)
                 if roster then
+                    print("[WSG Queue Debug] Active BG roster " .. inspect({
+                        instanceId = instanceId,
+                        alliance = { real = roster[0].realCount, total = #roster[0].players, bots = #roster[0].bots },
+                        horde = { real = roster[1].realCount, total = #roster[1].players, bots = #roster[1].bots },
+                    }))
                     local queueGroup = {}
                     if group then
                         for _, member in ipairs(group:GetMembers()) do
@@ -597,6 +705,16 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                             { [0] = roster[0].classCounts, [1] = roster[1].classCounts }
                         )
 
+                        print("[WSG Queue Debug] Active BG assignment result " .. inspect({
+                            instanceId = instanceId,
+                            queueGroup = #queueGroup,
+                            assignments = #assignments,
+                            assignedAlliance = decision.assignedAlliance,
+                            assignedHorde = decision.assignedHorde,
+                            finalAlliance = decision.finalAlliance,
+                            finalHorde = decision.finalHorde,
+                        }))
+
                         if #assignments ~= #queueGroup then
                             print("[WSG Queue] Delaying active BG invitation because the complete group cannot be assigned " .. inspect({
                                 instanceId = instanceId,
@@ -617,6 +735,15 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                             score = decision.score,
                         }))
 
+                        local fits, teamCounts = canFitBGInvites(map, instanceId, assignments)
+                        if not fits then
+                            print("[WSG Queue] Delaying active BG invitation because it would exceed the 10-player team limit " .. inspect({
+                                instanceId = instanceId,
+                                current = teamCounts,
+                            }))
+                            return false
+                        end
+
                         local invitedCount = 0
                         for _, assignment in ipairs(assignments) do
                             local p = assignment.player
@@ -628,12 +755,24 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                                 nativeTeam = p:GetTeam(),
                                 targetTeam = teamId,
                             }))
+                            print("[WSG Invite Debug] Attempting active-BG invite " .. inspect({
+                                player = p:GetName(),
+                                guidLow = pGuid,
+                                instanceId = instanceId,
+                                status = bg:GetStatus(),
+                                statusName = bgStatusNames[bg:GetStatus()],
+                                teamId = teamId,
+                            }))
                             if p:InviteToBattleground(bg, teamId) then
                                 pendingInvites[pGuid] = instanceId
+                                pendingInviteTeams[pGuid] = teamId
                                 classCapWarnings[pGuid] = nil
                                 groupSplitWarnings[pGuid] = nil
                                 activeQueueRetryAt[pGuid] = nil
                                 invitedCount = invitedCount + 1
+                                print("[WSG Invite Debug] Active-BG invite accepted by Lua API " .. inspect({ player = p:GetName(), instanceId = instanceId, teamId = teamId }))
+                            else
+                                print("[WSG Invite Debug] Active-BG invite rejected by Lua API " .. inspect({ player = p:GetName(), instanceId = instanceId, teamId = teamId }))
                             end
                         end
                         return invitedCount == #assignments
@@ -652,11 +791,32 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     if not player or player:IsBot() or not isWsgQueuePlayer(player) then return end
     local guidLow = player:GetGUIDLow()
     pendingInvites[guidLow] = nil
+    pendingInviteTeams[guidLow] = nil
     classCapWarnings[guidLow] = nil
     groupSplitWarnings[guidLow] = nil
     activeQueueRetryAt[guidLow] = GetCurrTime() + activeBGQueueDelayMs
     queueProjectionDirty = true
-    print("[WSG Queue] Player queued " .. inspect({ player = player:GetName(), isBot = false }))
+    print("[WSG Queue] Player queued " .. inspect({
+        player = player:GetName(),
+        guidLow = guidLow,
+        queueJoinTime = player:GetBattlegroundQueueJoinTime(bgTypeId),
+        retryAt = activeQueueRetryAt[guidLow],
+        isBot = false,
+    }))
+end)
+
+RegisterPlayerEvent(PLAYER_EVENT_ON_BG_INVITE, function(event, player, mapId, instanceId, bg, teamId)
+    if not player or mapId ~= WSG_MAP_ID then return end
+    debugBGState("PLAYER_EVENT_ON_BG_INVITE", bg, nil, instanceId)
+    print("[WSG Invite Debug] Engine invite hook fired " .. inspect({
+        player = player:GetName(),
+        guidLow = player:GetGUIDLow(),
+        mapId = mapId,
+        instanceId = instanceId,
+        teamId = teamId,
+        trackedInstanceId = pendingInvites[player:GetGUIDLow()],
+        trackedTeamId = pendingInviteTeams[player:GetGUIDLow()],
+    }))
 end)
 
 local SyncBGPlayerData, BalanceBGBots
@@ -667,12 +827,22 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
     if (not bg or bg:GetMapId() ~= WSG_MAP_ID) and not pendingInvites[guidLow] and not isWsgQueuePlayer(player) then return end
     local invitedInstanceId = pendingInvites[guidLow]
     pendingInvites[guidLow] = nil
+    pendingInviteTeams[guidLow] = nil
     classCapWarnings[guidLow] = nil
     groupSplitWarnings[guidLow] = nil
     activeQueueRetryAt[guidLow] = nil
     queueProjectionDirty = true
 
-    print("[WSG Queue] Player left queue " .. inspect({ player = player:GetName(), isBot = player:IsBot() }))
+    print("[WSG Queue] Player left queue " .. inspect({
+        player = player:GetName(),
+        guidLow = guidLow,
+        isBot = player:IsBot(),
+        mapId = mapId,
+        instanceId = instanceId,
+        invitedInstanceId = invitedInstanceId,
+        eventBgStatus = bg and bg:GetStatus(),
+        eventBgStatusName = bg and bgStatusNames[bg:GetStatus()],
+    }))
 
     if invitedInstanceId and not player:IsBot() then
         print("[WSG Queue] Real player declined/expired invite " .. inspect({ player = player:GetName(), invitedInstanceId = invitedInstanceId }))
@@ -801,7 +971,22 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
     local playerName = player:GetName()
     local playerGuidLow = player:GetGUIDLow()
 
+    local enteredBg = GetBattleground(instanceId, bgTypeId)
+    debugBGState("PLAYER_EVENT_ON_ENTER_BG", enteredBg, nil, instanceId)
+    print("[WSG Queue Debug] Player entered BG " .. inspect({
+        player = playerName,
+        guidLow = playerGuidLow,
+        mapId = mapId,
+        instanceId = instanceId,
+        isBot = isBot,
+        eventStatus = enteredBg and enteredBg:GetStatus(),
+        eventStatusName = enteredBg and bgStatusNames[enteredBg:GetStatus()],
+        trackedInstanceId = pendingInvites[playerGuidLow],
+        trackedTeamId = pendingInviteTeams[playerGuidLow],
+    }))
+
     pendingInvites[playerGuidLow] = nil
+    pendingInviteTeams[playerGuidLow] = nil
     if isBot then return end
 
     CreateLuaEvent(function()
@@ -824,6 +1009,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
     local map = GetMapById(mapId, instId)
 
     print("[DEBUG ON_LEAVE_BG] Hook fired " .. inspect({ type = botText, player = playerName, mapId = mapId or 489, instanceId = instId }))
+    debugBGState("PLAYER_EVENT_ON_LEAVE_BG", realBg or bg, map, instId)
 
     if player and player:IsBot() and fixedRoster[playerName] then
         print("[WSG Fixed Bots] Logging out " .. playerName .. " after WSG; it will be logged in when needed.")
@@ -892,11 +1078,13 @@ end)
 RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgTypeIdVal, instanceId)
     if not bg or bg:GetMapId() ~= WSG_MAP_ID then return end
     local instId = instanceId or bg:GetInstanceId()
+    debugBGState("BG_EVENT_ON_END before cleanup", bg, GetMapById(WSG_MAP_ID, instId), instId)
     activeBGInstances[instId] = nil
 
     for guidLow, invitedInstanceId in pairs(pendingInvites) do
         if invitedInstanceId == instId then
             pendingInvites[guidLow] = nil
+            pendingInviteTeams[guidLow] = nil
             activeQueueRetryAt[guidLow] = nil
             for _, player in ipairs(GetPlayersInWorld()) do
                 if player:GetGUIDLow() == guidLow then
@@ -915,6 +1103,7 @@ RegisterBGEvent(BG_EVENT_ON_START, function(event, bg, bgTypeIdVal, instanceId)
     if not bg or bg:GetMapId() ~= WSG_MAP_ID then return end
     local instId = instanceId or bg:GetInstanceId()
     local map = GetMapById(489, instId)
+    debugBGState("BG_EVENT_ON_START", bg, map, instId)
 
     local hasRealPlayers = false
     if map then
@@ -934,6 +1123,7 @@ RegisterBGEvent(BG_EVENT_ON_START, function(event, bg, bgTypeIdVal, instanceId)
         for guidLow, invInstId in pairs(pendingInvites) do
             if invInstId == instId then
                 pendingInvites[guidLow] = nil
+                pendingInviteTeams[guidLow] = nil
                 for _, p in ipairs(GetPlayersInWorld()) do
                     if p:GetGUIDLow() == guidLow then
                         p:LeaveBattleground()

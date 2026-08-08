@@ -159,6 +159,18 @@ assert(#leaveReplacementAssignments == 1 and leaveReplacementAssignments[1].team
     "The oldest waiting player must join the team that lost its class member")
 print("  -> PASSED: Oldest waiting player fills the freed class slot.")
 
+-- 1e. Queue projections expose projected team sizes, class distribution, and forced group splits.
+print("[Test 1e] Queue projection status and split metadata...")
+local projectedSplitGroup = { players = { player("projectedA", 0, 1), player("projectedB", 0, 8) } }
+local projectedGroups = { projectedSplitGroup }
+local projectedAssignments = balance.assign(projectedGroups)
+local projectedSummary = balance.describeAssignments(projectedGroups, projectedAssignments)
+assert(projectedSummary.teamCounts[0] + projectedSummary.teamCounts[1] == 2, "Queue projection must count every assigned player")
+assert((projectedSummary.classCounts[0][1] or 0) + (projectedSummary.classCounts[1][1] or 0) == 1,
+    "Queue projection must expose class distribution")
+assert(#projectedSummary.splitGroups == 1, "A two-player solo group must be reported as split in the projection")
+print("  -> PASSED: Queue projection exposes team, class, and split information.")
+
 -- 2. Prefer keeping groups intact when balance permits
 print("[Test 2] Keep groups intact when team balance permits...")
 
@@ -362,16 +374,31 @@ local _, variedCounts = run(variedSizeGroups)
 assert(variedCounts[0] + variedCounts[1] == 15, "All varied-size group players must be assigned")
 
 -- 7. Exposed Helper API Functions
-print("[Test 7] Exposed API Functions (groupCandidates, scoreLess, groupQueuedPlayers, assignOngoing)...")
+print("[Test 7] Exposed API Functions and edge cases...")
 
 -- 7a: Test balance.scoreLess
 assert(balance.scoreLess({ splitGroups = 0, splitPlayers = 0, factionMoves = 0 }, { splitGroups = 1, splitPlayers = 0, factionMoves = 0 }) == true)
 assert(balance.scoreLess({ splitGroups = 1, splitPlayers = 0, factionMoves = 0 }, { splitGroups = 0, splitPlayers = 0, factionMoves = 0 }) == false)
+assert(balance.scoreLess({ splitGroups = 0, splitPlayers = 0, factionMoves = 0 }, { splitGroups = 0, splitPlayers = 1, factionMoves = 0 }) == true)
+assert(balance.scoreLess({ splitGroups = 0, splitPlayers = 1, factionMoves = 0 }, { splitGroups = 0, splitPlayers = 0, factionMoves = 1 }) == false)
+assert(balance.scoreLess({ splitGroups = 0, splitPlayers = 1, factionMoves = 0 }, { splitGroups = 0, splitPlayers = 1, factionMoves = 1 }) == true)
 
 -- 7b: Test balance.groupCandidates
 local testGroup = { players = { player("p1", 0), player("p2", 0) } }
 local candidates = balance.groupCandidates(testGroup)
 assert(#candidates == 3, "2-player group must generate 3 candidates (0, 1, 2 alliance counts)")
+local knownClassCandidates = balance.groupCandidates({
+    players = { player("knownP1", 0, 1), player("knownP2", 0, 1), player("knownP3", 1, 8) },
+})
+assert(#knownClassCandidates > 0, "Class-aware group candidate generation must return feasible candidates")
+for _, candidate in ipairs(knownClassCandidates) do
+    assert(#candidate.assignments == 3, "Every feasible class-aware candidate must assign the whole group")
+    for team = 0, 1 do
+        for classId, count in pairs(candidate.classCounts[team]) do
+            assert(count <= balance.MAX_CLASS_PER_TEAM, "Class-aware candidates must respect the per-team class cap")
+        end
+    end
+end
 
 -- 7c: Test balance.groupQueuedPlayers
 local fakePlayers = {
@@ -381,10 +408,51 @@ local fakePlayers = {
 local grouped = balance.groupQueuedPlayers(fakePlayers)
 assert(#grouped == 2, "Solo players should form 2 distinct group buckets")
 assert(grouped[1].players[1].classId == 1 and grouped[2].players[1].classId == 11, "Queued grouping preserves player class IDs")
+assert(#balance.groupQueuedPlayers({}) == 0, "Empty queued-player input must produce no groups")
 
 -- 7d: Test balance.assignOngoing alias
 local ongoingAssignments = balance.assignOngoing({ { players = { player("p1", 0) } } }, 4, 5)
 assert(#ongoingAssignments == 1 and ongoingAssignments[1].team == 0, "assignOngoing alias works correctly")
+
+-- 7e: Test balance.describeAssignments for split, intact, partial, and empty projections.
+local intactGroup = { players = { player("intact1", 0, 1), player("intact2", 0, 8) } }
+local intactSummary = balance.describeAssignments({ intactGroup }, {
+    { player = "intact1", team = 0, classId = 1 },
+    { player = "intact2", team = 0, classId = 8 },
+})
+assert(intactSummary.teamCounts[0] == 2 and intactSummary.teamCounts[1] == 0, "Assignment summary must count team sizes")
+assert(intactSummary.classCounts[0][1] == 1 and intactSummary.classCounts[0][8] == 1, "Assignment summary must count classes per team")
+assert(#intactSummary.splitGroups == 0, "Intact groups must not appear in split metadata")
+
+local splitSummary = balance.describeAssignments({ intactGroup }, {
+    { player = "intact1", team = 0, classId = 1 },
+    { player = "intact2", team = 1, classId = 8 },
+})
+assert(#splitSummary.splitGroups == 1 and splitSummary.splitGroups[1] == intactGroup, "Split groups must be reported by identity")
+
+local partialSummary = balance.describeAssignments({ intactGroup }, {
+    { player = "intact1", team = 0, classId = 1 },
+})
+assert(#partialSummary.splitGroups == 0, "Partially assigned groups must not be reported as split")
+local emptySummary = balance.describeAssignments({}, {})
+assert(emptySummary.teamCounts[0] == 0 and emptySummary.teamCounts[1] == 0 and #emptySummary.splitGroups == 0,
+    "Empty assignment projections must return empty summary data")
+
+-- 7f: Direct empty/default behavior for queue and bot helpers.
+local emptySelected, emptyExcluded = balance.selectQueuedPlayers({})
+assert(#emptySelected == 0 and #emptyExcluded == 0, "Empty queue filtering must return two empty lists")
+local defaultTargetsA, defaultTargetsH = balance.calculateBotTargets(1, 0)
+assert(defaultTargetsA == 4 and defaultTargetsH == 5, "Bot target helper must default to five players per team")
+assert(#balance.selectClassesToAdd({}, 0) == 0, "Zero bot additions must return an empty class list")
+assert(#balance.sortBotsForRemoval({}, nil) == 0, "Empty bot removal input must return an empty list")
+
+local sparseBotPlan = balance.computeBotActions({ [0] = { realCount = 0, bots = {}, players = {} } }, 5)
+assert(#sparseBotPlan.toRemove == 0 and #sparseBotPlan.toAdd[0] == 0 and #sparseBotPlan.toAdd[1] == 0,
+    "Sparse roster data must safely produce an empty bot plan")
+assert(balance.extractRoster(nil) == nil, "Invalid map input must return no roster")
+local invalidMapPlan = balance.computeMapBotActions(nil, 5)
+assert(#invalidMapPlan.toRemove == 0 and #invalidMapPlan.toAdd[0] == 0 and #invalidMapPlan.toAdd[1] == 0,
+    "Invalid map input must produce an empty map bot plan")
 
 -- 8. Bot Target Calculation Tests
 print("[Test 8] Dynamic Bot Target Calculation...")
@@ -800,4 +868,23 @@ local _, twentyCounts = run({ twentyPlayerGroup })
 assert(twentyCounts[0] == 10 and twentyCounts[1] == 10, "20-player premade must split 10v10 under class caps")
 print("  -> PASSED: 20-player class-complete premade respects both hard rules.")
 
-print("\nwsg_balance_test: ok (All 22 test suites passed cleanly)")
+-- 23. WSG player-cap boundaries.
+print("[Test 23] WSG 10v10 player-cap boundaries...")
+local overCapacityAssignments = balance.assign(
+    { { players = { player("overCapacity", 0) } } },
+    10,
+    10
+)
+assert(#overCapacityAssignments == 0, "A full team must not receive another player")
+
+local twentyOnePlayers = {}
+for i = 1, 21 do
+    table.insert(twentyOnePlayers, player("cap" .. i, i % 2))
+end
+local selectedTwenty, excludedTwenty = balance.selectQueuedPlayers(twentyOnePlayers)
+assert(#selectedTwenty == 20 and #excludedTwenty == 1, "Fresh WSG selection must stop at 20 total players")
+local _, cappedCounts = run(balance.groupQueuedPlayers(selectedTwenty))
+assert(cappedCounts[0] <= 10 and cappedCounts[1] <= 10, "Assignments must never exceed 10 players per team")
+print("  -> PASSED: WSG assignments respect the 10v10 limit.")
+
+print("\nwsg_balance_test: ok (All 23 test suites passed cleanly)")

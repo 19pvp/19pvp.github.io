@@ -1,5 +1,6 @@
 local WsgBalance = {}
 local MAX_CLASS_PER_TEAM = 2
+local MAX_PLAYERS_PER_TEAM = 10
 
 local function getClassId(player)
     if type(player) ~= "table" and type(player) ~= "userdata" then return 0 end
@@ -275,7 +276,9 @@ function WsgBalance.assign(groups, currentAlliance, currentHorde, lastFavoredTea
         local aFinal = currentAlliance + aInc
         local hFinal = currentHorde + (incomingPlayers - aInc)
         local diff = math.abs(aFinal - hFinal)
-        table.insert(candidateIncoming, { aInc = aInc, diff = diff, state = state })
+        if aFinal <= MAX_PLAYERS_PER_TEAM and hFinal <= MAX_PLAYERS_PER_TEAM then
+            table.insert(candidateIncoming, { aInc = aInc, diff = diff, state = state })
+        end
     end
 
     local minDiff = math.huge
@@ -347,6 +350,7 @@ end
 WsgBalance.scoreLess = scoreLess
 WsgBalance.groupCandidates = groupCandidates
 WsgBalance.MAX_CLASS_PER_TEAM = MAX_CLASS_PER_TEAM
+WsgBalance.MAX_PLAYERS_PER_TEAM = MAX_PLAYERS_PER_TEAM
 
 function WsgBalance.selectQueuedPlayers(queuedPlayers, currentClassCounts)
     local availableByClass = {}
@@ -355,20 +359,24 @@ function WsgBalance.selectQueuedPlayers(queuedPlayers, currentClassCounts)
     local current = currentClassCounts or { [0] = {}, [1] = {} }
 
     for _, queuedPlayer in ipairs(queuedPlayers or {}) do
-        local classId = queuedPlayer.classId or queuedPlayer.class or getClassId(queuedPlayer.player or queuedPlayer)
-        if classId > 0 and availableByClass[classId] == nil then
-            availableByClass[classId] = 0
-            for team = 0, 1 do
-                availableByClass[classId] = availableByClass[classId]
-                    + math.max(0, MAX_CLASS_PER_TEAM - ((current[team] or {})[classId] or 0))
-            end
-        end
-
-        if classId <= 0 or availableByClass[classId] > 0 then
-            table.insert(selected, queuedPlayer)
-            if classId > 0 then availableByClass[classId] = availableByClass[classId] - 1 end
-        else
+        if #selected >= MAX_PLAYERS_PER_TEAM * 2 then
             table.insert(excluded, queuedPlayer)
+        else
+            local classId = queuedPlayer.classId or queuedPlayer.class or getClassId(queuedPlayer.player or queuedPlayer)
+            if classId > 0 and availableByClass[classId] == nil then
+                availableByClass[classId] = 0
+                for team = 0, 1 do
+                    availableByClass[classId] = availableByClass[classId]
+                        + math.max(0, MAX_CLASS_PER_TEAM - ((current[team] or {})[classId] or 0))
+                end
+            end
+
+            if classId <= 0 or availableByClass[classId] > 0 then
+                table.insert(selected, queuedPlayer)
+                if classId > 0 then availableByClass[classId] = availableByClass[classId] - 1 end
+            else
+                table.insert(excluded, queuedPlayer)
+            end
         end
     end
 
