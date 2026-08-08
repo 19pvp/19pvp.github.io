@@ -79,6 +79,12 @@ local ProcessActiveBGQueuePlayer
 local queueMidpointAlertSent = false
 local queueProjectionDirty = true
 
+local function isJoinableBattleground(bg)
+    if not bg then return false end
+    local status = bg:GetStatus()
+    return status > STATUS_WAIT_QUEUE and status < STATUS_WAIT_LEAVE
+end
+
 local classNames = {
     [1] = "Warrior",
     [2] = "Paladin",
@@ -189,7 +195,7 @@ for _, player in ipairs(GetPlayersInWorld()) do
     if player:InBattleground() and player:GetBattlegroundTypeId() == bgTypeId then
         local instanceId = player:GetBattlegroundId()
         local bg = GetBattleground(instanceId, bgTypeId)
-        if bg and not activeBGInstances[instanceId] then
+        if isJoinableBattleground(bg) and not activeBGInstances[instanceId] then
             activeBGInstances[instanceId] = bg
             table.insert(restoredInstances, instanceId)
         end
@@ -241,7 +247,7 @@ local function LogoutFixedRosterBotAfterWsg(botName)
 end
 
 local function AddBotToBattleground(bot, bg, teamId)
-    if not bot or not bg then return false end
+    if not bot or not isJoinableBattleground(bg) then return false end
 
     local instanceId = bg:GetInstanceId()
     if not bot:AddToBattleground(bg, teamId) then
@@ -251,7 +257,8 @@ local function AddBotToBattleground(bot, bg, teamId)
 
     local botName = bot:GetName()
     CreateLuaEvent(function()
-        if not GetBattleground(instanceId, bgTypeId) then return end
+        local currentBg = GetBattleground(instanceId, bgTypeId)
+        if not isJoinableBattleground(currentBg) then return end
 
         local currentBot = GetPlayerByName(botName)
         if not currentBot then return end
@@ -275,6 +282,8 @@ local function AddBotToBattleground(bot, bg, teamId)
 end
 
 local function AddBotForClass(bg, team, classId)
+    if not isJoinableBattleground(bg) then return end
+
     local bot, botInfo = GetAvailableBotByClass(team, classId)
     if bot then
         if AddBotToBattleground(bot, bg, team) then
@@ -305,7 +314,7 @@ CreateLuaEvent(function()
             local now = GetCurrTime()
             if pending.state == "joining" then
                 local bg = GetBattleground(pending.instanceId, bgTypeId)
-                if not bg then
+                if not isJoinableBattleground(bg) then
                     info.pending = nil
                 else
                     local bot = GetPlayerByName(botName)
@@ -475,6 +484,10 @@ local function CheckBGEmpty(player, mapId, instanceId)
     local instId = (instanceId and instanceId > 0) and instanceId or 0
     local bg = instId > 0 and GetBattleground(instId, bgTypeId) or nil
     if not bg then return false end
+    if not isJoinableBattleground(bg) then
+        activeBGInstances[instId] = nil
+        return true
+    end
     activeBGInstances[instId] = bg
 
     local departingName = player and player:GetName() or ""
@@ -545,7 +558,7 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
 
     for instanceId, _ in pairs(activeBGInstances) do
         local bg = GetBattleground(instanceId, bgTypeId)
-        if bg then
+        if isJoinableBattleground(bg) then
             activeBGInstances[instanceId] = bg
             local map = GetMapById(WSG_MAP_ID, instanceId)
             if map then
@@ -699,6 +712,11 @@ BalanceBGBots = function(map, bg, triggerEvent, playerName)
         end
     end
 
+    if not isJoinableBattleground(bg) then
+        if instId > 0 then activeBGInstances[instId] = nil end
+        return
+    end
+
     local hasPendingInvites = HasPendingBGInvite(instId)
     local plan = WsgBalance.computeMapBotActions(map, minPlayersPerTeam)
     if hasPendingInvites then
@@ -754,7 +772,7 @@ end
 CreateLuaEvent(function()
     for instanceId, _ in pairs(activeBGInstances) do
         local bg = GetBattleground(instanceId, bgTypeId)
-        if bg then
+        if isJoinableBattleground(bg) then
             activeBGInstances[instanceId] = bg
             local map = GetMapById(489, instanceId)
             if map then
@@ -789,7 +807,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
     CreateLuaEvent(function()
         local bg = GetBattleground(instanceId, bgTypeId)
         local map = GetMapById(mapId or 489, instanceId)
-        if map and bg then
+        if map and isJoinableBattleground(bg) then
             BalanceBGBots(map, bg, "join", playerName)
             SyncBGPlayerData(map)
         end
@@ -863,12 +881,33 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_MAP_CHANGE, function(event, player)
         local bgType = player:GetBattlegroundTypeId()
         local bg = (bgId and bgId > 0) and GetBattleground(bgId, (bgType and bgType > 0) and bgType or bgTypeId) or nil
         local map = GetMapById(player:GetMapId(), bgId)
-        if bg and map then
+        if isJoinableBattleground(bg) and map then
             print("[DEBUG ON_MAP_CHANGE] Balancing bots..." .. inspect({ player = player:GetName(), bgId = bgId }))
             BalanceBGBots(map, bg, "join", player:GetName())
             SyncBGPlayerData(map)
         end
     end
+end)
+
+RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgTypeIdVal, instanceId)
+    if not bg or bg:GetMapId() ~= WSG_MAP_ID then return end
+    local instId = instanceId or bg:GetInstanceId()
+    activeBGInstances[instId] = nil
+
+    for guidLow, invitedInstanceId in pairs(pendingInvites) do
+        if invitedInstanceId == instId then
+            pendingInvites[guidLow] = nil
+            activeQueueRetryAt[guidLow] = nil
+            for _, player in ipairs(GetPlayersInWorld()) do
+                if player:GetGUIDLow() == guidLow then
+                    player:LeaveBattleground()
+                    break
+                end
+            end
+        end
+    end
+
+    print("[WSG Queue] Battleground ended; stopping late joins " .. inspect({ instanceId = instId }))
 end)
 
 -- Doors Open Hook (BG_EVENT_ON_START = 1)
