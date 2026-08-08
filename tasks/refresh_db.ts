@@ -1732,9 +1732,16 @@ const generateQuestSql = (
   const questWhere = `quest >= ${minQuestId} AND quest <= ${maxQuestId}`
   const poiWhere = `QuestId >= ${minQuestId} AND QuestId <= ${maxQuestId}`
   const projectItemIdList = [...new Set(projectItemIds)].sort((a, b) => a - b).join(', ')
-  const nonProjectItemWhere = `(itemRow.class = 0 OR itemRow.InventoryType <> 0)${
-    projectItemIdList ? ` AND itemRow.entry NOT IN (${projectItemIdList})` : ''
-  }`
+  const nonProjectItemWhere = `(
+    itemRow.Quality >= 2
+    OR itemRow.class IN (0, 12)
+    OR itemRow.InventoryType <> 0
+    OR itemRow.spellid_1 <> 0
+    OR itemRow.spellid_2 <> 0
+    OR itemRow.spellid_3 <> 0
+    OR itemRow.spellid_4 <> 0
+    OR itemRow.spellid_5 <> 0
+  )${projectItemIdList ? ` AND itemRow.entry NOT IN (${projectItemIdList})` : ''}`
   const projectQuestIdList = [...new Set(questIds)].sort((a, b) => a - b).join(', ')
   const nonProjectQuestWhere = `questRow.ID NOT IN (${projectQuestIdList})`
   const lootCleanup = lootTables.map((table) => `
@@ -1742,12 +1749,11 @@ DELETE lootRow
 FROM ${table} lootRow
 JOIN item_template itemRow ON itemRow.entry = lootRow.Item
 WHERE ${nonProjectItemWhere};`).join('')
-  const referenceLootCleanup = lootTables.map((table) => `
+  const referenceLootCleanup = `
 DELETE referenceRow
 FROM reference_loot_template referenceRow
-JOIN ${table} lootRow ON lootRow.Reference = referenceRow.Entry
 JOIN item_template itemRow ON itemRow.entry = referenceRow.Item
-WHERE ${nonProjectItemWhere};`).join('')
+WHERE ${nonProjectItemWhere};`
   const questItemCleanup = questItemColumns.map(({ item, count }) => `
 UPDATE quest_template questRow
 JOIN item_template itemRow ON itemRow.entry = questRow.${item}

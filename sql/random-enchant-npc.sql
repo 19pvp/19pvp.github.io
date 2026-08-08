@@ -31,3 +31,7 @@ VALUES
   (777100, 777100)
 ON DUPLICATE KEY UPDATE
   `TextID` = VALUES(`TextID`);
+
+
+UPDATE `item_template` SET `FlagsExtra` = 0 WHERE (`entry` = 24551);
+UPDATE `item_template` SET `spellppmRate_1` = 6 WHERE (`entry` = 3822);
