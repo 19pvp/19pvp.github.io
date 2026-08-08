@@ -342,6 +342,12 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_STORE_NEW_ITEM, function(event, player, item
   rerollItemForPlayerClass(player, item)
 end)
 
+-- Loot can already have a core-generated random enchant when it reaches the
+-- loot hook. Apply the configured roll again on the direct creature-loot path.
+RegisterPlayerEvent(PLAYER_EVENT_ON_LOOT_ITEM, function(event, player, item, count)
+  rerollItemForPlayerClass(player, item)
+end)
+
 RegisterPlayerEvent(PLAYER_EVENT_ON_CREATE_ITEM, function(event, player, item, count)
   rerollItemForPlayerClass(player, item)
 end)
