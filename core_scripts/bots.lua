@@ -70,6 +70,7 @@ local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
 local pendingInvites = {}
 local pendingInviteTeams = {}
+local pendingInviteClasses = {}
 local classCapWarnings = {}
 local groupSplitWarnings = {}
 local activeQueueRetryAt = {}
@@ -124,6 +125,7 @@ local function debugBGState(label, bg, map, instanceId)
                 guidLow = guidLow,
                 instanceId = invitedInstanceId,
                 teamId = pendingInviteTeams[guidLow],
+                classId = pendingInviteClasses[guidLow],
             })
         end
     end
@@ -512,12 +514,14 @@ CreateLuaEvent(function ()
                 if player:InviteToBattleground(bg, teamId) then
                     pendingInvites[player:GetGUIDLow()] = bg:GetInstanceId()
                     pendingInviteTeams[player:GetGUIDLow()] = teamId
+                    pendingInviteClasses[player:GetGUIDLow()] = player:GetClass()
                     print("[WSG Invite Debug] Fresh-match invite accepted by Lua API " .. inspect({ player = player:GetName(), instanceId = bg:GetInstanceId(), teamId = teamId }))
                     table.insert(balancedRealPlayers[teamId], player)
                 else
                     print("[WSG Invite Debug] Fresh-match invite rejected by Lua API " .. inspect({ player = player:GetName(), instanceId = bg:GetInstanceId(), teamId = teamId }))
                     pendingInvites[player:GetGUIDLow()] = nil
                     pendingInviteTeams[player:GetGUIDLow()] = nil
+                    pendingInviteClasses[player:GetGUIDLow()] = nil
                 end
             end
 
@@ -572,6 +576,35 @@ local function canFitBGInvites(map, instanceId, assignments)
         maxPerTeam = maxWsgPlayersPerTeam,
     }))
     return fits, teamCounts
+end
+
+local function getBGClassCounts(roster, instanceId)
+    local classCounts = {
+        [0] = {},
+        [1] = {},
+    }
+    for team = 0, 1 do
+        for classId, count in pairs(roster[team].classCounts or {}) do
+            classCounts[team][classId] = count
+        end
+    end
+
+    for guidLow, invitedInstanceId in pairs(pendingInvites) do
+        if invitedInstanceId == instanceId then
+            local teamId = pendingInviteTeams[guidLow]
+            local classId = pendingInviteClasses[guidLow]
+            if (teamId == 0 or teamId == 1) and classId and classId > 0 then
+                classCounts[teamId][classId] = (classCounts[teamId][classId] or 0) + 1
+            end
+        end
+    end
+
+    print("[WSG Class Debug] Active BG class counts including pending invites " .. inspect({
+        instanceId = instanceId,
+        alliance = classCounts[0],
+        horde = classCounts[1],
+    }))
+    return classCounts
 end
 
 local function CheckBGEmpty(player, mapId, instanceId)
@@ -686,10 +719,8 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                     end
 
                     sortQueuedPlayers(queueGroup)
-                    local selectedQueueGroup, excludedQueueGroup = WsgBalance.selectQueuedPlayers(queueGroup, {
-                        [0] = roster[0].classCounts,
-                        [1] = roster[1].classCounts,
-                    })
+                    local classCounts = getBGClassCounts(roster, instanceId)
+                    local selectedQueueGroup, excludedQueueGroup = WsgBalance.selectQueuedPlayers(queueGroup, classCounts)
                     warnClassCapPlayers(excludedQueueGroup)
                     queueGroup = selectedQueueGroup
 
@@ -702,7 +733,7 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                             allianceCount,
                             hordeCount,
                             nil,
-                            { [0] = roster[0].classCounts, [1] = roster[1].classCounts }
+                            classCounts
                         )
 
                         print("[WSG Queue Debug] Active BG assignment result " .. inspect({
@@ -766,6 +797,7 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                             if p:InviteToBattleground(bg, teamId) then
                                 pendingInvites[pGuid] = instanceId
                                 pendingInviteTeams[pGuid] = teamId
+                                pendingInviteClasses[pGuid] = p:GetClass()
                                 classCapWarnings[pGuid] = nil
                                 groupSplitWarnings[pGuid] = nil
                                 activeQueueRetryAt[pGuid] = nil
@@ -792,6 +824,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_ENTER, function(event, player)
     local guidLow = player:GetGUIDLow()
     pendingInvites[guidLow] = nil
     pendingInviteTeams[guidLow] = nil
+    pendingInviteClasses[guidLow] = nil
     classCapWarnings[guidLow] = nil
     groupSplitWarnings[guidLow] = nil
     activeQueueRetryAt[guidLow] = GetCurrTime() + activeBGQueueDelayMs
@@ -828,6 +861,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
     local invitedInstanceId = pendingInvites[guidLow]
     pendingInvites[guidLow] = nil
     pendingInviteTeams[guidLow] = nil
+    pendingInviteClasses[guidLow] = nil
     classCapWarnings[guidLow] = nil
     groupSplitWarnings[guidLow] = nil
     activeQueueRetryAt[guidLow] = nil
@@ -987,6 +1021,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
 
     pendingInvites[playerGuidLow] = nil
     pendingInviteTeams[playerGuidLow] = nil
+    pendingInviteClasses[playerGuidLow] = nil
     if isBot then return end
 
     CreateLuaEvent(function()
@@ -1085,6 +1120,7 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgTypeIdVal, instanceId)
         if invitedInstanceId == instId then
             pendingInvites[guidLow] = nil
             pendingInviteTeams[guidLow] = nil
+            pendingInviteClasses[guidLow] = nil
             activeQueueRetryAt[guidLow] = nil
             for _, player in ipairs(GetPlayersInWorld()) do
                 if player:GetGUIDLow() == guidLow then
@@ -1124,6 +1160,7 @@ RegisterBGEvent(BG_EVENT_ON_START, function(event, bg, bgTypeIdVal, instanceId)
             if invInstId == instId then
                 pendingInvites[guidLow] = nil
                 pendingInviteTeams[guidLow] = nil
+                pendingInviteClasses[guidLow] = nil
                 for _, p in ipairs(GetPlayersInWorld()) do
                     if p:GetGUIDLow() == guidLow then
                         p:LeaveBattleground()
