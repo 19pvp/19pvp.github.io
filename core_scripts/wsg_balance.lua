@@ -8,6 +8,46 @@ local function getClassId(player)
     return player.class or player.classId or 0
 end
 
+local function getGuidLow(player)
+    if type(player) ~= "table" and type(player) ~= "userdata" then return nil end
+    if type(player.GetGUIDLow) == "function" then return player:GetGUIDLow() end
+    return player.guidLow or player.guid
+end
+
+local function nativeDistributionGuidKey(guid)
+    -- The ALE C++ bridge parses string keys with std::stoull(..., 0). Keep
+    -- this boundary stricter than Lua's normal number/table-key rules.
+    if type(guid) == "number" then
+        -- Lua numbers cannot represent every 64-bit GUID exactly.
+        if guid >= 1 and guid <= 9007199254740991 and guid == math.floor(guid) then
+            return string.format("%.0f", guid)
+        end
+        return nil
+    end
+
+    if type(guid) == "string" then
+        local digits = string.match(guid, "^(%d+)$")
+        if not digits then return nil end
+
+        digits = string.gsub(digits, "^0+", "")
+        if digits == "" then digits = "0" end
+        if digits == "0" or #digits > 20 then return nil end
+        if #digits == 20 and digits > "18446744073709551615" then return nil end
+
+        -- Remove leading zeroes because the native side uses base 0 parsing;
+        -- e.g. "08" would otherwise be interpreted as an invalid octal value.
+        return digits
+    end
+
+    return nil
+end
+
+local function nativeDistributionTeamId(teamId)
+    if type(teamId) ~= "number" or teamId ~= math.floor(teamId) then return nil end
+    if teamId ~= 0 and teamId ~= 1 then return nil end
+    return teamId
+end
+
 local function isBot(player)
     if type(player) ~= "table" and type(player) ~= "userdata" then return false end
     if type(player.IsBot) == "function" then return player:IsBot() end
@@ -44,6 +84,25 @@ local function stateKey(allianceCount, classCounts)
     }, "|")
 end
 
+local function classBalanceScore(classCounts)
+    local classIds = {}
+    local seen = {}
+    for team = 0, 1 do
+        for classId, count in pairs(classCounts[team] or {}) do
+            if count > 0 and not seen[classId] then
+                seen[classId] = true
+                table.insert(classIds, classId)
+            end
+        end
+    end
+
+    local score = 0
+    for _, classId in ipairs(classIds) do
+        score = score + math.abs((classCounts[0][classId] or 0) - (classCounts[1][classId] or 0))
+    end
+    return score
+end
+
 local function addClassCounts(previous, candidate)
     local nextCounts = {
         [0] = copyClassCounts(previous[0]),
@@ -68,6 +127,9 @@ local function shuffle(values)
 end
 
 local function scoreLess(left, right)
+    if (left.classImbalance or 0) ~= (right.classImbalance or 0) then
+        return (left.classImbalance or 0) < (right.classImbalance or 0)
+    end
     if left.splitGroups ~= right.splitGroups then return left.splitGroups < right.splitGroups end
     if left.splitPlayers ~= right.splitPlayers then return left.splitPlayers < right.splitPlayers end
     return left.factionMoves < right.factionMoves
@@ -255,6 +317,7 @@ function WsgBalance.assign(groups, currentAlliance, currentHorde, lastFavoredTea
                         previous = previous,
                         candidate = candidate,
                         score = {
+                            classImbalance = classBalanceScore(classCounts),
                             splitGroups = previous.score.splitGroups + candidate.splitGroups,
                             splitPlayers = previous.score.splitPlayers + candidate.splitPlayers,
                             factionMoves = previous.score.factionMoves + candidate.factionMoves,
@@ -281,6 +344,8 @@ function WsgBalance.assign(groups, currentAlliance, currentHorde, lastFavoredTea
         end
     end
 
+    -- Team size is the first heuristic: only equally balanced candidates
+    -- compete on class parity, group preservation, and faction preservation.
     local minDiff = math.huge
     for _, item in ipairs(candidateIncoming) do
         if item.diff < minDiff then minDiff = item.diff end
@@ -296,9 +361,13 @@ function WsgBalance.assign(groups, currentAlliance, currentHorde, lastFavoredTea
         if not bestItem then
             bestItem = item
         else
-            if scoreLess(item.state.score, bestItem.state.score) then
+            local itemClassImbalance = item.state.score.classImbalance or classBalanceScore(item.state.classCounts)
+            local bestClassImbalance = bestItem.state.score.classImbalance or classBalanceScore(bestItem.state.classCounts)
+            if itemClassImbalance < bestClassImbalance then
                 bestItem = item
-            elseif not scoreLess(bestItem.state.score, item.state.score) then
+            elseif itemClassImbalance == bestClassImbalance and scoreLess(item.state.score, bestItem.state.score) then
+                bestItem = item
+            elseif itemClassImbalance == bestClassImbalance and not scoreLess(bestItem.state.score, item.state.score) then
                 if lastFavoredTeam == 0 and item.aInc > bestItem.aInc then
                     bestItem = item
                 elseif lastFavoredTeam == 1 and item.aInc < bestItem.aInc then
@@ -348,6 +417,9 @@ function WsgBalance.assign(groups, currentAlliance, currentHorde, lastFavoredTea
 end
 
 WsgBalance.scoreLess = scoreLess
+WsgBalance.classBalanceScore = classBalanceScore
+WsgBalance.nativeDistributionGuidKey = nativeDistributionGuidKey
+WsgBalance.nativeDistributionTeamId = nativeDistributionTeamId
 WsgBalance.groupCandidates = groupCandidates
 WsgBalance.MAX_CLASS_PER_TEAM = MAX_CLASS_PER_TEAM
 WsgBalance.MAX_PLAYERS_PER_TEAM = MAX_PLAYERS_PER_TEAM
@@ -612,7 +684,7 @@ function WsgBalance.computeBotActions(roster, minPlayersPerTeam)
     }
 end
 
-function WsgBalance.extractRoster(map)
+function WsgBalance.extractRoster(map, excludedGuids)
     if not map or type(map.GetPlayers) ~= "function" then return nil end
 
     local roster = {
@@ -621,17 +693,20 @@ function WsgBalance.extractRoster(map)
     }
 
     for _, p in ipairs(map:GetPlayers()) do
-        local team = type(p.GetBgTeamId) == "function" and p:GetBgTeamId() or (p.team or 0)
-        if team == 0 or team == 1 then
-            table.insert(roster[team].players, p)
-            local isBot = type(p.IsBot) == "function" and p:IsBot() or (p.isBot == true)
-            if isBot then
-                table.insert(roster[team].bots, p)
-            else
-                roster[team].realCount = roster[team].realCount + 1
-                local classId = getClassId(p)
-                if classId > 0 then
-                    roster[team].classCounts[classId] = (roster[team].classCounts[classId] or 0) + 1
+        local guidLow = getGuidLow(p)
+        if not excludedGuids or not guidLow or not excludedGuids[guidLow] then
+            local team = type(p.GetBgTeamId) == "function" and p:GetBgTeamId() or (p.team or 0)
+            if team == 0 or team == 1 then
+                table.insert(roster[team].players, p)
+                local isBot = type(p.IsBot) == "function" and p:IsBot() or (p.isBot == true)
+                if isBot then
+                    table.insert(roster[team].bots, p)
+                else
+                    roster[team].realCount = roster[team].realCount + 1
+                    local classId = getClassId(p)
+                    if classId > 0 then
+                        roster[team].classCounts[classId] = (roster[team].classCounts[classId] or 0) + 1
+                    end
                 end
             end
         end
@@ -640,12 +715,279 @@ function WsgBalance.extractRoster(map)
     return roster
 end
 
-function WsgBalance.computeMapBotActions(map, minPlayersPerTeam, availableBots)
-    local roster = WsgBalance.extractRoster(map)
+function WsgBalance.computeMapBotActions(map, minPlayersPerTeam, availableBots, excludedGuids)
+    local roster = WsgBalance.extractRoster(map, excludedGuids)
     if not roster then
         return { toRemove = {}, toAdd = { [0] = {}, [1] = {} } }
     end
     return WsgBalance.computeBotActions(roster, minPlayersPerTeam, availableBots)
+end
+
+-- Queue state is deliberately kept separate from ALE objects.  The game script
+-- owns the controller; tests can exercise these transitions with plain tables.
+function WsgBalance.createQueueController()
+    local state = {
+        pendingInvites = {},
+        activeBGInstances = {},
+        departedPlayers = {}, -- instanceId -> guidLow -> true; protects against stale ALE map snapshots
+        activeQueueRetryAt = {},
+        classCapWarnings = {},
+        groupSplitWarnings = {},
+        queueMidpointAlertSent = false,
+        queueProjectionDirty = true,
+    }
+
+    local controller = {}
+
+    function controller:setPendingInvite(player, instanceId, teamId)
+        local guidLow = type(player.GetGUIDLow) == "function" and player:GetGUIDLow() or player.guidLow
+        state.pendingInvites[guidLow] = {
+            instanceId = instanceId,
+            teamId = teamId,
+            classId = getClassId(player),
+        }
+    end
+
+    function controller:getPendingInvite(guidLow)
+        return state.pendingInvites[guidLow]
+    end
+
+    function controller:clearPendingInvite(guidLow)
+        state.pendingInvites[guidLow] = nil
+    end
+
+    function controller:clearPlayer(guidLow)
+        state.pendingInvites[guidLow] = nil
+        state.classCapWarnings[guidLow] = nil
+        state.groupSplitWarnings[guidLow] = nil
+        state.activeQueueRetryAt[guidLow] = nil
+    end
+
+    function controller:getPendingInvites()
+        return state.pendingInvites
+    end
+
+    function controller:hasPendingInvite(instanceId)
+        if not instanceId or instanceId <= 0 then return false end
+        for _, invite in pairs(state.pendingInvites) do
+            if invite.instanceId == instanceId or invite.instanceId == true then return true end
+        end
+        return false
+    end
+
+    function controller:getTeamCountsWithPending(instanceId, baseCounts, assignments)
+        local teamCounts = {
+            [0] = (baseCounts and baseCounts[0]) or 0,
+            [1] = (baseCounts and baseCounts[1]) or 0,
+        }
+        for _, invite in pairs(state.pendingInvites) do
+            if invite.instanceId == instanceId and (invite.teamId == 0 or invite.teamId == 1) then
+                teamCounts[invite.teamId] = teamCounts[invite.teamId] + 1
+            end
+        end
+        for _, assignment in ipairs(assignments or {}) do
+            if assignment.team == 0 or assignment.team == 1 then
+                teamCounts[assignment.team] = teamCounts[assignment.team] + 1
+            end
+        end
+        return teamCounts
+    end
+
+    function controller:getPendingTeamCounts(instanceId)
+        local teamCounts = { [0] = 0, [1] = 0 }
+        for _, invite in pairs(state.pendingInvites) do
+            if invite.instanceId == instanceId and (invite.teamId == 0 or invite.teamId == 1) then
+                teamCounts[invite.teamId] = teamCounts[invite.teamId] + 1
+            end
+        end
+        return teamCounts
+    end
+
+    function controller:getClassCounts(instanceId, roster)
+        local classCounts = { [0] = {}, [1] = {} }
+        for team = 0, 1 do
+            for classId, count in pairs((roster[team] and roster[team].classCounts) or {}) do
+                classCounts[team][classId] = count
+            end
+        end
+
+        for _, invite in pairs(state.pendingInvites) do
+            if invite.instanceId == instanceId then
+                local teamId = invite.teamId
+                local classId = invite.classId
+                if (teamId == 0 or teamId == 1) and classId and classId > 0 then
+                    classCounts[teamId][classId] = (classCounts[teamId][classId] or 0) + 1
+                end
+            end
+        end
+        return classCounts
+    end
+
+    function controller:trackActiveBG(bg)
+        if bg and type(bg.GetInstanceId) == "function" then
+            state.activeBGInstances[bg:GetInstanceId()] = bg
+        end
+    end
+
+    function controller:trackActiveInstance(instanceId, bg)
+        if instanceId and instanceId > 0 then state.activeBGInstances[instanceId] = bg or true end
+    end
+
+    function controller:untrackActiveBG(instanceId)
+        if instanceId and instanceId > 0 then
+            state.activeBGInstances[instanceId] = nil
+            self:clearDepartedPlayers(instanceId)
+        end
+    end
+
+    function controller:getActiveBGInstances()
+        return state.activeBGInstances
+    end
+
+    function controller:markPlayerLeft(instanceId, player)
+        local guidLow = getGuidLow(player)
+        if not instanceId or instanceId <= 0 or not guidLow then return end
+        state.departedPlayers[instanceId] = state.departedPlayers[instanceId] or {}
+        state.departedPlayers[instanceId][guidLow] = true
+    end
+
+    function controller:getDepartedPlayers(instanceId)
+        return state.departedPlayers[instanceId] or {}
+    end
+
+    function controller:clearDepartedPlayers(instanceId)
+        if instanceId and instanceId > 0 then state.departedPlayers[instanceId] = nil end
+    end
+
+    function controller:getRetryAt(guidLow)
+        return state.activeQueueRetryAt[guidLow]
+    end
+
+    function controller:setRetryAt(guidLow, retryAt)
+        state.activeQueueRetryAt[guidLow] = retryAt
+    end
+
+    function controller:hasClassCapWarning(guidLow)
+        return state.classCapWarnings[guidLow] == true
+    end
+
+    function controller:markClassCapWarning(guidLow)
+        state.classCapWarnings[guidLow] = true
+    end
+
+    function controller:clearClassCapWarning(guidLow)
+        state.classCapWarnings[guidLow] = nil
+    end
+
+    function controller:hasGroupSplitWarning(guidLow)
+        return state.groupSplitWarnings[guidLow] == true
+    end
+
+    function controller:markGroupSplitWarning(guidLow)
+        state.groupSplitWarnings[guidLow] = true
+    end
+
+    function controller:clearGroupSplitWarning(guidLow)
+        state.groupSplitWarnings[guidLow] = nil
+    end
+
+    function controller:isQueueMidpointAlertSent()
+        return state.queueMidpointAlertSent
+    end
+
+    function controller:setQueueMidpointAlertSent(value)
+        state.queueMidpointAlertSent = value == true
+    end
+
+    function controller:isQueueProjectionDirty()
+        return state.queueProjectionDirty
+    end
+
+    function controller:setQueueProjectionDirty(value)
+        state.queueProjectionDirty = value == true
+    end
+
+    function controller:projectQueuedPlayers(players)
+        local selectedPlayers, excludedPlayers = WsgBalance.selectQueuedPlayers(players)
+        local groups = WsgBalance.groupQueuedPlayers(selectedPlayers)
+        local assignments, _, decision = WsgBalance.assign(groups)
+        return selectedPlayers, excludedPlayers, groups, assignments, decision,
+            WsgBalance.describeAssignments(groups, assignments)
+    end
+
+    function controller:planFreshMatch(players)
+        local selectedPlayers, excludedPlayers, groups, assignments, decision, summary =
+            self:projectQueuedPlayers(players)
+        return {
+            selectedPlayers = selectedPlayers,
+            excludedPlayers = excludedPlayers,
+            groups = groups,
+            assignments = assignments,
+            decision = decision,
+            summary = summary,
+        }
+    end
+
+    function controller:reserveFreshInvites(players)
+        for _, player in ipairs(players or {}) do
+            self:setPendingInvite(player, true)
+            local guidLow = type(player.GetGUIDLow) == "function" and player:GetGUIDLow() or player.guidLow
+            self:clearClassCapWarning(guidLow)
+            self:clearGroupSplitWarning(guidLow)
+        end
+    end
+
+    function controller:recordAcceptedInvite(player, instanceId, teamId)
+        local guidLow = type(player.GetGUIDLow) == "function" and player:GetGUIDLow() or player.guidLow
+        self:setPendingInvite(player, instanceId, teamId)
+        self:clearClassCapWarning(guidLow)
+        self:clearGroupSplitWarning(guidLow)
+        self:setRetryAt(guidLow, nil)
+    end
+
+    function controller:planActiveInvites(queuePlayers, roster, instanceId, mapCounts, maxPlayersPerTeam)
+        local classCounts = self:getClassCounts(instanceId, roster)
+        local pendingTeamCounts = self:getPendingTeamCounts(instanceId)
+        local selectedPlayers, excludedPlayers = WsgBalance.selectQueuedPlayers(queuePlayers, classCounts)
+        if #selectedPlayers == 0 then
+            return nil, excludedPlayers, classCounts
+        end
+
+        local grouped = WsgBalance.groupQueuedPlayers(selectedPlayers)
+        local assignments, _, decision = WsgBalance.assign(
+            grouped,
+            roster[0].realCount + pendingTeamCounts[0],
+            roster[1].realCount + pendingTeamCounts[1],
+            nil,
+            classCounts
+        )
+        if #assignments ~= #selectedPlayers then
+            return {
+                assignments = assignments,
+                selectedPlayers = selectedPlayers,
+                excludedPlayers = excludedPlayers,
+                classCounts = classCounts,
+                decision = decision,
+                fits = false,
+                reason = "group_assignment",
+            }, excludedPlayers, classCounts
+        end
+
+        local teamCounts = self:getTeamCountsWithPending(instanceId, mapCounts, assignments)
+        local fits = teamCounts[0] <= maxPlayersPerTeam and teamCounts[1] <= maxPlayersPerTeam
+        return {
+            assignments = assignments,
+            selectedPlayers = selectedPlayers,
+            excludedPlayers = excludedPlayers,
+            classCounts = classCounts,
+            decision = decision,
+            teamCounts = teamCounts,
+            fits = fits,
+            reason = fits and nil or "player_capacity",
+        }, excludedPlayers, classCounts
+    end
+
+    return controller
 end
 
 WsgBalance.assignOngoing = WsgBalance.assign

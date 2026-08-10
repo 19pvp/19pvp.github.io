@@ -444,10 +444,17 @@ index c0acc01..515a794 100644
      { "GetExplicitTargetMask", &LuaSpellInfo::GetExplicitTargetMask },
      { "GetAuraState", &LuaSpellInfo::GetAuraState },
 diff --git a/src/LuaEngine/hooks/BattleGroundHooks.cpp b/src/LuaEngine/hooks/BattleGroundHooks.cpp
-index ec70cf5..390424d 100644
+index ec70cf5..cecaaa4 100644
 --- a/src/LuaEngine/hooks/BattleGroundHooks.cpp
 +++ b/src/LuaEngine/hooks/BattleGroundHooks.cpp
-@@ -9,6 +9,7 @@
+@@ -4,11 +4,14 @@
+  * Please see the included DOCS/LICENSE.md for more information
+  */
+ 
++#include <exception>
++
+ #include "Hooks.h"
+ #include "HookHelpers.h"
  #include "LuaEngine.h"
  #include "BindingMap.h"
  #include "ALETemplate.h"
@@ -455,7 +462,7 @@ index ec70cf5..390424d 100644
  
  using namespace Hooks;
  
-@@ -56,3 +57,117 @@ void ALE::OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instance
+@@ -56,3 +59,157 @@ void ALE::OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instance
      Push(instanceId);
      CallAllFunctions(BGEventBindings, key);
  }
@@ -469,12 +476,16 @@ index ec70cf5..390424d 100644
 +
 +    if (!L) return false;
 +
++    int const stackTop = lua_gettop(L);
 +    lua_getglobal(L, "OnBattlegroundQueueDistribution");
 +    if (lua_isfunction(L, -1))
 +    {
-+        Push(bg);
-+        Push((uint32)bracketId);
-+        
++        // This is a direct lua_pcall, not an ALE event dispatch. Use the
++        // static stack-only overload so push_counter remains untouched for
++        // the next normal hook.
++        ALE::Push(L, bg);
++        ALE::Push(L, (uint32)bracketId);
++
 +        if (lua_pcall(L, 2, 1, 0) == 0)
 +        {
 +            bool handled = false;
@@ -486,33 +497,69 @@ index ec70cf5..390424d 100644
 +                {
 +                    if (lua_isstring(L, -2) && lua_isnumber(L, -1))
 +                    {
-+                        std::string guidStr = lua_tostring(L, -2);
-+                        uint32 teamId = lua_tonumber(L, -1);
-+                        distribution[ObjectGuid(uint64(std::stoull(guidStr, nullptr, 0)))] = teamId;
++                        char const* guidText = lua_tostring(L, -2);
++                        if (!guidText)
++                        {
++                            LOG_ERROR("eluna", "OnBattlegroundQueueDistribution ignored a GUID key that could not be converted to text");
++                            lua_pop(L, 1);
++                            continue;
++                        }
++                        std::string guidStr(guidText);
++                        lua_Number teamValue = lua_tonumber(L, -1);
++                        if (teamValue != 0 && teamValue != 1)
++                        {
++                            LOG_ERROR("eluna", "OnBattlegroundQueueDistribution ignored invalid team id {}", teamValue);
++                            lua_pop(L, 1);
++                            continue;
++                        }
++
++                        try
++                        {
++                            size_t parsed = 0;
++                            if (guidStr.empty() || guidStr.find_first_not_of("0123456789") != std::string::npos)
++                            {
++                                LOG_ERROR("eluna", "OnBattlegroundQueueDistribution ignored non-decimal GUID key '{}'", guidStr);
++                                lua_pop(L, 1);
++                                continue;
++                            }
++                            uint64 guidRaw = std::stoull(guidStr, &parsed, 10);
++                            if (parsed != guidStr.size() || guidRaw == 0)
++                            {
++                                LOG_ERROR("eluna", "OnBattlegroundQueueDistribution ignored invalid GUID key '{}'", guidStr);
++                                lua_pop(L, 1);
++                                continue;
++                            }
++                            distribution[ObjectGuid(guidRaw)] = static_cast<uint32>(teamValue);
++                        }
++                        catch (std::exception const& error)
++                        {
++                            LOG_ERROR("eluna", "OnBattlegroundQueueDistribution ignored malformed GUID key '{}': {}", guidStr, error.what());
++                        }
 +                    }
 +                    else if (lua_isnumber(L, -2) && lua_isnumber(L, -1))
 +                    {
-+                        uint64 guidRaw = lua_tonumber(L, -2);
-+                        uint32 teamId = lua_tonumber(L, -1);
-+                        distribution[ObjectGuid(guidRaw)] = teamId;
++                        // Do not cast arbitrary Lua doubles to uint64. Full WoW
++                        // GUIDs exceed the exact integer range of a Lua number.
++                        LOG_ERROR("eluna", "OnBattlegroundQueueDistribution ignored numeric GUID key");
 +                    }
 +                    lua_pop(L, 1);
 +                }
 +            }
-+            lua_pop(L, 1);
++            lua_settop(L, stackTop);
 +            return handled;
 +        }
 +        else
 +        {
 +            // pop error message
-+            std::string err = lua_tostring(L, -1);
-+            lua_pop(L, 1);
++            char const* errorText = lua_tostring(L, -1);
++            std::string err = errorText ? errorText : "<non-string Lua error>";
++            lua_settop(L, stackTop);
 +            LOG_ERROR("eluna", "OnBattlegroundQueueDistribution error: {}", err);
 +        }
 +    }
 +    else
 +    {
-+        lua_pop(L, 1);
++        lua_settop(L, stackTop);
 +    }
 +    return false;
 +}

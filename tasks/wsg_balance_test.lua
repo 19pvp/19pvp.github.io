@@ -111,6 +111,25 @@ assert(classHeavyMatch.w1 ~= classHeavyMatch.w2 or classHeavyMatch.w2 ~= classHe
     "Four players of one class must be distributed across both teams")
 print("  -> PASSED: Class-heavy queue respects the 2-per-class team cap.")
 
+-- 1ba. Class parity is preferred over preserving native factions when team sizes tie.
+print("[Test 1ba] Prefer class parity over faction parity...")
+local mixedClassAssignments = balance.assign({
+    { players = { player("allianceRogue1", 0, 4) } },
+    { players = { player("allianceRogue2", 0, 4) } },
+    { players = { player("hordeDruid1", 1, 11) } },
+    { players = { player("hordeDruid2", 1, 11) } },
+})
+local mixedClassCounts = { [0] = {}, [1] = {} }
+for _, assignment in ipairs(mixedClassAssignments) do
+    local counts = mixedClassCounts[assignment.team]
+    counts[assignment.classId] = (counts[assignment.classId] or 0) + 1
+end
+assert(mixedClassCounts[0][4] == 1 and mixedClassCounts[1][4] == 1,
+    "Two Alliance rogues must be split for class parity")
+assert(mixedClassCounts[0][11] == 1 and mixedClassCounts[1][11] == 1,
+    "Two Horde druids must be split for class parity")
+print("  -> PASSED: Equal-size teams prioritize one rogue and one druid per team.")
+
 -- 1c. Class-cap overflow keeps the oldest queued players and defers the newest.
 print("[Test 1c] Class-cap overflow keeps queue order...")
 local orderedWarriors = {}
@@ -377,6 +396,12 @@ assert(variedCounts[0] + variedCounts[1] == 15, "All varied-size group players m
 print("[Test 7] Exposed API Functions and edge cases...")
 
 -- 7a: Test balance.scoreLess
+assert(balance.nativeDistributionGuidKey(28001) == "28001", "Numeric native distribution GUIDs must become canonical decimal strings")
+assert(balance.nativeDistributionGuidKey("28001") == "28001", "Decimal native distribution GUID strings must be accepted")
+assert(balance.nativeDistributionGuidKey("Player-1-28001") == nil, "Formatted GUID strings must never cross the native numeric bridge")
+assert(balance.scoreLess({ classImbalance = 0, splitGroups = 0, splitPlayers = 0, factionMoves = 2 },
+    { classImbalance = 2, splitGroups = 0, splitPlayers = 0, factionMoves = 0 }) == true,
+    "Class imbalance must outrank faction movement in candidate scoring")
 assert(balance.scoreLess({ splitGroups = 0, splitPlayers = 0, factionMoves = 0 }, { splitGroups = 1, splitPlayers = 0, factionMoves = 0 }) == true)
 assert(balance.scoreLess({ splitGroups = 1, splitPlayers = 0, factionMoves = 0 }, { splitGroups = 0, splitPlayers = 0, factionMoves = 0 }) == false)
 assert(balance.scoreLess({ splitGroups = 0, splitPlayers = 0, factionMoves = 0 }, { splitGroups = 0, splitPlayers = 1, factionMoves = 0 }) == true)
@@ -634,6 +659,30 @@ local extracted = balance.extractRoster(mockMap)
 assert(extracted[0].realCount == 1 and #extracted[0].bots == 1 and #extracted[1].bots == 1, "extractRoster parses real vs bot counts correctly")
 assert(extracted[0].classCounts[1] == 1 and not extracted[1].classCounts[8], "extractRoster counts real-player classes only")
 
+local function testStaleRosterExclusion()
+    local stalePlayer = { guidLow = 1401, team = 0, class = 4, isBot = false }
+    local filteredRoster = balance.extractRoster({ GetPlayers = function() return { stalePlayer } end }, { [1401] = true })
+    assert(filteredRoster[0].realCount == 0, "Roster extraction must ignore a player whose leave event predates map removal")
+
+    local staleSnapshotMap = {
+        GetPlayers = function()
+            return {
+                stalePlayer,
+                { guidLow = 1402, team = 1, class = 11, isBot = false },
+            }
+        end,
+    }
+    local staleExcludedRoster = balance.extractRoster(staleSnapshotMap, { [1401] = true })
+    assert(staleExcludedRoster[0].realCount == 0 and staleExcludedRoster[1].realCount == 1,
+        "A stale departing player must not remain in the active team roster")
+    local staleExcludedBotPlan = balance.computeMapBotActions(staleSnapshotMap, 5, nil, { [1401] = true })
+    assert(#staleExcludedBotPlan.toAdd[0] == 5 and #staleExcludedBotPlan.toAdd[1] == 4,
+        "Bot replacement targets must be calculated from the filtered roster")
+    local restoredRoster = balance.extractRoster(staleSnapshotMap)
+    assert(restoredRoster[0].realCount == 1, "Roster extraction must stop excluding a player once no exclusion is supplied")
+end
+testStaleRosterExclusion()
+
 local mapPlan = balance.computeMapBotActions(mockMap, 5)
 assert(#mapPlan.toAdd[0] == 3 and #mapPlan.toAdd[1] == 4, "computeMapBotActions returns correct bot target additions")
 
@@ -834,7 +883,7 @@ local exactCapTeams = runWithCurrentRoster(
     0,
     { [0] = { [1] = 1 }, [1] = {} }
 )
-assert(exactCapTeams.secondWarr == 0, "A player may join a team when it reaches exactly two of that class")
+assert(exactCapTeams.secondWarr == 1, "Class priority should use the other team when it avoids a class imbalance")
 print("  -> PASSED: Active-BG cap boundary and split behavior verified.")
 
 -- 21. Social-group aggregation must preserve class data before assignment.
@@ -887,4 +936,173 @@ local _, cappedCounts = run(balance.groupQueuedPlayers(selectedTwenty))
 assert(cappedCounts[0] <= 10 and cappedCounts[1] <= 10, "Assignments must never exceed 10 players per team")
 print("  -> PASSED: WSG assignments respect the 10v10 limit.")
 
-print("\nwsg_balance_test: ok (All 23 test suites passed cleanly)")
+-- 24. Queue controller state includes pending invites in both caps.
+print("[Test 24] Queue controller tracks pending invites in capacity and class counts...")
+local queueController = balance.createQueueController()
+local hunterOne = { guidLow = 2401, class = 3 }
+local hunterTwo = { guidLow = 2402, class = 3 }
+local hunterThree = { guidLow = 2403, class = 3 }
+queueController:setPendingInvite(hunterOne, 9001, 0)
+queueController:setPendingInvite(hunterTwo, 9001, 0)
+
+local pendingClassCounts = queueController:getClassCounts(9001, {
+    [0] = { classCounts = { [3] = 1 } },
+    [1] = { classCounts = {} },
+})
+assert(pendingClassCounts[0][3] == 3, "Pending invites must count toward the active team class cap")
+
+local pendingTeamCounts = queueController:getTeamCountsWithPending(9001, { [0] = 8, [1] = 2 }, {})
+assert(pendingTeamCounts[0] == 10 and pendingTeamCounts[1] == 2, "Pending invites must count toward the 10-player team cap")
+
+queueController:setPendingInvite(hunterThree, 9001, 0)
+local overfullTeamCounts = queueController:getTeamCountsWithPending(9001, { [0] = 8, [1] = 2 }, {})
+assert(overfullTeamCounts[0] == 11, "A third pending invite must remain visible to the capacity selector")
+local activePlan, activeExcluded = queueController:planActiveInvites(
+    { { name = "hunter4", nativeTeam = 1, classId = 3, guidLow = 2404 } },
+    {
+        [0] = { realCount = 1, classCounts = { [3] = 1 }, players = {}, bots = {} },
+        [1] = { realCount = 2, classCounts = { [3] = 2 }, players = {}, bots = {} },
+    },
+    9001,
+    { [0] = 3, [1] = 2 },
+    10
+)
+assert(activePlan == nil and #activeExcluded == 1, "Active matchmaking must defer a class once pending invites fill its cap")
+queueController:clearPlayer(hunterTwo.guidLow)
+assert(queueController:getPendingInvite(hunterTwo.guidLow) == nil, "Clearing a player must retract its pending invite")
+assert(queueController:getClassCounts(9001, {
+    [0] = { classCounts = { [3] = 1 } },
+    [1] = { classCounts = {} },
+})[0][3] == 3, "Remaining pending invites must stay counted after one player leaves")
+print("  -> PASSED: Queue controller keeps pending class and player caps consistent.")
+
+-- 25. Queue controller invite and active-instance lifecycle transitions.
+print("[Test 25] Queue controller lifecycle transitions clear and replace state correctly...")
+local lifecycleController = balance.createQueueController()
+local lifecyclePlayer = { guidLow = 2501, class = 8 }
+lifecycleController:markClassCapWarning(lifecyclePlayer.guidLow)
+lifecycleController:markGroupSplitWarning(lifecyclePlayer.guidLow)
+lifecycleController:setRetryAt(lifecyclePlayer.guidLow, 12345)
+lifecycleController:setPendingInvite(lifecyclePlayer, true)
+assert(lifecycleController:hasPendingInvite(9901), "Fresh-match reservations must remain visible for any pending BG")
+
+lifecycleController:recordAcceptedInvite(lifecyclePlayer, 9901, 1)
+local acceptedInvite = lifecycleController:getPendingInvite(lifecyclePlayer.guidLow)
+assert(acceptedInvite.instanceId == 9901 and acceptedInvite.teamId == 1 and acceptedInvite.classId == 8,
+    "Accepted invites must replace the fresh reservation with instance, team, and class data")
+assert(not lifecycleController:hasClassCapWarning(lifecyclePlayer.guidLow)
+    and not lifecycleController:hasGroupSplitWarning(lifecyclePlayer.guidLow)
+    and lifecycleController:getRetryAt(lifecyclePlayer.guidLow) == nil,
+    "Accepting an invite must clear stale queue warnings and retry state")
+
+lifecycleController:clearPendingInvite(lifecyclePlayer.guidLow)
+assert(not lifecycleController:hasPendingInvite(9901), "Clearing an invite must remove it from active-BG accounting")
+lifecycleController:setRetryAt(lifecyclePlayer.guidLow, 456)
+lifecycleController:markClassCapWarning(lifecyclePlayer.guidLow)
+lifecycleController:clearPlayer(lifecyclePlayer.guidLow)
+assert(lifecycleController:getRetryAt(lifecyclePlayer.guidLow) == nil
+    and not lifecycleController:hasClassCapWarning(lifecyclePlayer.guidLow),
+    "Clearing a player must remove all queue bookkeeping, not only the invite")
+
+lifecycleController:markPlayerLeft(9905, lifecyclePlayer)
+assert(lifecycleController:getDepartedPlayers(9905)[lifecyclePlayer.guidLow] == true,
+    "A BG leave must remember the player until the stale map snapshot is gone")
+lifecycleController:clearDepartedPlayers(9905)
+assert(next(lifecycleController:getDepartedPlayers(9905)) == nil,
+    "Departed-player exclusions must be clearable when the BG instance ends")
+
+local fakeBG = { GetInstanceId = function() return 9902 end }
+lifecycleController:trackActiveBG(fakeBG)
+lifecycleController:trackActiveInstance(9903)
+assert(lifecycleController:getActiveBGInstances()[9902] == fakeBG
+    and lifecycleController:getActiveBGInstances()[9903] == true,
+    "Active BG tracking must retain both object-backed and instance-only entries")
+lifecycleController:untrackActiveBG(9902)
+lifecycleController:untrackActiveBG(9903)
+assert(next(lifecycleController:getActiveBGInstances()) == nil, "Ended BG instances must be removed from controller state")
+print("  -> PASSED: Queue controller lifecycle transitions are isolated and complete.")
+
+-- 26. Fresh-match plans expose selection and reservation effects without ALE objects.
+print("[Test 26] Fresh-match controller plans are deterministic at queue boundaries...")
+local freshController = balance.createQueueController()
+local freshPlayers = {}
+for i = 1, 21 do
+    table.insert(freshPlayers, { name = "fresh" .. i, nativeTeam = i % 2, classId = i <= 5 and 8 or 0, guidLow = 2600 + i })
+end
+local freshPlan = freshController:planFreshMatch(freshPlayers)
+assert(#freshPlan.selectedPlayers == 20 and #freshPlan.excludedPlayers == 1,
+    "Fresh-match plans must enforce the 20-player queue boundary")
+assert(#freshPlan.assignments == 20 and freshPlan.summary.teamCounts[0] <= 10 and freshPlan.summary.teamCounts[1] <= 10,
+    "Fresh-match plans must return a complete 10v10-safe assignment")
+freshController:reserveFreshInvites(freshPlan.selectedPlayers)
+for _, queuedPlayer in ipairs(freshPlan.selectedPlayers) do
+    assert(freshController:getPendingInvite(queuedPlayer.guidLow) ~= nil,
+        "Fresh-match reservation must create one pending record per selected player")
+end
+print("  -> PASSED: Fresh-match plans expose tested selection and reservation behavior.")
+
+-- 27. Active-match plans respect the exact player-cap boundary after balancing.
+print("[Test 27] Active-match plan capacity is checked after team assignment...")
+local activeBoundaryController = balance.createQueueController()
+local boundaryQueue = {
+    { name = "boundary1", nativeTeam = 1, classId = 0 },
+}
+local boundaryRoster = {
+    [0] = { realCount = 9, classCounts = {}, players = {}, bots = {} },
+    [1] = { realCount = 10, classCounts = {}, players = {}, bots = {} },
+}
+local boundaryPlan = activeBoundaryController:planActiveInvites(
+    boundaryQueue,
+    boundaryRoster,
+    9904,
+    { [0] = 10, [1] = 10 },
+    10
+)
+assert(boundaryPlan and not boundaryPlan.fits and boundaryPlan.reason == "player_capacity",
+    "Active-match plans must reject assignments that would exceed 10 players per team")
+assert(boundaryPlan.teamCounts[0] > 10 or boundaryPlan.teamCounts[1] > 10,
+    "Capacity rejection must expose the projected team counts")
+print("  -> PASSED: Active-match plans enforce the exact 10v10 boundary after assignment.")
+
+-- 28. Active assignments include pending invites when the map is still WAIT_JOIN.
+print("[Test 28] Active-match team balance includes pending invite teams...")
+local function testPendingTeamBalance()
+    local pendingController = balance.createQueueController()
+    pendingController:setPendingInvite({ guidLow = 2801, class = 8 }, 9905, 0)
+    pendingController:setPendingInvite({ guidLow = 2802, class = 2 }, 9905, 0)
+    pendingController:setPendingInvite({ guidLow = 2803, class = 4 }, 9905, 1)
+
+    local pendingPlan = pendingController:planActiveInvites(
+        { { name = "nextPlayer", nativeTeam = 0, classId = 5 } },
+        {
+            [0] = { realCount = 0, classCounts = {}, players = {}, bots = {} },
+            [1] = { realCount = 0, classCounts = {}, players = {}, bots = {} },
+        },
+        9905,
+        { [0] = 0, [1] = 0 },
+        10
+    )
+    assert(pendingPlan and #pendingPlan.assignments == 1 and pendingPlan.assignments[1].team == 1,
+        "A player joining a 2A versus 1H pending match must be assigned to Horde")
+end
+testPendingTeamBalance()
+print("  -> PASSED: Pending invites participate in active team balancing before map entry.")
+
+-- 29. Native queue distribution boundary rejects values that can crash or
+-- misparse in the ALE C++ decimal std::stoull conversion.
+print("[Test 29] Native queue distribution GUID boundary rejects unsafe values...")
+assert(balance.nativeDistributionGuidKey(28001) == "28001", "Small integer GUIDs remain supported as decimal strings")
+assert(balance.nativeDistributionGuidKey("28001") == "28001", "Canonical decimal GUID strings remain supported")
+assert(balance.nativeDistributionGuidKey("00028001") == "28001", "Leading zeroes are canonicalized before native parsing")
+assert(balance.nativeDistributionGuidKey("08") == "8", "Octal-looking decimal strings are canonicalized")
+assert(balance.nativeDistributionGuidKey("18446744073709551615") == "18446744073709551615", "Maximum uint64 GUID is supported")
+assert(balance.nativeDistributionGuidKey("18446744073709551616") == nil, "uint64 overflow is rejected")
+assert(balance.nativeDistributionGuidKey("Player-1-28001") == nil, "Formatted GUID strings are rejected")
+assert(balance.nativeDistributionGuidKey(9007199254740992) == nil, "Unsafe Lua integers are rejected")
+assert(balance.nativeDistributionTeamId(0) == 0 and balance.nativeDistributionTeamId(1) == 1,
+    "Only Alliance and Horde team IDs are supported")
+assert(balance.nativeDistributionTeamId(2) == nil and balance.nativeDistributionTeamId("0") == nil,
+    "Invalid native team IDs are rejected")
+print("  -> PASSED: Native distribution inputs are range-checked and fail closed.")
+
+print("\nwsg_balance_test: ok (All 29 test suites passed cleanly)")
