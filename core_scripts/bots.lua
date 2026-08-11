@@ -505,6 +505,32 @@ local function AddBotForClass(bg, team, classId)
     print("[WSG] Bot is unavailable; queued login before adding " .. inspect({ bot = botInfo.name, instanceId = instanceId }))
 end
 
+local function GetPendingBotsForInstance(instanceId)
+    local pendingBots = {}
+    for _, botInfo in pairs(fixedRoster) do
+        local pending = botInfo.pending
+        if pending and (pending.state == "joining" or pending.state == "rejoining")
+            and pending.instanceId == instanceId then
+            table.insert(pendingBots, {
+                name = botInfo.name,
+                classId = botInfo.classId,
+                teamId = pending.teamId,
+            })
+        end
+    end
+    return pendingBots
+end
+
+local function CancelPendingBot(bot, instanceId)
+    if not bot or not bot.pending or not bot.name then return false end
+    local botInfo = fixedRoster[bot.name]
+    if not botInfo or not botInfo.pending or botInfo.pending.instanceId ~= instanceId then return false end
+
+    botInfo.pending = nil
+    print("[WSG] Cancelled pending bot reservation " .. inspect({ bot = bot.name, instanceId = instanceId }))
+    return true
+end
+
 CreateLuaEvent(function()
     for botName, info in pairs(fixedRoster) do
         local pending = info.pending
@@ -1015,7 +1041,13 @@ BalanceBGBots = function(map, bg, triggerEvent, playerName)
     end
 
     local hasPendingInvites = HasPendingBGInvite(instId)
-    local plan = WsgBalance.computeMapBotActions(map, minPlayersPerTeam, nil, wsgController:getDepartedPlayers(instId))
+    local plan = WsgBalance.computeMapBotActions(
+        map,
+        minPlayersPerTeam,
+        nil,
+        wsgController:getDepartedPlayers(instId),
+        GetPendingBotsForInstance(instId)
+    )
     if hasPendingInvites then
         plan.toRemove = {}
         print("[WSG Bot Balance] Keeping bots while real-player invites are pending " .. inspect({ instanceId = instId }))
@@ -1024,10 +1056,15 @@ BalanceBGBots = function(map, bg, triggerEvent, playerName)
     local removedBotNames = {}
     for _, bot in ipairs(plan.toRemove) do
         if bot then
-            local botName = type(bot.GetName) == "function" and bot:GetName() or tostring(bot)
+            local botName = type(bot) == "table" and bot.name or nil
+            if not botName and (type(bot) == "table" or type(bot) == "userdata")
+                and type(bot.GetName) == "function" then
+                botName = bot:GetName()
+            end
+            botName = botName or tostring(bot)
             table.insert(removedBotNames, botName)
             print("[Bot Balance] Removing bot from BG " .. inspect({ bot = botName }))
-            if type(bot.LeaveBattleground) == "function" then
+            if not CancelPendingBot(bot, instId) and type(bot.LeaveBattleground) == "function" then
                 bot:LeaveBattleground()
             end
         end

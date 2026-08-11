@@ -1,6 +1,8 @@
 local WsgBalance = {}
 local MAX_CLASS_PER_TEAM = 2
 local MAX_PLAYERS_PER_TEAM = 10
+local HORDE_FLAG_AURA = 23333
+local ALLIANCE_FLAG_AURA = 23335
 
 local function getClassId(player)
     if type(player) ~= "table" and type(player) ~= "userdata" then return 0 end
@@ -52,6 +54,23 @@ local function isBot(player)
     if type(player) ~= "table" and type(player) ~= "userdata" then return false end
     if type(player.IsBot) == "function" then return player:IsBot() end
     return player.isBot == true
+end
+
+local function isFlagCarrier(player)
+    if type(player) == "table" then
+        if player.isFlagCarrier ~= nil then return player.isFlagCarrier == true end
+        if player.flagCarrier ~= nil then return player.flagCarrier == true end
+    end
+    if type(player) ~= "table" and type(player) ~= "userdata" then return false end
+    if type(player.HasAura) ~= "function" then return false end
+    return player:HasAura(HORDE_FLAG_AURA) or player:HasAura(ALLIANCE_FLAG_AURA)
+end
+
+local function hasKnownBotClasses(bots)
+    for _, bot in ipairs(bots or {}) do
+        if getClassId(bot) <= 0 then return false end
+    end
+    return true
 end
 
 local function copyClassCounts(classCounts)
@@ -537,6 +556,11 @@ function WsgBalance.calculateBotTargets(realAlliance, realHorde, minPlayersPerTe
     local targetAlliance = math.max(0, minPlayersPerTeam - realAlliance)
     local targetHorde = math.max(0, minPlayersPerTeam - realHorde)
 
+    -- Keep one Warrior on the team that is behind, even after both teams
+    -- have passed the normal five-player bot-filler threshold.
+    if realAlliance < realHorde then targetAlliance = math.max(targetAlliance, 1) end
+    if realHorde < realAlliance then targetHorde = math.max(targetHorde, 1) end
+
     return targetAlliance, targetHorde
 end
 
@@ -552,8 +576,16 @@ local function getClassPriority(classId)
     return CLASS_PRIORITY[classId] or (10 + (classId or 99))
 end
 
-function WsgBalance.selectClassesToAdd(teamPlayers, count, currentBots)
+function WsgBalance.selectClassesToAdd(teamPlayers, count, currentBots, teamRealCount, opposingRealCount)
     if not count or count <= 0 then return {} end
+
+    local allowWarrior = false
+    if type(teamRealCount) == "boolean" then
+        -- Keep the helper convenient for isolated callers/tests.
+        allowWarrior = teamRealCount
+    elseif type(teamRealCount) == "number" and type(opposingRealCount) == "number" then
+        allowWarrior = teamRealCount < opposingRealCount
+    end
 
     local classCounts = {}
     local presentClasses = {}
@@ -576,9 +608,10 @@ function WsgBalance.selectClassesToAdd(teamPlayers, count, currentBots)
         end
     end
 
-    -- Warrior is the highest-priority filler unless its fixed bot is already in the BG.
+    -- The fixed Warrior is reserved for the team that is behind on real
+    -- players. Other filler classes can still be used on equal teams.
     local selectedClasses = {}
-    if not botClasses[1] and (classCounts[1] or 0) < MAX_CLASS_PER_TEAM then
+    if allowWarrior and not botClasses[1] and (classCounts[1] or 0) < MAX_CLASS_PER_TEAM then
         selectedClasses[1] = 1
         classCounts[1] = (classCounts[1] or 0) + 1
     end
@@ -595,7 +628,9 @@ function WsgBalance.selectClassesToAdd(teamPlayers, count, currentBots)
 
         if not chosenClass then
             for _, classId in ipairs({ 11, 8, 5, 4, 1 }) do
-                if (classCounts[classId] or 0) < MAX_CLASS_PER_TEAM and not botClasses[classId] then
+                if (classId ~= 1 or allowWarrior)
+                    and (classCounts[classId] or 0) < MAX_CLASS_PER_TEAM
+                    and not botClasses[classId] then
                     chosenClass = classId
                     break
                 end
@@ -630,6 +665,10 @@ function WsgBalance.sortBotsForRemoval(currentBots, teamPlayers)
     end
 
     table.sort(candidates, function(a, b)
+        local aCarrier = isFlagCarrier(a)
+        local bCarrier = isFlagCarrier(b)
+        if aCarrier ~= bCarrier then return not aCarrier end
+
         local cA = getClassId(a)
         local cB = getClassId(b)
 
@@ -665,16 +704,55 @@ function WsgBalance.computeBotActions(roster, minPlayersPerTeam)
         local currentBots = tData.bots or {}
         local currentBotCount = #currentBots
         local targetBotCount = desiredBots[team]
+        local teamRealCount = team == 0 and realAlliance or realHorde
+        local opposingRealCount = team == 0 and realHorde or realAlliance
+        local sortedBots = WsgBalance.sortBotsForRemoval(currentBots, tData.players)
+        local teamRemovals = {}
 
         if currentBotCount > targetBotCount then
             local removeCount = currentBotCount - targetBotCount
-            local sortedBots = WsgBalance.sortBotsForRemoval(currentBots, tData.players)
-            for i = 1, removeCount do
-                table.insert(toRemove, sortedBots[i])
+            for _, bot in ipairs(sortedBots) do
+                if #teamRemovals < removeCount and not isFlagCarrier(bot) then
+                    table.insert(toRemove, bot)
+                    table.insert(teamRemovals, bot)
+                end
             end
         elseif currentBotCount < targetBotCount then
             local addCount = targetBotCount - currentBotCount
-            toAdd[team] = WsgBalance.selectClassesToAdd(tData.players, addCount, tData.bots)
+            toAdd[team] = WsgBalance.selectClassesToAdd(
+                tData.players,
+                addCount,
+                tData.bots,
+                teamRealCount,
+                opposingRealCount
+            )
+        end
+
+        -- Keep the bot count stable while correcting a missing trailing Warrior.
+        -- If the current replacement candidate carries the flag, wait until the
+        -- carrier drops it; the next balance pass can then swap it out safely.
+        if targetBotCount > 0 and currentBotCount >= targetBotCount and hasKnownBotClasses(currentBots) then
+            local desiredClass = WsgBalance.selectClassesToAdd(
+                tData.players,
+                1,
+                currentBots,
+                teamRealCount,
+                opposingRealCount
+            )[1]
+            if desiredClass == 1 then
+                if #teamRemovals == 0 then
+                    for _, bot in ipairs(sortedBots) do
+                        if not isFlagCarrier(bot) then
+                            table.insert(toRemove, bot)
+                            table.insert(teamRemovals, bot)
+                            break
+                        end
+                    end
+                end
+                if #teamRemovals > 0 then
+                    table.insert(toAdd[team], 1, desiredClass)
+                end
+            end
         end
     end
 
@@ -715,11 +793,39 @@ function WsgBalance.extractRoster(map, excludedGuids)
     return roster
 end
 
-function WsgBalance.computeMapBotActions(map, minPlayersPerTeam, availableBots, excludedGuids)
+function WsgBalance.computeMapBotActions(map, minPlayersPerTeam, availableBots, excludedGuids, pendingBots)
     local roster = WsgBalance.extractRoster(map, excludedGuids)
     if not roster then
         return { toRemove = {}, toAdd = { [0] = {}, [1] = {} } }
     end
+
+    local presentBotNames = {}
+    for team = 0, 1 do
+        for _, bot in ipairs(roster[team].bots) do
+            local name = type(bot) == "table" and bot.name or nil
+            if not name and (type(bot) == "table" or type(bot) == "userdata")
+                and type(bot.GetName) == "function" then
+                name = bot:GetName()
+            end
+            if name then presentBotNames[name] = true end
+        end
+    end
+
+    -- A fixed-roster bot can be reserved for this BG while it is still offline
+    -- or waiting to enter. Count that reservation so repeated balance passes do
+    -- not request the same bot again before the map snapshot catches up.
+    for _, bot in ipairs(pendingBots or {}) do
+        local team = bot.teamId or bot.team
+        local name = bot.name
+        if (team == 0 or team == 1) and name and not presentBotNames[name] then
+            bot.isBot = true
+            bot.pending = true
+            table.insert(roster[team].bots, bot)
+            table.insert(roster[team].players, bot)
+            presentBotNames[name] = true
+        end
+    end
+
     return WsgBalance.computeBotActions(roster, minPlayersPerTeam, availableBots)
 end
 

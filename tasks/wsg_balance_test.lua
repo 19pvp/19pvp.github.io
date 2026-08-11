@@ -494,11 +494,16 @@ assert(bA2 == 4 and bH2 == 4, "1A vs 1H needs 4 Alliance bots and 4 Horde bots")
 local bA3, bH3 = balance.calculateBotTargets(5, 5, 5)
 assert(bA3 == 0 and bH3 == 0, "5A vs 5H needs 0 bots")
 
--- 8d: 6A vs 5H (11 real players total) -> Needs 0 Alliance bots, 0 Horde bots
+-- 8d: 6A vs 5H keeps one Warrior bot on the trailing Horde team.
 local bA4, bH4 = balance.calculateBotTargets(6, 5, 5)
-assert(bA4 == 0 and bH4 == 0, "6A vs 5H needs 0 bots")
+assert(bA4 == 0 and bH4 == 1, "6A vs 5H keeps one Horde Warrior bot")
 
--- 8e: Test computeBotActions diff computation (User Example 2: 1 Horde bot removed when 2nd real player enters)
+-- 8e: The trailing team still gets its Warrior above the normal five-player threshold.
+assert(select(1, balance.calculateBotTargets(7, 8, 5)) == 1
+    and select(2, balance.calculateBotTargets(7, 8, 5)) == 0,
+    "7A vs 8H needs one Alliance Warrior bot")
+
+-- 8f: Test computeBotActions diff computation (User Example 2: 1 Horde bot removed when 2nd real player enters)
 local plan1 = balance.computeBotActions({
     [0] = { realCount = 1, bots = { "botA1", "botA2", "botA3", "botA4" } },
     [1] = { realCount = 1, bots = { "botH1", "botH2", "botH3", "botH4", "botH5" } },
@@ -506,33 +511,54 @@ local plan1 = balance.computeBotActions({
 assert(#plan1.toRemove == 1 and plan1.toRemove[1] == "botH1", "computeBotActions must return 1 Horde bot to remove when 2nd real player joins")
 assert(#plan1.toAdd[0] == 0 and #plan1.toAdd[1] == 0, "No bots to add")
 
--- 8f: Edge Case 10v9 (Alliance: 5 real + 5 bots = 10; Horde: 4 real + 5 bots = 9). Single player joins Horde -> Horde real becomes 5 -> All 5 Horde bots leave to make room for real players!
+-- 8g: Edge Case 10v9: the trailing team retains its Warrior balance bot.
 local plan10v9 = balance.computeBotActions({
-    [0] = { realCount = 5, bots = { "botA1", "botA2", "botA3", "botA4", "botA5" } },
-    [1] = { realCount = 5, bots = { "botH1", "botH2", "botH3", "botH4", "botH5" } },
+    [0] = { realCount = 10, bots = {} },
+    [1] = { realCount = 9, bots = { { class = 1 } } },
 }, 5)
-assert(#plan10v9.toRemove == 10, "10v9 edge case: when 5th real player joins Horde, all 5 Horde bots (and 5 Alliance bots) must be removed!")
+assert(#plan10v9.toRemove == 0 and #plan10v9.toAdd[0] == 0 and #plan10v9.toAdd[1] == 0,
+    "10A vs 9H must retain exactly one Horde Warrior bot")
 
--- 8g: Edge Case Full Capacity (Alliance: 5 real + 6 bots; Horde: 4 real + 4 bots). 5th real player joins Alliance -> 6 Alliance bots + 3 Horde bots removed
+;(function()
+    local plan10v10AfterJoin = balance.computeBotActions({
+        [0] = { realCount = 10, bots = {} },
+        [1] = { realCount = 10, bots = { { class = 1 } } },
+    }, 5)
+    assert(#plan10v10AfterJoin.toRemove == 1 and plan10v10AfterJoin.toRemove[1].class == 1,
+        "A joining player that makes 10A vs 10H must remove the trailing Warrior bot")
+end)()
+
+-- 8h: Edge Case Full Capacity (Alliance: 5 real + 6 bots; Horde: 4 real + 4 bots). 5th real player joins Alliance -> 6 Alliance bots + 3 Horde bots removed
 local planFullCap = balance.computeBotActions({
     [0] = { realCount = 5, bots = { "botA1", "botA2", "botA3", "botA4", "botA5", "botA6" } },
     [1] = { realCount = 4, bots = { "botH1", "botH2", "botH3", "botH4" } },
 }, 5)
 assert(#planFullCap.toRemove == 9, "Full capacity edge case: 6 Alliance bots and 3 Horde bots removed to reach target counts")
 
--- 8h: Ongoing group join (2 Alliance real + 3 bots vs 1 Horde real + 4 bots). Group of 2 real Horde players joins -> Horde real becomes 3 -> 2 Horde bots leave
+-- 8i: Ongoing group join (2 Alliance real + 3 bots vs 1 Horde real + 4 bots). Group of 2 real Horde players joins -> Horde real becomes 3 -> 2 Horde bots leave
 local planGroupJoin = balance.computeBotActions({
     [0] = { realCount = 2, bots = { "botA1", "botA2", "botA3" } },
     [1] = { realCount = 3, bots = { "botH1", "botH2", "botH3", "botH4" } },
 }, 5)
 assert(#planGroupJoin.toRemove == 2, "Ongoing group join: 2 Horde bots removed when 2 real players join Horde")
 
--- 8i: Over 10 real players (6 Alliance real + 2 bots vs 5 Horde real + 3 bots) -> All 5 bots removed
+-- 8j: Over 10 real players (6 Alliance real + 2 bots vs 5 Horde real + 3 bots) -> trailing team keeps one Warrior bot
 local planOver10 = balance.computeBotActions({
     [0] = { realCount = 6, bots = { "botA1", "botA2" } },
     [1] = { realCount = 5, bots = { "botH1", "botH2", "botH3" } },
 }, 5)
-assert(#planOver10.toRemove == 5, "Over 10 real players: all 5 remaining bots must be removed")
+assert(#planOver10.toRemove == 4 and #planOver10.toAdd[0] == 0 and #planOver10.toAdd[1] == 0,
+    "6A vs 5H must remove extra bots but keep one Horde Warrior target")
+
+;(function()
+    local extraWarriorPlan = balance.computeBotActions({
+        [0] = { realCount = 6, bots = { { class = 1 } } },
+        [1] = { realCount = 5, bots = {} },
+    }, 5)
+    assert(#extraWarriorPlan.toRemove == 1 and extraWarriorPlan.toRemove[1].class == 1
+        and #extraWarriorPlan.toAdd[1] == 1 and extraWarriorPlan.toAdd[1][1] == 1,
+        "6A vs 5H must remove the extra Alliance Warrior and add the trailing Horde Warrior")
+end)()
 
 print("  -> PASSED: Bot target calculations, 10v9 edge cases, capacity frees, and group join bot diffs verified.")
 
@@ -686,6 +712,20 @@ testStaleRosterExclusion()
 local mapPlan = balance.computeMapBotActions(mockMap, 5)
 assert(#mapPlan.toAdd[0] == 3 and #mapPlan.toAdd[1] == 4, "computeMapBotActions returns correct bot target additions")
 
+;(function()
+    local pendingPlan = balance.computeMapBotActions(
+        { GetPlayers = function() return {
+            { team = 0, class = 8, isBot = false },
+        } end },
+        5,
+        nil,
+        nil,
+        { { name = "PendingA", teamId = 0, classId = 1 } }
+    )
+    assert(#pendingPlan.toAdd[0] == 3 and #pendingPlan.toAdd[1] == 5,
+        "A pending bot reservation must count before the bot appears in the map snapshot")
+end)()
+
 print("  -> PASSED: Map roster extraction and map bot action calculation verified.")
 
 -- 15. Empty Real Player BG Bot Kick Edge Case
@@ -705,18 +745,18 @@ print("  -> PASSED: All bots kicked when no real players remain in BG.")
 -- 16. Bot Selection & Addition Class Priority
 print("[Test 16] Bot Selection & Addition Class Priority...")
 
--- 16a: No Warrior in team -> Warrior (class 1) picked first
+-- 16a: A team behind by one real player may receive the fixed Warrior first.
 local teamNoWarrior = { { name = "RealPriest", class = 5 } }
-local added1 = balance.selectClassesToAdd(teamNoWarrior, 1)
-assert(added1[1] == 1, "Warrior (class 1) is picked first when no warrior is in team")
+local added1 = balance.selectClassesToAdd(teamNoWarrior, 1, nil, true)
+assert(added1[1] == 1, "The team behind by one real player receives the Warrior first")
 
--- 16b: Real player is a Warrior -> Warrior remains the first filler, then Druid (11)
+-- 16b: Equal teams do not receive the fixed Warrior automatically.
 local teamRealWarrior = { { name = "RealWarrior", class = 1 } }
-local addedRealWarrOne = balance.selectClassesToAdd(teamRealWarrior, 1)
-assert(addedRealWarrOne[1] == 1, "Warrior (1) is still picked when it is already in team and only one bot is added")
-local addedRealWarr = balance.selectClassesToAdd(teamRealWarrior, 2)
-assert(addedRealWarr[1] == 1, "Warrior (1) remains the first filler when it is already in team")
-assert(addedRealWarr[2] == 11, "Druid (11) is picked second when real Warrior is already in team")
+local addedRealWarrOne = balance.selectClassesToAdd(teamRealWarrior, 1, nil, false)
+assert(addedRealWarrOne[1] == 11, "Equal teams must skip the fixed Warrior and pick Druid")
+local addedRealWarr = balance.selectClassesToAdd(teamRealWarrior, 2, nil, false)
+assert(addedRealWarr[1] == 11 and addedRealWarr[2] == 8,
+    "Equal teams must use non-Warrior fillers")
 
 -- 16c: 3-player premade (Warrior, Druid, Mage) -> Warrior first, then unrepresented Priest (5)
 local teamTrio = {
@@ -724,20 +764,20 @@ local teamTrio = {
     { name = "RealDruid", class = 11 },
     { name = "RealMage", class = 8 },
 }
-local addedTrio = balance.selectClassesToAdd(teamTrio, 2)
+local addedTrio = balance.selectClassesToAdd(teamTrio, 2, nil, true)
 assert(addedTrio[1] == 1, "Warrior (1) remains the first filler")
 assert(addedTrio[2] == 5, "Priest (5) is added second to complete unrepresented classes")
 
 -- 16d: 2 real players (Priest, Rogue) -> Warrior (1) -> Druid (11) -> Mage (8)
 local teamDuo = { { name = "RealPriest", class = 5 }, { name = "RealRogue", class = 4 } }
-local addedDuo = balance.selectClassesToAdd(teamDuo, 3)
+local addedDuo = balance.selectClassesToAdd(teamDuo, 3, nil, true)
 assert(addedDuo[1] == 1, "Warrior (1) added first when missing")
 assert(addedDuo[2] == 11, "Druid (11) added second")
 assert(addedDuo[3] == 8, "Mage (8) added third")
 
 -- 16e: Empty team 5-bot add -> Sequence MUST be Warrior(1) -> Druid(11) -> Mage(8) -> Priest(5) -> Rogue(4)
 local emptyTeam = {}
-local added5 = balance.selectClassesToAdd(emptyTeam, 5)
+local added5 = balance.selectClassesToAdd(emptyTeam, 5, nil, true)
 assert(added5[1] == 1, "1st bot added to empty team is Warrior (1)")
 assert(added5[2] == 11, "2nd bot added to empty team is Druid (11)")
 assert(added5[3] == 8, "3rd bot added to empty team is Mage (8)")
@@ -745,14 +785,28 @@ assert(added5[4] == 5, "4th bot added to empty team is Priest (5)")
 assert(added5[5] == 4, "5th bot added to empty team is Rogue (4)")
 
 -- 16f: A bot class already in the BG is not selected again.
-local addedWithWarriorBot = balance.selectClassesToAdd(emptyTeam, 1, { { class = 1 } })
+local addedWithWarriorBot = balance.selectClassesToAdd(emptyTeam, 1, { { class = 1 } }, true)
 assert(addedWithWarriorBot[1] == 11, "Existing Warrior bot is skipped in favor of Druid")
 
-local cappedClassAdd = balance.selectClassesToAdd({ { class = 1 }, { class = 1 } }, 1)
+local cappedClassAdd = balance.selectClassesToAdd({ { class = 1 }, { class = 1 } }, 1, nil, true)
 assert(cappedClassAdd[1] ~= 1, "Bot filler must not add a third player of a class")
 
-local botClassDoesNotCount = balance.selectClassesToAdd({ { class = 1 }, { class = 1, isBot = true } }, 1)
+local botClassDoesNotCount = balance.selectClassesToAdd({ { class = 1 }, { class = 1, isBot = true } }, 1, nil, true)
 assert(botClassDoesNotCount[1] == 1, "Bot classes must not consume the real-player class cap")
+
+local equalTeamFillers = balance.computeBotActions({
+    [0] = { realCount = 1, bots = {}, players = { { name = "alliancePriest", class = 5 } } },
+    [1] = { realCount = 1, bots = {}, players = { { name = "hordePriest", class = 5 } } },
+}, 3)
+assert(equalTeamFillers.toAdd[0][1] ~= 1 and equalTeamFillers.toAdd[1][1] ~= 1,
+    "Equal real-player teams must not receive the fixed Warrior bot")
+
+local behindTeamWarrior = balance.computeBotActions({
+    [0] = { realCount = 1, bots = {}, players = { { name = "alliancePriest", class = 5 } } },
+    [1] = { realCount = 2, bots = {}, players = { { name = "hordePriest", class = 5 }, { name = "hordeMage", class = 8 } } },
+}, 3)
+assert(behindTeamWarrior.toAdd[0][1] == 1 and behindTeamWarrior.toAdd[1][1] ~= 1,
+    "Only the team behind in real-player count may receive the fixed Warrior bot")
 
 print("  -> PASSED: Bot addition selection sequence across diverse team compositions verified.")
 
@@ -809,6 +863,29 @@ local duplicatedTeam = {
 local dupRemovalOrder = balance.sortBotsForRemoval(duplicatedTeam, duplicatedTeam)
 assert(dupRemovalOrder[1].class == 4, "Duplicated Rogue (4) is removed before duplicated Warrior (1) or single Druid (11)")
 assert(dupRemovalOrder[#dupRemovalOrder].class == 11, "Single Druid (11) is preserved over duplicated classes")
+
+-- 17e: A flag-carrying bot is protected, then swapped for the trailing Warrior after dropping the flag.
+do
+    local flagMage = { name = "FlagMage", class = 8, isBot = true, isFlagCarrier = true }
+    local carrierOrder = balance.sortBotsForRemoval({ flagMage, { name = "BotRogue", class = 4, isBot = true } }, { flagMage })
+    assert(carrierOrder[#carrierOrder] == flagMage, "Flag carrier must be last in bot removal order")
+
+    local carryingPlan = balance.computeBotActions({
+        [0] = { realCount = 9, bots = { flagMage }, players = { flagMage } },
+        [1] = { realCount = 10, bots = {}, players = {} },
+    }, 5)
+    assert(#carryingPlan.toRemove == 0 and #carryingPlan.toAdd[0] == 0,
+        "A flag-carrying bot must not be kicked while it is carrying the flag")
+
+    flagMage.isFlagCarrier = false
+    local droppedFlagPlan = balance.computeBotActions({
+        [0] = { realCount = 9, bots = { flagMage }, players = { flagMage } },
+        [1] = { realCount = 10, bots = {}, players = {} },
+    }, 5)
+    assert(#droppedFlagPlan.toRemove == 1 and droppedFlagPlan.toRemove[1] == flagMage
+        and #droppedFlagPlan.toAdd[0] == 1 and droppedFlagPlan.toAdd[0][1] == 1,
+        "After the flag is dropped, the carrier is replaced by the trailing Warrior bot")
+end
 
 print("  -> PASSED: Bot removal order across diverse real player join scenarios verified.")
 
