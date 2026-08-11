@@ -555,7 +555,7 @@ index 21937606..f5c8a86f 100644
      if (!formation)
          return false;
 diff --git a/src/Ai/Base/Actions/GenericSpellActions.cpp b/src/Ai/Base/Actions/GenericSpellActions.cpp
-index 2d78e443..0de002c7 100644
+index 2d78e443..9e1c71e7 100644
 --- a/src/Ai/Base/Actions/GenericSpellActions.cpp
 +++ b/src/Ai/Base/Actions/GenericSpellActions.cpp
 @@ -26,6 +26,8 @@ using ai::spell::HasSpellOrCategoryCooldown;
@@ -577,6 +577,23 @@ index 2d78e443..0de002c7 100644
          }
      }
  }
+@@ -528,6 +533,16 @@ bool UseTrinketAction::UseTrinket(Item* item)
+     if (bot->CanUseItem(item) != EQUIP_ERR_OK || bot->IsNonMeleeSpellCast(true))
+         return false;
+ 
++    if (item && item->GetEntry() == 18706)
++    {
++        if (!bot->IsInCombat())
++            return false;
++
++        uint8 const healthPct = AI_VALUE2(uint8, "health", "self target");
++        if (healthPct > 30)
++            return false;
++    }
++
+     uint8 bagIndex = item->GetBagSlot();
+     uint8 slot = item->GetSlot();
+     uint8 cast_count = 1;
 diff --git a/src/Ai/Base/Actions/GenericSpellActions.h b/src/Ai/Base/Actions/GenericSpellActions.h
 index a5f802a4..5bbdd792 100644
 --- a/src/Ai/Base/Actions/GenericSpellActions.h
@@ -1691,8 +1708,27 @@ index 2ef0f539..32f58752 100644
  }
  
  void PlayerbotFactory::InitTalents(uint32 specNo)
+diff --git a/src/Bot/Factory/RandomPlayerbotFactory.cpp b/src/Bot/Factory/RandomPlayerbotFactory.cpp
+index 002720ac..1debec51 100644
+--- a/src/Bot/Factory/RandomPlayerbotFactory.cpp
++++ b/src/Bot/Factory/RandomPlayerbotFactory.cpp
+@@ -586,6 +586,14 @@ void RandomPlayerbotFactory::CreateRandomBots()
+         return;
+     }
+ 
++    if (sPlayerbotAIConfig.maxRandomBots == 0 &&
++        sPlayerbotAIConfig.addClassAccountPoolSize == 0 &&
++        sPlayerbotAIConfig.randomBotAccountCount == 0)
++    {
++        LOG_INFO("playerbots", "Random bot and AddClass account creation disabled.");
++        return;
++    }
++
+     LOG_INFO("playerbots", "Creating random bot accounts...");
+     std::unordered_map<NameRaceAndGender, std::vector<std::string>> nameCache;
+     std::vector<std::future<void>> account_creations;
 diff --git a/src/Bot/PlayerbotAI.cpp b/src/Bot/PlayerbotAI.cpp
-index cd7a0993..10e6e316 100644
+index cd7a0993..3bd96b5a 100644
 --- a/src/Bot/PlayerbotAI.cpp
 +++ b/src/Bot/PlayerbotAI.cpp
 @@ -5,12 +5,15 @@
@@ -1751,7 +1787,7 @@ index cd7a0993..10e6e316 100644
  
      if (pmo)
          pmo->finish();
-@@ -592,6 +610,236 @@ void PlayerbotAI::HandleCommands()
+@@ -592,6 +610,235 @@ void PlayerbotAI::HandleCommands()
      }
  }
  
@@ -1920,7 +1956,6 @@ index cd7a0993..10e6e316 100644
 +            ResetBattlegroundCommand();
 +            return true;
 +        }
-+        ChangeStrategy("+follow", BOT_STATE_COMBAT);
 +        action = "come";
 +    }
 +    else if (flee)
@@ -1988,7 +2023,7 @@ index cd7a0993..10e6e316 100644
  std::map<std::string, ChatMsg> chatMap;
  void PlayerbotAI::HandleCommand(uint32 type, const std::string& text, Player& fromPlayer, const uint32 lang)
  {
-@@ -946,6 +1194,15 @@ bool PlayerbotAI::IsAllowedCommand(std::string const text)
+@@ -946,6 +1193,15 @@ bool PlayerbotAI::IsAllowedCommand(std::string const text)
  
  void PlayerbotAI::HandleCommand(uint32 type, std::string const text, Player* fromPlayer)
  {
@@ -2004,7 +2039,7 @@ index cd7a0993..10e6e316 100644
      if (!GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_INVITE, type != CHAT_MSG_WHISPER, fromPlayer))
          return;
  
-@@ -2944,6 +3201,9 @@ bool PlayerbotAI::Say(const std::string& msg)
+@@ -2944,6 +3200,9 @@ bool PlayerbotAI::Say(const std::string& msg)
  
  bool PlayerbotAI::Whisper(const std::string& msg, const std::string& receiverName)
  {
@@ -2014,7 +2049,7 @@ index cd7a0993..10e6e316 100644
      const auto receiver = ObjectAccessor::FindPlayerByName(receiverName);
      if (!receiver)
      {
-@@ -2969,6 +3229,9 @@ bool PlayerbotAI::TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecuri
+@@ -2969,6 +3228,9 @@ bool PlayerbotAI::TellMasterNoFacing(std::ostringstream& stream, PlayerbotSecuri
  
  bool PlayerbotAI::TellMasterNoFacing(std::string const text, PlayerbotSecurityLevel securityLevel)
  {
@@ -2024,7 +2059,7 @@ index cd7a0993..10e6e316 100644
      Player* master = GetMaster();
      PlayerbotAI* masterBotAI = nullptr;
      if (master)
-@@ -3255,6 +3518,9 @@ bool PlayerbotAI::CanCastSpell(std::string const name, Unit* target, Item* itemT
+@@ -3255,6 +3517,9 @@ bool PlayerbotAI::CanCastSpell(std::string const name, Unit* target, Item* itemT
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell, Item* itemTarget, Item* castItem)
  {
@@ -2034,7 +2069,7 @@ index cd7a0993..10e6e316 100644
      if (!spellid)
      {
          if (!sPlayerbotAIConfig.logInGroupOnly || (bot->GetGroup() && HasRealPlayerMaster()))
-@@ -3435,6 +3701,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
+@@ -3435,6 +3700,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkHasSpell)
  {
@@ -2044,7 +2079,7 @@ index cd7a0993..10e6e316 100644
      if (!spellid)
          return false;
  
-@@ -3493,6 +3762,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
+@@ -3493,6 +3761,9 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
  
  bool PlayerbotAI::CanCastSpell(uint32 spellid, float x, float y, float z, bool checkHasSpell, Item* itemTarget)
  {
@@ -2054,7 +2089,7 @@ index cd7a0993..10e6e316 100644
      if (!spellid)
          return false;
  
-@@ -3556,6 +3828,9 @@ bool PlayerbotAI::CastSpell(std::string const name, Unit* target, Item* itemTarg
+@@ -3556,6 +3827,9 @@ bool PlayerbotAI::CastSpell(std::string const name, Unit* target, Item* itemTarg
  
  bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
  {
@@ -2064,7 +2099,7 @@ index cd7a0993..10e6e316 100644
      if (!spellId)
          return false;
  
-@@ -3569,7 +3844,15 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+@@ -3569,7 +3843,15 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
      if (!spellInfo)
          return false;
  
@@ -2080,7 +2115,7 @@ index cd7a0993..10e6e316 100644
      if (pet && pet->HasSpell(spellId))
      {
          // List of spell IDs for which we do NOT want to toggle auto-cast or send message
-@@ -3835,16 +4118,25 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
+@@ -3835,16 +4117,25 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
          TellMasterNoFacing(out);
      }
  
@@ -2106,7 +2141,7 @@ index cd7a0993..10e6e316 100644
      if (pet && pet->HasSpell(spellId))
      {
          bool autocast = false;
-@@ -4837,6 +5129,9 @@ void PlayerbotAI::RemoveShapeshift()
+@@ -4837,6 +5128,9 @@ void PlayerbotAI::RemoveShapeshift()
      RemoveAura("aquatic form");
      RemoveAura("ghost wolf");
      // RemoveAura("tree of life");
