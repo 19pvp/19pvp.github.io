@@ -1,4 +1,5 @@
 import { auth, characters, type SqlRow } from './db.ts'
+import * as env from './env.ts'
 
 const MAX_ACCOUNT_USERNAME_LENGTH = 17
 const N = BigInt('0x894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7')
@@ -136,7 +137,7 @@ export const getUsername = async (accountIdOrName: number | string) => {
 export const setGmLevel = async (account: number | string, gmLevel: number) => {
   const id = typeof account === 'string' ? (await getAccountByUsername(account)).id : account
 
-  await auth.sql`DELETE FROM account_access WHERE id=${id}`
+  await auth.sql`DELETE FROM account_access WHERE id=${id} AND RealmID <> ${env.WORLD_ID}`
   if (gmLevel > 0) {
     await auth.sql`
       INSERT INTO account_access (id, gmlevel, RealmID)
