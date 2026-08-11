@@ -82,12 +82,16 @@ local queueDelayTime = 120
 local annouceFreq = math.floor(queueDelayTime / 2)
 local activeBGQueueDelayMs = 5000
 local maxWsgPlayersPerTeam = 10
+-- NOTE: This server uses a one-minute WSG preparation timer.
+local BOT_PREP_DURATION_MS = 60000
+local BOT_FILL_LEAD_MS = 5000
 local bracketId = GetBattlegroundBracketIdByLevel(bgTypeId, level)
 local teamNames = { [0] = "alliance", [1] = "horde" }
 local wsgController = WsgBalance.createQueueController()
 local PVP19_SERVER_ID = "19PVP"
 local PVP19_ADDON_VERSION = "1.1"
 local ProcessActiveBGQueuePlayer
+local botFillAt = {}
 
 local function isJoinableBattleground(bg)
     if not bg then return false end
@@ -454,21 +458,43 @@ local function AddBotToBattleground(bot, bg, teamId)
     end
 
     local botName = bot:GetName()
+    local botInfo = fixedRoster[botName]
+    if botInfo then
+        -- Reserve immediately: AddToBattleground succeeds before the bot is
+        -- visible in the map snapshot, so another balance event can otherwise
+        -- request the same bot repeatedly during that gap.
+        botInfo.pending = {
+            state = "entering",
+            instanceId = instanceId,
+            teamId = teamId,
+            lastAttemptAt = 0,
+        }
+    end
+
     CreateLuaEvent(function()
         local currentBg = GetBattleground(instanceId, bgTypeId)
-        if not isJoinableBattleground(currentBg) then return end
+        if not isJoinableBattleground(currentBg) then
+            if botInfo and botInfo.pending and botInfo.pending.instanceId == instanceId then
+                botInfo.pending = nil
+            end
+            return
+        end
 
         local currentBot = GetPlayerByName(botName)
         if not currentBot then return end
 
         local joined = currentBot:IsInWorld() and currentBot:InBattleground() and currentBot:GetBattlegroundId() == instanceId
         if joined then
+            if botInfo and botInfo.pending and botInfo.pending.instanceId == instanceId then
+                botInfo.pending = nil
+            end
             currentBot:SetBotStrategy("+bg", 1)
             return
         end
 
         print("[WSG] Bot failed to join after 3 seconds; logging out before retrying " .. inspect({ bot = botName, instanceId = instanceId }))
         local info = fixedRoster[botName]
+        if not info then return end
         info.pending = {
             state = "rejoining",
             instanceId = instanceId,
@@ -505,11 +531,41 @@ local function AddBotForClass(bg, team, classId)
     print("[WSG] Bot is unavailable; queued login before adding " .. inspect({ bot = botInfo.name, instanceId = instanceId }))
 end
 
+local function IsBotFillWindowOpen(bg)
+    if not bg then return false end
+    if bg:GetStatus() ~= STATUS_WAIT_JOIN then return true end
+    local fillAt = botFillAt[bg:GetInstanceId()]
+    return fillAt and GetCurrTime() >= fillAt or false
+end
+
+local function ScheduleInitialBotFill(bg, classIdsByTeam, startedAt)
+    if not bg then return end
+    local instanceId = bg:GetInstanceId()
+    local fillAt = startedAt + BOT_PREP_DURATION_MS - BOT_FILL_LEAD_MS
+    botFillAt[instanceId] = fillAt
+    local delay = math.max(0, fillAt - GetCurrTime())
+    CreateLuaEvent(function()
+        botFillAt[instanceId] = nil
+        local currentBg = GetBattleground(instanceId, bgTypeId)
+        if not isJoinableBattleground(currentBg) then return end
+
+        print("[WSG Bot Balance] Initial bot fill window opened " .. inspect({
+            instanceId = instanceId,
+            fillAt = fillAt,
+        }))
+        for team = 0, 1 do
+            for _, classId in ipairs(classIdsByTeam[team] or {}) do
+                AddBotForClass(currentBg, team, classId)
+            end
+        end
+    end, delay, 1)
+end
+
 local function GetPendingBotsForInstance(instanceId)
     local pendingBots = {}
     for _, botInfo in pairs(fixedRoster) do
         local pending = botInfo.pending
-        if pending and (pending.state == "joining" or pending.state == "rejoining")
+        if pending and (pending.state == "entering" or pending.state == "joining" or pending.state == "rejoining")
             and pending.instanceId == instanceId then
             table.insert(pendingBots, {
                 name = botInfo.name,
@@ -662,6 +718,7 @@ CreateLuaEvent(function ()
         local assignments = freshPlan.assignments
         local bg = CreateBattleground(bgTypeId, bracketId)
         if bg then
+            local startedAt = GetCurrTime()
             bg:StartBattleground()
             wsgController:trackActiveBG(bg)
             debugBGState("new match after StartBattleground", bg, nil, bg:GetInstanceId())
@@ -711,6 +768,7 @@ CreateLuaEvent(function ()
                 minPlayersPerTeam
             )
             local targetBots = { [0] = targetAllianceBots, [1] = targetHordeBots }
+            local initialBotClasses = { [0] = {}, [1] = {} }
             for team = 0, 1 do
                 local needed = targetBots[team]
                 if needed > 0 then
@@ -722,11 +780,10 @@ CreateLuaEvent(function ()
                         #balancedRealPlayers[team],
                         #balancedRealPlayers[otherTeam]
                     )
-                    for _, classId in ipairs(classIds) do
-                        AddBotForClass(bg, team, classId)
-                    end
+                    initialBotClasses[team] = classIds
                 end
             end
+            ScheduleInitialBotFill(bg, initialBotClasses, startedAt)
             SendWorldMessage("[WSG Queue] Match is starting!")
         end
     end
@@ -1040,6 +1097,8 @@ BalanceBGBots = function(map, bg, triggerEvent, playerName)
         return
     end
 
+    if not IsBotFillWindowOpen(bg) then return end
+
     local hasPendingInvites = HasPendingBGInvite(instId)
     local plan = WsgBalance.computeMapBotActions(
         map,
@@ -1242,6 +1301,7 @@ end)
 RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgTypeIdVal, instanceId)
     if not bg or bg:GetMapId() ~= WSG_MAP_ID then return end
     local instId = instanceId or bg:GetInstanceId()
+    botFillAt[instId] = nil
     debugBGState("BG_EVENT_ON_END before cleanup", bg, GetMapById(WSG_MAP_ID, instId), instId)
     wsgController:untrackActiveBG(instId)
 
