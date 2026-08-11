@@ -13,7 +13,19 @@ print("[Fixed Roster] Loaded enabled bots " .. inspect(fixedRoster))
 
 local startupBotSpecs = custom_data and custom_data.wsg_bot_specs or {}
 
-local function ReplaceWarriorWeapon(bot)
+local WARRIOR_WEAPON_ITEM_ID = 1482
+local WARRIOR_SHIELD_ITEM_ID = 3761
+
+local function EnsureEquipped(bot, itemId, slot)
+    local equipped = bot:GetEquippedItemBySlot(slot)
+    if equipped and equipped:GetEntry() == itemId then return end
+
+    local item = bot:GetItemByEntry(itemId)
+    if not item then item = bot:AddItem(itemId, 1) end
+    if item then bot:EquipItem(item, slot) end
+end
+
+local function ReplaceWarriorEquipment(bot)
     if not bot or bot:GetClass() ~= 1 then return end
 
     for _, itemId in ipairs({ 1459, 4818 }) do
@@ -21,23 +33,27 @@ local function ReplaceWarriorWeapon(bot)
         if oldCount > 0 then bot:RemoveItem(itemId, oldCount) end
     end
 
-    local weapon = bot:GetItemByEntry(1482)
-    if not weapon then weapon = bot:AddItem(1482, 1) end
+    local weapon = bot:GetItemByEntry(WARRIOR_WEAPON_ITEM_ID)
+    if not weapon then weapon = bot:AddItem(WARRIOR_WEAPON_ITEM_ID, 1) end
     if weapon then weapon:SetEnchantment(1900, 0, 0) end
 
-    for _, itemId in ipairs({ 18706, 13966, 14530 }) do
+    for _, itemId in ipairs({ WARRIOR_SHIELD_ITEM_ID, 18706, 13966, 14530 }) do
         if not bot:GetItemByEntry(itemId) then bot:AddItem(itemId, 1) end
+    end
+
+    EnsureEquipped(bot, WARRIOR_WEAPON_ITEM_ID, SLOT_MAINHAND)
+    EnsureEquipped(bot, WARRIOR_SHIELD_ITEM_ID, SLOT_OFFHAND)
+
+    local shield = bot:GetEquippedItemBySlot(SLOT_OFFHAND)
+    if shield and shield:GetEntry() == WARRIOR_SHIELD_ITEM_ID then
+        shield:SetEnchantment(929, 0, 0)
     end
 
     for _, trinket in ipairs({
         { itemId = 18706, slot = SLOT_TRINKET1 },
         { itemId = 13966, slot = SLOT_TRINKET2 },
     }) do
-        local equipped = bot:GetEquippedItemBySlot(trinket.slot)
-        if not equipped or equipped:GetEntry() ~= trinket.itemId then
-            local item = bot:GetItemByEntry(trinket.itemId)
-            if item then bot:EquipItem(item, trinket.slot) end
-        end
+        EnsureEquipped(bot, trinket.itemId, trinket.slot)
     end
 
     if not bot:HasSpell(55500) then bot:LearnSpell(55500) end
@@ -45,7 +61,7 @@ end
 
 local function InitializeBot(bot)
     if not bot or not bot:IsBot() then return end
-    ReplaceWarriorWeapon(bot)
+    ReplaceWarriorEquipment(bot)
     local spec = startupBotSpecs[bot:GetClass()]
     if not spec then return end
     bot:Command("talents apply " .. spec.talents)
@@ -663,10 +679,23 @@ CreateLuaEvent(function ()
 
             print("[WSG Queue] Processed queued players " .. inspect({ realPlayersCount = realPlayersCount, allianceAssigned = #balancedRealPlayers[0], hordeAssigned = #balancedRealPlayers[1] }))
 
+            local targetAllianceBots, targetHordeBots = WsgBalance.calculateBotTargets(
+                #balancedRealPlayers[0],
+                #balancedRealPlayers[1],
+                minPlayersPerTeam
+            )
+            local targetBots = { [0] = targetAllianceBots, [1] = targetHordeBots }
             for team = 0, 1 do
-                local needed = minPlayersPerTeam - #balancedRealPlayers[team]
+                local needed = targetBots[team]
                 if needed > 0 then
-                    local classIds = WsgBalance.selectClassesToAdd(balancedRealPlayers[team], needed)
+                    local otherTeam = team == 0 and 1 or 0
+                    local classIds = WsgBalance.selectClassesToAdd(
+                        balancedRealPlayers[team],
+                        needed,
+                        nil,
+                        #balancedRealPlayers[team],
+                        #balancedRealPlayers[otherTeam]
+                    )
                     for _, classId in ipairs(classIds) do
                         AddBotForClass(bg, team, classId)
                     end
