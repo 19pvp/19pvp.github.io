@@ -431,12 +431,17 @@ end)
 
 local function GetAvailableBotByClass(team, classId)
     local botInfo = fixedRosterByClass[team] and fixedRosterByClass[team][classId]
-    if not botInfo then return nil, nil end
-    if botInfo.pending then return nil, nil end
+    if not botInfo then return nil, nil, { reason = "no_roster_entry" } end
+    if botInfo.pending then
+        return nil, botInfo, { reason = "pending", pendingState = botInfo.pending.state }
+    end
     local bot = GetPlayerByName(botInfo.name)
-    if bot and bot:InBattleground() then return nil, nil end
-    if not bot or not bot:IsInWorld() then return nil, botInfo end
-    return bot, botInfo
+    if bot and bot:InBattleground() then
+        return nil, botInfo, { reason = "already_in_battleground" }
+    end
+    if not bot then return nil, botInfo, { reason = "offline" } end
+    if not bot:IsInWorld() then return nil, botInfo, { reason = "not_in_world" } end
+    return bot, botInfo, nil
 end
 
 local function LogoutFixedRosterBotAfterWsg(botName)
@@ -448,12 +453,104 @@ local function LogoutFixedRosterBotAfterWsg(botName)
     }
 end
 
+local addDiagnosticAt = {}
+local removeDiagnosticAt = {}
+
+local function GetBotName(bot)
+    if type(bot) == "table" and bot.name then return bot.name end
+    if (type(bot) == "table" or type(bot) == "userdata") and type(bot.GetName) == "function" then
+        return bot:GetName()
+    end
+    return tostring(bot)
+end
+
+local function GetBotState(bot, instanceId)
+    local botName = GetBotName(bot)
+    local currentBot = nil
+    if (type(bot) == "table" or type(bot) == "userdata") and type(bot.GetName) == "function" then
+        currentBot = bot
+    elseif botName and type(GetPlayerByName) == "function" then
+        currentBot = GetPlayerByName(botName)
+    end
+
+    local info = fixedRoster[botName]
+    local pending = info and info.pending
+    local state = {
+        bot = botName,
+        instanceId = instanceId,
+        pendingState = pending and pending.state,
+        pendingTeam = pending and pending.teamId,
+        inWorld = currentBot and currentBot:IsInWorld() or false,
+        inBattleground = currentBot and currentBot:InBattleground() or false,
+        currentBgId = currentBot and currentBot:GetBattlegroundId() or nil,
+        currentTeam = currentBot and currentBot:GetBgTeamId() or nil,
+        flagCarrier = false,
+    }
+    if currentBot and type(currentBot.HasAura) == "function" then
+        state.flagCarrier = currentBot:HasAura(WSG_HORDE_FLAG_AURA) or currentBot:HasAura(WSG_ALLIANCE_FLAG_AURA)
+    end
+    return state
+end
+
+local function LogBotAddBlocked(bg, team, classId, botInfo, diagnostic)
+    local instanceId = bg and bg:GetInstanceId() or 0
+    local botName = botInfo and botInfo.name or "unknown"
+    local state = GetBotState(botName, instanceId)
+    local reason = diagnostic and diagnostic.reason or "unavailable"
+    local key = table.concat({
+        tostring(instanceId), tostring(team), tostring(classId), botName, reason,
+        tostring(state.pendingState), tostring(state.currentBgId), tostring(state.currentTeam),
+    }, ":")
+    local now = GetCurrTime()
+    if addDiagnosticAt[key] and now - addDiagnosticAt[key] < 5000 then return end
+    addDiagnosticAt[key] = now
+    state.requestedTeam = team
+    state.requestedClass = classId
+    state.reason = reason
+    if diagnostic then
+        for field, value in pairs(diagnostic) do state[field] = value end
+    end
+    print("[WSG Bot Add] Cannot add bot " .. inspect(state))
+end
+
+local function LogBotRemovalBlocked(bot, instanceId, reason)
+    local state = GetBotState(bot, instanceId)
+    local key = table.concat({
+        tostring(instanceId), tostring(state.bot), tostring(reason),
+        tostring(state.pendingState), tostring(state.currentBgId), tostring(state.currentTeam),
+    }, ":")
+    local now = GetCurrTime()
+    if removeDiagnosticAt[key] and now - removeDiagnosticAt[key] < 5000 then return end
+    removeDiagnosticAt[key] = now
+    state.reason = reason
+    print("[WSG Bot Remove] Cannot remove bot " .. inspect(state))
+end
+
 local function AddBotToBattleground(bot, bg, teamId)
     if not bot or not isJoinableBattleground(bg) then return false end
 
     local instanceId = bg:GetInstanceId()
     if not bot:AddToBattleground(bg, teamId) then
-        print("[WSG] Failed to add bot " .. inspect({ bot = bot:GetName(), instanceId = instanceId }))
+        local botName = bot:GetName()
+        local currentBgId = type(bot.GetBattlegroundId) == "function" and bot:GetBattlegroundId() or nil
+        local currentTeam = type(bot.GetBgTeamId) == "function" and bot:GetBgTeamId() or nil
+        print("[WSG] Failed to add bot " .. inspect({
+            bot = botName,
+            instanceId = instanceId,
+            expectedTeam = teamId,
+            currentBgId = currentBgId,
+            currentTeam = currentTeam,
+        }))
+
+        local botInfo = fixedRoster[botName]
+        if botInfo then
+            botInfo.pending = {
+                state = "rejoining",
+                instanceId = instanceId,
+                teamId = teamId,
+                lastAttemptAt = 0,
+            }
+        end
         return false
     end
 
@@ -506,9 +603,16 @@ local function AddBotToBattleground(bot, bg, teamId)
 end
 
 local function AddBotForClass(bg, team, classId)
-    if not isJoinableBattleground(bg) then return end
+    if not bg then
+        print("[WSG Bot Add] Cannot add bot " .. inspect({ reason = "missing_battleground", team = team, classId = classId }))
+        return
+    end
+    if not isJoinableBattleground(bg) then
+        LogBotAddBlocked(bg, team, classId, nil, { reason = "battleground_not_joinable", status = bg:GetStatus() })
+        return
+    end
 
-    local bot, botInfo = GetAvailableBotByClass(team, classId)
+    local bot, botInfo, diagnostic = GetAvailableBotByClass(team, classId)
     if bot then
         if AddBotToBattleground(bot, bg, team) then
             print("[WSG] Added bot " .. inspect({ bot = botInfo.name, class = classId, team = teamNames[team] or team }))
@@ -516,10 +620,12 @@ local function AddBotForClass(bg, team, classId)
         return
     end
 
+    LogBotAddBlocked(bg, team, classId, botInfo, diagnostic)
     if not botInfo or not bg then return end
 
     local instanceId = bg:GetInstanceId()
     if botInfo.pending then return end
+    if diagnostic and diagnostic.reason == "already_in_battleground" then return end
 
     botInfo.pending = {
         state = "joining",
@@ -1108,23 +1214,30 @@ BalanceBGBots = function(map, bg, triggerEvent, playerName)
         GetPendingBotsForInstance(instId)
     )
     if hasPendingInvites then
+        for _, bot in ipairs(plan.toRemove) do
+            LogBotRemovalBlocked(bot, instId, "real_player_invite_pending")
+        end
         plan.toRemove = {}
         print("[WSG Bot Balance] Keeping bots while real-player invites are pending " .. inspect({ instanceId = instId }))
+    end
+
+    for _, blocked in ipairs(plan.blockedRemovals or {}) do
+        LogBotRemovalBlocked(blocked.bot, instId, blocked.reason)
     end
 
     local removedBotNames = {}
     for _, bot in ipairs(plan.toRemove) do
         if bot then
-            local botName = type(bot) == "table" and bot.name or nil
-            if not botName and (type(bot) == "table" or type(bot) == "userdata")
-                and type(bot.GetName) == "function" then
-                botName = bot:GetName()
-            end
-            botName = botName or tostring(bot)
+            local botName = GetBotName(bot)
             table.insert(removedBotNames, botName)
-            print("[Bot Balance] Removing bot from BG " .. inspect({ bot = botName }))
-            if not CancelPendingBot(bot, instId) and type(bot.LeaveBattleground) == "function" then
+            print("[Bot Balance] Removing bot from BG " .. inspect(GetBotState(bot, instId)))
+            if CancelPendingBot(bot, instId) then
+                print("[WSG Bot Remove] Cancelled pending bot reservation " .. inspect({ bot = botName, instanceId = instId }))
+            elseif type(bot.LeaveBattleground) == "function" then
                 bot:LeaveBattleground()
+                print("[WSG Bot Remove] LeaveBattleground request sent " .. inspect({ bot = botName, instanceId = instId }))
+            else
+                LogBotRemovalBlocked(bot, instId, "leave_battleground_api_unavailable")
             end
         end
     end

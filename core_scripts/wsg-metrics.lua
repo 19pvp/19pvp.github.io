@@ -11,17 +11,15 @@ local WSG_MAP_ID = 489
 local WSG_BG_TYPE_ID = 2
 local WSG_ARENA_TEAM_TYPE = 5
 local PREPARATION_AURA = 44521
-local HORDE_FLAG = 23333
-local ALLIANCE_FLAG = 23335
 local HAND_OF_PROTECTION = 1022
 local ARENA_PREPARATION_AURA = 32727
 local WINNER_ARENA_POINTS = 10
 local LOSER_ARENA_POINTS = 5
-local WSG_FLAG_AURAS = { [HORDE_FLAG] = true, [ALLIANCE_FLAG] = true }
+local WSG_FLAG_AURAS = { [WSG_HORDE_FLAG_AURA] = true, [WSG_ALLIANCE_FLAG_AURA] = true }
 local NO_FAKE_CAST_CLASSES = { [WARRIOR] = true, [HUNTER] = true, [ROGUE] = true }
 
 local function isFlagCarrier(player)
-    return player:HasAura(HORDE_FLAG) or player:HasAura(ALLIANCE_FLAG)
+    return player:HasAura(WSG_HORDE_FLAG_AURA) or player:HasAura(WSG_ALLIANCE_FLAG_AURA)
 end
 
 local function isMatchStarted(player)

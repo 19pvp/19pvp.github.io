@@ -277,3 +277,53 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_WHO_REQUEST, function(event, requester, targ
     requester:SendBroadcastMessage(infoMsg)
   end)
 end)
+
+-- Every 10 seconds in WSG:
+-- 3 honor if within 40 yards of friendly flag carrier (or carrying own team's flag)
+-- 2 honor if within 40 yards of enemy flag carrier (or carrying enemy flag)
+-- 1 honor otherwise
+CreateLuaEvent(function()
+  for _, player in ipairs(GetPlayersInWorld()) do
+    if not player:IsBot() and player:InBattleground() and player:GetMapId() == 489 then -- 489 = Warsong Gulch
+      local instanceId = player:GetBattlegroundId()
+      if instanceId and instanceId ~= 0 then
+        local bg = GetBattleground(instanceId, player:GetBattlegroundTypeId())
+        if bg and bg:GetStatus() == 2 then -- STATUS_IN_PROGRESS = 2
+          local honorAmount = 1
+          local map = player:GetMap()
+          if map then
+            local pTeam = player:GetTeam()
+            local nearFriendlyFC = false
+            local nearEnemyFC = false
+
+            for _, p in ipairs(map:GetPlayers()) do
+              local hasAllianceFlag = p:HasAura(WSG_ALLIANCE_FLAG_AURA) -- 23335
+              local hasHordeFlag = p:HasAura(WSG_HORDE_FLAG_AURA)       -- 23333
+
+              if hasAllianceFlag or hasHordeFlag then
+                local dist = player:GetDistance(p)
+                if dist <= 40.0 then
+                  -- Friendly FC: Alliance carrying Horde flag (if player is Alliance) or Horde carrying Alliance flag (if player is Horde)
+                  local isFriendlyFC = (pTeam == 0 and hasHordeFlag) or (pTeam == 1 and hasAllianceFlag)
+                  if isFriendlyFC then
+                    nearFriendlyFC = true
+                  else
+                    nearEnemyFC = true
+                  end
+                end
+              end
+            end
+
+            if nearFriendlyFC then
+              honorAmount = 3
+            elseif nearEnemyFC then
+              honorAmount = 2
+            end
+          end
+
+          player:ModifyHonorPoints(honorAmount)
+        end
+      end
+    end
+  end
+end, 10000, 0)

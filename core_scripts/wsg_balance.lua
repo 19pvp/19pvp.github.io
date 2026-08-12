@@ -1,8 +1,6 @@
 local WsgBalance = {}
 local MAX_CLASS_PER_TEAM = 2
 local MAX_PLAYERS_PER_TEAM = 10
-local HORDE_FLAG_AURA = 23333
-local ALLIANCE_FLAG_AURA = 23335
 
 local function getClassId(player)
     if type(player) ~= "table" and type(player) ~= "userdata" then return 0 end
@@ -63,7 +61,7 @@ local function isFlagCarrier(player)
     end
     if type(player) ~= "table" and type(player) ~= "userdata" then return false end
     if type(player.HasAura) ~= "function" then return false end
-    return player:HasAura(HORDE_FLAG_AURA) or player:HasAura(ALLIANCE_FLAG_AURA)
+    return player:HasAura(WSG_HORDE_FLAG_AURA) or player:HasAura(WSG_ALLIANCE_FLAG_AURA)
 end
 
 local function hasKnownBotClasses(bots)
@@ -692,6 +690,14 @@ function WsgBalance.computeBotActions(roster, minPlayersPerTeam)
     minPlayersPerTeam = minPlayersPerTeam or 5
     local toRemove = {}
     local toAdd = { [0] = {}, [1] = {} }
+    local blockedRemovals = {}
+    local blockedRemovalSet = {}
+
+    local function blockRemoval(bot, reason)
+        if blockedRemovalSet[bot] then return end
+        blockedRemovalSet[bot] = true
+        table.insert(blockedRemovals, { bot = bot, reason = reason })
+    end
 
     local realAlliance = (roster[0] and roster[0].realCount) or 0
     local realHorde = (roster[1] and roster[1].realCount) or 0
@@ -712,9 +718,13 @@ function WsgBalance.computeBotActions(roster, minPlayersPerTeam)
         if currentBotCount > targetBotCount then
             local removeCount = currentBotCount - targetBotCount
             for _, bot in ipairs(sortedBots) do
-                if #teamRemovals < removeCount and not isFlagCarrier(bot) then
-                    table.insert(toRemove, bot)
-                    table.insert(teamRemovals, bot)
+                if #teamRemovals < removeCount then
+                    if isFlagCarrier(bot) then
+                        blockRemoval(bot, "flag_carrier")
+                    else
+                        table.insert(toRemove, bot)
+                        table.insert(teamRemovals, bot)
+                    end
                 end
             end
         elseif currentBotCount < targetBotCount then
@@ -742,7 +752,9 @@ function WsgBalance.computeBotActions(roster, minPlayersPerTeam)
             if desiredClass == 1 then
                 if #teamRemovals == 0 then
                     for _, bot in ipairs(sortedBots) do
-                        if not isFlagCarrier(bot) then
+                        if isFlagCarrier(bot) then
+                            blockRemoval(bot, "flag_carrier")
+                        else
                             table.insert(toRemove, bot)
                             table.insert(teamRemovals, bot)
                             break
@@ -759,6 +771,7 @@ function WsgBalance.computeBotActions(roster, minPlayersPerTeam)
     return {
         toRemove = toRemove,
         toAdd = toAdd,
+        blockedRemovals = blockedRemovals,
     }
 end
 

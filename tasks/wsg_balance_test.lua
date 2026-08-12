@@ -876,6 +876,8 @@ do
     }, 5)
     assert(#carryingPlan.toRemove == 0 and #carryingPlan.toAdd[0] == 0,
         "A flag-carrying bot must not be kicked while it is carrying the flag")
+    assert(#carryingPlan.blockedRemovals == 1 and carryingPlan.blockedRemovals[1].reason == "flag_carrier",
+        "Blocked flag-carrier removals must expose their reason for diagnostics")
 
     flagMage.isFlagCarrier = false
     local droppedFlagPlan = balance.computeBotActions({
