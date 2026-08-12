@@ -341,7 +341,7 @@ index a21640d..7a56309 100644
      void OnSpellCast(Unit* caster, Spell* spell, SpellInfo const* spellInfo, bool skipCheck);
      void OnSpellCastCancel(Unit* caster, Spell* spell, SpellInfo const* spellInfo, bool bySelf);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..515a794 100644
+index c0acc01..2ade729 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -107,6 +107,8 @@ luaL_Reg GlobalMethods[] =
@@ -424,7 +424,15 @@ index c0acc01..515a794 100644
      { "GetOwner", &LuaAura::GetOwner },
  
      // Setters
-@@ -1380,6 +1404,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1368,6 +1392,7 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+     { "GetMap", &LuaBattleGround::GetMap },
+     { "GetBonusHonorFromKillCount", &LuaBattleGround::GetBonusHonorFromKillCount },
+     { "GetEndTime", &LuaBattleGround::GetEndTime },
++    { "GetStartTime", &LuaBattleGround::GetStartTime },
+     { "GetFreeSlotsForTeam", &LuaBattleGround::GetFreeSlotsForTeam },
+     { "GetInstanceId", &LuaBattleGround::GetInstanceId },
+     { "GetMapId", &LuaBattleGround::GetMapId },
+@@ -1380,6 +1405,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -435,7 +443,7 @@ index c0acc01..515a794 100644
  
      { NULL, NULL }
  };
-@@ -1481,6 +1509,7 @@ ALERegister<SpellInfo> SpellInfoMethods[] =
+@@ -1481,6 +1510,7 @@ ALERegister<SpellInfo> SpellInfoMethods[] =
      { "GetEffectMechanicMask", &LuaSpellInfo::GetEffectMechanicMask },
      { "GetSpellMechanicMaskByEffectMask", &LuaSpellInfo::GetSpellMechanicMaskByEffectMask },
      { "GetEffectMechanic", &LuaSpellInfo::GetEffectMechanic },
@@ -774,13 +782,32 @@ index 3f63743..8db7423 100644
       * Returns the [Unit] that the [Aura] has been applied to.
       *
 diff --git a/src/LuaEngine/methods/BattleGroundMethods.h b/src/LuaEngine/methods/BattleGroundMethods.h
-index 70e97bb..e32c8b1 100644
+index 70e97bb..76fe4d2 100644
 --- a/src/LuaEngine/methods/BattleGroundMethods.h
 +++ b/src/LuaEngine/methods/BattleGroundMethods.h
-@@ -209,5 +209,110 @@ namespace LuaBattleGround
+@@ -75,6 +75,17 @@ namespace LuaBattleGround
+         return 1;
+     }
+ 
++    /**
++     * Returns the start time of the [BattleGround] in milliseconds.
++     *
++     * @return uint32 startTime
++     */
++    int GetStartTime(lua_State* L, BattleGround* bg)
++    {
++        ALE::Push(L, bg->GetStartTime());
++        return 1;
++    }
++
+     /**
+      * Returns the amount of free slots for the selected team in the specific [BattleGround].
+      *
+@@ -209,5 +220,111 @@ namespace LuaBattleGround
          ALE::Push(L, bg->GetStatus());
          return 1;
      }
++
 +    /**
 +     * Ends the [BattleGround] with the specified winner.
 +     *
