@@ -341,7 +341,7 @@ index a21640d..7a56309 100644
      void OnSpellCast(Unit* caster, Spell* spell, SpellInfo const* spellInfo, bool skipCheck);
      void OnSpellCastCancel(Unit* caster, Spell* spell, SpellInfo const* spellInfo, bool bySelf);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..2ade729 100644
+index c0acc01..4c977e9 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -107,6 +107,8 @@ luaL_Reg GlobalMethods[] =
@@ -389,7 +389,15 @@ index c0acc01..2ade729 100644
      { "GetItemCount", &LuaPlayer::GetItemCount },
      { "GetGroup", &LuaPlayer::GetGroup },
      { "GetGuild", &LuaPlayer::GetGuild },
-@@ -566,6 +576,16 @@ ALERegister<Player> PlayerMethods[] =
+@@ -538,6 +548,7 @@ ALERegister<Player> PlayerMethods[] =
+     { "GetReputationRank", &LuaPlayer::GetReputationRank },
+     { "GetDrunkValue", &LuaPlayer::GetDrunkValue },
+     { "GetBattlegroundId", &LuaPlayer::GetBattlegroundId },
++    { "GetBattleground", &LuaPlayer::GetBattleground },
+     { "GetBattlegroundTypeId", &LuaPlayer::GetBattlegroundTypeId },
+     { "GetXP", &LuaPlayer::GetXP },
+     { "GetXPRestBonus", &LuaPlayer::GetXPRestBonus },
+@@ -566,6 +577,16 @@ ALERegister<Player> PlayerMethods[] =
      { "GetQuestSlotQuestId", &LuaPlayer::GetQuestSlotQuestId },
      { "GetTalentTreePoints", &LuaPlayer::GetTalentTreePoints },
      { "GetMostPointsTalentTree", &LuaPlayer::GetMostPointsTalentTree },
@@ -406,7 +414,7 @@ index c0acc01..2ade729 100644
  
      // Setters
      { "SetTemporaryUnsummonedPetNumber", &LuaPlayer::SetTemporaryUnsummonedPetNumber },
-@@ -625,6 +645,9 @@ ALERegister<Player> PlayerMethods[] =
+@@ -625,6 +646,9 @@ ALERegister<Player> PlayerMethods[] =
      { "GetBankItem", &LuaPlayer::GetBankItem },
      { "GetCreationTime", &LuaPlayer::GetCreationTime },
      { "SetCanFly", &LuaPlayer::SetCanFly },
@@ -416,7 +424,7 @@ index c0acc01..2ade729 100644
  
      // Boolean
      { "HasTankSpec", &LuaPlayer::HasTankSpec },
-@@ -1088,6 +1111,7 @@ ALERegister<Aura> AuraMethods[] =
+@@ -1088,6 +1112,7 @@ ALERegister<Aura> AuraMethods[] =
      { "GetMaxDuration", &LuaAura::GetMaxDuration },
      { "GetAuraId", &LuaAura::GetAuraId },
      { "GetStackAmount", &LuaAura::GetStackAmount },
@@ -424,7 +432,7 @@ index c0acc01..2ade729 100644
      { "GetOwner", &LuaAura::GetOwner },
  
      // Setters
-@@ -1368,6 +1392,7 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1368,6 +1393,7 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMap", &LuaBattleGround::GetMap },
      { "GetBonusHonorFromKillCount", &LuaBattleGround::GetBonusHonorFromKillCount },
      { "GetEndTime", &LuaBattleGround::GetEndTime },
@@ -432,7 +440,7 @@ index c0acc01..2ade729 100644
      { "GetFreeSlotsForTeam", &LuaBattleGround::GetFreeSlotsForTeam },
      { "GetInstanceId", &LuaBattleGround::GetInstanceId },
      { "GetMapId", &LuaBattleGround::GetMapId },
-@@ -1380,6 +1405,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1406,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -443,7 +451,7 @@ index c0acc01..2ade729 100644
  
      { NULL, NULL }
  };
-@@ -1481,6 +1510,7 @@ ALERegister<SpellInfo> SpellInfoMethods[] =
+@@ -1481,6 +1511,7 @@ ALERegister<SpellInfo> SpellInfoMethods[] =
      { "GetEffectMechanicMask", &LuaSpellInfo::GetEffectMechanicMask },
      { "GetSpellMechanicMaskByEffectMask", &LuaSpellInfo::GetSpellMechanicMaskByEffectMask },
      { "GetEffectMechanic", &LuaSpellInfo::GetEffectMechanic },
@@ -1262,7 +1270,7 @@ index 06ddf1d..6c57bbf 100644
      }
  
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..acb8cc1 100644
+index c39801f..d5e369c 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -7,9 +7,20 @@
@@ -1446,7 +1454,25 @@ index c39801f..acb8cc1 100644
      /**
       * Returns `true` if the [Player] is immune to everything.
       *
-@@ -1556,6 +1720,33 @@ namespace LuaPlayer
+@@ -1052,6 +1216,17 @@ namespace LuaPlayer
+         return 1;
+     }
+ 
++    /**
++     * Returns the [Player]s current [BattleGround]
++     *
++     * @return [BattleGround] battleground
++     */
++    int GetBattleground(lua_State* L, Player* player)
++    {
++        ALE::Push(L, player->GetBattleground());
++        return 1;
++    }
++
+     /**
+      * Returns the [Player]s reputation rank of faction specified
+      *
+@@ -1556,6 +1731,33 @@ namespace LuaPlayer
          ALE::Push(L, player->GetTeamId());
          return 1;
      }
@@ -1480,7 +1506,7 @@ index c39801f..acb8cc1 100644
      
      /**
       * Returns amount of the specified [Item] the [Player] has.
-@@ -2249,6 +2440,14 @@ namespace LuaPlayer
+@@ -2249,6 +2451,14 @@ namespace LuaPlayer
          int32 amount = ALE::CHECKVAL<int32>(L, 2);
  
          player->ModifyHonorPoints(amount);
@@ -1495,7 +1521,7 @@ index c39801f..acb8cc1 100644
          return 0;
      }
  
-@@ -5149,7 +5348,7 @@ namespace LuaPlayer
+@@ -5149,7 +5359,7 @@ namespace LuaPlayer
      #endif
          return 1;
      }
@@ -1504,7 +1530,7 @@ index c39801f..acb8cc1 100644
      /**
       * Returns the [Player]s spent talent points in each talent tree for the active spec
       *
-@@ -5175,6 +5374,399 @@ namespace LuaPlayer
+@@ -5175,6 +5385,399 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }

@@ -275,7 +275,7 @@ index de0663cdc..e5d906547 100644
  
      // Default score, present in every type
 diff --git a/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp b/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
-index f5bd8a84f..57739bfdc 100644
+index f5bd8a84f..38f608229 100644
 --- a/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
 +++ b/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
 @@ -162,8 +162,6 @@ void BattlegroundWS::RespawnFlagAfterDrop(TeamId teamId)
@@ -287,7 +287,17 @@ index f5bd8a84f..57739bfdc 100644
      RemoveAssaultAuras();
  
      CheckFlagKeeperInArea(teamId == TEAM_ALLIANCE ? TEAM_HORDE : TEAM_ALLIANCE);
-@@ -202,6 +200,8 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* player)
+@@ -193,15 +191,17 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* player)
+         return;
+ 
+     player->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+-    RemoveAssaultAuras();
+ 
+     AddPoints(player->GetTeamId(), 1);
+     SetFlagPicker(ObjectGuid::Empty, GetOtherTeamId(player->GetTeamId()));
+     UpdateFlagState(GetOtherTeamId(player->GetTeamId()), BG_WS_FLAG_STATE_ON_BASE);
++    RemoveAssaultAuras();
+ 
      if (player->GetTeamId() == TEAM_ALLIANCE)
      {
          player->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
@@ -371,16 +381,35 @@ index f5bd8a84f..57739bfdc 100644
              _bgEvents.HasTimeUntilEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10))
          return 0;
  
-@@ -588,6 +590,9 @@ uint32 BattlegroundWS::GetAssaultSpellId() const
+@@ -588,14 +590,20 @@ uint32 BattlegroundWS::GetAssaultSpellId() const
  
  void BattlegroundWS::RemoveAssaultAuras()
  {
-+    _bgEvents.CancelEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10);
-+    _bgEvents.CancelEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT15);
-+
-     if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_ALLIANCE)))
+-    if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_ALLIANCE)))
++    if (GetFlagState(TEAM_ALLIANCE) == BG_WS_FLAG_STATE_ON_BASE && GetFlagState(TEAM_HORDE) == BG_WS_FLAG_STATE_ON_BASE)
      {
-         player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
+-        player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
+-        player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
+-    }
+-    if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_HORDE)))
+-    {
+-        player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
+-        player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
++        _bgEvents.CancelEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10);
++        _bgEvents.CancelEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT15);
++
++        if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_ALLIANCE)))
++        {
++            player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
++            player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
++        }
++        if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_HORDE)))
++        {
++            player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
++            player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
++        }
+     }
+ }
 diff --git a/src/server/game/Battlegrounds/Zones/BattlegroundWS.h b/src/server/game/Battlegrounds/Zones/BattlegroundWS.h
 index ff3dc64d6..832c5e087 100644
 --- a/src/server/game/Battlegrounds/Zones/BattlegroundWS.h

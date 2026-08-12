@@ -1214,10 +1214,17 @@ BalanceBGBots = function(map, bg, triggerEvent, playerName)
         GetPendingBotsForInstance(instId)
     )
     if hasPendingInvites then
+        print("[WSG Bot Balance] Deferring bot changes while real-player invites are pending " .. inspect({
+            instanceId = instId,
+            wouldRemove = #plan.toRemove,
+            wouldAddAlliance = #(plan.toAdd[0] or {}),
+            wouldAddHorde = #(plan.toAdd[1] or {}),
+        }))
         for _, bot in ipairs(plan.toRemove) do
             LogBotRemovalBlocked(bot, instId, "real_player_invite_pending")
         end
         plan.toRemove = {}
+        plan.toAdd = { [0] = {}, [1] = {} }
         print("[WSG Bot Balance] Keeping bots while real-player invites are pending " .. inspect({ instanceId = instId }))
     end
 

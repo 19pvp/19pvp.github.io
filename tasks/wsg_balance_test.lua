@@ -870,7 +870,7 @@ do
     local carrierOrder = balance.sortBotsForRemoval({ flagMage, { name = "BotRogue", class = 4, isBot = true } }, { flagMage })
     assert(carrierOrder[#carrierOrder] == flagMage, "Flag carrier must be last in bot removal order")
 
-    local carryingPlan = balance.computeBotActions({
+local carryingPlan = balance.computeBotActions({
         [0] = { realCount = 9, bots = { flagMage }, players = { flagMage } },
         [1] = { realCount = 10, bots = {}, players = {} },
     }, 5)
