@@ -1262,7 +1262,7 @@ index 06ddf1d..6c57bbf 100644
      }
  
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..4262139 100644
+index c39801f..acb8cc1 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -7,9 +7,20 @@
@@ -1480,7 +1480,22 @@ index c39801f..4262139 100644
      
      /**
       * Returns amount of the specified [Item] the [Player] has.
-@@ -5149,7 +5340,7 @@ namespace LuaPlayer
+@@ -2249,6 +2440,14 @@ namespace LuaPlayer
+         int32 amount = ALE::CHECKVAL<int32>(L, 2);
+ 
+         player->ModifyHonorPoints(amount);
++
++        if (amount > 0 && player->InBattleground())
++        {
++            if (BattleGround* bg = player->GetBattleground())
++            {
++                bg->UpdatePlayerScore(player, SCORE_BONUS_HONOR, amount, false);
++            }
++        }
+         return 0;
+     }
+ 
+@@ -5149,7 +5348,7 @@ namespace LuaPlayer
      #endif
          return 1;
      }
@@ -1489,7 +1504,7 @@ index c39801f..4262139 100644
      /**
       * Returns the [Player]s spent talent points in each talent tree for the active spec
       *
-@@ -5175,6 +5366,399 @@ namespace LuaPlayer
+@@ -5175,6 +5374,399 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }

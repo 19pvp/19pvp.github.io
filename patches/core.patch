@@ -275,7 +275,7 @@ index de0663cdc..e5d906547 100644
  
      // Default score, present in every type
 diff --git a/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp b/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
-index f5bd8a84f..b316a1ea2 100644
+index f5bd8a84f..57739bfdc 100644
 --- a/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
 +++ b/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
 @@ -162,8 +162,6 @@ void BattlegroundWS::RespawnFlagAfterDrop(TeamId teamId)
@@ -287,7 +287,63 @@ index f5bd8a84f..b316a1ea2 100644
      RemoveAssaultAuras();
  
      CheckFlagKeeperInArea(teamId == TEAM_ALLIANCE ? TEAM_HORDE : TEAM_ALLIANCE);
-@@ -328,8 +326,6 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+@@ -202,6 +200,8 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* player)
+     if (player->GetTeamId() == TEAM_ALLIANCE)
+     {
+         player->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
++        player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
++        player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
+         PlaySoundToAll(BG_WS_SOUND_FLAG_CAPTURED_ALLIANCE);
+         SendBroadcastText(BG_WS_TEXT_CAPTURED_HORDE_FLAG, CHAT_MSG_BG_SYSTEM_ALLIANCE, player);
+         RewardReputationToTeam(890, _reputationCapture, TEAM_ALLIANCE);
+@@ -209,6 +209,8 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* player)
+     else
+     {
+         player->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
++        player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
++        player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
+         PlaySoundToAll(BG_WS_SOUND_FLAG_CAPTURED_HORDE);
+         SendBroadcastText(BG_WS_TEXT_CAPTURED_ALLIANCE_FLAG, CHAT_MSG_BG_SYSTEM_HORDE, player);
+         RewardReputationToTeam(889, _reputationCapture, TEAM_HORDE);
+@@ -242,6 +244,7 @@ void BattlegroundWS::EventPlayerDroppedFlag(Player* player)
+ 
+     SetFlagPicker(ObjectGuid::Empty, GetOtherTeamId(player->GetTeamId()));
+     player->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
++    player->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
+     player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
+     player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
+ 
+@@ -284,11 +287,13 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+         PlaySoundToAll(BG_WS_SOUND_ALLIANCE_FLAG_PICKED_UP);
+         SendBroadcastText(BG_WS_TEXT_ALLIANCE_FLAG_PICKED_UP, CHAT_MSG_BG_SYSTEM_HORDE, player);
+ 
+-        if (GetFlagState(TEAM_HORDE) != BG_WS_FLAG_STATE_ON_BASE)
++        if (GetFlagState(TEAM_HORDE) == BG_WS_FLAG_STATE_ON_BASE)
+         {
+             _bgEvents.RescheduleEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10, BG_WS_SPELL_FORCE_TIME);
+             _bgEvents.RescheduleEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT15, BG_WS_SPELL_BRUTAL_TIME);
+         }
++        else if (uint32 assaultSpellId = GetAssaultSpellId())
++            player->CastSpell(player, assaultSpellId, true);
+         return;
+     }
+ 
+@@ -304,11 +309,13 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+         PlaySoundToAll(BG_WS_SOUND_HORDE_FLAG_PICKED_UP);
+         SendBroadcastText(BG_WS_TEXT_HORDE_FLAG_PICKED_UP, CHAT_MSG_BG_SYSTEM_ALLIANCE, player);
+ 
+-        if (GetFlagState(TEAM_ALLIANCE) != BG_WS_FLAG_STATE_ON_BASE)
++        if (GetFlagState(TEAM_ALLIANCE) == BG_WS_FLAG_STATE_ON_BASE)
+         {
+             _bgEvents.RescheduleEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10, BG_WS_SPELL_FORCE_TIME);
+             _bgEvents.RescheduleEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT15, BG_WS_SPELL_BRUTAL_TIME);
+         }
++        else if (uint32 assaultSpellId = GetAssaultSpellId())
++            player->CastSpell(player, assaultSpellId, true);
+         return;
+     }
+     if (player->IsMounted())
+@@ -328,8 +335,6 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
  
              PlaySoundToAll(BG_WS_SOUND_FLAG_RETURNED);
              SendBroadcastText(BG_WS_TEXT_ALLIANCE_FLAG_RETURNED, CHAT_MSG_BG_SYSTEM_ALLIANCE, player);
@@ -296,7 +352,7 @@ index f5bd8a84f..b316a1ea2 100644
              RemoveAssaultAuras();
  
              CheckFlagKeeperInArea(TEAM_HORDE);
-@@ -361,8 +357,6 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+@@ -361,8 +366,6 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
  
              PlaySoundToAll(BG_WS_SOUND_FLAG_RETURNED);
              SendBroadcastText(BG_WS_TEXT_HORDE_FLAG_RETURNED, CHAT_MSG_BG_SYSTEM_HORDE, player);
@@ -305,35 +361,26 @@ index f5bd8a84f..b316a1ea2 100644
              RemoveAssaultAuras();
  
              CheckFlagKeeperInArea(TEAM_ALLIANCE);
-@@ -588,14 +582,20 @@ uint32 BattlegroundWS::GetAssaultSpellId() const
+@@ -578,8 +581,7 @@ TeamId BattlegroundWS::GetPrematureWinner()
+ 
+ uint32 BattlegroundWS::GetAssaultSpellId() const
+ {
+-    if ((!GetFlagPickerGUID(TEAM_ALLIANCE) && GetFlagState(TEAM_ALLIANCE) != BG_WS_FLAG_STATE_ON_GROUND) ||
+-            (!GetFlagPickerGUID(TEAM_HORDE) && GetFlagState(TEAM_HORDE) != BG_WS_FLAG_STATE_ON_GROUND) ||
++    if ((GetFlagState(TEAM_ALLIANCE) == BG_WS_FLAG_STATE_ON_BASE && GetFlagState(TEAM_HORDE) == BG_WS_FLAG_STATE_ON_BASE) ||
+             _bgEvents.HasTimeUntilEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10))
+         return 0;
+ 
+@@ -588,6 +590,9 @@ uint32 BattlegroundWS::GetAssaultSpellId() const
  
  void BattlegroundWS::RemoveAssaultAuras()
  {
--    if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_ALLIANCE)))
-+    if (GetFlagState(TEAM_ALLIANCE) == BG_WS_FLAG_STATE_ON_BASE && GetFlagState(TEAM_HORDE) == BG_WS_FLAG_STATE_ON_BASE)
-     {
--        player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
--        player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
--    }
--    if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_HORDE)))
--    {
--        player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
--        player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
-+        _bgEvents.CancelEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10);
-+        _bgEvents.CancelEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT15);
++    _bgEvents.CancelEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10);
++    _bgEvents.CancelEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT15);
 +
-+        if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_ALLIANCE)))
-+        {
-+            player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
-+            player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
-+        }
-+        if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_HORDE)))
-+        {
-+            player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
-+            player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
-+        }
-     }
- }
+     if (Player* player = ObjectAccessor::GetPlayer(FindBgMap(), GetFlagPickerGUID(TEAM_ALLIANCE)))
+     {
+         player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
 diff --git a/src/server/game/Battlegrounds/Zones/BattlegroundWS.h b/src/server/game/Battlegrounds/Zones/BattlegroundWS.h
 index ff3dc64d6..832c5e087 100644
 --- a/src/server/game/Battlegrounds/Zones/BattlegroundWS.h
@@ -384,7 +431,7 @@ index 32e9bec91..3dc8b3e0d 100644
      void SendToOne(WorldPacket* data, ObjectGuid who);
      void SendToAllWatching(WorldPacket* data);
 diff --git a/src/server/game/Entities/Player/Player.cpp b/src/server/game/Entities/Player/Player.cpp
-index f2b3207c7..bb27532b2 100644
+index f2b3207c7..e034432b8 100644
 --- a/src/server/game/Entities/Player/Player.cpp
 +++ b/src/server/game/Entities/Player/Player.cpp
 @@ -1195,12 +1195,10 @@ bool Player::BuildEnumData(PreparedQueryResult result, WorldPacket* data)
@@ -460,7 +507,7 @@ index f2b3207c7..bb27532b2 100644
  
 -            honor_f = std::ceil(Acore::Honor::hk_honor_at_level_f(k_level) * (v_level - k_grey) / (k_level - k_grey));
 +            if (InBattleground())
-+                honor_f = 0.0f;
++                honor_f = float(urand(1, 3));
 +            else
 +                honor_f = std::ceil(Acore::Honor::hk_honor_at_level_f(k_level) * (v_level - k_grey) / (k_level - k_grey));
  
