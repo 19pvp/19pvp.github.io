@@ -821,15 +821,24 @@ CreateLuaEvent(function ()
         end
     end
 
-    local hasJoinableActiveBG = false
+    local activeBGHasCapacity = false
     for instanceId in pairs(wsgController:getActiveBGInstances()) do
         if isJoinableBattleground(GetBattleground(instanceId, bgTypeId)) then
-            hasJoinableActiveBG = true
-            break
+            local map = GetMapById(WSG_MAP_ID, instanceId)
+            if not map then
+                activeBGHasCapacity = true
+            else
+                local departedPlayers = wsgController:getDepartedPlayers(instanceId)
+                local realCounts = getMapTeamCounts(map, departedPlayers)
+                local counts = wsgController:getTeamCountsWithPending(instanceId, realCounts, {})
+                if counts[0] < maxWsgPlayersPerTeam or counts[1] < maxWsgPlayersPerTeam then
+                    activeBGHasCapacity = true
+                end
+            end
         end
     end
 
-    if shouldProc and realPlayersCount > 0 and not hasJoinableActiveBG then
+    if shouldProc and realPlayersCount > 0 and not activeBGHasCapacity then
         local freshPlan = wsgController:planFreshMatch(eligiblePlayers)
         local selectedPlayers = freshPlan.selectedPlayers
         local excludedPlayers = freshPlan.excludedPlayers
