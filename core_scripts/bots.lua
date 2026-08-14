@@ -262,7 +262,7 @@ local function getMapTeamCounts(map, excludedGuids)
     local teamCounts = { [0] = 0, [1] = 0 }
     for _, player in ipairs(map:GetPlayers()) do
         local guidLow = player:GetGUIDLow()
-        if not excludedGuids[guidLow] then
+        if not excludedGuids[guidLow] and not player:IsBot() then
             local teamId = player:GetBgTeamId()
             if teamId == 0 or teamId == 1 then teamCounts[teamId] = teamCounts[teamId] + 1 end
         end
@@ -821,7 +821,15 @@ CreateLuaEvent(function ()
         end
     end
 
-    if shouldProc and realPlayersCount > 0 then
+    local hasJoinableActiveBG = false
+    for instanceId in pairs(wsgController:getActiveBGInstances()) do
+        if isJoinableBattleground(GetBattleground(instanceId, bgTypeId)) then
+            hasJoinableActiveBG = true
+            break
+        end
+    end
+
+    if shouldProc and realPlayersCount > 0 and not hasJoinableActiveBG then
         local freshPlan = wsgController:planFreshMatch(eligiblePlayers)
         local selectedPlayers = freshPlan.selectedPlayers
         local excludedPlayers = freshPlan.excludedPlayers

@@ -1069,6 +1069,22 @@ local activePlan, activeExcluded = queueController:planActiveInvites(
     10
 )
 assert(activePlan == nil and #activeExcluded == 1, "Active matchmaking must defer a class once pending invites fill its cap")
+
+do
+    local botDoesNotConsumeCapacity = balance.createQueueController()
+    local latePlayer = { name = "late-player", nativeTeam = 0, classId = 8, guidLow = 2410 }
+    local latePlan = botDoesNotConsumeCapacity:planActiveInvites(
+        { latePlayer },
+        {
+            [0] = { realCount = 9, classCounts = {}, players = {}, bots = { { isBot = true } } },
+            [1] = { realCount = 9, classCounts = {}, players = {}, bots = {} },
+        },
+        9002,
+        { [0] = 9, [1] = 9 },
+        10
+    )
+    assert(latePlan and latePlan.fits, "A bot occupying the tenth map slot must not block a real player join")
+end
 queueController:clearPlayer(hunterTwo.guidLow)
 assert(queueController:getPendingInvite(hunterTwo.guidLow) == nil, "Clearing a player must retract its pending invite")
 assert(queueController:getClassCounts(9001, {
@@ -1230,6 +1246,16 @@ function testSharedMatchState()
     assert(participants["3001"] and participants["3001"].guid == "Player-3001"
         and participants["3001"].team == 1,
         "Rewards must use the participant's battleground team, not permanent faction")
+
+    local arenaState = state.create()
+    state.recordParticipant(arenaState, 9931, {
+        guidLow = 3010,
+        guid = "Player-3010",
+        name = "arena-player",
+        bgTeam = 0,
+    }, 1)
+    assert(state.getParticipants(arenaState, 9931)["3010"].team == 1,
+        "Arena rewards must retain the arena team instead of the permanent faction")
 
     local previousGetPlayerByGUID = _G.GetPlayerByGUID
     local livePlayer = { isBot = false }

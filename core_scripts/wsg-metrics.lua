@@ -13,6 +13,8 @@ local WSG_ARENA_TEAM_TYPE = 5
 local PREPARATION_AURA = 44521
 local HAND_OF_PROTECTION = 1022
 local ARENA_PREPARATION_AURA = 32727
+local WsgState = require("wsg-state")
+local wsgState = WsgState.shared
 local WINNER_ARENA_POINTS = 10
 local LOSER_ARENA_POINTS = 5
 local WSG_FLAG_AURAS = { [WSG_HORDE_FLAG_AURA] = true, [WSG_ALLIANCE_FLAG_AURA] = true }
@@ -612,7 +614,11 @@ end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, instanceId)
     local _, stats = addParticipant(player, instanceId)
-    if stats then stats.deserted = nil end
+    if stats then
+        stats.deserted = nil
+        local participantInstanceId = instanceId or player:GetBattlegroundId()
+        WsgState.recordParticipant(wsgState, participantInstanceId, player, stats.team)
+    end
 end)
 
 -- The preparation aura is removed when the arena actually begins. This keeps

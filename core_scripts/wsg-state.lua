@@ -31,20 +31,20 @@ end
 
 WsgState.shared = createState()
 
-function WsgState.recordParticipant(state, instanceId, player)
+function WsgState.recordParticipant(state, instanceId, player, teamId)
     if not state or not player or not instanceId or instanceId <= 0 or isBot(player) then return end
 
     local guidLow = getValue(player, "GetGUIDLow", "guidLow")
     if not guidLow then return end
 
     local guid = getValue(player, "GetGUID", "guid") or guidLow
-    local teamId = getValue(player, "GetBgTeamId", "bgTeam")
+    local playerTeamId = getValue(player, "GetBgTeamId", "bgTeam")
 
     state.participants[instanceId] = state.participants[instanceId] or {}
     state.participants[instanceId][tostring(guidLow)] = {
         guid = guid,
         guidLow = guidLow,
-        team = teamId,
+        team = teamId or playerTeamId,
         name = getValue(player, "GetName", "name"),
     }
 end
