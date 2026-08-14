@@ -93,7 +93,7 @@ local function UpdateScoreboardHeaders()
             local cleanName = string.match(name, "^([^-]+)") or name
             local isBot = PVP19_ScoreboardBots[cleanName]
             local _, _, _, _, _, actualFaction = GetBattlefieldScore(i)
-            
+
             -- Invert actualFaction here for the header text calculation (0 = Horde, 1 = Alliance)
             if actualFaction == 0 then -- Horde
                 if isBot then
@@ -643,7 +643,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
         elseif prefix == "PVP19_SYNC" then
             -- Split payload: "bot1,bot2;hordeplayer1,hordeplayer2;allianceplayer1,allianceplayer2"
             local botsSection, hordeSection, allianceSection = string.match(message, "^([^;]*);?([^;]*);?(.*)$")
-            
+
             if botsSection and botsSection ~= "" then
                 for botName in string.gmatch(botsSection, "[^,]+") do
                     PVP19_ScoreboardBots[botName] = true

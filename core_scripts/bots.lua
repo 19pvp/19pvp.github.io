@@ -92,6 +92,138 @@ local PVP19_ADDON_VERSION = "1.1"
 local ProcessActiveBGQueuePlayer
 local botFillAt = {}
 
+local function getDebugPlayerValue(player, methodName)
+    if not player or type(player[methodName]) ~= "function" then return nil end
+    local ok, value = pcall(player[methodName], player)
+    return ok and value or nil
+end
+
+local function formatDebugPlayer(player, overrides)
+    overrides = overrides or {}
+    return {
+        guidLow = overrides.guidLow ~= nil and overrides.guidLow or getDebugPlayerValue(player, "GetGUIDLow"),
+        name = overrides.name ~= nil and overrides.name or getDebugPlayerValue(player, "GetName"),
+        class = overrides.class ~= nil and overrides.class or getDebugPlayerValue(player, "GetClass"),
+        bgTeam = overrides.bgTeam ~= nil and overrides.bgTeam or getDebugPlayerValue(player, "GetBgTeamId"),
+        race = overrides.race ~= nil and overrides.race or getDebugPlayerValue(player, "GetRace"),
+    }
+end
+
+local function getDebugPlayerByGUID(guid)
+    if type(GetPlayerByGUID) ~= "function" then return nil end
+    local ok, player = pcall(GetPlayerByGUID, guid)
+    return ok and player or nil
+end
+
+local function getDebugMapPlayers(instanceId)
+    local map = GetMapById(WSG_MAP_ID, instanceId)
+    if not map or type(map.GetPlayers) ~= "function" then return {} end
+
+    local players = {}
+    for _, player in ipairs(map:GetPlayers() or {}) do
+        table.insert(players, formatDebugPlayer(player))
+    end
+    return players
+end
+
+local function getDebugActiveBGs()
+    local active = {}
+    for instanceId, bg in pairs(WsgState.shared.activeBGInstances) do
+        local summary = {}
+        local hasObject = type(bg) == "table" or type(bg) == "userdata"
+        if hasObject and type(bg.GetStatus) == "function" then summary.status = bg:GetStatus() end
+        if hasObject and type(bg.GetMapId) == "function" then summary.mapId = bg:GetMapId() end
+        summary.players = getDebugMapPlayers(instanceId)
+        active[instanceId] = summary
+    end
+    return active
+end
+
+local function getDebugParticipants()
+    local participants = {}
+    for instanceId, instanceParticipants in pairs(WsgState.shared.participants) do
+        participants[instanceId] = {}
+        for guidLow, participant in pairs(instanceParticipants) do
+            local livePlayer = getDebugPlayerByGUID(participant.guid)
+            participants[instanceId][guidLow] = formatDebugPlayer(livePlayer, {
+                guidLow = participant.guidLow,
+                name = participant.name,
+                bgTeam = participant.team,
+            })
+        end
+    end
+    return participants
+end
+
+local function getDebugPendingInvites()
+    local invites = {}
+    for guidLow, invite in pairs(WsgState.shared.pendingInvites) do
+        local livePlayer = getDebugPlayerByGUID(invite.guidLow)
+        invites[guidLow] = formatDebugPlayer(livePlayer, {
+            guidLow = invite.guidLow,
+            class = invite.classId,
+            bgTeam = invite.teamId,
+        })
+    end
+    return invites
+end
+
+local function getDebugQueuePlayers()
+    local players = {}
+    for _, player in ipairs(GetPlayersInQueue(bgTypeId, bracketId) or {}) do
+        table.insert(players, formatDebugPlayer(player))
+    end
+    return players
+end
+
+local function getDebugFixedRoster()
+    local roster = {}
+    for name, botInfo in pairs(fixedRoster) do
+        roster[name] = {
+            name = botInfo.name,
+            class = botInfo.classId,
+            bgTeam = botInfo.team,
+            pending = botInfo.pending,
+        }
+    end
+    return roster
+end
+
+local function sendWsgDebug(player)
+    local snapshot = {
+        state = {
+            pendingInvites = getDebugPendingInvites(),
+            activeBGInstances = getDebugActiveBGs(),
+            departedPlayers = WsgState.shared.departedPlayers,
+            participants = getDebugParticipants(),
+            endRewardsDistributed = WsgState.shared.endRewardsDistributed,
+            activeQueueRetryAt = WsgState.shared.activeQueueRetryAt,
+            classCapWarnings = WsgState.shared.classCapWarnings,
+            groupSplitWarnings = WsgState.shared.groupSplitWarnings,
+            queueMidpointAlertSent = WsgState.shared.queueMidpointAlertSent,
+            queueProjectionDirty = WsgState.shared.queueProjectionDirty,
+        },
+        queuedPlayers = getDebugQueuePlayers(),
+        botFillAt = botFillAt,
+        fixedRoster = getDebugFixedRoster(),
+    }
+
+    local text = inspect(snapshot)
+    local chunkSize = 180
+    local chunkCount = math.max(1, math.ceil(#text / chunkSize))
+    player:SendAddonMessage("PVP19_DEBUG", "BEGIN:" .. tostring(chunkCount), 7, player)
+    for chunkIndex = 1, chunkCount do
+        local startIndex = (chunkIndex - 1) * chunkSize + 1
+        player:SendAddonMessage(
+            "PVP19_DEBUG",
+            "DATA:" .. tostring(chunkIndex) .. ":" .. text:sub(startIndex, startIndex + chunkSize - 1),
+            7,
+            player
+        )
+    end
+    player:SendAddonMessage("PVP19_DEBUG", "END", 7, player)
+end
+
 local function isJoinableBattleground(bg)
     if not bg then return false end
     local status = bg:GetStatus()
@@ -940,8 +1072,16 @@ SyncBGPlayerData = function(map)
     local bots, hordePlayers, alliancePlayers, realPlayers = {}, {}, {}, {}
     for _, p in ipairs(map:GetPlayers()) do
         local name = p:GetName()
-        if p:IsBot() then table.insert(bots, name) else table.insert(realPlayers, p) end
-        if p:GetBgTeamId() == 1 then table.insert(hordePlayers, name) else table.insert(alliancePlayers, name) end
+        if p:IsBot() then
+            table.insert(bots, name)
+        else
+            table.insert(realPlayers, p)
+        end
+        if p:GetBgTeamId() == 1 then
+            table.insert(hordePlayers, name)
+        else
+            table.insert(alliancePlayers, name)
+        end
     end
     local payload = table.concat(bots, ",") .. ";" .. table.concat(hordePlayers, ",") .. ";" .. table.concat(alliancePlayers, ",")
     for _, p in ipairs(realPlayers) do p:SendAddonMessage("PVP19_SYNC", payload, 7, p) end
@@ -1241,6 +1381,12 @@ RegisterServerEvent(ADDON_EVENT_ON_MESSAGE, function(event, sender, type, prefix
         if map then
             SyncBGPlayerData(map)
         end
+        return false -- Suppress message forwarding
+    elseif prefix == "PVP19_DEBUG" then
+        if not sender or not sender:IsGM() or msg ~= "REQ" then
+            return false
+        end
+        sendWsgDebug(sender)
         return false -- Suppress message forwarding
     end
 end)
