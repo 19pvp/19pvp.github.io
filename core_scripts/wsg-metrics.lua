@@ -392,7 +392,10 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell, s
     local target = spell:GetTarget()
     local targetPlayer = target and target:ToPlayer()
     if DISPEL_PROTECTIVE_SPELLS[spellId] and targetPlayer then
-        if player:GetTeam() == targetPlayer:GetTeam() then
+        local playerTeam = player:GetBgTeamId()
+        local targetTeam = targetPlayer:GetBgTeamId()
+        if playerTeam == nil or targetTeam == nil then return end
+        if playerTeam == targetTeam then
             stats.dispelsDefensive = stats.dispelsDefensive + 1
         else
             stats.dispelsOffensive = stats.dispelsOffensive + 1
@@ -688,49 +691,4 @@ RegisterBGEvent(BG_EVENT_ON_PRE_DESTROY, function(event, bg, bgId, instanceId)
     local startedAt = match.startedAt or match.createdAt
     local duration = math.max(0, math.floor((endedAt - startedAt) / 1000))
     finishArenaMatch(match, match.winner, duration)
-end)
-
--- Metrics inspection command.
-RegisterPlayerEvent(PLAYER_EVENT_ON_CHAT, function(event, player, msg, Type, lang)
-    if not msg or msg:sub(1, 8):lower() ~= "?metrics" then return end
-    local suffix = msg:sub(9)
-    if suffix ~= "" and not suffix:match("^%s") then return end
-
-    local query = suffix:match("^%s*(.-)%s*$")
-    local instanceId = player:GetBattlegroundId()
-    local match = instanceId and matches[instanceId]
-    if not match then match = findArenaMatch(player, instanceId) end
-    local currentMatchStats = match and match.players
-    if not currentMatchStats then
-        player:SendBroadcastMessage("[Metrics] No metrics available for this match yet.")
-        return false
-    end
-
-    local label = match.kind == "ARENA" and "Arena" or "WSG"
-    local metricKey = query ~= "" and query or nil
-    local found = false
-    for _, stats in pairs(currentMatchStats) do
-        local value = metricKey and stats[metricKey] or stats
-        local hasValue = not metricKey or (value ~= nil and value ~= false and value ~= 0 and value ~= "")
-        if hasValue then
-            found = true
-            if metricKey then
-                player:SendBroadcastMessage("[" .. label .. " Metrics] " .. stats.name .. " -> " .. metricKey .. " = " .. inspect(value))
-            else
-                local visibleStats = {}
-                for key, statValue in pairs(stats) do
-                    if key:sub(1, 1) ~= "_" then visibleStats[key] = statValue end
-                end
-                player:SendBroadcastMessage("[" .. label .. " Metrics] " .. stats.name .. " -> " .. inspect(visibleStats))
-            end
-        end
-    end
-
-    if metricKey and not found then
-        player:SendBroadcastMessage("[" .. label .. " Metrics] No players accumulated this metric yet.")
-    elseif not metricKey and not found then
-        player:SendBroadcastMessage("[" .. label .. " Metrics] No players are tracked in this match yet.")
-    end
-
-    return false
 end)

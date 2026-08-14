@@ -435,11 +435,7 @@ assert(#grouped == 2, "Solo players should form 2 distinct group buckets")
 assert(grouped[1].players[1].classId == 1 and grouped[2].players[1].classId == 11, "Queued grouping preserves player class IDs")
 assert(#balance.groupQueuedPlayers({}) == 0, "Empty queued-player input must produce no groups")
 
--- 7d: Test balance.assignOngoing alias
-local ongoingAssignments = balance.assignOngoing({ { players = { player("p1", 0) } } }, 4, 5)
-assert(#ongoingAssignments == 1 and ongoingAssignments[1].team == 0, "assignOngoing alias works correctly")
-
--- 7e: Test balance.describeAssignments for split, intact, partial, and empty projections.
+-- 7d: Test balance.describeAssignments for split, intact, partial, and empty projections.
 local intactGroup = { players = { player("intact1", 0, 1), player("intact2", 0, 8) } }
 local intactSummary = balance.describeAssignments({ intactGroup }, {
     { player = "intact1", team = 0, classId = 1 },
@@ -708,6 +704,32 @@ local function testStaleRosterExclusion()
     assert(restoredRoster[0].realCount == 1, "Roster extraction must stop excluding a player once no exclusion is supplied")
 end
 testStaleRosterExclusion()
+
+;(function()
+    local reenteredWarrior = {
+        guidLow = 1420,
+        team = 0,
+        class = 1,
+        isBot = true,
+        name = "ReenteredWarrior",
+    }
+    local players = { reenteredWarrior }
+    for i = 1, 6 do
+        table.insert(players, { guidLow = 1500 + i, team = 0, class = i, isBot = false })
+    end
+    for i = 1, 7 do
+        table.insert(players, { guidLow = 1600 + i, team = 1, class = i, isBot = false })
+    end
+
+    local reenteredMap = { GetPlayers = function() return players end }
+    local staleReentryPlan = balance.computeMapBotActions(reenteredMap, 5, nil, { [1420] = true })
+    assert(#staleReentryPlan.toAdd[0] == 1 and staleReentryPlan.toAdd[0][1] == 1,
+        "A stale departed Warrior exclusion must reproduce the false duplicate-bot request")
+
+    local activeReentryPlan = balance.computeMapBotActions(reenteredMap, 5)
+    assert(#activeReentryPlan.toAdd[0] == 0 and #activeReentryPlan.toRemove == 0,
+        "A re-entered Warrior present in the map must satisfy the trailing bot target")
+end)()
 
 local mapPlan = balance.computeMapBotActions(mockMap, 5)
 assert(#mapPlan.toAdd[0] == 3 and #mapPlan.toAdd[1] == 4, "computeMapBotActions returns correct bot target additions")
@@ -1086,6 +1108,9 @@ assert(lifecycleController:getRetryAt(lifecyclePlayer.guidLow) == nil
 lifecycleController:markPlayerLeft(9905, lifecyclePlayer)
 assert(lifecycleController:getDepartedPlayers(9905)[lifecyclePlayer.guidLow] == true,
     "A BG leave must remember the player until the stale map snapshot is gone")
+lifecycleController:markPlayerEntered(9905, lifecyclePlayer)
+assert(lifecycleController:getDepartedPlayers(9905)[lifecyclePlayer.guidLow] == nil,
+    "A BG re-entry must restore the player to active roster consideration")
 lifecycleController:clearDepartedPlayers(9905)
 assert(next(lifecycleController:getDepartedPlayers(9905)) == nil,
     "Departed-player exclusions must be clearable when the BG instance ends")
@@ -1184,4 +1209,111 @@ assert(balance.nativeDistributionTeamId(2) == nil and balance.nativeDistribution
     "Invalid native team IDs are rejected")
 print("  -> PASSED: Native distribution inputs are range-checked and fail closed.")
 
-print("\nwsg_balance_test: ok (All 29 test suites passed cleanly)")
+-- 30. Shared match state keeps participants and end-reward delivery in sync.
+function testSharedMatchState()
+    print("[Test 30] Shared WSG match state retains participants who leave and claims rewards once...")
+    local state = require("wsg-state")
+    local matchState = state.create()
+    local matchController = balance.createQueueController(matchState)
+    local matchPlayer = {
+        guidLow = 3001,
+        guid = "Player-3001",
+        name = "leaver",
+        class = 4,
+        team = 0,
+        bgTeam = 1,
+    }
+    matchController:markPlayerLeft(9930, matchPlayer)
+    matchController:markPlayerEntered(9930, matchPlayer)
+
+    local participants = state.getParticipants(matchState, 9930)
+    assert(participants["3001"] and participants["3001"].guid == "Player-3001"
+        and participants["3001"].team == 1,
+        "Rewards must use the participant's battleground team, not permanent faction")
+
+    local previousGetPlayerByGUID = _G.GetPlayerByGUID
+    local livePlayer = { isBot = false }
+    local liveBot = { isBot = true }
+    _G.GetPlayerByGUID = function(guid)
+        return ({ ["Player-3001"] = livePlayer, ["Player-3002"] = liveBot })[guid]
+    end
+    matchState.participants[9930]["3002"] = {
+        guid = "Player-3002",
+        guidLow = 3002,
+        team = 0,
+        name = "bot",
+    }
+    local previousGetPlayersInWorld = _G.GetPlayersInWorld
+    local restoredPlayer = {
+        isBot = false,
+        InBattleground = function() return true end,
+        GetBattlegroundTypeId = function() return 2 end,
+        GetMapId = function() return 489 end,
+        GetBattlegroundId = function() return 9932 end,
+        guidLow = 3005,
+        guid = "Player-3005",
+        name = "restored",
+        bgTeam = 0,
+    }
+    local ignoredPlayer = {
+        isBot = false,
+        InBattleground = function() return true end,
+        GetBattlegroundTypeId = function() return 2 end,
+        GetMapId = function() return 1 end,
+        GetBattlegroundId = function() return 9933 end,
+        guidLow = 3006,
+        guid = "Player-3006",
+        name = "ignored",
+        bgTeam = 1,
+    }
+    _G.GetPlayersInWorld = function() return { restoredPlayer, ignoredPlayer } end
+    local restored = state.restoreFromWorld(matchState, 2, 489)
+    _G.GetPlayersInWorld = previousGetPlayersInWorld
+    assert(restored[9932] and not restored[9933]
+        and state.getParticipants(matchState, 9932)["3005"],
+        "World restoration must record real WSG players and return their active instances")
+    matchState.activeBGInstances[9932] = true
+    local previousGetPlayerByGUIDAfterRestore = _G.GetPlayerByGUID
+    _G.GetPlayerByGUID = function(guid)
+        return guid == "Player-3005" and restoredPlayer or nil
+    end
+    local activeBattlegroundCount = 0
+    local activePlayerCount = 0
+    state.forEachActiveBattlegrounds(matchState, function(instanceId, players)
+        activeBattlegroundCount = activeBattlegroundCount + 1
+        assert(instanceId == 9932, "Active battleground iteration must return the tracked instance")
+        for _, player in ipairs(players) do
+            activePlayerCount = activePlayerCount + 1
+            assert(player == restoredPlayer,
+                "Active battleground iteration must return synchronized players")
+        end
+    end)
+    _G.GetPlayerByGUID = previousGetPlayerByGUIDAfterRestore
+    assert(activeBattlegroundCount == 1 and activePlayerCount == 1,
+        "Active battleground iteration must group synchronized players by instance")
+
+    local callbackCount = 0
+    local callbackTeam
+    local unavailableCount = 0
+    local iterated = state.forEachPlayers(matchState, 9930, function(player, participant)
+        callbackCount = callbackCount + 1
+        callbackTeam = participant.team
+        assert(player == livePlayer, "Player iteration must expose the live non-bot player")
+    end, function()
+        unavailableCount = unavailableCount + 1
+    end)
+    _G.GetPlayerByGUID = previousGetPlayerByGUID
+    assert(iterated == 1 and callbackCount == 1 and callbackTeam == 1 and unavailableCount == 0,
+        "Player iteration must exclude bots while preserving participant metadata")
+
+    assert(state.claimEndRewards(matchState, 9930), "The first end-reward delivery must claim the match")
+    assert(not state.claimEndRewards(matchState, 9930), "The same match must not distribute end rewards twice")
+    state.clearMatch(matchState, 9930)
+    assert(next(state.getParticipants(matchState, 9930)) == nil,
+        "Clearing a match must remove its participant records")
+    print("  -> PASSED: Shared match state preserves participants and enforces one end-reward claim.")
+end
+testSharedMatchState()
+testSharedMatchState = nil
+
+print("\nwsg_balance_test: ok (All 30 test suites passed cleanly)")

@@ -1,4 +1,5 @@
 local WsgBalance = {}
+local WsgState = require("wsg-state")
 local MAX_CLASS_PER_TEAM = 2
 local MAX_PLAYERS_PER_TEAM = 10
 
@@ -844,17 +845,8 @@ end
 
 -- Queue state is deliberately kept separate from ALE objects.  The game script
 -- owns the controller; tests can exercise these transitions with plain tables.
-function WsgBalance.createQueueController()
-    local state = {
-        pendingInvites = {},
-        activeBGInstances = {},
-        departedPlayers = {}, -- instanceId -> guidLow -> true; protects against stale ALE map snapshots
-        activeQueueRetryAt = {},
-        classCapWarnings = {},
-        groupSplitWarnings = {},
-        queueMidpointAlertSent = false,
-        queueProjectionDirty = true,
-    }
+function WsgBalance.createQueueController(initialState)
+    local state = initialState or WsgState.create()
 
     local controller = {}
 
@@ -968,6 +960,16 @@ function WsgBalance.createQueueController()
         if not instanceId or instanceId <= 0 or not guidLow then return end
         state.departedPlayers[instanceId] = state.departedPlayers[instanceId] or {}
         state.departedPlayers[instanceId][guidLow] = true
+    end
+
+    function controller:markPlayerEntered(instanceId, player)
+        local guidLow = getGuidLow(player)
+        if not instanceId or instanceId <= 0 or not guidLow then return end
+        WsgState.recordParticipant(state, instanceId, player)
+        local departed = state.departedPlayers[instanceId]
+        if not departed then return end
+        departed[guidLow] = nil
+        if next(departed) == nil then state.departedPlayers[instanceId] = nil end
     end
 
     function controller:getDepartedPlayers(instanceId)
@@ -1108,7 +1110,5 @@ function WsgBalance.createQueueController()
 
     return controller
 end
-
-WsgBalance.assignOngoing = WsgBalance.assign
 
 return WsgBalance

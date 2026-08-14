@@ -15,6 +15,8 @@ local classColors = {
 }
 
 local SATCHEL_ITEM_ID = 51999
+local WsgState = require("wsg-state")
+local wsgState = WsgState.shared
 
 local arenaTeamDefinitions = {
   { type = 2, suffix = " 2v2" },
@@ -50,11 +52,9 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LOGIN, function (event, player)
     "SELECT discord_login FROM discord_account WHERE account_id="
     ..tostring(account_id), function (result)
     if not result then
-      print("[Web Events] Account logged in -> " .. inspect({ accountId = account_id }))
       return
     end
     local discord_login = result:GetString(0)
-    print("[Web Events] Account logged in -> " .. inspect({ accountId = account_id, discordLogin = discord_login }))
     discord_logins[account_id] = discord_login
   end)
 end)
@@ -131,12 +131,10 @@ function DisplayNewMessages(result)
     
     -- Delete from DB first to prevent duplicate processing if Lua error occurs during broadcast
     AuthDBQuery("DELETE FROM discord_message WHERE id = "..tostring(message_id))
-    print("[Web Events] handling message: ("..msg..")")
     local player = account_id > 0 and GetActivePlayerForAccount(account_id) or nil
     local classColor = (player and classColors[player:GetClass()]) or "|c9B59B600" 
     local fullMsg = (login and (classColor.."@"..login.."|r ") or "")..msg:gsub("<@(%d+):([^>]+)>", ReplaceDiscordMentions)
     SendChannelMessage("General", fullMsg, 2, 0, player or account_id)
-    print("[Web Events] Displaying Discord message [" .. tostring(message_id) .. "] -> " .. msg)
   until not result:NextRow()
 end
 
@@ -226,39 +224,37 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_KILL_PLAYER, function (event, killer, killed
     y = killed:GetY(),
     z = killed:GetZ(),
   })
-  killer:AddItem(5075) -- blood shard
+  -- killer:AddItem(5075) -- blood shard
 end)
 
 RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
+  if not bg or not instanceId or instanceId <= 0 then return end
   local mapId = bg:GetMapId()
   local map = GetMapById(mapId, instanceId)
-  if not map then return end
+  if not map or not WsgState.claimEndRewards(wsgState, instanceId) then return end
+
   if map:IsBattleground() then
-    for _, player in ipairs(map:GetPlayers()) do
-      if not player:IsBot() then
-        player:AddItem(SATCHEL_ITEM_ID, 1)
-        local count = player:GetTeam() == winner and 2 or 1
-        player:AddItem(29434, count)
-      end
-    end
+    WsgState.forEachPlayers(wsgState, instanceId, function(player, participant)
+      player:AddItem(SATCHEL_ITEM_ID, 1)
+      local count = participant.team == winner and 2 or 1
+      player:AddItem(29434, count)
+    end)
   elseif map:IsArena() then
-    for _, player in ipairs(map:GetPlayers()) do
-      if not player:IsBot() then
-        local count = player:GetTeam() == winner and 2 or 1
-        player:AddItem(40752, count)
-      end
-    end
+    WsgState.forEachPlayers(wsgState, instanceId, function(player, participant)
+      local count = participant.team == winner and 2 or 1
+      player:AddItem(40752, count)
+    end)
   end
+
+  WsgState.clearMatch(wsgState, instanceId)
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_WHO_REQUEST, function(event, requester, target)
-  print("[Web Events] PLAYER_EVENT_ON_WHO_REQUEST -> " .. inspect({ requester = requester and requester:GetName(), target = target and target:GetName() }))
   if not requester or not target then return end
   local accountId = target:GetAccountId()
   local targetName = target:GetName()
   AuthDBQueryAsync("SELECT da.discord_login, a.joindate, a.username FROM account a LEFT JOIN discord_account da ON a.id = da.discord_id OR a.id = da.account_id WHERE a.id = " .. tostring(accountId), function(result)
     if not result then
-      print("[Web Events] AuthDBQueryAsync returned nil result for accountId: " .. tostring(accountId))
       return
     end
     local discordLogin = not result:IsNull(0) and result:GetString(0) or "None"
@@ -273,7 +269,6 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_WHO_REQUEST, function(event, requester, targ
       infoMsg = infoMsg .. " | Account: " .. accountName
     end
 
-    print("[Web Events] Sending Who Info to " .. requester:GetName() .. " -> " .. infoMsg)
     requester:SendBroadcastMessage(infoMsg)
   end)
 end)
@@ -283,47 +278,42 @@ end)
 -- 2 honor if within 40 yards of enemy flag carrier (or carrying enemy flag)
 -- 1 honor otherwise
 CreateLuaEvent(function()
-  for _, player in ipairs(GetPlayersInWorld()) do
-    if not player:IsBot() and player:InBattleground() and player:GetMapId() == 489 then -- 489 = Warsong Gulch
-      local instanceId = player:GetBattlegroundId()
-      if instanceId and instanceId ~= 0 then
-        local bg = GetBattleground(instanceId, player:GetBattlegroundTypeId())
-        if bg and bg:GetStatus() == 2 then -- STATUS_IN_PROGRESS = 2
-          local honorAmount = 1
-          local map = player:GetMap()
-          if map then
-            local pTeam = player:GetTeam()
-            local nearFriendlyFC = false
-            local nearEnemyFC = false
+  WsgState.forEachActiveBattlegrounds(wsgState, function(instanceId, players)
+    local player = players[1]
+    local bg = player:GetBattleground()
+    if not bg or bg:GetStatus() ~= 2 then return end
 
-            for _, p in ipairs(map:GetPlayers()) do
-              local hasAllianceFlag = p:HasAura(WSG_ALLIANCE_FLAG_AURA) -- 23335
-              local hasHordeFlag = p:HasAura(WSG_HORDE_FLAG_AURA)       -- 23333
+    local map = player:GetMap()
+    if not map then return end
 
-              if hasAllianceFlag or hasHordeFlag then
-                local dist = player:GetDistance(p)
-                if dist <= 40.0 then
-                  -- Friendly FC: Alliance carrying Horde flag (if player is Alliance) or Horde carrying Alliance flag (if player is Horde)
-                  local isFriendlyFC = (pTeam == 0 and hasHordeFlag) or (pTeam == 1 and hasAllianceFlag)
-                  if isFriendlyFC then
-                    nearFriendlyFC = true
-                  else
-                    nearEnemyFC = true
-                  end
-                end
-              end
-            end
-
-            if nearFriendlyFC then
-              honorAmount = 3
-            elseif nearEnemyFC then
-              honorAmount = 2
-            end
-          end
-
-          player:ModifyHonorPoints(honorAmount)
-        end
+    local flagCarriers = {}
+    for _, p in ipairs(map:GetPlayers()) do
+      local hasAllianceFlag = p:HasAura(WSG_ALLIANCE_FLAG_AURA)
+      local hasHordeFlag = p:HasAura(WSG_HORDE_FLAG_AURA)
+      if hasAllianceFlag or hasHordeFlag then
+        table.insert(flagCarriers, {
+          player = p,
+          hasAllianceFlag = hasAllianceFlag,
+          hasHordeFlag = hasHordeFlag,
+        })
       end
     end
-  end
+
+    for _, player in ipairs(players) do
+      local honorAmount = 1
+      local pTeam = player:GetBgTeamId()
+      for _, carrier in ipairs(flagCarriers) do
+        if player:GetDistance(carrier.player) <= 40.0 then
+          local isFriendlyFC = (pTeam == 0 and carrier.hasHordeFlag)
+            or (pTeam == 1 and carrier.hasAllianceFlag)
+          if isFriendlyFC then
+            honorAmount = 3
+            break
+          end
+          honorAmount = math.max(honorAmount, 2)
+        end
+      end
+      player:ModifyHonorPoints(honorAmount)
+    end
+  end)
 end, 10000, 0)
