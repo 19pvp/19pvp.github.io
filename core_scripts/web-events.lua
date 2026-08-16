@@ -281,7 +281,7 @@ CreateLuaEvent(function()
   WsgState.forEachActiveBattlegrounds(wsgState, function(instanceId, players)
     local player = players[1]
     local bg = player:GetBattleground()
-    if not bg or bg:GetStatus() ~= 2 then return end
+    if not bg or bg:GetStatus() ~= STATUS_IN_PROGRESS then return end
 
     local map = player:GetMap()
     if not map then return end
