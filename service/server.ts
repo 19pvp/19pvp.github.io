@@ -508,15 +508,16 @@ export default {
 
       if (url.pathname === '/api/leaderboards/csv') {
         if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
-        const period = url.searchParams.get('period') || 'all'
+        const periodParam = url.searchParams.get('period')
 
-        if (!isLeaderboardPeriod(period)) {
+        if (periodParam && !isLeaderboardPeriod(periodParam)) {
           return json({ error: 'Unknown leaderboard period' }, { status: 400 })
         }
 
-        const csvData = await getLeaderboardsCsv(period)
+        const csvData = await getLeaderboardsCsv(periodParam ?? undefined)
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-        const filename = `leaderboard-${period}-${timestamp}.csv`
+        const label = periodParam || 'raw'
+        const filename = `leaderboard-${label}-${timestamp}.csv`
         return new Response(csvData, {
           headers: {
             'content-type': 'text/csv; charset=utf-8',

@@ -180,9 +180,87 @@ export const getLeaderboards = async (params: LeaderboardParams) => {
   }
 }
 
-export const getLeaderboardsCsv = async (periodParam = 'all') => {
-  if (!isLeaderboardPeriod(periodParam)) throw Error('Unknown leaderboard period')
+export const getLeaderboardsCsv = async (periodParam?: string) => {
   await leaderboardReady
+
+  if (!periodParam) {
+    const columns = [
+      'eventId',
+      'kind',
+      'at',
+      'playerGuid',
+      'name',
+      'team',
+      'winner',
+      'won',
+      ...LEADERBOARD_METRICS.map(([key]) => key),
+    ]
+
+    const csvRows: Record<string, string | number>[] = []
+    let cursor = 0
+
+    while (true) {
+      const events = await auth.sql`
+        SELECT id, type, at, data FROM web_events
+        WHERE world=${env.WORLD_ID} AND type IN ('PVP_BG_STATS', 'PVP_ARENA_STATS') AND id > ${cursor}
+        UNION ALL
+        SELECT id, type, at, data FROM web_events_archive
+        WHERE world=${env.WORLD_ID} AND type IN ('PVP_BG_STATS', 'PVP_ARENA_STATS') AND id > ${cursor}
+        ORDER BY id
+        LIMIT ${BATCH_SIZE}
+      `
+      if (!events.length) break
+
+      for (const event of events) {
+        cursor = Math.max(cursor, Number(event.id) || cursor)
+        const payload = eventData(event.data) as Record<string, unknown> | null
+        if (!payload) continue
+        const players = payload.players as Record<string, Record<string, unknown>> | undefined
+        if (!players || typeof players !== 'object') continue
+
+        const isArena = event.type === 'PVP_ARENA_STATS'
+        const arenaType = payload.arenaType || payload.type
+        const kindLabel = isArena ? (arenaType === 2 || arenaType === '2v2' ? '2v2' : '3v3') : 'wsg'
+        const at = eventTimestamp(event)
+        const winner = payload.winner
+
+        for (const [guidKey, rawStats] of Object.entries(players)) {
+          if (!rawStats || typeof rawStats !== 'object') continue
+          const playerGuid = String(rawStats.playerGuid || guidKey)
+          const name = String(rawStats.name || playerGuid)
+          const team = rawStats.team
+          const won = typeof winner === 'number' && typeof team === 'number' ? (String(team) === String(winner) ? 1 : 0) : ''
+
+          const record: Record<string, string | number> = {
+            eventId: Number(event.id),
+            kind: kindLabel,
+            at,
+            playerGuid,
+            name,
+            team: typeof team === 'number' ? team : '',
+            winner: typeof winner === 'number' ? winner : '',
+            won,
+          }
+
+          for (const [key] of LEADERBOARD_METRICS) {
+            const val = rawStats[key]
+            if (key === 'deserted') {
+              record[key] = val ? 1 : 0
+            } else {
+              const num = Number(val)
+              record[key] = Number.isFinite(num) && num > 0 ? num : 0
+            }
+          }
+
+          csvRows.push(record)
+        }
+      }
+    }
+
+    return stringify(csvRows, { columns })
+  }
+
+  if (!isLeaderboardPeriod(periodParam)) throw Error('Unknown leaderboard period')
 
   const storeEntries: Array<['wsg' | '2v2' | '3v3', LeaderboardStore]> = [
     ['wsg', battlegroundStore],
