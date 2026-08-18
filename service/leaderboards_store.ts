@@ -351,7 +351,12 @@ export class LeaderboardStore {
     }
   }
 
-  getLeaderboard(metric: LeaderboardSortMetric, period: LeaderboardPeriod, mode: LeaderboardValueMode = 'absolute') {
+  getLeaderboard(
+    metric: LeaderboardSortMetric,
+    period: LeaderboardPeriod,
+    mode: LeaderboardValueMode = 'absolute',
+    limit = 100,
+  ) {
     this.synchronizeDay()
     const values = period
     const avgKey = `${period}Average` as 'allAverage' | 'todayAverage' | 'weekAverage' | 'monthAverage'
@@ -390,7 +395,7 @@ export class LeaderboardStore {
         else start = middle + 1
       }
 
-      if (top.length < 100 || start < top.length) {
+      if (top.length < limit || start < top.length) {
         const matches = period === 'all'
           ? player.matches
           : period === 'today'
@@ -406,7 +411,7 @@ export class LeaderboardStore {
           matches,
           timePlayed: periodValues[timePlayedIndex],
         })
-        if (top.length > 100) top.pop()
+        if (top.length > limit) top.pop()
       }
     }
 
@@ -418,10 +423,11 @@ export class LeaderboardStore {
     period: LeaderboardPeriod,
     metric: LeaderboardSortMetric = 'damageDone',
     mode: LeaderboardValueMode = 'absolute',
+    limit = 100,
   ) {
     const values = period
     const avgKey = `${period}Average` as 'allAverage' | 'todayAverage' | 'weekAverage' | 'monthAverage'
-    const top = this.getLeaderboard(metric, period, mode)
+    const top = this.getLeaderboard(metric, period, mode, limit)
     return top.map((row) => {
       const player = this.players.get(row.playerGuid)!
       const averageValues = player[avgKey]
@@ -434,5 +440,53 @@ export class LeaderboardStore {
       }
       return { ...row, stats, averages }
     })
+  }
+
+  getRawPlayerData(period: LeaderboardPeriod) {
+    this.synchronizeDay()
+    const values = period
+    const avgKey = `${period}Average` as 'allAverage' | 'todayAverage' | 'weekAverage' | 'monthAverage'
+    const results: Array<{
+      playerGuid: string
+      name: string
+      class?: number
+      matches: number
+      timePlayed: number
+      stats: Record<string, number>
+      averages: Record<string, number>
+    }> = []
+
+    for (const [playerGuid, player] of this.players) {
+      const periodValues = player[values]
+      const averageValues = player[avgKey]
+      const matches = period === 'all'
+        ? player.matches
+        : period === 'today'
+        ? player.todayMatches
+        : period === 'week'
+        ? player.weekMatches
+        : player.monthMatches
+
+      if (matches === 0 && !periodValues.some((v) => v > 0)) continue
+
+      const stats: Record<string, number> = {}
+      const averages: Record<string, number> = {}
+      for (const [key, valueIndex] of baseMetricIndex) {
+        stats[key] = periodValues[valueIndex]
+        averages[key] = averageValues[valueIndex]
+      }
+
+      results.push({
+        playerGuid,
+        name: player.name || playerGuid,
+        class: player.class,
+        matches,
+        timePlayed: periodValues[timePlayedIndex],
+        stats,
+        averages,
+      })
+    }
+
+    return results.sort((a, b) => a.name.localeCompare(b.name))
   }
 }

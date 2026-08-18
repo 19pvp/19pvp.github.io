@@ -53,6 +53,7 @@
     "server": "DENO_SERVE_AUTOMATIC_COMPRESSION=1 deno serve --unstable-raw-imports --watch=service -A service/server.ts"
   },
   "imports": {
+    "@std/csv": "jsr:@std/csv@^1.0.6",
     "@std/fmt/colors": "jsr:@std/fmt@^1.0.10/colors",
     "@std/streams": "jsr:@std/streams@^1.1.1",
     "node-emoji": "npm:node-emoji@^2.2.0",

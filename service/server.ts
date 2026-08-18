@@ -26,7 +26,8 @@ import { getAccountDetails, setOrCreateAccount } from './account.ts'
 import { auth } from './db.ts'
 import { env } from './env.ts'
 import { handleLog } from './logs.ts'
-import { getLeaderboards } from './leaderboards.ts'
+import { assertLeaderboardParams, getLeaderboards, getLeaderboardsCsv } from './leaderboards.ts'
+import { isLeaderboardPeriod } from './leaderboards_store.ts'
 import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib'
 
 import templateHTMLRaw from '../web/template.html' with { type: 'text' }
@@ -484,14 +485,38 @@ export default {
         const mode = url.searchParams.get('mode') || 'absolute'
         const kind = url.searchParams.get('kind') || 'battleground'
         const arenaType = url.searchParams.get('arenaType') || 'all'
+
+        let params: ReturnType<typeof assertLeaderboardParams>
         try {
-          return json(await getLeaderboards(metric, period, mode, kind, arenaType))
+          params = assertLeaderboardParams(metric, period, mode, kind, arenaType)
         } catch (error) {
           if (error instanceof Error && error.message.startsWith('Unknown leaderboard')) {
             return json({ error: error.message }, { status: 400 })
           }
           throw error
         }
+
+        return json(await getLeaderboards(params))
+      }
+
+      if (url.pathname === '/api/leaderboards/csv') {
+        if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 })
+        const period = url.searchParams.get('period') || 'all'
+
+        if (!isLeaderboardPeriod(period)) {
+          return json({ error: 'Unknown leaderboard period' }, { status: 400 })
+        }
+
+        const csvData = await getLeaderboardsCsv(period)
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+        const filename = `leaderboard-${period}-${timestamp}.csv`
+        return new Response(csvData, {
+          headers: {
+            'content-type': 'text/csv; charset=utf-8',
+            'content-disposition': `attachment; filename="${filename}"`,
+          },
+        })
+      }
       }
 
       if (url.pathname === '/api/events') {

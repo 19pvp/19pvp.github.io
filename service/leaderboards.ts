@@ -1,10 +1,12 @@
 import { auth, characters, type SqlRow } from './db.ts'
 import { type WebEvent, wowEvents } from './wow-events.ts'
+import { stringify } from '@std/csv'
 import {
   isLeaderboardArenaType,
   isLeaderboardPeriod,
   isLeaderboardSortMetric,
   isLeaderboardValueMode,
+  LEADERBOARD_METRICS,
   type LeaderboardArenaType,
   type LeaderboardPeriod,
   type LeaderboardSortMetric,
@@ -134,33 +136,91 @@ const handleMatchEvent = async (event: WebEvent) => {
 wowEvents.on.PVP_BG_STATS(handleMatchEvent)
 wowEvents.on.PVP_ARENA_STATS(handleMatchEvent)
 
-export const getLeaderboards = async (
+export type LeaderboardParams = {
+  metric: LeaderboardSortMetric
+  period: LeaderboardPeriod
+  mode: LeaderboardValueMode
+  kind: LeaderboardKind
+  arenaType: LeaderboardArenaType
+}
+
+export const assertLeaderboardParams = (
   metricParam: string,
   periodParam: string,
-  modeParam = 'absolute',
-  kindParam = 'battleground',
-  arenaTypeParam = 'all',
-) => {
-  await leaderboardReady
-  if (!isLeaderboardSortMetric(metricParam)) throw new Error('Unknown leaderboard metric')
-  if (!isLeaderboardPeriod(periodParam)) throw new Error('Unknown leaderboard period')
-  if (!isLeaderboardValueMode(modeParam)) throw new Error('Unknown leaderboard mode')
-  if (!isLeaderboardKind(kindParam)) throw new Error('Unknown leaderboard kind')
-  if (!isLeaderboardArenaType(arenaTypeParam)) throw new Error('Unknown leaderboard arena type')
+  modeParam: string,
+  kindParam: string,
+  arenaTypeParam: string,
+): LeaderboardParams => {
+  if (!isLeaderboardSortMetric(metricParam)) throw Error('Unknown leaderboard metric')
+  if (!isLeaderboardPeriod(periodParam)) throw Error('Unknown leaderboard period')
+  if (!isLeaderboardValueMode(modeParam)) throw Error('Unknown leaderboard mode')
+  if (!isLeaderboardKind(kindParam)) throw Error('Unknown leaderboard kind')
+  if (!isLeaderboardArenaType(arenaTypeParam)) throw Error('Unknown leaderboard arena type')
 
-  const definition = metricsByKey[metricParam]
-  const store = kindParam === 'arena' ? arenaStores.get(arenaTypeParam)! : battlegroundStore
-  const rows = store.getLeaderboardData(
-    periodParam as LeaderboardPeriod,
-    metricParam as LeaderboardSortMetric,
-    modeParam as LeaderboardValueMode,
-  )
+  return {
+    metric: metricParam,
+    period: periodParam,
+    mode: modeParam,
+    kind: kindParam,
+    arenaType: arenaTypeParam,
+  }
+}
+
+export const getLeaderboards = async (params: LeaderboardParams) => {
+  await leaderboardReady
+  const { metric, period, mode, kind, arenaType } = params
+  const definition = metricsByKey[metric]
+  const store = kind === 'arena' ? arenaStores.get(arenaType)! : battlegroundStore
+  const rows = store.getLeaderboardData(period, metric, mode)
   return {
     metric: definition,
-    period: periodParam,
-    arenaType: arenaTypeParam,
+    period,
+    arenaType,
     rows,
   }
+}
+
+export const getLeaderboardsCsv = async (periodParam = 'all') => {
+  if (!isLeaderboardPeriod(periodParam)) throw Error('Unknown leaderboard period')
+  await leaderboardReady
+
+  const storeEntries: Array<['wsg' | '2v2' | '3v3', LeaderboardStore]> = [
+    ['wsg', battlegroundStore],
+    ['2v2', arenaStores.get('2v2')!],
+    ['3v3', arenaStores.get('3v3')!],
+  ]
+
+  const columns = [
+    'kind',
+    'playerGuid',
+    'name',
+    'class',
+    'matches',
+    'timePlayed',
+    ...LEADERBOARD_METRICS.map(([key]) => key),
+    ...LEADERBOARD_METRICS.map(([key]) => `${key}_avg`),
+  ]
+
+  const csvRows = storeEntries.flatMap(([kindLabel, store]) => {
+    const players = store.getRawPlayerData(periodParam as LeaderboardPeriod)
+    return players.map((row) => {
+      const record: Record<string, string | number> = {
+        kind: kindLabel,
+        playerGuid: row.playerGuid,
+        name: row.name,
+        class: row.class ?? '',
+        matches: row.matches,
+        timePlayed: row.timePlayed,
+      }
+      for (const [key] of LEADERBOARD_METRICS) {
+        record[key] = row.stats[key] ?? 0
+        record[`${key}_avg`] = row.averages[key] ?? 0
+      }
+      return record
+    })
+  })
+
+  return stringify(csvRows, { columns })
 }
 
 export { battlegroundStore as leaderboardStore }
