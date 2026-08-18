@@ -79,7 +79,7 @@ const dbConnect = {
 type DatabaseConfig = typeof authDb
 const databaseKey = (config: DatabaseConfig) => `${config.hostname};${config.port};${config.username};${config.db}`
 
-const database = async (config: DatabaseConfig = worldDb) => {
+export const database = async (config: DatabaseConfig = worldDb) => {
   const key = databaseKey(config)
   const existing = dbByConfig.get(key)
   if (existing) return existing
@@ -218,6 +218,11 @@ export const auth = scope(authDb)
 export const worldserver = scope(worldDb)
 export const characters = scope(charactersDb)
 export const playerbots = scope(playerbotsDb)
+
+// World databases are selected from the server-side realm registry. The name is
+// validated before it becomes part of a connection configuration.
+export const worldserverForDatabase = (name: string) =>
+  scope({ ...worldDb, db: validateDatabaseName(name, 'world database') })
 /*
 Query Graveyard:
 

@@ -1,0 +1,439 @@
+<style data-page-style>
+.rbac-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.rbac-page h1 {
+  margin-bottom: 0;
+}
+.rbac-intro {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+.rbac-toolbar,
+.rbac-card {
+  padding: 18px;
+  background: var(--surface);
+  border-radius: 12px;
+}
+.rbac-toolbar {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.rbac-toolbar label,
+.rbac-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: .85rem;
+}
+.rbac-toolbar select {
+  min-width: 230px;
+}
+.rbac-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.rbac-card h2 {
+  margin: 0 0 5px;
+  font-size: 1.25rem;
+}
+.rbac-card h3 {
+  margin: 18px 0 8px;
+  font-size: 1rem;
+  color: var(--accent-color);
+}
+.rbac-card > p {
+  color: var(--text-secondary);
+  font-size: .86rem;
+  margin: 0 0 14px;
+}
+.rbac-form {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin: 12px 0 14px;
+}
+.rbac-form select,
+.rbac-form input {
+  min-width: 120px;
+  max-width: 240px;
+}
+.rbac-form .wide {
+  min-width: 220px;
+}
+.rbac-table-wrap {
+  overflow: auto;
+  max-height: 430px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.rbac-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+}
+.rbac-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface2);
+  color: var(--text-muted);
+  text-align: left;
+  white-space: nowrap;
+}
+.rbac-table th,
+.rbac-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: top;
+}
+.rbac-table tr:last-child td {
+  border-bottom: 0;
+}
+.rbac-table code {
+  font-family: var(--font-mono);
+  color: var(--accent-color);
+}
+.rbac-help {
+  white-space: pre-wrap;
+  min-width: 280px;
+  max-width: 520px;
+  color: var(--text-secondary);
+}
+.rbac-danger {
+  color: var(--danger-text);
+}
+.rbac-muted {
+  color: var(--text-muted);
+}
+.rbac-status {
+  min-height: 1.4em;
+  color: var(--success-text);
+}
+.rbac-status.error {
+  color: var(--danger-text);
+}
+.rbac-count {
+  color: var(--text-muted);
+  font-size: .8rem;
+  margin-left: auto;
+}
+@media (max-width: 800px) {
+  .rbac-grid {
+    grid-template-columns: 1fr;
+  }
+  .rbac-help {
+    min-width: 220px;
+  }
+}
+</style>
+<main id="page-content" class="rbac-page" data-page="rbac">
+  <div>
+    <h1 class="page-title">RBAC Control</h1>
+    <p
+      class="rbac-intro">Manage AzerothCore account permissions, default roles, inherited permissions, and inspect every command available on each realm.</p>
+  </div>
+
+  <div id="rbacDenied" class="rbac-card" hidden>
+    <h2>Administrator access required</h2>
+    <p id="rbacDeniedText">RBAC management is restricted to GM level 3.</p>
+  </div>
+
+  <div id="rbacApp" hidden>
+    <div class="rbac-toolbar">
+      <label>Realm<select id="realmSelect"></select></label>
+      <button id="reloadButton" class="btn btn-secondary" type="button">Reload</button>
+      <span id="realmInfo" class="rbac-count"></span>
+    </div>
+    <div id="rbacStatus" class="rbac-status" role="status"></div>
+
+    <div class="rbac-grid">
+      <section class="rbac-card">
+        <h2>Account permissions</h2>
+        <p>Explicit grants and denies override the selected account’s default security role. “All realms” uses realm ID -1.</p>
+        <div class="rbac-form">
+          <label class="wide">Account<select id="accountSelect"></select></label>
+          <label class="wide">Permission<select id="accountPermission"></select></label>
+          <label>Scope<select id="accountRealm"><option value="selected">Selected realm</option><option value="-1">All realms</option></select></label>
+          <label>Result<select id="accountGranted"><option value="1">Grant</option><option value="0">Deny</option></select></label>
+          <button id="accountSave" class="btn btn-primary" type="button">Save</button>
+        </div>
+        <div id="accountTable" class="rbac-table-wrap"></div>
+      </section>
+
+      <section class="rbac-card">
+        <h2>Default permissions</h2>
+        <p>Permissions inherited by every account at a security level. Choose “All realms” or the selected realm.</p>
+        <div class="rbac-form">
+          <label>Security level<select id="defaultSec"><option>0</option><option>1</option><option>2</option><option>3</option></select></label>
+          <label class="wide">Permission<select id="defaultPermission"></select></label>
+          <label>Scope<select id="defaultRealm"><option value="selected">Selected realm</option><option value="-1">All realms</option></select></label>
+          <button id="defaultSave" class="btn btn-primary" type="button">Add</button>
+        </div>
+        <div id="defaultTable" class="rbac-table-wrap"></div>
+      </section>
+
+      <section class="rbac-card">
+        <h2>Permission inheritance</h2>
+        <p>Linked permissions form roles. Links are shared by all realms and are intentionally separate from account grants.</p>
+        <div class="rbac-form">
+          <label class="wide">Parent permission<select id="linkPermission"></select></label>
+          <label class="wide">Includes permission<select id="linkTarget"></select></label>
+          <button id="linkSave" class="btn btn-primary" type="button">Add link</button>
+        </div>
+        <div id="linkTable" class="rbac-table-wrap"></div>
+      </section>
+
+      <section class="rbac-card">
+        <h2>RBAC permission catalogue</h2>
+        <p>Core and module permission IDs available in <code>rbac_permissions</code>. These definitions are normally supplied by AzerothCore updates.</p>
+        <input id="permissionSearch" type="text" placeholder="Filter permissions…" aria-label="Filter permissions">
+        <div id="permissionTable" class="rbac-table-wrap" style="margin-top:10px"></div>
+        <div id="moduleTable"></div>
+      </section>
+    </div>
+
+    <section class="rbac-card">
+      <h2>World commands <span id="commandCount" class="rbac-count"></span></h2>
+      <p>Commands come from the selected realm’s <code>command</code> table. Security is the command’s minimum GM level; RBAC permissions are listed separately above.</p>
+      <input id="commandSearch" type="text" placeholder="Filter command names or help…" aria-label="Filter commands">
+      <div id="commandTable" class="rbac-table-wrap" style="margin-top:10px"></div>
+    </section>
+  </div>
+</main>
+<script type="module" data-page-script>
+const api = '/api/rbac'
+let state = null
+
+const esc = (value) =>
+  String(value ?? '').replace(
+    /[&<>"']/g,
+    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]),
+  )
+const selectedRealmId = () => Number(document.getElementById('realmSelect').value)
+const scopeRealm = (id) => id === 'selected' ? selectedRealmId() : Number(id)
+const permissionOptions = (selected = '') =>
+  state.permissions.map((permission) =>
+    `<option value="${permission.id}"${
+      String(permission.id) === String(selected) ? ' selected' : ''
+    }>${permission.id} — ${esc(permission.name)}</option>`
+  ).join('')
+const setStatus = (message, error = false) => {
+  const element = document.getElementById('rbacStatus')
+  element.textContent = message
+  element.classList.toggle('error', error)
+}
+const empty = (message) => `<div class="rbac-muted" style="padding:18px">${esc(message)}</div>`
+const actionButton = (label, action, values, danger = false) =>
+  `<button class="btn btn-ghost${danger ? ' rbac-danger' : ''}" type="button" data-action="${action}" ${
+    Object.entries(values).map(([key, value]) => `data-${key}="${esc(value)}"`).join(' ')
+  }>${label}</button>`
+
+const renderSelectors = () => {
+  const permissionSelects = ['accountPermission', 'defaultPermission', 'linkPermission', 'linkTarget']
+  for (const id of permissionSelects) {
+    const element = document.getElementById(id)
+    const previous = element.value
+    element.innerHTML = permissionOptions(previous)
+  }
+  const accounts = document.getElementById('accountSelect')
+  const previousAccount = accounts.value
+  accounts.innerHTML = state.accounts.map((account) =>
+    `<option value="${account.id}">${esc(account.username)} (#${account.id})</option>`
+  ).join('')
+  accounts.value = previousAccount || state.accounts[0]?.id || ''
+}
+
+const renderAccountTable = () => {
+  const accountId = Number(document.getElementById('accountSelect').value)
+  const rows = state.accountPermissions.filter((row) => row.accountId === accountId)
+  document.getElementById('accountTable').innerHTML = rows.length
+    ? `<table class="rbac-table"><thead><tr><th>Permission</th><th>Scope</th><th>Result</th><th></th></tr></thead><tbody>${
+      rows.map((row) =>
+        `<tr><td><code>${row.permissionId}</code> ${esc(row.name)}</td><td>${
+          row.realmId === -1 ? 'All realms' : `Realm ${row.realmId}`
+        }</td><td class="${row.granted ? '' : 'rbac-danger'}">${row.granted ? 'Granted' : 'Denied'}</td><td>${
+          actionButton('Remove', 'account-delete', {
+            account: row.accountId,
+            permission: row.permissionId,
+            realm: row.realmId,
+          }, true)
+        }</td></tr>`
+      ).join('')
+    }</tbody></table>`
+    : empty('No explicit permissions for this account in this realm.')
+}
+
+const renderDefaultTable = () => {
+  document.getElementById('defaultTable').innerHTML = state.defaultPermissions.length
+    ? `<table class="rbac-table"><thead><tr><th>Level</th><th>Permission</th><th>Scope</th><th></th></tr></thead><tbody>${
+      state.defaultPermissions.map((row) =>
+        `<tr><td>${row.secId}</td><td><code>${row.permissionId}</code> ${esc(row.name)}</td><td>${
+          row.realmId === -1 ? 'All realms' : `Realm ${row.realmId}`
+        }</td><td>${
+          actionButton(
+            'Remove',
+            'default-delete',
+            { sec: row.secId, permission: row.permissionId, realm: row.realmId },
+            true,
+          )
+        }</td></tr>`
+      ).join('')
+    }</tbody></table>`
+    : empty('No default permissions for this realm.')
+}
+
+const renderLinkTable = () => {
+  document.getElementById('linkTable').innerHTML = state.linkedPermissions.length
+    ? `<table class="rbac-table"><thead><tr><th>Parent</th><th>Includes</th><th></th></tr></thead><tbody>${
+      state.linkedPermissions.map((row) =>
+        `<tr><td><code>${row.id}</code> ${esc(row.name)}</td><td><code>${row.linkedId}</code> ${
+          esc(row.linkedName)
+        }</td><td>${
+          actionButton('Remove', 'link-delete', { permission: row.id, linked: row.linkedId, realm: -1 }, true)
+        }</td></tr>`
+      ).join('')
+    }</tbody></table>`
+    : empty('No linked permissions.')
+}
+
+const renderPermissionTable = () => {
+  const search = document.getElementById('permissionSearch').value.toLowerCase()
+  const rows = state.permissions.filter((row) => `${row.id} ${row.name}`.toLowerCase().includes(search))
+  document.getElementById('permissionTable').innerHTML =
+    `<table class="rbac-table"><thead><tr><th>ID</th><th>Name</th></tr></thead><tbody>${
+      rows.map((row) => `<tr><td><code>${row.id}</code></td><td>${esc(row.name)}</td></tr>`).join('')
+    }</tbody></table>`
+  const module = state.modulePermissions
+  document.getElementById('moduleTable').innerHTML = module === null
+    ? '<h3>Optional module table</h3><p class="rbac-muted">module_rbac_permissions is not installed on this server.</p>'
+    : module.length
+    ? `<h3>Optional module permissions</h3><div class="rbac-table-wrap"><table class="rbac-table"><thead><tr>${
+      Object.keys(module[0]).map((key) => `<th>${esc(key)}</th>`).join('')
+    }</tr></thead><tbody>${
+      module.map((row) => `<tr>${Object.values(row).map((value) => `<td>${esc(value)}</td>`).join('')}</tr>`).join('')
+    }</tbody></table></div>`
+    : '<h3>Optional module table</h3><p class="rbac-muted">module_rbac_permissions is installed but empty.</p>'
+}
+
+const renderCommands = () => {
+  const search = document.getElementById('commandSearch').value.toLowerCase()
+  const rows = state.commands.filter((row) => `${row.name} ${row.help}`.toLowerCase().includes(search))
+  document.getElementById('commandCount').textContent = `${rows.length} / ${state.commands.length}`
+  document.getElementById('commandTable').innerHTML = rows.length
+    ? `<table class="rbac-table"><thead><tr><th>Command</th><th>GM level</th><th>Help</th></tr></thead><tbody>${
+      rows.map((row) =>
+        `<tr><td><code>.${esc(row.name)}</code></td><td>${row.security}</td><td class="rbac-help">${
+          esc(row.help)
+        }</td></tr>`
+      ).join('')
+    }</tbody></table>`
+    : empty('No commands match this filter.')
+}
+
+const render = () => {
+  renderSelectors()
+  document.getElementById('realmInfo').textContent = `${state.realm.name} · ${state.realm.database}`
+  renderAccountTable()
+  renderDefaultTable()
+  renderLinkTable()
+  renderPermissionTable()
+  renderCommands()
+}
+
+const load = async (realmId = selectedRealmId()) => {
+  setStatus('Loading…')
+  try {
+    const response = await fetch(`${api}?realmId=${encodeURIComponent(realmId)}`, { credentials: 'include' })
+    const data = await response.json()
+    if (!response.ok) throw Error(data.error || `Request failed (${response.status})`)
+    state = data
+    const realmSelect = document.getElementById('realmSelect')
+    realmSelect.innerHTML = state.realms.map((realm) =>
+      `<option value="${realm.id}">${esc(realm.name)} (#${realm.id})</option>`
+    ).join('')
+    realmSelect.value = String(state.realm.id)
+    render()
+    setStatus('')
+  } catch (error) {
+    setStatus(error.message, true)
+    if (!state) throw error
+  }
+}
+
+const mutate = async (body) => {
+  setStatus('Saving…')
+  try {
+    const response = await fetch(api, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const data = await response.json()
+    if (!response.ok) throw Error(data.error || `Request failed (${response.status})`)
+    await load(selectedRealmId())
+  } catch (error) {
+    setStatus(error.message, true)
+  }
+}
+
+document.getElementById('realmSelect').addEventListener('change', () => load(selectedRealmId()))
+document.getElementById('reloadButton').addEventListener('click', () => load(selectedRealmId()))
+document.getElementById('accountSelect').addEventListener('change', renderAccountTable)
+document.getElementById('permissionSearch').addEventListener('input', renderPermissionTable)
+document.getElementById('commandSearch').addEventListener('input', renderCommands)
+document.getElementById('accountSave').addEventListener('click', () =>
+  mutate({
+    action: 'account-upsert',
+    accountId: Number(document.getElementById('accountSelect').value),
+    permissionId: Number(document.getElementById('accountPermission').value),
+    realmId: scopeRealm(document.getElementById('accountRealm').value),
+    granted: document.getElementById('accountGranted').value === '1',
+  }))
+document.getElementById('defaultSave').addEventListener('click', () =>
+  mutate({
+    action: 'default-upsert',
+    secId: Number(document.getElementById('defaultSec').value),
+    permissionId: Number(document.getElementById('defaultPermission').value),
+    realmId: scopeRealm(document.getElementById('defaultRealm').value),
+  }))
+document.getElementById('linkSave').addEventListener('click', () =>
+  mutate({
+    action: 'link-upsert',
+    permissionId: Number(document.getElementById('linkPermission').value),
+    linkedId: Number(document.getElementById('linkTarget').value),
+    realmId: -1,
+  }))
+document.getElementById('rbacApp').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-action]')
+  if (!button) return
+  if (!confirm(`Remove this ${button.dataset.action.startsWith('link') ? 'permission link' : 'permission'}?`)) return
+  const body = {
+    action: button.dataset.action,
+    permissionId: Number(button.dataset.permission),
+    realmId: Number(button.dataset.realm),
+  }
+  if (button.dataset.account) body.accountId = Number(button.dataset.account)
+  if (button.dataset.sec) body.secId = Number(button.dataset.sec)
+  if (button.dataset.linked) body.linkedId = Number(button.dataset.linked)
+  mutate(body)
+})
+
+const start = async () => {
+  document.getElementById('rbacApp').hidden = false
+  await load()
+}
+start().catch((error) => {
+  document.getElementById('rbacDenied').hidden = false
+  document.getElementById('rbacApp').hidden = true
+  document.getElementById('rbacDeniedText').textContent = error.message
+})
+</script>

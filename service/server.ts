@@ -27,6 +27,7 @@ import { auth } from './db.ts'
 import { env } from './env.ts'
 import { handleLog } from './logs.ts'
 import { assertLeaderboardParams, getLeaderboards, getLeaderboardsCsv } from './leaderboards.ts'
+import { getRbacData, updateRbac } from './rbac.ts'
 import { isLeaderboardPeriod } from './leaderboards_store.ts'
 import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib'
 
@@ -35,6 +36,7 @@ import leaderboardsHTMLRaw from '../web/leaderboards.html' with { type: 'text' }
 import accountHTMLRaw from '../web/account.html' with { type: 'text' }
 import installHTMLRaw from '../web/install.html' with { type: 'text' }
 import eventsHTMLRaw from '../web/events.html' with { type: 'text' }
+import rbacHTMLRaw from '../web/rbac.html' with { type: 'text' }
 import aboutHTMLRaw from '../web/about.html' with { type: 'text' }
 import styleCSSRaw from '../web/style.css' with { type: 'text' }
 import scriptJSRaw from '../web/script.js' with { type: 'text' }
@@ -203,6 +205,10 @@ const eventsHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
   '',
   ' events-shell',
 )))
+const rbacHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
+  rbacHTMLRaw,
+  '19 PvP - RBAC Control',
+)))
 const aboutHTMLBytes = new TextEncoder().encode(inlineAssets(composePage(
   aboutHTMLRaw,
   '19 PvP - About the Server',
@@ -280,6 +286,7 @@ export default {
       if (url.pathname === '/account') return respondText(accountHTMLBytes, 'text/html')
       if (url.pathname === '/install') return respondText(installHTMLBytes, 'text/html')
       if (url.pathname === '/events') return respondText(eventsHTMLBytes, 'text/html')
+      if (url.pathname === '/rbac') return respondText(rbacHTMLBytes, 'text/html')
       if (url.pathname === '/about' || url.pathname === '/about.html') return respondText(aboutHTMLBytes, 'text/html')
       if (url.pathname === '/tooltip-test' || url.pathname === '/tooltip-test.html') return staticTooltipTest(req)
       if (url.pathname === '/style.css') return staticStyle(req)
@@ -517,6 +524,30 @@ export default {
           },
         })
       }
+
+      if (url.pathname === '/api/rbac') {
+        const session = await getSession(req)
+        if (!session) return json({ error: 'Unauthorized' }, { status: 401 })
+        if (session.gmLevel < 3) return json({ error: 'RBAC management requires GM level 3.' }, { status: 403 })
+
+        if (req.method === 'GET') {
+          const realmId = Number(url.searchParams.get('realmId') || env.WORLD_ID)
+          if (!Number.isSafeInteger(realmId)) return json({ error: 'Invalid realm ID' }, { status: 400 })
+          try {
+            return json(await getRbacData(realmId))
+          } catch (error) {
+            return json({ error: String(error) }, { status: 400 })
+          }
+        }
+        if (req.method === 'POST') {
+          try {
+            await updateRbac(await req.json())
+            return json({ success: true })
+          } catch (error) {
+            return json({ error: String(error) }, { status: 400 })
+          }
+        }
+        return new Response('Method not allowed', { status: 405, headers: { allow: 'GET, POST' } })
       }
 
       if (url.pathname === '/api/events') {

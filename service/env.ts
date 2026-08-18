@@ -46,6 +46,9 @@ export const env = {
   DB_USERNAME: get('DB_USERNAME'),
   DB_PASSWORD: get('DB_PASSWORD'),
   DB_POOL_SIZE: getNumber('DB_POOL_SIZE', 3),
+  // Comma-separated realm ID to world database mapping, for example:
+  // REALM_DATABASES=1:chupato_world,2:19pvp_world
+  REALM_DATABASES: get('REALM_DATABASES'),
 
   // API integrations & System administration
   GEMINI_TOKEN: get('GEMINI_TOKEN'),

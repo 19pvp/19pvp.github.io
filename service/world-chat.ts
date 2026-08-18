@@ -15,8 +15,8 @@ const generalChannelId = env.DISCORD_GENERAL_CHANNEL_ID
 const gmCommandChannelId = env.DISCORD_GM_COMMAND_CHANNEL_ID
 const roleGMLevel = {
   [env.GM_LEVEL_1]: 1,
-  [env.GM_LEVEL_2]: 2,
-  [env.GM_LEVEL_3]: 3,
+  [env.GM_LEVEL_2]: 1,
+  [env.GM_LEVEL_3]: 1,
 }
 const MAX_ACCOUNT_USERNAME_LENGTH = 17
 const MAX_DISCORD_LOGIN_LENGTH = 255

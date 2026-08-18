@@ -1,4 +1,5 @@
-import { isLeaderboardMetric, isLeaderboardPeriod, LeaderboardStore } from './leaderboards_store.ts'
+import { stringify } from '@std/csv'
+import { isLeaderboardMetric, isLeaderboardPeriod, LeaderboardStore, LEADERBOARD_METRICS } from './leaderboards_store.ts'
 
 const dateAt = (year: number, month: number, day: number, hour = 12) => new Date(year, month - 1, day, hour).getTime()
 
@@ -14,10 +15,10 @@ Deno.test('validates the supported leaderboard dimensions', () => {
 
 Deno.test('aggregates all-time and rolling periods by stable player guid', () => {
   const store = new LeaderboardStore()
-  const today = dateAt(2026, 8, 2)
+  const today = Date.now()
   store.addMatch(match('1', 'Alice', { damageDone: 100 }), today)
-  store.addMatch(match('1', 'Alice Renamed', { damageDone: 50, deserted: 37 }), dateAt(2026, 8, 1))
-  store.addMatch(match('2', 'Bob', { damageDone: 120 }), dateAt(2026, 7, 1))
+  store.addMatch(match('1', 'Alice Renamed', { damageDone: 50, deserted: 37 }), today - 86_400_000)
+  store.addMatch(match('2', 'Bob', { damageDone: 120 }), today - 40 * 86_400_000)
 
   const all = store.getLeaderboard('damageDone', 'all')
   if (all[0]?.name !== 'Alice Renamed' || Math.floor(all[0]?.value || 0) !== Math.round(Math.log1p(150) * 100_000) || all[0]?.matches !== 2) {
@@ -113,6 +114,57 @@ Deno.test('falls back to the next metric in the selected group', () => {
   const rows = store.getLeaderboard('successfulInterrupts', 'all')
   if (rows.length !== 2 || rows[0]?.name !== 'Bob' || rows[1]?.name !== 'Alice' || rows[1]?.value <= 0 || rows[1]?.value >= 1) {
     throw Error(`group fallback sorting failed: ${JSON.stringify(rows)}`)
+  }
+})
+
+Deno.test('supports custom limit in getLeaderboardData', () => {
+  const store = new LeaderboardStore()
+  const today = Date.now()
+  for (let index = 0; index < 105; index++) {
+    store.addMatch({ id: `m${index}`, players: { [`p${index}`]: { name: `Player ${index}`, damageDone: (index + 1) * 10 } } }, today)
+  }
+  const defaultList = store.getLeaderboardData('all', 'damageDone', 'absolute')
+  if (defaultList.length !== 100) throw Error(`Expected default limit 100, got ${defaultList.length}`)
+
+  const fullList = store.getLeaderboardData('all', 'damageDone', 'absolute', Infinity)
+  if (fullList.length !== 105) throw Error(`Expected full list 105, got ${fullList.length}`)
+})
+
+Deno.test('CSV export generates valid CSV header and rows', () => {
+  const store = new LeaderboardStore()
+  store.addMatch({ id: 'csv1', players: { 'guid-1': { name: 'Tester', damageDone: 500, healingDone: 200 } } }, Date.now())
+  const players = store.getRawPlayerData('all')
+  const columns = [
+    'kind',
+    'playerGuid',
+    'name',
+    'class',
+    'matches',
+    'timePlayed',
+    ...LEADERBOARD_METRICS.map(([key]) => key),
+    ...LEADERBOARD_METRICS.map(([key]) => `${key}_avg`),
+  ]
+  const csvRows = players.map((row) => {
+    const record: Record<string, string | number> = {
+      kind: 'wsg',
+      playerGuid: row.playerGuid,
+      name: row.name,
+      class: row.class ?? '',
+      matches: row.matches,
+      timePlayed: row.timePlayed,
+    }
+    for (const [key] of LEADERBOARD_METRICS) {
+      record[key] = row.stats[key] ?? 0
+      record[`${key}_avg`] = row.averages[key] ?? 0
+    }
+    return record
+  })
+  const csv = stringify(csvRows, { columns })
+  const lines = csv.trim().split('\n')
+  if (lines.length !== 2) throw Error(`Expected CSV header and 1 data row, got ${lines.length} lines`)
+  const header = lines[0].split(',')
+  if (!header.includes('kind') || !header.includes('playerGuid') || !header.includes('name') || !header.includes('damageDone') || !header.includes('damageDone_avg')) {
+    throw Error(`CSV header missing expected columns: ${lines[0]}`)
   }
 })
 

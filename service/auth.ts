@@ -11,8 +11,8 @@ const BASE_URL = env.PUBLIC_BASE_URL
 
 const roleGMLevel: Record<string, number> = {
   [env.GM_LEVEL_1]: 1,
-  [env.GM_LEVEL_2]: 2,
-  [env.GM_LEVEL_3]: 3,
+  [env.GM_LEVEL_2]: 1,
+  [env.GM_LEVEL_3]: 1,
 }
 
 // In-memory OAuth state store
