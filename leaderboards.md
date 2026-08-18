@@ -34,9 +34,10 @@ When no `period` parameter is specified, the endpoint queries all recorded `PVP_
 | `at` | `number` | Unix timestamp of match event in milliseconds |
 | `playerGuid` | `string` | Character GUID |
 | `name` | `string` | Character name |
+| `class` | `number \| ""` | Character class ID (empty string if unassigned) |
 | `team` | `number \| ""` | Team index/ID for the match |
 | `winner` | `number \| ""` | Winning team index/ID |
-| `won` | `1 \| 0 \| ""` | `1` if player's team won, `0` if lost, empty if draw/unresolved |
+| `won` | `1 \| 0 \| -1 \| ""` | `1` if won, `0` if draw/tie, `-1` if lost |
 | `damageDone` | `number` | Match damage dealt |
 | `healingDone` | `number` | Match healing done |
 | `absorbsDone` | `number` | Match damage absorbed |

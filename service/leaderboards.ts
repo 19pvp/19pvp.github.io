@@ -190,6 +190,7 @@ export const getLeaderboardsCsv = async (periodParam?: string) => {
       'at',
       'playerGuid',
       'name',
+      'class',
       'team',
       'winner',
       'won',
@@ -221,6 +222,7 @@ export const getLeaderboardsCsv = async (periodParam?: string) => {
         const isArena = event.type === 'PVP_ARENA_STATS'
         const arenaType = payload.arenaType || payload.type
         const kindLabel = isArena ? (arenaType === 2 || arenaType === '2v2' ? '2v2' : '3v3') : 'wsg'
+        const store = isArena ? arenaStores.get(kindLabel as LeaderboardArenaType)! : battlegroundStore
         const at = eventTimestamp(event)
         const winner = payload.winner
 
@@ -228,8 +230,15 @@ export const getLeaderboardsCsv = async (periodParam?: string) => {
           if (!rawStats || typeof rawStats !== 'object') continue
           const playerGuid = String(rawStats.playerGuid || guidKey)
           const name = String(rawStats.name || playerGuid)
+          const storedPlayer = store.players.get(playerGuid)
+          const classVal = rawStats.class !== undefined ? Number(rawStats.class) : storedPlayer?.class
+          const playerClass = typeof classVal === 'number' && Number.isInteger(classVal) && classVal > 0 ? classVal : ''
           const team = rawStats.team
-          const won = typeof winner === 'number' && typeof team === 'number' ? (String(team) === String(winner) ? 1 : 0) : ''
+          const won = typeof team === 'number'
+            ? (typeof winner === 'number'
+              ? (String(team) === String(winner) ? 1 : -1)
+              : 0)
+            : ''
 
           const record: Record<string, string | number> = {
             eventId: Number(event.id),
@@ -237,6 +246,7 @@ export const getLeaderboardsCsv = async (periodParam?: string) => {
             at,
             playerGuid,
             name,
+            class: playerClass,
             team: typeof team === 'number' ? team : '',
             winner: typeof winner === 'number' ? winner : '',
             won,
