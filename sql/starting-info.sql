@@ -12,6 +12,33 @@ SET map = 530,
 
 UPDATE item_template SET SellPrice = 1 WHERE entry IN (892, 1276, 1306, 1459, 1560, 2035, 2046, 2512, 2516, 2910, 3429, 3555, 3561, 3585, 4316, 4368, 4369, 4708, 4800, 4818, 4998, 5312, 5317, 5356, 5627, 5749, 5750, 5961, 6189, 6265, 6333, 6467, 7336, 14169, 14568, 14743, 15019, 15946, 16981, 21841, 21934, 22979, 25873, 46978);
 
+UPDATE player_class_stats
+SET Stamina = CASE Class
+        WHEN 1 THEN 50  -- Warrior (42 + 8)
+        WHEN 2 THEN 48  -- Paladin (40 + 8)
+        WHEN 3 THEN 45  -- Hunter (37 + 8)
+        WHEN 4 THEN 41  -- Rogue (33 + 8)
+        WHEN 5 THEN 35  -- Priest (27 + 8)
+        WHEN 7 THEN 46  -- Shaman (38 + 8)
+        WHEN 8 THEN 34  -- Mage (26 + 8)
+        WHEN 9 THEN 39  -- Warlock (31 + 8)
+        WHEN 11 THEN 39 -- Druid (31 + 8)
+        ELSE Stamina
+    END,
+    Spirit = CASE Class
+        WHEN 1 THEN 51  -- Warrior (26 + 25)
+        WHEN 2 THEN 58  -- Paladin (33 + 25)
+        WHEN 3 THEN 57  -- Hunter (32 + 25)
+        WHEN 4 THEN 52  -- Rogue (27 + 25)
+        WHEN 5 THEN 71  -- Priest (46 + 25)
+        WHEN 7 THEN 65  -- Shaman (40 + 25)
+        WHEN 8 THEN 69  -- Mage (44 + 25)
+        WHEN 9 THEN 68  -- Warlock (43 + 25)
+        WHEN 11 THEN 67 -- Druid (42 + 25)
+        ELSE Spirit
+    END
+WHERE Level = 19;
+
 DROP TEMPORARY TABLE IF EXISTS starting_info_item;
 CREATE TEMPORARY TABLE starting_info_item (
   race TINYINT UNSIGNED NOT NULL DEFAULT 0,

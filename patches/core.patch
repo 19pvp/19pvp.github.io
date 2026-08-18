@@ -640,10 +640,59 @@ index 35ac03d79..21aa05f3c 100644
                      else
                          currentNameExt = current_zone_name;
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index 5912e36eb..84565b8f7 100644
+index 5912e36eb..4c7575150 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
-@@ -2358,31 +2358,11 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited)
+@@ -1571,6 +1571,22 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
+                     // Increase crit damage from SPELL_AURA_MOD_CRIT_PERCENT_VERSUS
+                     crit_mod += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_CRIT_PERCENT_VERSUS, crTypeMask);
+ 
++                    // Custom PvP physical critical damage reduction based on attacker/victim class
++                    if (IsPlayer() && victim->GetTypeId() == TYPEID_PLAYER && (damageSchoolMask & SPELL_SCHOOL_MASK_NORMAL))
++                    {
++                        if (victim->IsClass(CLASS_PRIEST, CLASS_CONTEXT_STATS) || victim->IsClass(CLASS_WARLOCK, CLASS_CONTEXT_STATS))
++                            crit_mod -= 5.0f;
++                        else if (victim->IsClass(CLASS_MAGE, CLASS_CONTEXT_STATS))
++                            crit_mod -= 10.0f;
++
++                        if (IsClass(CLASS_HUNTER, CLASS_CONTEXT_STATS))
++                            crit_mod -= 10.0f;
++                        else if (IsClass(CLASS_WARRIOR, CLASS_CONTEXT_STATS))
++                            crit_mod -= 7.5f;
++                        else if (IsClass(CLASS_ROGUE, CLASS_CONTEXT_STATS))
++                            crit_mod -= 5.0f;
++                    }
++
+                     if (crit_bonus != 0 && crit_mod != 0.0f)
+                         AddPct(crit_bonus, crit_mod);
+ 
+@@ -1852,10 +1868,22 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
+                         mod += (GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_CRIT_DAMAGE_BONUS, damageInfo->damages[i].damageSchoolMask) - 1.0f) * 100;
+                     }
+ 
+-                    uint32 crTypeMask = damageInfo->target->GetCreatureTypeMask();
++                    // Custom PvP physical critical damage reduction based on attacker/victim class
++                    if (IsPlayer() && damageInfo->target->GetTypeId() == TYPEID_PLAYER && (damageInfo->damages[i].damageSchoolMask & SPELL_SCHOOL_MASK_NORMAL))
++                    {
++                        if (damageInfo->target->IsClass(CLASS_PRIEST, CLASS_CONTEXT_STATS) || damageInfo->target->IsClass(CLASS_WARLOCK, CLASS_CONTEXT_STATS))
++                            mod -= 5.0f;
++                        else if (damageInfo->target->IsClass(CLASS_MAGE, CLASS_CONTEXT_STATS))
++                            mod -= 10.0f;
++
++                        if (IsClass(CLASS_HUNTER, CLASS_CONTEXT_STATS))
++                            mod -= 10.0f;
++                        else if (IsClass(CLASS_WARRIOR, CLASS_CONTEXT_STATS))
++                            mod -= 7.5f;
++                        else if (IsClass(CLASS_ROGUE, CLASS_CONTEXT_STATS))
++                            mod -= 5.0f;
++                    }
+ 
+-                    // Increase crit damage from SPELL_AURA_MOD_CRIT_PERCENT_VERSUS
+-                    mod += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_CRIT_PERCENT_VERSUS, crTypeMask);
+                     if (mod != 0)
+                     {
+                         AddPct(damageInfo->damages[i].damage, mod);
+@@ -2358,31 +2386,11 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited)
      {
          float averageResist = Unit::GetEffectiveResistChance(attacker, schoolMask, victim);
  
@@ -654,7 +703,10 @@ index 5912e36eb..84565b8f7 100644
 -            if (discreteResistProbability[i] < 0.0f)
 -                discreteResistProbability[i] = 0.0f;
 -        }
--
++        // Apply resistance as a deterministic damage reduction. Keep at least
++        // one point of the original damage so resistance can never fully resist it.
++        float damageResisted = float(damage) * averageResist;
+ 
 -        if (averageResist <= 0.1f)
 -        {
 -            discreteResistProbability[0] = 1.0f - 7.5f * averageResist;
@@ -668,10 +720,7 @@ index 5912e36eb..84565b8f7 100644
 -
 -        while (r >= probabilitySum && i < 10)
 -            probabilitySum += discreteResistProbability[++i];
-+        // Apply resistance as a deterministic damage reduction. Keep at least
-+        // one point of the original damage so resistance can never fully resist it.
-+        float damageResisted = float(damage) * averageResist;
- 
+-
 -        float damageResisted = float(damage * i / 10);
 -
 -        if (damageResisted) // if equal to 0, checking these is pointless
@@ -679,7 +728,7 @@ index 5912e36eb..84565b8f7 100644
          {
              if (attacker)
              {
-@@ -2407,6 +2387,8 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited)
+@@ -2407,6 +2415,8 @@ void Unit::CalcAbsorbResist(DamageInfo& dmgInfo, bool Splited)
                  if (armorReduction < damageResisted) // pick the lower one, the weakest resistance counts
                      damageResisted = armorReduction;
              }
@@ -688,7 +737,7 @@ index 5912e36eb..84565b8f7 100644
          }
  
          dmgInfo.ResistDamage(uint32(damageResisted));
-@@ -3618,8 +3600,6 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit* victim, SpellInfo const* spellInfo
+@@ -3618,8 +3628,6 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit* victim, SpellInfo const* spellInfo
              tmp += victim->GetMaxNegativeAuraModifierByMiscValue(SPELL_AURA_MOD_DEBUFF_RESISTANCE, int32(spellInfo->Dispel)) * 100;
          }
  
@@ -697,7 +746,7 @@ index 5912e36eb..84565b8f7 100644
      }
  
      // Roll chance
-@@ -11725,6 +11705,40 @@ int32 Unit::ModSpellDuration(SpellInfo const* spellProto, Unit const* target, in
+@@ -11725,6 +11733,40 @@ int32 Unit::ModSpellDuration(SpellInfo const* spellProto, Unit const* target, in
                  break;
          }
      }
