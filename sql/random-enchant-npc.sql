@@ -35,3 +35,4 @@ ON DUPLICATE KEY UPDATE
 
 UPDATE `item_template` SET `FlagsExtra` = 0 WHERE (`entry` = 24551);
 UPDATE `item_template` SET `spellppmRate_1` = 6 WHERE (`entry` = 3822);
+UPDATE `item_template` SET `dmg_min1` = 57, `dmg_max1` = 92, `delay` = 3800 WHERE (`entry` = 12975);

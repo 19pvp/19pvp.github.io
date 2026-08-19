@@ -182,6 +182,7 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=${await Deno.realPath(bin(''))}
 ExecStart=${await Deno.realPath(bin('worldserver'))}
+Environment="AC_DISABLE_INTERACTIVE=1"
 StandardInput=null
 Restart=on-failure
 RestartSec=3
