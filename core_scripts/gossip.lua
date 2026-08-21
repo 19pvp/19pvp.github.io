@@ -59,12 +59,12 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_COMPLETE_QUEST, function (event, player, que
 end)
 
 local DUAL_SPEC_SPELL = 63645
+local ICON_CHAT = 0
+local ICON_VENDOR = 1
 local ICON_BOOK = 3
 local ICON_INTERACT_COG = 4
-local ICON_VENDOR = 1
+local ICON_MONEY_BAG = 6
 local DUAL_SPEC_COST = 100000-- 10 Gold in copper
-local NPC_ITEM_VENDOR = 20205
-local VENDOR_MENU_SENDER = 20205
 
 RegisterCreatureGossipEvent(22427, ON_HELLO, function(event, player, creature)
   player:GossipClearMenu()
@@ -99,18 +99,104 @@ RegisterCreatureGossipEvent(22427, ON_SELECT, function(event, player, creature, 
   player:GossipComplete()
 end)
 
-RegisterCreatureGossipEvent(NPC_ITEM_VENDOR, ON_HELLO, function(event, player, creature)
+local NPC_ITEM_VENDOR = 20205
+local VENDOR_MENU_SENDER = 20205
+local EXCHANGE_MENU_SENDER = 20206
+local HONOR_EXCHANGE_COST = 1000
+local ARENA_POINTS_REWARD = 10
+local ARENA_EXCHANGE_COST = 100
+local HONOR_POINTS_REWARD = 5000
+local ITEM_WSG_MARK = 29434
+local ITEM_ARENA_MARK = 40752
+
+local TEXTURE_HONOR = "Interface\\Icons\\PVPCurrency-Honor-Alliance"
+local TEXTURE_ARENA_POINTS = "Interface\\PVPFrame\\PVP-ArenaPoints-Icon"
+local TEXTURE_BADGE_JUSTICE = "Interface\\Icons\\Spell_Holy_ChampionsBond"
+local TEXTURE_EMBLEM_HEROISM = "Interface\\Icons\\Spell_Holy_ProclaimChampion"
+
+local function inlineIcon(texture, size)
+  size = size or 24
+  return "|T" .. texture .. ":" .. size .. ":" .. size .. ":0:0|t "
+end
+
+local function showVendorMainMenu(player, creature)
   player:GossipClearMenu()
   player:GossipAddQuests(creature)
   player:GossipMenuAddItem(ICON_VENDOR, "Browse my heirlooms", VENDOR_MENU_SENDER, 1)
+  player:GossipMenuAddItem(ICON_CHAT, "Currency Exchange", EXCHANGE_MENU_SENDER, 1)
   player:GossipSendMenu(1, creature)
+end
+
+local function showCurrencyExchangeMenu(player, creature)
+  player:GossipClearMenu()
+  player:GossipMenuAddItem(ICON_CHAT, inlineIcon(TEXTURE_ARENA_POINTS) .. "Convert 1000 Honor to 10 Arena Points", EXCHANGE_MENU_SENDER, 2)
+  player:GossipMenuAddItem(ICON_CHAT, inlineIcon(TEXTURE_HONOR) .. "Convert 100 Arena Points to 5000 Honor", EXCHANGE_MENU_SENDER, 3)
+  player:GossipMenuAddItem(ICON_CHAT, inlineIcon(TEXTURE_EMBLEM_HEROISM) .. "Convert 1 Badge of Justice to 1 Emblem of Heroism", EXCHANGE_MENU_SENDER, 4)
+  player:GossipMenuAddItem(ICON_CHAT, inlineIcon(TEXTURE_BADGE_JUSTICE) .. "Convert 2 Emblems of Heroism to 1 Badge of Justice", EXCHANGE_MENU_SENDER, 5)
+  player:GossipMenuAddItem(ICON_CHAT, "<- Back", VENDOR_MENU_SENDER, 0)
+  player:GossipSendMenu(1, creature)
+end
+
+RegisterCreatureGossipEvent(NPC_ITEM_VENDOR, ON_HELLO, function(event, player, creature)
+  showVendorMainMenu(player, creature)
   return true
 end)
 
 RegisterCreatureGossipEvent(NPC_ITEM_VENDOR, ON_SELECT, function(event, player, creature, sender, intid)
-  if sender == VENDOR_MENU_SENDER and intid == 1 then
-    player:SendListInventory(creature)
-    return true
+  if sender == VENDOR_MENU_SENDER then
+    if intid == 0 then
+      showVendorMainMenu(player, creature)
+      return true
+    elseif intid == 1 then
+      player:SendListInventory(creature)
+      return true
+    end
+  elseif sender == EXCHANGE_MENU_SENDER then
+    if intid == 1 then
+      showCurrencyExchangeMenu(player, creature)
+      return true
+    elseif intid == 2 then
+      if player:GetHonorPoints() < HONOR_EXCHANGE_COST then
+        player:SendBroadcastMessage("You do not have enough Honor Points (Requires 1000 Honor).")
+      else
+        player:ModifyHonorPoints(-HONOR_EXCHANGE_COST)
+        player:ModifyArenaPoints(ARENA_POINTS_REWARD)
+        player:SendBroadcastMessage("Exchanged 1000 Honor Points for 10 Arena Points.")
+      end
+      showCurrencyExchangeMenu(player, creature)
+      return true
+    elseif intid == 3 then
+      if player:GetArenaPoints() < ARENA_EXCHANGE_COST then
+        player:SendBroadcastMessage("You do not have enough Arena Points (Requires 100 Arena Points).")
+      else
+        player:ModifyArenaPoints(-ARENA_EXCHANGE_COST)
+        player:ModifyHonorPoints(HONOR_POINTS_REWARD)
+        player:SendBroadcastMessage("Exchanged 100 Arena Points for 5000 Honor Points.")
+      end
+      showCurrencyExchangeMenu(player, creature)
+      return true
+    elseif intid == 4 then
+      if not player:HasItem(ITEM_WSG_MARK, 1) then
+        player:SendBroadcastMessage("You do not have a Badge of Justice.")
+      else
+        player:RemoveItem(ITEM_WSG_MARK, 1)
+        player:AddItem(ITEM_ARENA_MARK, 1)
+        player:SendBroadcastMessage("Exchanged 1 Badge of Justice for 1 Emblem of Heroism.")
+      end
+      showCurrencyExchangeMenu(player, creature)
+      return true
+    elseif intid == 5 then
+      if not player:HasItem(ITEM_ARENA_MARK, 2) then
+        player:SendBroadcastMessage("You do not have enough Emblems of Heroism (Requires 2 Emblems of Heroism).")
+      else
+        player:RemoveItem(ITEM_ARENA_MARK, 2)
+        player:AddItem(ITEM_WSG_MARK, 1)
+        player:SendBroadcastMessage("Exchanged 2 Emblems of Heroism for 1 Badge of Justice.")
+      end
+      showCurrencyExchangeMenu(player, creature)
+      return true
+    end
   end
   return false
 end)
+
