@@ -24,7 +24,8 @@ const managedSqlFiles = async () => {
       (entry.name.startsWith('generated-') || entry.name === 'starting-info.sql' ||
         entry.name === 'random-enchant-npc.sql' || entry.name === 'gm-command-permissions.sql' ||
         entry.name === 'gm-command-permissions-auth.sql' || entry.name === 'gathering-nodes.sql' ||
-        entry.name === 'disable-call-of-arms.sql' || entry.name === 'remove-pvp-dampening.sql')
+        entry.name === 'disable-call-of-arms.sql' || entry.name === 'remove-pvp-dampening.sql' ||
+        entry.name === 'mage-spell-coefficients.sql')
     ) {
       files.push(`${generatedSqlDir}/${entry.name}`)
     }
