@@ -440,7 +440,7 @@
   "Wintergrasp.SkipBattleSessionCount": "3500",
   "Wintergrasp.KickVoAPlayers": "1",
   "Wintergrasp.EssenceBothFactions": "0",
-  "Battleground.PrepTime": "60",
+  "Battleground.PrepTime": "120",
   "Battleground.CastDeserter": "1",
   "Battleground.QueueAnnouncer.Enable": "0",
   "Battleground.QueueAnnouncer.Limit.MinLevel": "0",
