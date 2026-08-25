@@ -214,17 +214,43 @@ function WsgState.getParticipationScore(participation)
         + participation.flagReturns * 20
 end
 
-function WsgState.isParticipationEligible(participant)
-    if not participant or WsgState.isDeserted(participant) then return false end
+function WsgState.getParticipationStatus(participant)
+    if not participant then
+        return { eligible = false, reason = "missing_participant", score = 0, requiredScore = 0, timePlayed = 0 }
+    end
+    if WsgState.isDeserted(participant) then
+        return { eligible = false, reason = "deserted", score = 0, requiredScore = 0, timePlayed = 0 }
+    end
 
     local participation = participant.participation
-    if not participation then return false end
+    if not participation then
+        return { eligible = false, reason = "missing_metrics", score = 0, requiredScore = 0, timePlayed = 0 }
+    end
 
     local timePlayed = participation.timePlayed
-    if timePlayed <= WsgState.WSG_LATE_JOIN_GRACE_SECONDS then return true end
+    local score = WsgState.getParticipationScore(participation)
+    if timePlayed <= WsgState.WSG_LATE_JOIN_GRACE_SECONDS then
+        return {
+            eligible = true,
+            reason = "late_join_grace",
+            score = score,
+            requiredScore = 0,
+            timePlayed = timePlayed,
+        }
+    end
 
     local requiredScore = (timePlayed / 60) * WsgState.WSG_MIN_ACTIVITY_POINTS_PER_MINUTE
-    return WsgState.getParticipationScore(participation) >= requiredScore
+    return {
+        eligible = score >= requiredScore,
+        reason = score >= requiredScore and "activity_met" or "activity_too_low",
+        score = score,
+        requiredScore = requiredScore,
+        timePlayed = timePlayed,
+    }
+end
+
+function WsgState.isParticipationEligible(participant)
+    return WsgState.getParticipationStatus(participant).eligible
 end
 
 local function isActivePlayer(state, instanceId, player, participant)

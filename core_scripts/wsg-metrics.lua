@@ -352,7 +352,20 @@ end)
 -- Hook: Send aggregated stats as web event at the end of the BG match
 RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
     local match = matches[instanceId]
-    if not match or match.kind ~= "WSG" then return end
+    if not match or match.kind ~= "WSG" then
+        print(string.format(
+            "[WSG Reward Debug] Metrics end skipped { instanceId: %s, matchFound: %s, kind: %s }",
+            tostring(instanceId), tostring(match ~= nil), tostring(match and match.kind or "nil")
+        ))
+        return
+    end
+
+    local metricPlayerCount = 0
+    for _ in pairs(match.players) do metricPlayerCount = metricPlayerCount + 1 end
+    print(string.format(
+        "[WSG Reward Debug] Metrics end started { instanceId: %s, players: %s, winner: %s }",
+        tostring(instanceId), tostring(metricPlayerCount), tostring(winner)
+    ))
 
     local map = GetMapById(bg:GetMapId(), instanceId)
     if map then
@@ -376,7 +389,25 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
         stats.flagCarryTime = math.floor(stats.flagCarryTime / 1000)
         local guidLow = stats._guidLow
         finalizeMetricStats(stats)
-        WsgState.updateParticipationMetrics(wsgState, instanceId, guidLow, stats)
+        local stored = WsgState.updateParticipationMetrics(wsgState, instanceId, guidLow, stats)
+        print(string.format(
+            "[WSG Reward Debug] Metrics finalized { instanceId: %s, player: %s, guidLow: %s, stored: %s, timePlayed: %s, damage: %s, healing: %s, kills: %s, interrupts: %s, dispels: %s, damageOnEFC: %s, healsOnFC: %s, flagCarryTime: %s, flagCaptures: %s, flagReturns: %s }",
+            tostring(instanceId),
+            tostring(stats.name),
+            tostring(guidLow),
+            tostring(stored),
+            tostring(stats.timePlayed),
+            tostring(stats.damageDone),
+            tostring(stats.healingDone),
+            tostring(stats.killingBlows),
+            tostring(stats.successfulInterrupts),
+            tostring(stats.dispelsOffensive),
+            tostring(stats.damageOnEFC),
+            tostring(stats.healsOnFC),
+            tostring(stats.flagCarryTime),
+            tostring(stats.flagCaptures),
+            tostring(stats.flagReturns)
+        ))
         stats._guidLow = nil
     end
 
