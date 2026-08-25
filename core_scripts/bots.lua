@@ -258,18 +258,6 @@ local function sortQueuedPlayers(players)
     return players
 end
 
-local function getMapTeamCounts(map, excludedGuids)
-    local teamCounts = { [0] = 0, [1] = 0 }
-    for _, player in ipairs(map:GetPlayers()) do
-        local guidLow = player:GetGUIDLow()
-        if not excludedGuids[guidLow] and not player:IsBot() then
-            local teamId = player:GetBgTeamId()
-            if teamId == 0 or teamId == 1 then teamCounts[teamId] = teamCounts[teamId] + 1 end
-        end
-    end
-    return teamCounts
-end
-
 local function warnClassCapPlayers(players)
     for _, player in ipairs(players or {}) do
         local guidLow = player:GetGUIDLow()
@@ -374,7 +362,7 @@ local function planNativeBattlegroundQueueDistribution(bg, queueBracketId)
         queuedPlayers,
         roster,
         instanceId,
-        getMapTeamCounts(map, departedPlayers),
+        WsgState.getActivePlayerCounts(WsgState.shared, instanceId),
         maxWsgPlayersPerTeam
     )
     if type(plan) ~= "table" or type(plan.selectedPlayers) ~= "table" or type(plan.assignments) ~= "table"
@@ -824,16 +812,13 @@ CreateLuaEvent(function ()
     local activeBGHasCapacity = false
     for instanceId in pairs(wsgController:getActiveBGInstances()) do
         if isJoinableBattleground(GetBattleground(instanceId, bgTypeId)) then
-            local map = GetMapById(WSG_MAP_ID, instanceId)
-            if not map then
+            local counts = wsgController:getTeamCountsWithPending(
+                instanceId,
+                WsgState.getActivePlayerCounts(WsgState.shared, instanceId),
+                {}
+            )
+            if counts[0] < maxWsgPlayersPerTeam or counts[1] < maxWsgPlayersPerTeam then
                 activeBGHasCapacity = true
-            else
-                local departedPlayers = wsgController:getDepartedPlayers(instanceId)
-                local realCounts = getMapTeamCounts(map, departedPlayers)
-                local counts = wsgController:getTeamCountsWithPending(instanceId, realCounts, {})
-                if counts[0] < maxWsgPlayersPerTeam or counts[1] < maxWsgPlayersPerTeam then
-                    activeBGHasCapacity = true
-                end
             end
         end
     end
@@ -904,7 +889,7 @@ local function HasPendingBGInvite(instanceId)
     return wsgController:hasPendingInvite(instanceId)
 end
 
-local function CheckBGEmpty(player, mapId, instanceId)
+local function CheckBGEmpty(instanceId)
     local instId = (instanceId and instanceId > 0) and instanceId or 0
     local bg = instId > 0 and GetBattleground(instId, bgTypeId) or nil
     if not bg then return false end
@@ -914,15 +899,9 @@ local function CheckBGEmpty(player, mapId, instanceId)
     end
     wsgController:trackActiveBG(bg)
 
-    local departingName = player and player:GetName() or ""
-    local map = GetMapById(mapId or 489, instId)
-    if map then
-        local departedPlayers = wsgController:getDepartedPlayers(instId)
-        for _, p in ipairs(map:GetPlayers()) do
-            if not departedPlayers[p:GetGUIDLow()] and p:GetName() ~= departingName and not p:IsBot() then
-                return false
-            end
-        end
+    local activeCounts = WsgState.getActivePlayerCounts(WsgState.shared, instId)
+    if activeCounts[0] + activeCounts[1] > 0 then
+        return false
     end
 
     if HasPendingBGInvite(instId) then
@@ -997,7 +976,7 @@ ProcessActiveBGQueuePlayer = function(player, queuedByGuid)
                     end
 
                     sortQueuedPlayers(queueGroup)
-                    local mapCounts = getMapTeamCounts(map, departedPlayers)
+                    local mapCounts = WsgState.getActivePlayerCounts(WsgState.shared, instanceId)
                     local plan, excludedQueueGroup = wsgController:planActiveInvites(
                         queueGroup,
                         roster,
@@ -1075,7 +1054,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_BG_QUEUE_LEAVE, function(event, player, mapI
         local bg = GetBattleground(invitedInstanceId, bgTypeId)
         local map = GetMapById(489, invitedInstanceId)
         if map and bg then
-            local isEmpty = CheckBGEmpty(player, 489, invitedInstanceId)
+            local isEmpty = CheckBGEmpty(invitedInstanceId)
             if not isEmpty then
                 BalanceBGBots(map, bg, "leave", player:GetName())
                 SyncBGPlayerData(map)
@@ -1195,14 +1174,8 @@ CreateLuaEvent(function()
             wsgController:trackActiveBG(bg)
             local map = GetMapById(489, instanceId)
             if map then
-                local hasRealPlayers = false
-                local departedPlayers = wsgController:getDepartedPlayers(instanceId)
-                for _, p in ipairs(map:GetPlayers()) do
-                    if not departedPlayers[p:GetGUIDLow()] and not p:IsBot() then
-                        hasRealPlayers = true
-                        break
-                    end
-                end
+                local activeCounts = WsgState.getActivePlayerCounts(WsgState.shared, instanceId)
+                local hasRealPlayers = activeCounts[0] + activeCounts[1] > 0
 
                 if hasRealPlayers then
                     BalanceBGBots(map, bg, "periodic_check")
@@ -1223,6 +1196,9 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_ENTER_BG, function(event, player, mapId, ins
 
     local enteredBg = GetBattleground(instanceId, bgTypeId)
 
+    if isJoinableBattleground(enteredBg) then
+        wsgController:trackActiveBG(enteredBg)
+    end
     wsgController:markPlayerEntered(instanceId, player)
     wsgController:clearPlayer(playerGuidLow)
     if isBot then return end
@@ -1253,7 +1229,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
         return
     end
 
-    local isEmpty = CheckBGEmpty(player, mapId, instId)
+    local isEmpty = CheckBGEmpty(instId)
     if isEmpty or (player and player:IsBot()) then return end
 
     if map and realBg then

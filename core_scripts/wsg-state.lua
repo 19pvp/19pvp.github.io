@@ -1,5 +1,9 @@
 local WsgState = {}
 
+WsgState.WSG_LATE_JOIN_GRACE_SECONDS = 180
+WsgState.WSG_MIN_ACTIVITY_POINTS_PER_MINUTE = 5
+WsgState.WSG_FLAG_REPEAT_WINDOW_MS = 10 * 1000
+
 local function getValue(player, methodName, fieldName)
     if type(player) ~= "table" and type(player) ~= "userdata" then return nil end
     if type(player[methodName]) == "function" then return player[methodName](player) end
@@ -22,7 +26,72 @@ local function createState()
         groupSplitWarnings = {},
         queueMidpointAlertSent = false,
         queueProjectionDirty = true,
+        flagStates = {}, -- instanceId -> guidLow -> flag carry/drop state
     }
+end
+
+local function getFlagState(state, instanceId, guidLow)
+    if not state or not instanceId or instanceId <= 0 or not guidLow then return nil end
+
+    state.flagStates = state.flagStates or {}
+    state.flagStates[instanceId] = state.flagStates[instanceId] or {}
+    local key = tostring(guidLow)
+    state.flagStates[instanceId][key] = state.flagStates[instanceId][key] or {
+        carrying = false,
+        wasCarrying = false,
+        awaitingRepick = false,
+        lastDropAt = nil,
+        repeatDrops = 0,
+    }
+    return state.flagStates[instanceId][key]
+end
+
+function WsgState.recordFlagPickup(state, instanceId, guidLow, now)
+    local flagState = getFlagState(state, instanceId, guidLow)
+    if not flagState or type(now) ~= "number" then return false, 0 end
+
+    if flagState.carrying then return false, flagState.repeatDrops end
+
+    local isRepick = flagState.awaitingRepick
+        and flagState.lastDropAt
+        and now - flagState.lastDropAt < WsgState.WSG_FLAG_REPEAT_WINDOW_MS
+
+    if not isRepick then
+        flagState.lastDropAt = nil
+        flagState.repeatDrops = 0
+    end
+
+    flagState.carrying = true
+    flagState.wasCarrying = false
+    flagState.awaitingRepick = false
+    return isRepick == true, flagState.repeatDrops
+end
+
+function WsgState.recordFlagAuraRemoved(state, instanceId, guidLow)
+    local flagState = getFlagState(state, instanceId, guidLow)
+    if not flagState then return false end
+
+    flagState.wasCarrying = flagState.carrying == true
+    flagState.carrying = false
+    return flagState.wasCarrying
+end
+
+function WsgState.recordFlagDrop(state, instanceId, guidLow, now)
+    local flagState = getFlagState(state, instanceId, guidLow)
+    if not flagState or type(now) ~= "number" or not flagState.wasCarrying then
+        return false, 0
+    end
+
+    if flagState.lastDropAt and now - flagState.lastDropAt < WsgState.WSG_FLAG_REPEAT_WINDOW_MS then
+        flagState.repeatDrops = flagState.repeatDrops + 1
+    else
+        flagState.repeatDrops = 0
+    end
+
+    flagState.lastDropAt = now
+    flagState.wasCarrying = false
+    flagState.awaitingRepick = true
+    return true, flagState.repeatDrops
 end
 
 function WsgState.create()
@@ -77,7 +146,98 @@ function WsgState.getParticipants(state, instanceId)
     return state.participants[instanceId] or {}
 end
 
-function WsgState.forEachPlayers(state, instanceId, callback, onUnavailable)
+function WsgState.markPlayerDeserted(state, player, instanceId)
+    if not state or not player then return false end
+
+    local guidLow = getValue(player, "GetGUIDLow", "guidLow")
+    if not guidLow then return false end
+
+    local function markInstance(matchInstanceId)
+        local participants = state.participants[matchInstanceId]
+        local participant = participants and participants[tostring(guidLow)]
+        if not participant then return false end
+        participant.deserted = true
+        return true
+    end
+
+    if instanceId and instanceId > 0 then
+        return markInstance(instanceId)
+    end
+
+    for matchInstanceId in pairs(state.participants) do
+        if markInstance(matchInstanceId) then return true end
+    end
+    return false
+end
+
+function WsgState.isDeserted(participant)
+    return participant and participant.deserted == true
+end
+
+function WsgState.updateParticipationMetrics(state, instanceId, guidLow, stats)
+    if not state or not instanceId or not guidLow or not stats then return false end
+
+    local participants = state.participants[instanceId]
+    local participant = participants and participants[tostring(guidLow)]
+    if not participant then return false end
+
+    participant.participation = {
+        timePlayed = math.max(0, tonumber(stats.timePlayed) or 0),
+        damageDone = math.max(0, tonumber(stats.damageDone) or 0),
+        healingDone = math.max(0, tonumber(stats.healingDone) or 0),
+        killingBlows = math.max(0, tonumber(stats.killingBlows) or 0),
+        honorableKills = math.max(0, tonumber(stats.honorableKills) or 0),
+        successfulInterrupts = math.max(0, tonumber(stats.successfulInterrupts) or 0),
+        dispelsOffensive = math.max(0, tonumber(stats.dispelsOffensive) or 0),
+        damageOnEFC = math.max(0, tonumber(stats.damageOnEFC) or 0),
+        healsOnFC = math.max(0, tonumber(stats.healsOnFC) or 0),
+        flagCarryTime = math.max(0, tonumber(stats.flagCarryTime) or 0),
+        flagCaptures = math.max(0, tonumber(stats.flagCaptures) or 0),
+        flagReturns = math.max(0, tonumber(stats.flagReturns) or 0),
+    }
+    return true
+end
+
+function WsgState.getParticipationScore(participation)
+    if not participation then return 0 end
+
+    return participation.damageDone / 1000
+        + participation.healingDone / 1000
+        + participation.killingBlows * 10
+        + participation.honorableKills * 2
+        + participation.successfulInterrupts * 2
+        + participation.dispelsOffensive * 2
+        + participation.damageOnEFC / 500
+        + participation.healsOnFC / 500
+        + participation.flagCarryTime / 10000
+        + participation.flagCaptures * 50
+        + participation.flagReturns * 20
+end
+
+function WsgState.isParticipationEligible(participant)
+    if not participant or WsgState.isDeserted(participant) then return false end
+
+    local participation = participant.participation
+    if not participation then return false end
+
+    local timePlayed = participation.timePlayed
+    if timePlayed <= WsgState.WSG_LATE_JOIN_GRACE_SECONDS then return true end
+
+    local requiredScore = (timePlayed / 60) * WsgState.WSG_MIN_ACTIVITY_POINTS_PER_MINUTE
+    return WsgState.getParticipationScore(participation) >= requiredScore
+end
+
+local function isActivePlayer(state, instanceId, player, participant)
+    local departed = state.departedPlayers and state.departedPlayers[instanceId]
+    local guidLow = participant and participant.guidLow
+    return not (departed and departed[guidLow])
+        and type(player.InBattleground) == "function"
+        and type(player.GetBattlegroundId) == "function"
+        and player:InBattleground()
+        and player:GetBattlegroundId() == instanceId
+end
+
+function WsgState.forEachParticipants(state, instanceId, callback, onUnavailable)
     if not state or not instanceId or type(callback) ~= "function"
         or type(GetPlayerByGUID) ~= "function" then
         return 0
@@ -96,19 +256,39 @@ function WsgState.forEachPlayers(state, instanceId, callback, onUnavailable)
     return count
 end
 
+function WsgState.forEachActivePlayers(state, instanceId, callback, onUnavailable)
+    if type(callback) ~= "function" then return 0 end
+    return WsgState.forEachParticipants(state, instanceId, function(player, participant)
+        if isActivePlayer(state, instanceId, player, participant) then
+            callback(player, participant)
+        end
+    end, onUnavailable)
+end
+
+WsgState.forEachPlayers = WsgState.forEachActivePlayers
+
+function WsgState.getActivePlayerCounts(state, instanceId)
+    local counts = { [0] = 0, [1] = 0 }
+    if not state or not instanceId then return counts end
+
+    -- Participants are maintained by BG enter/leave events, so this remains
+    -- independent from map snapshots and live Player object state.
+    local departed = state.departedPlayers and state.departedPlayers[instanceId]
+    for _, participant in pairs(WsgState.getParticipants(state, instanceId)) do
+        if not (departed and departed[participant.guidLow])
+            and (participant.team == 0 or participant.team == 1) then
+            counts[participant.team] = counts[participant.team] + 1
+        end
+    end
+    return counts
+end
+
 function WsgState.forEachActiveBattlegrounds(state, callback)
     if not state or type(callback) ~= "function" then return end
 
     for instanceId in pairs(state.activeBGInstances) do
         local players = {}
-        WsgState.forEachPlayers(state, instanceId, function(player)
-            if type(player.InBattleground) ~= "function"
-                or type(player.GetBattlegroundId) ~= "function"
-                or not player:InBattleground()
-                or player:GetBattlegroundId() ~= instanceId then
-                return
-            end
-
+        WsgState.forEachActivePlayers(state, instanceId, function(player)
             table.insert(players, player)
         end)
         if next(players) then
@@ -128,6 +308,7 @@ function WsgState.clearMatch(state, instanceId)
     if not state or not instanceId or instanceId <= 0 then return end
     state.participants[instanceId] = nil
     state.departedPlayers[instanceId] = nil
+    if state.flagStates then state.flagStates[instanceId] = nil end
 end
 
 return WsgState

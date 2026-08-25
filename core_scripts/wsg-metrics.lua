@@ -7,12 +7,18 @@ local activeCCs = {}
 local activeAbsorbs = {}
 -- playerGuidString -> flagCarryStartTime
 local flagCarryStartTimes = {}
+-- playerGuidString -> pending flag-aura removal waiting to be classified as a drop or capture
+local pendingFlagRemovals = {}
+-- playerGuidString -> repeat count while AddAura is being used as the fallback
+local manualFlagPenalties = {}
 local WSG_MAP_ID = 489
 local WSG_BG_TYPE_ID = 2
 local WSG_ARENA_TEAM_TYPE = 5
 local PREPARATION_AURA = 44521
 local HAND_OF_PROTECTION = 1022
 local ARENA_PREPARATION_AURA = 32727
+local WSG_RECENTLY_DROPPED_FLAG = 42792
+local FLAG_DROP_FALLBACK_DELAY_MS = 100
 local WsgState = require("wsg-state")
 local wsgState = WsgState.shared
 local WINNER_ARENA_POINTS = 10
@@ -36,6 +42,87 @@ local function getWSGInstanceId(player)
     local instanceId = player:GetBattlegroundId()
     if not instanceId or instanceId == 0 then return nil end
     return instanceId
+end
+
+local function getActiveWsgInstanceId(player)
+    if not player or not player:InBattleground() or player:GetMapId() ~= WSG_MAP_ID then return nil end
+
+    local bg = player:GetBattleground()
+    if not bg or bg:GetStatus() ~= STATUS_IN_PROGRESS then return nil end
+
+    local instanceId = player:GetBattlegroundId()
+    if not instanceId or instanceId == 0 then return nil end
+    return instanceId
+end
+
+local function getFlagCaptures(player, instanceId)
+    local bg = GetBattleground(instanceId, WSG_BG_TYPE_ID)
+    if not bg then return nil end
+
+    local score = bg:GetPlayerScore(player)
+    return score and tonumber(score.flagCaptures) or nil
+end
+
+local function applyRecentlyDroppedFlag(player, repeatDrops)
+    if not player or not player:InBattleground() or player:GetMapId() ~= WSG_MAP_ID then return end
+
+    local keepAura = player:IsBot() or (repeatDrops or 0) > 0
+    if not keepAura then
+        if player:HasAura(WSG_RECENTLY_DROPPED_FLAG) then
+            player:RemoveAura(WSG_RECENTLY_DROPPED_FLAG)
+        end
+        return
+    end
+
+    local guid = tostring(player:GetGUID())
+    if not player:HasAura(WSG_RECENTLY_DROPPED_FLAG) then
+        manualFlagPenalties[guid] = repeatDrops or 0
+        player:AddAura(WSG_RECENTLY_DROPPED_FLAG, player)
+        manualFlagPenalties[guid] = nil
+    end
+
+    local aura = player:GetAura(WSG_RECENTLY_DROPPED_FLAG)
+    if not aura or (repeatDrops or 0) <= 0 then return end
+
+    local extension = repeatDrops * IN_MILLISECONDS
+    local duration = aura:GetDuration()
+    local maxDuration = aura:GetMaxDuration()
+    if duration and duration > 0 then aura:SetDuration(duration + extension) end
+    if maxDuration and maxDuration > 0 then aura:SetMaxDuration(maxDuration + extension) end
+end
+
+local function classifyPendingFlagRemoval(pending)
+    if not pendingFlagRemovals[pending.guid] or pendingFlagRemovals[pending.guid] ~= pending then return end
+    pendingFlagRemovals[pending.guid] = nil
+
+    local player = GetPlayerByGUID(pending.guidObject)
+    if not player or getActiveWsgInstanceId(player) ~= pending.instanceId then return end
+
+    local captures = getFlagCaptures(player, pending.instanceId)
+    if captures and pending.flagCaptures and captures > pending.flagCaptures then return end
+
+    local dropped, repeatDrops = WsgState.recordFlagDrop(
+        wsgState,
+        pending.instanceId,
+        pending.guidLow,
+        GetCurrTime()
+    )
+    if dropped then applyRecentlyDroppedFlag(player, repeatDrops) end
+end
+
+local function deferFlagRemovalClassification(player, instanceId, flagCaptures)
+    local guid = tostring(player:GetGUID())
+    local pending = {
+        guid = guid,
+        guidObject = player:GetGUID(),
+        guidLow = player:GetGUIDLow(),
+        instanceId = instanceId,
+        flagCaptures = flagCaptures,
+    }
+    pendingFlagRemovals[guid] = pending
+    CreateLuaEvent(function()
+        classifyPendingFlagRemoval(pending)
+    end, FLAG_DROP_FALLBACK_DELAY_MS, 1)
 end
 
 local function getOrCreateMatch(kind, instanceId)
@@ -194,6 +281,7 @@ local function getWSGStats(player, instanceId)
     if not match.players[guid] then
         local stats = newMetricStats(player, "WSG")
         stats._guid = player:GetGUID()
+        stats._guidLow = player:GetGUIDLow()
         stats._instanceId = instanceId
         match.players[guid] = stats
     end
@@ -243,6 +331,10 @@ end)
 
 -- Hook: Track player desertion and total play time when leaving
 RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, instanceId, bg)
+    if bg and bg:GetStatus() < STATUS_WAIT_LEAVE then
+        WsgState.markPlayerDeserted(wsgState, player, instanceId)
+    end
+
     local stats = getWSGStats(player, instanceId)
     if not stats then return end
     -- Record play time up to the point they left
@@ -282,7 +374,10 @@ RegisterBGEvent(BG_EVENT_ON_END, function(event, bg, bgId, instanceId, winner)
     -- Format flag carrying time (convert ms to seconds) and CC duration
     for _, stats in pairs(currentMatchStats) do
         stats.flagCarryTime = math.floor(stats.flagCarryTime / 1000)
+        local guidLow = stats._guidLow
         finalizeMetricStats(stats)
+        WsgState.updateParticipationMetrics(wsgState, instanceId, guidLow, stats)
+        stats._guidLow = nil
     end
 
     SendWebEvent('PVP_BG_STATS', nil, {
@@ -419,15 +514,68 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_INTERRUPT_CAST, function(event, interrupter,
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
-    local playerStats = getMetricStats(player)
+    if not player or not aura then return end
     local spellId = aura:GetAuraId()
     if not spellId then return end
 
+    if spellId == WSG_RECENTLY_DROPPED_FLAG then
+        local instanceId = getActiveWsgInstanceId(player)
+        local guid = tostring(player:GetGUID())
+        pendingFlagRemovals[guid] = nil
+
+        local manualRepeatDrops = manualFlagPenalties[guid]
+        if manualRepeatDrops ~= nil then
+            if not player:IsBot() and manualRepeatDrops <= 0 then
+                player:RemoveAura(WSG_RECENTLY_DROPPED_FLAG)
+            end
+            return
+        end
+
+        local dropped, repeatDrops = false, 0
+        if instanceId then
+            dropped, repeatDrops = WsgState.recordFlagDrop(
+                wsgState,
+                instanceId,
+                player:GetGUIDLow(),
+                GetCurrTime()
+            )
+        end
+
+        if player:IsBot() then
+            if dropped then applyRecentlyDroppedFlag(player, repeatDrops) end
+        elseif dropped and repeatDrops > 0 then
+            local duration = aura:GetDuration()
+            local maxDuration = aura:GetMaxDuration()
+            local extension = repeatDrops * IN_MILLISECONDS
+            if duration and duration > 0 then aura:SetDuration(duration + extension) end
+            if maxDuration and maxDuration > 0 then aura:SetMaxDuration(maxDuration + extension) end
+        else
+            player:RemoveAura(WSG_RECENTLY_DROPPED_FLAG)
+        end
+        return
+    end
+
+    local playerStats = getMetricStats(player)
+
     if WSG_FLAG_AURAS[spellId] then
+        local instanceId = getWSGInstanceId(player)
+        local isRepick
+        if instanceId then
+            isRepick = WsgState.recordFlagPickup(
+                wsgState,
+                instanceId,
+                player:GetGUIDLow(),
+                GetCurrTime()
+            )
+        end
+
         if not playerStats or playerStats._kind ~= "WSG" then return end
         local guid = tostring(player:GetGUID())
         if not flagCarryStartTimes[guid] then
             playerStats.attemptsOnFlag = playerStats.attemptsOnFlag + 1
+            if isRepick and playerStats.attemptsOnFlag > 0 then
+                playerStats.attemptsOnFlag = playerStats.attemptsOnFlag - 1
+            end
             flagCarryStartTimes[guid] = GetCurrTime()
         end
         return
@@ -524,10 +672,16 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
     end
 
     local spellId = aura:GetAuraId()
-    if playerStats and playerStats._kind == "WSG" and spellId and WSG_FLAG_AURAS[spellId] then
+    if spellId and WSG_FLAG_AURAS[spellId] then
         local guid = tostring(player:GetGUID())
+        local instanceId = getActiveWsgInstanceId(player)
+        if instanceId then
+            WsgState.recordFlagAuraRemoved(wsgState, instanceId, player:GetGUIDLow())
+            deferFlagRemovalClassification(player, instanceId, getFlagCaptures(player, instanceId))
+        end
+
         local startTime = flagCarryStartTimes[guid]
-        if startTime then
+        if playerStats and playerStats._kind == "WSG" and startTime then
             local elapsed = now - startTime
             if elapsed > 0 then
                 playerStats.flagCarryTime = playerStats.flagCarryTime + elapsed
@@ -646,6 +800,7 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_LEAVE_BG, function(event, player, mapId, ins
     updateMetricTime(stats, now, match.startedAt ~= nil)
     stats.left = true
     if bg and bg:GetStatus() < STATUS_WAIT_LEAVE then
+        WsgState.markPlayerDeserted(wsgState, player, match.instanceId)
         stats.deserted = match.startedAt and math.floor((now - match.startedAt) / 1000) or 0
     end
     recordQueueGroup(match, player, stats)

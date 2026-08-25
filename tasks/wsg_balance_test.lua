@@ -1246,6 +1246,9 @@ function testSharedMatchState()
     assert(participants["3001"] and participants["3001"].guid == "Player-3001"
         and participants["3001"].team == 1,
         "Rewards must use the participant's battleground team, not permanent faction")
+    assert(state.markPlayerDeserted(matchState, matchPlayer, 9930)
+        and state.isDeserted(participants["3001"]),
+        "Deserted participants must be marked in shared match state")
 
     local arenaState = state.create()
     state.recordParticipant(arenaState, 9931, {
@@ -1299,10 +1302,51 @@ function testSharedMatchState()
         and state.getParticipants(matchState, 9932)["3005"],
         "World restoration must record real WSG players and return their active instances")
     matchState.activeBGInstances[9932] = true
+    matchState.participants[9932]["3007"] = {
+        guid = "Player-3007",
+        guidLow = 3007,
+        team = 0,
+        name = "departed",
+    }
+    matchState.departedPlayers[9932] = { [3007] = true }
     local previousGetPlayerByGUIDAfterRestore = _G.GetPlayerByGUID
     _G.GetPlayerByGUID = function(guid)
-        return guid == "Player-3005" and restoredPlayer or nil
+        if guid == "Player-3005" then return restoredPlayer end
+        if guid == "Player-3007" then
+            return {
+                isBot = false,
+                InBattleground = function() return true end,
+                GetBattlegroundId = function() return 9932 end,
+            }
+        end
+        return nil
     end
+    assert(state.getActivePlayerCounts(matchState, 9932)[0] == 1
+        and state.getActivePlayerCounts(matchState, 9932)[1] == 0,
+        "Active player counts must use live, non-departed participant state")
+
+    local fullMatchState = state.create()
+    for teamId = 0, 1 do
+        for playerIndex = 1, 10 do
+            local guidLow = 3100 + teamId * 100 + playerIndex
+            state.recordParticipant(fullMatchState, 9934, {
+                guidLow = guidLow,
+                guid = "Player-" .. tostring(guidLow),
+                bgTeam = teamId,
+                isBot = false,
+            })
+        end
+    end
+    local fullCounts = state.getActivePlayerCounts(fullMatchState, 9934)
+    assert(fullCounts[0] == 10 and fullCounts[1] == 10
+        and not (fullCounts[0] < 10 or fullCounts[1] < 10),
+        "A full active WSG must block another fresh match")
+    fullMatchState.departedPlayers[9934] = { [3101] = true }
+    local capacityCounts = state.getActivePlayerCounts(fullMatchState, 9934)
+    assert(capacityCounts[0] == 9 and capacityCounts[1] == 10
+        and (capacityCounts[0] < 10 or capacityCounts[1] < 10),
+        "A departed player must free capacity for a later WSG join")
+
     local activeBattlegroundCount = 0
     local activePlayerCount = 0
     state.forEachActiveBattlegrounds(matchState, function(instanceId, players)
@@ -1321,7 +1365,7 @@ function testSharedMatchState()
     local callbackCount = 0
     local callbackTeam
     local unavailableCount = 0
-    local iterated = state.forEachPlayers(matchState, 9930, function(player, participant)
+    local iterated = state.forEachParticipants(matchState, 9930, function(player, participant)
         callbackCount = callbackCount + 1
         callbackTeam = participant.team
         assert(player == livePlayer, "Player iteration must expose the live non-bot player")
@@ -1342,4 +1386,132 @@ end
 testSharedMatchState()
 testSharedMatchState = nil
 
-print("\nwsg_balance_test: ok (All 30 test suites passed cleanly)")
+-- 31. A full in-progress BG must not contribute its classes to a new match.
+function testFullMatchIsolation()
+    print("[Test 31] Full in-progress BG state is isolated from fresh-match class limits...")
+    local state = require("wsg-state")
+    local matchState = state.create()
+    local controller = balance.createQueueController(matchState)
+    local instanceId = 9935
+
+    for teamId = 0, 1 do
+        for playerIndex = 1, 10 do
+            local guidLow = 3500 + teamId * 100 + playerIndex
+            state.recordParticipant(matchState, instanceId, {
+                guidLow = guidLow,
+                guid = "Player-" .. tostring(guidLow),
+                bgTeam = teamId,
+                classId = 8,
+                isBot = false,
+            })
+        end
+    end
+    controller:setPendingInvite({ guidLow = 3599, class = 8 }, instanceId, 0)
+
+    local activeCounts = state.getActivePlayerCounts(matchState, instanceId)
+    local projectedCounts = controller:getTeamCountsWithPending(instanceId, activeCounts, {})
+    assert(activeCounts[0] == 10 and activeCounts[1] == 10
+        and projectedCounts[0] == 11 and projectedCounts[1] == 10,
+        "The full in-progress BG fixture must include active and pending players")
+
+    local queuedHunters = {}
+    for playerIndex = 1, 5 do
+        table.insert(queuedHunters, {
+            name = "newHunter" .. playerIndex,
+            nativeTeam = playerIndex % 2,
+            classId = 8,
+            guidLow = 3600 + playerIndex,
+        })
+    end
+    local freshPlan = controller:planFreshMatch(queuedHunters)
+    assert(#freshPlan.selectedPlayers == 4 and #freshPlan.excludedPlayers == 1,
+        "Classes in a full existing BG must not consume fresh-match class capacity")
+    assert(#freshPlan.assignments == 4,
+        "Fresh matchmaking must still assign the eligible class-heavy queue")
+end
+testFullMatchIsolation()
+testFullMatchIsolation = nil
+
+-- 32. WSG reward eligibility scales activity requirements with time played.
+function testWsgParticipationEligibility()
+    print("[Test 32] WSG rewards require proportional participation...")
+    local state = require("wsg-state")
+    local matchState = state.create()
+    local instanceId = 9936
+
+    local function addParticipant(guidLow, metrics)
+        state.recordParticipant(matchState, instanceId, {
+            guidLow = guidLow,
+            guid = "Player-" .. tostring(guidLow),
+            bgTeam = 0,
+            isBot = false,
+        })
+        assert(state.updateParticipationMetrics(matchState, instanceId, guidLow, metrics),
+            "Participation metrics must attach to the shared participant")
+        return matchState.participants[instanceId][tostring(guidLow)]
+    end
+
+    assert(state.isParticipationEligible(addParticipant(3601, {
+        timePlayed = 120,
+    })), "Players who join during the final minutes must always receive rewards")
+
+    assert(not state.isParticipationEligible(addParticipant(3602, {
+        timePlayed = 600,
+        damageDone = 3000,
+    })), "Negligible activity over a long participation period must not receive rewards")
+
+    assert(state.isParticipationEligible(addParticipant(3603, {
+        timePlayed = 600,
+        damageDone = 60000,
+    })), "Sufficient activity over time must receive rewards")
+
+    assert(state.isParticipationEligible(addParticipant(3604, {
+        timePlayed = 600,
+        flagCaptures = 1,
+    })), "Objective participation must count toward reward eligibility")
+
+    local deserter = addParticipant(3605, {
+        timePlayed = 600,
+        damageDone = 60000,
+    })
+    deserter.deserted = true
+    assert(not state.isParticipationEligible(deserter),
+        "Players who leave before the match ends must not receive rewards")
+end
+testWsgParticipationEligibility()
+testWsgParticipationEligibility = nil
+
+-- 33. WSG flag repeat state penalizes rapid drop/re-pick cycles without
+-- affecting the first pickup or a pickup after the repeat window.
+function testWsgFlagRepeatState()
+    print("[Test 33] WSG flag repeat state tracks rapid drop/re-pick cycles...")
+    local state = require("wsg-state")
+    local matchState = state.create()
+    local instanceId = 9937
+    local guidLow = 3701
+
+    assert(not state.recordFlagPickup(matchState, instanceId, guidLow, 0),
+        "The first flag pickup must not be treated as a re-pick")
+    assert(state.recordFlagAuraRemoved(matchState, instanceId, guidLow),
+        "Removing the carrier aura must remember that the player was carrying")
+    local dropped, repeatDrops = state.recordFlagDrop(matchState, instanceId, guidLow, 1000)
+    assert(dropped and repeatDrops == 0, "The first drop must have no repeat penalty")
+
+    local repick, penalty = state.recordFlagPickup(matchState, instanceId, guidLow, 5000)
+    assert(repick and penalty == 0, "A re-pick inside the window must cancel the prior pickup")
+    assert(state.recordFlagAuraRemoved(matchState, instanceId, guidLow),
+        "The second carrier removal must be tracked")
+    dropped, repeatDrops = state.recordFlagDrop(matchState, instanceId, guidLow, 6000)
+    assert(dropped and repeatDrops == 1, "A rapid second drop must add one repeat penalty")
+
+    assert(state.recordFlagPickup(matchState, instanceId, guidLow, 17001) == false,
+        "A pickup after the repeat window must not cancel the old pickup")
+    assert(state.recordFlagAuraRemoved(matchState, instanceId, guidLow),
+        "The post-window carrier removal must be tracked")
+    dropped, repeatDrops = state.recordFlagDrop(matchState, instanceId, guidLow, 17002)
+    assert(dropped and repeatDrops == 0, "A drop after the repeat window must reset the penalty")
+end
+testWsgFlagRepeatState()
+testWsgFlagRepeatState = nil
+
+print("\nwsg_balance_test: ok (All 33 test suites passed cleanly)")

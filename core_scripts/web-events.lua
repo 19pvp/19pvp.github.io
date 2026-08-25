@@ -231,22 +231,30 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
   if not bg or not instanceId or instanceId <= 0 then return end
   local mapId = bg:GetMapId()
   local map = GetMapById(mapId, instanceId)
-  if not map or not WsgState.claimEndRewards(wsgState, instanceId) then return end
+  if not map then return end
 
-  if map:IsBattleground() then
-    WsgState.forEachPlayers(wsgState, instanceId, function(player, participant)
-      player:AddItem(SATCHEL_ITEM_ID, 1)
-      local count = participant.team == winner and 2 or 1
-      player:AddItem(29434, count)
-    end)
-  elseif map:IsArena() then
-    WsgState.forEachPlayers(wsgState, instanceId, function(player, participant)
-      local count = participant.team == winner and 2 or 1
-      player:AddItem(40752, count)
-    end)
-  end
+  -- Metrics finalize on the same BG_END event. Defer one tick so the reward
+  -- decision sees the final participation snapshot.
+  CreateLuaEvent(function()
+    if not WsgState.claimEndRewards(wsgState, instanceId) then return end
 
-  WsgState.clearMatch(wsgState, instanceId)
+    if map:IsBattleground() then
+      WsgState.forEachParticipants(wsgState, instanceId, function(player, participant)
+        if not WsgState.isParticipationEligible(participant) then return end
+        player:AddItem(SATCHEL_ITEM_ID, 1)
+        local count = participant.team == winner and 2 or 1
+        player:AddItem(29434, count)
+      end)
+    elseif map:IsArena() then
+      WsgState.forEachParticipants(wsgState, instanceId, function(player, participant)
+        if WsgState.isDeserted(participant) then return end
+        local count = participant.team == winner and 2 or 1
+        player:AddItem(40752, count)
+      end)
+    end
+
+    WsgState.clearMatch(wsgState, instanceId)
+  end, 100, 1)
 end)
 
 RegisterPlayerEvent(PLAYER_EVENT_ON_WHO_REQUEST, function(event, requester, target)
