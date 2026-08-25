@@ -231,20 +231,76 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
   if not bg or not instanceId or instanceId <= 0 then return end
   local mapId = bg:GetMapId()
   local map = GetMapById(mapId, instanceId)
-  if not map then return end
+  if not map then
+    print(string.format(
+      "[WSG Reward Debug] End reward skipped: map unavailable { instanceId: %s, mapId: %s }",
+      tostring(instanceId), tostring(mapId)
+    ))
+    return
+  end
 
   -- Metrics finalize on the same BG_END event. Defer one tick so the reward
   -- decision sees the final participation snapshot.
   CreateLuaEvent(function()
-    if not WsgState.claimEndRewards(wsgState, instanceId) then return end
+    local claimed = WsgState.claimEndRewards(wsgState, instanceId)
+    print(string.format(
+      "[WSG Reward Debug] End reward pass { instanceId: %s, mapId: %s, winner: %s, claimed: %s }",
+      tostring(instanceId), tostring(mapId), tostring(winner), tostring(claimed)
+    ))
+    if not claimed then return end
 
     if map:IsBattleground() then
+      local participants = WsgState.getParticipants(wsgState, instanceId)
+      local participantCount = 0
+      for _ in pairs(participants) do participantCount = participantCount + 1 end
+
+      for _, participant in pairs(participants) do
+        local isWinner = participant.team == winner
+        local status = WsgState.getParticipationStatus(participant, isWinner)
+        print(string.format(
+          "[WSG Reward Debug] Eligibility { instanceId: %s, player: %s, guidLow: %s, team: %s, winner: %s, deserted: %s, eligible: %s, reason: %s, timePlayed: %.0f, score: %.2f, required: %.2f }",
+          tostring(instanceId),
+          tostring(participant.name),
+          tostring(participant.guidLow),
+          tostring(participant.team),
+          tostring(isWinner),
+          tostring(participant.deserted == true),
+          tostring(status.eligible),
+          tostring(status.reason),
+          status.timePlayed,
+          status.score,
+          status.requiredScore
+        ))
+      end
+
+      local rewarded = 0
+      local skipped = 0
       WsgState.forEachParticipants(wsgState, instanceId, function(player, participant)
-        if not WsgState.isParticipationEligible(participant) then return end
-        player:AddItem(SATCHEL_ITEM_ID, 1)
+        if not WsgState.isParticipationEligible(participant, participant.team == winner) then
+          skipped = skipped + 1
+          return
+        end
+
+        local satchel = player:AddItem(SATCHEL_ITEM_ID, 1)
         local count = participant.team == winner and 2 or 1
-        player:AddItem(29434, count)
+        local token = player:AddItem(29434, count)
+        print(string.format(
+          "[WSG Reward Debug] Reward delivery { instanceId: %s, player: %s, guidLow: %s, satchelAdded: %s, tokenAdded: %s, tokenCount: %s }",
+          tostring(instanceId), player:GetName(), tostring(player:GetGUIDLow()),
+          tostring(satchel ~= nil), tostring(token ~= nil), tostring(count)
+        ))
+        rewarded = rewarded + 1
+      end, function(participant)
+        print(string.format(
+          "[WSG Reward Debug] Reward player unavailable { instanceId: %s, player: %s, guidLow: %s }",
+          tostring(instanceId), tostring(participant.name), tostring(participant.guidLow)
+        ))
+        skipped = skipped + 1
       end)
+      print(string.format(
+        "[WSG Reward Debug] End reward summary { instanceId: %s, participants: %s, rewarded: %s, skipped: %s }",
+        tostring(instanceId), tostring(participantCount), tostring(rewarded), tostring(skipped)
+      ))
     elseif map:IsArena() then
       WsgState.forEachParticipants(wsgState, instanceId, function(player, participant)
         if WsgState.isDeserted(participant) then return end

@@ -275,7 +275,7 @@ index de0663cdc..e5d906547 100644
  
      // Default score, present in every type
 diff --git a/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp b/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
-index f5bd8a84f..38f608229 100644
+index f5bd8a84f..d85d11ea6 100644
 --- a/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
 +++ b/src/server/game/Battlegrounds/Zones/BattlegroundWS.cpp
 @@ -162,8 +162,6 @@ void BattlegroundWS::RespawnFlagAfterDrop(TeamId teamId)
@@ -315,15 +315,7 @@ index f5bd8a84f..38f608229 100644
          PlaySoundToAll(BG_WS_SOUND_FLAG_CAPTURED_HORDE);
          SendBroadcastText(BG_WS_TEXT_CAPTURED_ALLIANCE_FLAG, CHAT_MSG_BG_SYSTEM_HORDE, player);
          RewardReputationToTeam(889, _reputationCapture, TEAM_HORDE);
-@@ -242,6 +244,7 @@ void BattlegroundWS::EventPlayerDroppedFlag(Player* player)
- 
-     SetFlagPicker(ObjectGuid::Empty, GetOtherTeamId(player->GetTeamId()));
-     player->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
-+    player->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
-     player->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
-     player->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
- 
-@@ -284,11 +287,13 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+@@ -284,11 +286,13 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
          PlaySoundToAll(BG_WS_SOUND_ALLIANCE_FLAG_PICKED_UP);
          SendBroadcastText(BG_WS_TEXT_ALLIANCE_FLAG_PICKED_UP, CHAT_MSG_BG_SYSTEM_HORDE, player);
  
@@ -338,7 +330,7 @@ index f5bd8a84f..38f608229 100644
          return;
      }
  
-@@ -304,11 +309,13 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+@@ -304,11 +308,13 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
          PlaySoundToAll(BG_WS_SOUND_HORDE_FLAG_PICKED_UP);
          SendBroadcastText(BG_WS_TEXT_HORDE_FLAG_PICKED_UP, CHAT_MSG_BG_SYSTEM_ALLIANCE, player);
  
@@ -353,7 +345,7 @@ index f5bd8a84f..38f608229 100644
          return;
      }
      if (player->IsMounted())
-@@ -328,8 +335,6 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+@@ -328,8 +334,6 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
  
              PlaySoundToAll(BG_WS_SOUND_FLAG_RETURNED);
              SendBroadcastText(BG_WS_TEXT_ALLIANCE_FLAG_RETURNED, CHAT_MSG_BG_SYSTEM_ALLIANCE, player);
@@ -362,7 +354,7 @@ index f5bd8a84f..38f608229 100644
              RemoveAssaultAuras();
  
              CheckFlagKeeperInArea(TEAM_HORDE);
-@@ -361,8 +366,6 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
+@@ -361,8 +365,6 @@ void BattlegroundWS::EventPlayerClickedOnFlag(Player* player, GameObject* gameOb
  
              PlaySoundToAll(BG_WS_SOUND_FLAG_RETURNED);
              SendBroadcastText(BG_WS_TEXT_HORDE_FLAG_RETURNED, CHAT_MSG_BG_SYSTEM_HORDE, player);
@@ -371,7 +363,7 @@ index f5bd8a84f..38f608229 100644
              RemoveAssaultAuras();
  
              CheckFlagKeeperInArea(TEAM_ALLIANCE);
-@@ -578,8 +581,7 @@ TeamId BattlegroundWS::GetPrematureWinner()
+@@ -578,8 +580,7 @@ TeamId BattlegroundWS::GetPrematureWinner()
  
  uint32 BattlegroundWS::GetAssaultSpellId() const
  {
@@ -381,7 +373,7 @@ index f5bd8a84f..38f608229 100644
              _bgEvents.HasTimeUntilEvent(BG_WS_EVENT_BOTH_FLAGS_KEPT10))
          return 0;
  
-@@ -588,14 +590,20 @@ uint32 BattlegroundWS::GetAssaultSpellId() const
+@@ -588,14 +589,20 @@ uint32 BattlegroundWS::GetAssaultSpellId() const
  
  void BattlegroundWS::RemoveAssaultAuras()
  {

@@ -1,7 +1,10 @@
 local WsgState = {}
 
 WsgState.WSG_LATE_JOIN_GRACE_SECONDS = 180
-WsgState.WSG_MIN_ACTIVITY_POINTS_PER_MINUTE = 5
+-- Keep the reward gate focused on genuinely inactive players. One point is
+-- roughly 1,000 damage or healing, so this is intentionally a low floor.
+WsgState.WSG_MIN_ACTIVITY_POINTS_PER_MINUTE = 1
+WsgState.WSG_WINNING_TEAM_ACTIVITY_MULTIPLIER = 0.5
 WsgState.WSG_FLAG_REPEAT_WINDOW_MS = 10 * 1000
 
 local function getValue(player, methodName, fieldName)
@@ -76,9 +79,9 @@ function WsgState.recordFlagAuraRemoved(state, instanceId, guidLow)
     return flagState.wasCarrying
 end
 
-function WsgState.recordFlagDrop(state, instanceId, guidLow, now)
+function WsgState.recordFlagDrop(state, instanceId, guidLow, now, force)
     local flagState = getFlagState(state, instanceId, guidLow)
-    if not flagState or type(now) ~= "number" or not flagState.wasCarrying then
+    if not flagState or type(now) ~= "number" or (not flagState.wasCarrying and not force) then
         return false, 0
     end
 
@@ -214,7 +217,7 @@ function WsgState.getParticipationScore(participation)
         + participation.flagReturns * 20
 end
 
-function WsgState.getParticipationStatus(participant)
+function WsgState.getParticipationStatus(participant, isWinner)
     if not participant then
         return { eligible = false, reason = "missing_participant", score = 0, requiredScore = 0, timePlayed = 0 }
     end
@@ -239,18 +242,22 @@ function WsgState.getParticipationStatus(participant)
         }
     end
 
-    local requiredScore = (timePlayed / 60) * WsgState.WSG_MIN_ACTIVITY_POINTS_PER_MINUTE
+    local activityRate = WsgState.WSG_MIN_ACTIVITY_POINTS_PER_MINUTE
+    if isWinner then activityRate = activityRate * WsgState.WSG_WINNING_TEAM_ACTIVITY_MULTIPLIER end
+    local requiredScore = (timePlayed / 60) * activityRate
     return {
         eligible = score >= requiredScore,
-        reason = score >= requiredScore and "activity_met" or "activity_too_low",
+        reason = score >= requiredScore
+            and (isWinner and "winning_team_activity_met" or "activity_met")
+            or "activity_too_low",
         score = score,
         requiredScore = requiredScore,
         timePlayed = timePlayed,
     }
 end
 
-function WsgState.isParticipationEligible(participant)
-    return WsgState.getParticipationStatus(participant).eligible
+function WsgState.isParticipationEligible(participant, isWinner)
+    return WsgState.getParticipationStatus(participant, isWinner).eligible
 end
 
 local function isActivePlayer(state, instanceId, player, participant)

@@ -19,6 +19,7 @@ local HAND_OF_PROTECTION = 1022
 local ARENA_PREPARATION_AURA = 32727
 local WSG_RECENTLY_DROPPED_FLAG = 42792
 local FLAG_DROP_FALLBACK_DELAY_MS = 100
+local BOT_FLAG_DROP_DURATION_MS = 3 * IN_MILLISECONDS
 local WsgState = require("wsg-state")
 local wsgState = WsgState.shared
 local WINNER_ARENA_POINTS = 10
@@ -84,11 +85,11 @@ local function applyRecentlyDroppedFlag(player, repeatDrops)
     local aura = player:GetAura(WSG_RECENTLY_DROPPED_FLAG)
     if not aura or (repeatDrops or 0) <= 0 then return end
 
-    local extension = repeatDrops * IN_MILLISECONDS
-    local duration = aura:GetDuration()
-    local maxDuration = aura:GetMaxDuration()
-    if duration and duration > 0 then aura:SetDuration(duration + extension) end
-    if maxDuration and maxDuration > 0 then aura:SetMaxDuration(maxDuration + extension) end
+    local penaltyDuration = player:IsBot()
+        and BOT_FLAG_DROP_DURATION_MS
+        or repeatDrops * IN_MILLISECONDS
+    aura:SetMaxDuration(penaltyDuration)
+    aura:SetDuration(penaltyDuration)
 end
 
 local function classifyPendingFlagRemoval(pending)
@@ -99,15 +100,35 @@ local function classifyPendingFlagRemoval(pending)
     if not player or getActiveWsgInstanceId(player) ~= pending.instanceId then return end
 
     local captures = getFlagCaptures(player, pending.instanceId)
-    if captures and pending.flagCaptures and captures > pending.flagCaptures then return end
+    if captures and pending.flagCaptures and captures > pending.flagCaptures then
+        print(string.format(
+            "[WSG Flag Debug] Carrier aura removal was a capture { instanceId: %s, player: %s, guidLow: %s }",
+            tostring(pending.instanceId), player:GetName(), tostring(pending.guidLow)
+        ))
+        return
+    end
 
     local dropped, repeatDrops = WsgState.recordFlagDrop(
         wsgState,
         pending.instanceId,
         pending.guidLow,
-        GetCurrTime()
+        GetCurrTime(),
+        player:IsBot()
     )
-    if dropped then applyRecentlyDroppedFlag(player, repeatDrops) end
+    print(string.format(
+        "[WSG Flag Debug] Drop fallback { instanceId: %s, player: %s, guidLow: %s, bot: %s, forced: %s, dropped: %s }",
+        tostring(pending.instanceId), player:GetName(), tostring(pending.guidLow),
+        tostring(player:IsBot()), tostring(player:IsBot()), tostring(dropped)
+    ))
+    if dropped then
+        applyRecentlyDroppedFlag(player, repeatDrops)
+        print(string.format(
+            "[WSG Flag Debug] Drop debuff ensured { instanceId: %s, player: %s, guidLow: %s, hasAura: %s, durationMs: %s }",
+            tostring(pending.instanceId), player:GetName(), tostring(pending.guidLow),
+            tostring(player:HasAura(WSG_RECENTLY_DROPPED_FLAG)),
+            tostring(player:IsBot() and BOT_FLAG_DROP_DURATION_MS or repeatDrops * IN_MILLISECONDS)
+        ))
+    end
 end
 
 local function deferFlagRemovalClassification(player, instanceId, flagCaptures)
@@ -124,6 +145,22 @@ local function deferFlagRemovalClassification(player, instanceId, flagCaptures)
         classifyPendingFlagRemoval(pending)
     end, FLAG_DROP_FALLBACK_DELAY_MS, 1)
 end
+
+-- WSG normally casts 42792 when a carrier drops the flag. Keep a direct
+-- spell-cast path because some bot aura applications do not reach ALE.
+RegisterPlayerEvent(PLAYER_EVENT_ON_SPELL_CAST, function(event, player, spell)
+    if not player or not spell or not player:IsBot() then return end
+    if spell:GetEntry() ~= WSG_RECENTLY_DROPPED_FLAG then return end
+    if not getActiveWsgInstanceId(player) then return end
+
+    applyRecentlyDroppedFlag(player, 0)
+    print(string.format(
+        "[WSG Flag Debug] Bot drop spell handled { player: %s, guidLow: %s, hasAura: %s, durationMs: %s }",
+        player:GetName(), tostring(player:GetGUIDLow()),
+        tostring(player:HasAura(WSG_RECENTLY_DROPPED_FLAG)),
+        tostring(BOT_FLAG_DROP_DURATION_MS)
+    ))
+end)
 
 local function getOrCreateMatch(kind, instanceId)
     local match = matches[instanceId]
@@ -554,6 +591,11 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         local guid = tostring(player:GetGUID())
         pendingFlagRemovals[guid] = nil
 
+        print(string.format(
+            "[WSG Flag Debug] Recently dropped aura received { instanceId: %s, player: %s, guidLow: %s, bot: %s }",
+            tostring(instanceId), player:GetName(), tostring(player:GetGUIDLow()), tostring(player:IsBot())
+        ))
+
         local manualRepeatDrops = manualFlagPenalties[guid]
         if manualRepeatDrops ~= nil then
             if not player:IsBot() and manualRepeatDrops <= 0 then
@@ -573,13 +615,11 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_APPLY, function(event, player, aura)
         end
 
         if player:IsBot() then
-            if dropped then applyRecentlyDroppedFlag(player, repeatDrops) end
+            applyRecentlyDroppedFlag(player, repeatDrops)
         elseif dropped and repeatDrops > 0 then
-            local duration = aura:GetDuration()
-            local maxDuration = aura:GetMaxDuration()
-            local extension = repeatDrops * IN_MILLISECONDS
-            if duration and duration > 0 then aura:SetDuration(duration + extension) end
-            if maxDuration and maxDuration > 0 then aura:SetMaxDuration(maxDuration + extension) end
+            local penaltyDuration = repeatDrops * IN_MILLISECONDS
+            aura:SetMaxDuration(penaltyDuration)
+            aura:SetDuration(penaltyDuration)
         else
             player:RemoveAura(WSG_RECENTLY_DROPPED_FLAG)
         end

@@ -1460,6 +1460,22 @@ function testWsgParticipationEligibility()
         damageDone = 3000,
     })), "Negligible activity over a long participation period must not receive rewards")
 
+    assert(state.isParticipationEligible(addParticipant(3606, {
+        timePlayed = 600,
+        damageDone = 10000,
+    })), "Low but sustained activity must pass the relaxed participation floor")
+
+    assert(not state.isParticipationEligible(addParticipant(3607, {
+        timePlayed = 600,
+        damageDone = 5000,
+    })), "The normal team must still use the full activity floor")
+    local winningLowActivity = addParticipant(3608, {
+        timePlayed = 600,
+        damageDone = 5000,
+    })
+    assert(state.isParticipationEligible(winningLowActivity, true),
+        "The winning team must use the more lenient activity floor")
+
     assert(state.isParticipationEligible(addParticipant(3603, {
         timePlayed = 600,
         damageDone = 60000,
@@ -1510,6 +1526,11 @@ function testWsgFlagRepeatState()
         "The post-window carrier removal must be tracked")
     dropped, repeatDrops = state.recordFlagDrop(matchState, instanceId, guidLow, 17002)
     assert(dropped and repeatDrops == 0, "A drop after the repeat window must reset the penalty")
+
+    local untrackedBotState = state.create()
+    dropped, repeatDrops = state.recordFlagDrop(untrackedBotState, instanceId, 3702, 0, true)
+    assert(dropped and repeatDrops == 0,
+        "A bot drop must still be recorded when its pickup state was not tracked")
 end
 testWsgFlagRepeatState()
 testWsgFlagRepeatState = nil
