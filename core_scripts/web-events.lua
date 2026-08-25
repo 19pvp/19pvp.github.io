@@ -228,10 +228,21 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_KILL_PLAYER, function (event, killer, killed
 end)
 
 RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
-  if not bg or not instanceId or instanceId <= 0 then return end
+  print(string.format(
+    "[WSG Reward Debug] BG end hook received { bgPresent: %s, bgId: %s, instanceId: %s, winner: %s }",
+    tostring(bg ~= nil), tostring(bgId), tostring(instanceId), tostring(winner)
+  ))
+  if not bg or not instanceId or instanceId <= 0 then
+    print("[WSG Reward Debug] BG end hook ignored: missing battleground or instance")
+    return
+  end
+
   local mapId = bg:GetMapId()
   local map = GetMapById(mapId, instanceId)
-  if not map then
+  local isWsg = mapId == 489
+  local mapIsBattleground = map and map:IsBattleground() or false
+  local mapIsArena = map and map:IsArena() or false
+  if not isWsg and not map then
     print(string.format(
       "[WSG Reward Debug] End reward skipped: map unavailable { instanceId: %s, mapId: %s }",
       tostring(instanceId), tostring(mapId)
@@ -239,9 +250,18 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
     return
   end
 
+  print(string.format(
+    "[WSG Reward Debug] End reward callback scheduled { instanceId: %s, mapId: %s, isWsg: %s, mapAvailable: %s }",
+    tostring(instanceId), tostring(mapId), tostring(isWsg), tostring(map ~= nil)
+  ))
+
   -- Metrics finalize on the same BG_END event. Defer one tick so the reward
   -- decision sees the final participation snapshot.
   CreateLuaEvent(function()
+    print(string.format(
+      "[WSG Reward Debug] Reward callback entered { instanceId: %s, isWsg: %s }",
+      tostring(instanceId), tostring(isWsg)
+    ))
     local claimed = WsgState.claimEndRewards(wsgState, instanceId)
     print(string.format(
       "[WSG Reward Debug] End reward pass { instanceId: %s, mapId: %s, winner: %s, claimed: %s }",
@@ -249,11 +269,16 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
     ))
     if not claimed then return end
 
-    if map:IsBattleground() then
-      local participants = WsgState.getParticipants(wsgState, instanceId)
-      local participantCount = 0
-      for _ in pairs(participants) do participantCount = participantCount + 1 end
+    local participants = WsgState.getParticipants(wsgState, instanceId)
+    local participantCount = 0
+    for _ in pairs(participants) do participantCount = participantCount + 1 end
+    print(string.format(
+      "[WSG Reward Debug] Reward target { instanceId: %s, mapId: %s, isWsg: %s, mapIsBattleground: %s, mapIsArena: %s, participants: %s }",
+      tostring(instanceId), tostring(mapId), tostring(isWsg),
+      tostring(mapIsBattleground), tostring(mapIsArena), tostring(participantCount)
+    ))
 
+    if isWsg then
       for _, participant in pairs(participants) do
         local isWinner = participant.team == winner
         local status = WsgState.getParticipationStatus(participant, isWinner)
@@ -301,7 +326,7 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
         "[WSG Reward Debug] End reward summary { instanceId: %s, participants: %s, rewarded: %s, skipped: %s }",
         tostring(instanceId), tostring(participantCount), tostring(rewarded), tostring(skipped)
       ))
-    elseif map:IsArena() then
+    elseif mapIsArena then
       WsgState.forEachParticipants(wsgState, instanceId, function(player, participant)
         if WsgState.isDeserted(participant) then return end
         local count = participant.team == winner and 2 or 1

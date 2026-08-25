@@ -101,6 +101,9 @@ local function classifyPendingFlagRemoval(pending)
 
     local captures = getFlagCaptures(player, pending.instanceId)
     if captures and pending.flagCaptures and captures > pending.flagCaptures then
+        if player:IsBot() and player:HasAura(WSG_RECENTLY_DROPPED_FLAG) then
+            player:RemoveAura(WSG_RECENTLY_DROPPED_FLAG)
+        end
         print(string.format(
             "[WSG Flag Debug] Carrier aura removal was a capture { instanceId: %s, player: %s, guidLow: %s }",
             tostring(pending.instanceId), player:GetName(), tostring(pending.guidLow)
@@ -748,6 +751,11 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_AURA_REMOVE, function(event, player, aura, r
         local instanceId = getActiveWsgInstanceId(player)
         if instanceId then
             WsgState.recordFlagAuraRemoved(wsgState, instanceId, player:GetGUIDLow())
+            if player:IsBot() then
+                -- Apply synchronously; the delayed fallback is too late to
+                -- prevent a bot from re-picking the dropped flag.
+                applyRecentlyDroppedFlag(player, 0)
+            end
             deferFlagRemovalClassification(player, instanceId, getFlagCaptures(player, instanceId))
         end
 
