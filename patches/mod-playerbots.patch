@@ -839,43 +839,54 @@ index f414e752..b2b981e4 100644
      triggers.push_back(new TriggerNode("timer", { NextAction("bg strategy check", relevance)}));
  }
 diff --git a/src/Ai/Base/Value/CcTargetValue.cpp b/src/Ai/Base/Value/CcTargetValue.cpp
-index 4903a59f..4cea2a4c 100644
+index 4903a59f..f1fa1d93 100644
 --- a/src/Ai/Base/Value/CcTargetValue.cpp
 +++ b/src/Ai/Base/Value/CcTargetValue.cpp
-@@ -32,13 +32,32 @@ public:
-             return;
-         }
- 
--        if (*botAI->GetAiObjectContext()->GetValue<Unit*>("current target") == creature)
-+        if (spell != "polymorph" && *botAI->GetAiObjectContext()->GetValue<Unit*>("current target") == creature)
+@@ -35,6 +35,20 @@ public:
+         if (*botAI->GetAiObjectContext()->GetValue<Unit*>("current target") == creature)
              return;
  
++        if (botAI->HasAura(spell, creature) ||
++            creature->HasAuraType(SPELL_AURA_MOD_CONFUSE) ||
++            creature->HasAuraType(SPELL_AURA_MOD_STUN) ||
++            creature->HasAuraType(SPELL_AURA_MOD_FEAR) ||
++            botAI->HasAura("cyclone", creature) ||
++            botAI->HasAura("freezing trap", creature))
++            return;
++
++        if (spell == "polymorph")
++        {
++            result = creature;
++            return;
++        }
++
          uint8 health = static_cast<uint8>(creature->GetHealthPct());
          if (health < sPlayerbotAIConfig.mediumHealth)
              return;
- 
-+        bool const hasDot = creature->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE) ||
-+                            creature->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT) ||
-+                            creature->HasAuraType(SPELL_AURA_PERIODIC_LEECH);
-+        if (spell == "polymorph")
-+        {
-+            bool hasOtherAttacker = false;
-+            for (Unit* attacker : creature->getAttackers())
-+            {
-+                if (attacker && attacker != bot)
-+                {
-+                    hasOtherAttacker = true;
-+                    break;
-+                }
-+            }
+@@ -92,5 +106,22 @@ private:
+ Unit* CcTargetValue::Calculate()
+ {
+     FindTargetForCcStrategy strategy(botAI, qualifier);
+-    return FindTarget(&strategy);
++    Unit* target = FindTarget(&strategy);
++    if (target)
++        return target;
 +
-+            if (health < 80 || hasOtherAttacker || hasDot)
-+                return;
-+        }
++    Unit* currentTarget = *botAI->GetAiObjectContext()->GetValue<Unit*>("current target");
++    GuidVector targets = botAI->GetAiObjectContext()->GetValue<GuidVector>("possible targets")->Get();
++    for (ObjectGuid const guid : targets)
++    {
++        Unit* unit = botAI->GetUnit(guid);
++        if (!unit || unit == currentTarget)
++            continue;
 +
-         float minDistance = botAI->GetRange("spell");
-         Group* group = bot->GetGroup();
-         if (!group)
++        strategy.CheckAttacker(unit, nullptr);
++        if (strategy.GetResult())
++            return strategy.GetResult();
++    }
++
++    return nullptr;
+ }
 diff --git a/src/Ai/Base/Value/InvalidTargetValue.cpp b/src/Ai/Base/Value/InvalidTargetValue.cpp
 index 50f7a386..c3c938d3 100644
 --- a/src/Ai/Base/Value/InvalidTargetValue.cpp
