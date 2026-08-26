@@ -451,6 +451,19 @@ index 32e9bec91..3dc8b3e0d 100644
      void SendToAllButOne(WorldPacket* data, ObjectGuid who);
      void SendToOne(WorldPacket* data, ObjectGuid who);
      void SendToAllWatching(WorldPacket* data);
+diff --git a/src/server/game/Combat/CombatManager.h b/src/server/game/Combat/CombatManager.h
+index f8e3aef00..91e48a9e2 100644
+--- a/src/server/game/Combat/CombatManager.h
++++ b/src/server/game/Combat/CombatManager.h
+@@ -87,7 +87,7 @@ protected:
+ 
+ struct AC_GAME_API PvPCombatReference : public CombatReference
+ {
+-    static const uint32 PVP_COMBAT_TIMEOUT = 5 * IN_MILLISECONDS;
++    static const uint32 PVP_COMBAT_TIMEOUT = 5500;
+ 
+ private:
+     PvPCombatReference(Unit* first, Unit* second) : CombatReference(first, second, true) { }
 diff --git a/src/server/game/Entities/Player/Player.cpp b/src/server/game/Entities/Player/Player.cpp
 index f2b3207c7..e034432b8 100644
 --- a/src/server/game/Entities/Player/Player.cpp
@@ -632,7 +645,7 @@ index 35ac03d79..21aa05f3c 100644
                      else
                          currentNameExt = current_zone_name;
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index 5912e36eb..4c7575150 100644
+index 5912e36eb..dd81f10f7 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
 @@ -1571,6 +1571,22 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
@@ -738,7 +751,27 @@ index 5912e36eb..4c7575150 100644
      }
  
      // Roll chance
-@@ -11725,6 +11733,40 @@ int32 Unit::ModSpellDuration(SpellInfo const* spellProto, Unit const* target, in
+@@ -7423,7 +7431,9 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
+     //    ToCreature()->SetCombatStartPosition(GetPositionX(), GetPositionY(), GetPositionZ());
+     if (creature)
+     {
+-        EngageWithTarget(victim);
++        // Player pets enter combat on their first attack, not when commanded to chase a target.
++        if (!IsPet())
++            EngageWithTarget(victim);
+ 
+         if (!IsControlledByPlayer())
+         {
+@@ -11391,7 +11401,7 @@ void Unit::setDeathState(DeathState s, bool despawn)
+ 
+     if (s != DeathState::Alive && s != DeathState::JustRespawned)
+     {
+-        CombatStop();
++        CombatStop(false, false);
+         ClearComboPointHolders();                           // any combo points pointed to unit lost at it death
+ 
+         if (IsNonMeleeSpellCast(false))
+@@ -11725,6 +11735,40 @@ int32 Unit::ModSpellDuration(SpellInfo const* spellProto, Unit const* target, in
                  break;
          }
      }
@@ -1444,3 +1477,40 @@ index 8b6dacc8b..6a2df39e3 100644
      (1ULL << MECHANIC_SAPPED);
  
  // Spell dispel type
+diff --git a/src/test/server/game/Combat/CombatManagerTest.cpp b/src/test/server/game/Combat/CombatManagerTest.cpp
+index 5900ee5e8..9ffa48392 100644
+--- a/src/test/server/game/Combat/CombatManagerTest.cpp
++++ b/src/test/server/game/Combat/CombatManagerTest.cpp
+@@ -137,6 +137,23 @@ TEST_F(CombatManagerIntegrationTest, SetInCombatWith_DifferentPhase_Fails)
+     EXPECT_FALSE(CombatManager::CanBeginCombat(_creatureA, _creatureB));
+ }
+ 
++TEST_F(CombatManagerIntegrationTest, PlayerPetCommandWaitsForFirstAttack)
++{
++    _creatureA->m_ControlledByPlayer = true;
++    _creatureA->AddUnitTypeMask(UNIT_MASK_PET);
++    _creatureB->m_ControlledByPlayer = true;
++
++    ASSERT_TRUE(_creatureA->Attack(_creatureB, true));
++    EXPECT_FALSE(_creatureA->GetCombatManager().HasCombat());
++    EXPECT_FALSE(_creatureB->GetCombatManager().HasCombat());
++
++    _creatureA->AtTargetAttacked(_creatureB, true);
++    EXPECT_TRUE(_creatureA->GetCombatManager().HasCombat());
++    EXPECT_TRUE(_creatureB->GetCombatManager().HasCombat());
++
++    _creatureA->AttackStop();
++}
++
+ // ============================================================================
+ // EndAllPvECombat Tests
+ // ============================================================================
+@@ -251,7 +268,7 @@ TEST_F(CombatManagerIntegrationTest, EvadeConstants)
+ 
+     EXPECT_EQ(duration, 10000u);
+     EXPECT_EQ(delay, 5000u);
+-    EXPECT_EQ(pvpTimeout, 5000u);
++    EXPECT_EQ(pvpTimeout, 5500u);
+     EXPECT_EQ(delay * 2, duration);
+ 
+     EXPECT_EQ(static_cast<uint8>(EVADE_STATE_NONE), 0);
