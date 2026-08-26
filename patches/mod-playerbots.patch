@@ -1074,18 +1074,123 @@ index 6e3c6cdc..2babef13 100644
  }
  
 diff --git a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
-index 4addfa05..503ec0f4 100644
+index 4addfa05..cba17a38 100644
 --- a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
 +++ b/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
-@@ -163,7 +163,7 @@ void ArmsWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -77,8 +77,6 @@ ArmsWarriorStrategy::ArmsWarriorStrategy(PlayerbotAI* botAI) : GenericWarriorStr
+ std::vector<NextAction> ArmsWarriorStrategy::getDefaultActions()
+ {
+     return {
+-        NextAction("bladestorm", ACTION_DEFAULT + 0.2f),
+-        NextAction("mortal strike", ACTION_DEFAULT + 0.1f),
+         NextAction("sunder armor", ACTION_DEFAULT + 0.05f),
+         NextAction("melee", ACTION_DEFAULT)
+     };
+@@ -98,72 +96,54 @@ void ArmsWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ 
+     triggers.push_back(
          new TriggerNode(
-             "hamstring",
+-            "battle stance",
+-            {
+-                NextAction("battle stance", ACTION_HIGH + 10)
+-            }
+-        )
+-    );
+-
+-    triggers.push_back(
+-        new TriggerNode(
+-            "battle shout",
+-            {
+-                NextAction("battle shout", ACTION_HIGH + 9)
+-            }
+-        )
+-    );
+-
+-    triggers.push_back(
+-        new TriggerNode(
+-            "rend",
++            "disarm",
              {
--                NextAction("piercing howl", ACTION_HIGH)
-+                NextAction("hamstring", ACTION_HIGH)
+-                NextAction("rend", ACTION_HIGH + 8)
++                NextAction("disarm", ACTION_HIGH + 11)
              }
          )
      );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "rend on attacker",
++            "battle stance",
+             {
+-                NextAction("rend on attacker", ACTION_HIGH + 8)
++                NextAction("battle stance", ACTION_HIGH + 10)
+             }
+         )
+     );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "mortal strike",
++            "hamstring",
+             {
+-                NextAction("mortal strike", ACTION_HIGH + 3)
++                NextAction("hamstring", ACTION_HIGH + 9)
+             }
+         )
+     );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "target critical health",
++            "battle shout",
+             {
+-                NextAction("execute", ACTION_HIGH + 5)
++                NextAction("battle shout", ACTION_HIGH + 8)
+             }
+         )
+     );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "sudden death",
++            "rend",
+             {
+-                NextAction("execute", ACTION_HIGH + 5)
++                NextAction("rend", ACTION_HIGH + 7)
+             }
+         )
+     );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "hamstring",
++            "rend on attacker",
+             {
+-                NextAction("piercing howl", ACTION_HIGH)
++                NextAction("rend on attacker", ACTION_HIGH + 7)
+             }
+         )
+     );
+diff --git a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
+index 18781ef3..bb0393da 100644
+--- a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
++++ b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.cpp
+@@ -27,6 +27,7 @@ private:
+ GenericWarriorStrategy::GenericWarriorStrategy(PlayerbotAI* botAI) : CombatStrategy(botAI)
+ {
+     actionNodeFactories.Add(new GenericWarriorStrategyActionNodeFactory());
++    actionNodeFactories.Add(new WarriorStanceRequirementActionNodeFactory());
+ }
+ 
+ void GenericWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -59,7 +60,6 @@ void WarrirorAoeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ {
+     triggers.push_back(new TriggerNode(
+         "light aoe", { NextAction("sweeping strikes", ACTION_HIGH + 7),
+-                                       NextAction("bladestorm", ACTION_HIGH + 6),
+                                        NextAction("thunder clap", ACTION_HIGH + 5),
+                                        NextAction("shockwave", ACTION_HIGH + 4),
+                                        NextAction("demoralizing shout without life time check", ACTION_HIGH + 1),
 diff --git a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
 index efd7eba2..2746616a 100644
 --- a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
@@ -1397,32 +1502,20 @@ index a1b2217b..430338f1 100644
      std::string GetPullActionName() const override;
  };
 diff --git a/src/Ai/Class/Warrior/WarriorActions.cpp b/src/Ai/Class/Warrior/WarriorActions.cpp
-index 4636f784..3ea4c5ab 100644
+index 4636f784..5d0d4e94 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.cpp
 +++ b/src/Ai/Class/Warrior/WarriorActions.cpp
-@@ -17,6 +17,37 @@ constexpr uint32 SPELL_BLESSING_OF_PROTECTION = 41450;
+@@ -17,6 +17,25 @@ constexpr uint32 SPELL_BLESSING_OF_PROTECTION = 41450;
  constexpr uint32 SPELL_SHATTERING_THROW = 64382;
  }
  
-+bool IsValidDisarmTarget(PlayerbotAI* botAI, Unit* target)
++bool IsValidDisarmTarget(PlayerbotAI* /*botAI*/, Unit* target)
 +{
 +    Player* player = target ? target->ToPlayer() : nullptr;
 +    if (!player)
 +        return false;
 +
-+    switch (player->getClass())
-+    {
-+        case CLASS_ROGUE:
-+            return !botAI->HasAura("evasion", player);
-+        case CLASS_HUNTER:
-+            return true;
-+        case CLASS_WARRIOR:
-+            return !botAI->HasAura("shield block", player);
-+        case CLASS_PALADIN:
-+            return true;
-+        default:
-+            return false;
-+    }
++    return player->getClass() == CLASS_HUNTER;
 +}
 +
 +bool CastDisarmAction::isUseful()
@@ -1438,7 +1531,7 @@ index 4636f784..3ea4c5ab 100644
  bool CastBerserkerRageAction::isPossible()
  {
      if (botAI->IsInVehicle() && !botAI->IsInVehicle(false, false, true))
-@@ -46,6 +77,27 @@ bool CastBerserkerRageAction::isUseful()
+@@ -46,6 +65,27 @@ bool CastBerserkerRageAction::isUseful()
  
  bool CastSunderArmorAction::isUseful()
  {
@@ -1466,7 +1559,7 @@ index 4636f784..3ea4c5ab 100644
      Group* group = bot->GetGroup();
      if (!group)
          return false;
-@@ -71,6 +123,14 @@ bool CastSunderArmorAction::isUseful()
+@@ -71,6 +111,14 @@ bool CastSunderArmorAction::isUseful()
      return !aura || aura->GetStackAmount() < 5 || aura->GetDuration() <= 6000;
  }
  
@@ -1482,7 +1575,7 @@ index 4636f784..3ea4c5ab 100644
  {
      Group* group = bot->GetGroup();
 diff --git a/src/Ai/Class/Warrior/WarriorActions.h b/src/Ai/Class/Warrior/WarriorActions.h
-index f1316c2c..93f30527 100644
+index f1316c2c..97250894 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.h
 +++ b/src/Ai/Class/Warrior/WarriorActions.h
 @@ -56,7 +56,13 @@ public:
@@ -1513,7 +1606,7 @@ index f1316c2c..93f30527 100644
 +class CastDisarmAction : public CastDebuffSpellAction
 +{
 +public:
-+    CastDisarmAction(PlayerbotAI* botAI) : CastDebuffSpellAction(botAI, "disarm") {}
++    CastDisarmAction(PlayerbotAI* botAI) : CastDebuffSpellAction(botAI, "disarm", false, 0.0f) {}
 +
 +    bool isUseful() override;
 +};
@@ -1521,7 +1614,7 @@ index f1316c2c..93f30527 100644
 +class CastDisarmOnAttackerAction : public CastDebuffSpellOnAttackerAction
 +{
 +public:
-+    CastDisarmOnAttackerAction(PlayerbotAI* botAI) : CastDebuffSpellOnAttackerAction(botAI, "disarm") {}
++    CastDisarmOnAttackerAction(PlayerbotAI* botAI) : CastDebuffSpellOnAttackerAction(botAI, "disarm", false, 0.0f) {}
 +
 +    bool isUseful() override;
 +};
