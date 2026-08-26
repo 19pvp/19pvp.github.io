@@ -75,6 +75,7 @@ end
 
 local bgTypeId = 2 -- Warsong Gulch
 local WSG_MAP_ID = 489
+local GROUP_EVENT_ON_MEMBER_REMOVE = 3
 local level = 19
 local minPlayersPerTeam = 5
 local queueDelayTime = 120
@@ -91,6 +92,17 @@ local PVP19_SERVER_ID = "19PVP"
 local PVP19_ADDON_VERSION = "1.1"
 local ProcessActiveBGQueuePlayer
 local botFillAt = {}
+
+RegisterGroupEvent(GROUP_EVENT_ON_MEMBER_REMOVE, function(_, group)
+    if not group or not group:IsBGGroup() then return end
+
+    for _, member in ipairs(group:GetMembers()) do
+        if member:GetMapId() == WSG_MAP_ID then
+            WsgBalance.compactRaidSubgroups(group)
+            return
+        end
+    end
+end)
 
 local function getDebugPlayerValue(player, methodName)
     if not player or type(player[methodName]) ~= "function" then return nil end

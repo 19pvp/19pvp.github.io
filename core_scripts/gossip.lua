@@ -101,11 +101,9 @@ end)
 
 local NPC_ITEM_VENDOR = 20205
 local VENDOR_MENU_SENDER = 20205
-local EXCHANGE_MENU_SENDER = 20206
 local ITEM_WSG_MARK = 29434
 local ITEM_ARENA_MARK = 40752
 
-local TEXTURE_BADGE_JUSTICE = "Interface\\Icons\\Spell_Holy_ChampionsBond"
 local TEXTURE_EMBLEM_HEROISM = "Interface\\Icons\\Spell_Holy_ProclaimChampion"
 
 local function inlineIcon(texture, size)
@@ -117,15 +115,7 @@ local function showVendorMainMenu(player, creature)
   player:GossipClearMenu()
   player:GossipAddQuests(creature)
   player:GossipMenuAddItem(ICON_VENDOR, "Browse my heirlooms", VENDOR_MENU_SENDER, 1)
-  player:GossipMenuAddItem(ICON_CHAT, "Currency Exchange", EXCHANGE_MENU_SENDER, 1)
-  player:GossipSendMenu(1, creature)
-end
-
-local function showCurrencyExchangeMenu(player, creature)
-  player:GossipClearMenu()
-  player:GossipMenuAddItem(ICON_CHAT, inlineIcon(TEXTURE_EMBLEM_HEROISM) .. "Convert 1 Badge of Justice to 1 Emblem of Heroism", EXCHANGE_MENU_SENDER, 2)
-  player:GossipMenuAddItem(ICON_CHAT, inlineIcon(TEXTURE_BADGE_JUSTICE) .. "Convert 2 Emblems of Heroism to 1 Badge of Justice", EXCHANGE_MENU_SENDER, 3)
-  player:GossipMenuAddItem(ICON_CHAT, "<- Back", VENDOR_MENU_SENDER, 0)
+  player:GossipMenuAddItem(ICON_CHAT, inlineIcon(TEXTURE_EMBLEM_HEROISM) .. "Convert 1 Badge of Justice to 1 Emblem of Heroism", VENDOR_MENU_SENDER, 2)
   player:GossipSendMenu(1, creature)
 end
 
@@ -136,16 +126,8 @@ end)
 
 RegisterCreatureGossipEvent(NPC_ITEM_VENDOR, ON_SELECT, function(event, player, creature, sender, intid)
   if sender == VENDOR_MENU_SENDER then
-    if intid == 0 then
-      showVendorMainMenu(player, creature)
-      return true
-    elseif intid == 1 then
-      player:SendListInventory(creature)
-      return true
-    end
-  elseif sender == EXCHANGE_MENU_SENDER then
     if intid == 1 then
-      showCurrencyExchangeMenu(player, creature)
+      player:SendListInventory(creature)
       return true
     elseif intid == 2 then
       if not player:HasItem(ITEM_WSG_MARK, 1) then
@@ -155,20 +137,11 @@ RegisterCreatureGossipEvent(NPC_ITEM_VENDOR, ON_SELECT, function(event, player, 
         player:AddItem(ITEM_ARENA_MARK, 1)
         player:SendBroadcastMessage("Exchanged 1 Badge of Justice for 1 Emblem of Heroism.")
       end
-      showCurrencyExchangeMenu(player, creature)
-      return true
-    elseif intid == 3 then
-      if not player:HasItem(ITEM_ARENA_MARK, 2) then
-        player:SendBroadcastMessage("You do not have enough Emblems of Heroism (Requires 2 Emblems of Heroism).")
-      else
-        player:RemoveItem(ITEM_ARENA_MARK, 2)
-        player:AddItem(ITEM_WSG_MARK, 1)
-        player:SendBroadcastMessage("Exchanged 2 Emblems of Heroism for 1 Badge of Justice.")
-      end
-      showCurrencyExchangeMenu(player, creature)
+      showVendorMainMenu(player, creature)
       return true
     end
   end
   return false
 end)
+
 

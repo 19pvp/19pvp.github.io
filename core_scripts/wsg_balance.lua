@@ -442,6 +442,28 @@ WsgBalance.groupCandidates = groupCandidates
 WsgBalance.MAX_CLASS_PER_TEAM = MAX_CLASS_PER_TEAM
 WsgBalance.MAX_PLAYERS_PER_TEAM = MAX_PLAYERS_PER_TEAM
 
+function WsgBalance.compactRaidSubgroups(group)
+    local members = {}
+    for _, player in ipairs(group:GetMembers()) do
+        local guid = player:GetGUID()
+        table.insert(members, { guid = guid, subgroup = group:GetMemberGroup(guid) })
+    end
+
+    table.sort(members, function(left, right)
+        return left.subgroup < right.subgroup
+    end)
+
+    local moved = 0
+    for index, member in ipairs(members) do
+        local targetSubgroup = math.floor((index - 1) / 5)
+        if member.subgroup ~= targetSubgroup then
+            group:SetMembersGroup(member.guid, targetSubgroup)
+            moved = moved + 1
+        end
+    end
+    return moved
+end
+
 function WsgBalance.selectQueuedPlayers(queuedPlayers, currentClassCounts)
     local availableByClass = {}
     local selected = {}

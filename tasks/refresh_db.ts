@@ -825,6 +825,7 @@ const vendorGoldDiscount = (item: VendorItem) => {
 const vendorNpcSubname = (currency: VendorCurrency, category: VendorCategory, itemId?: number) => {
   if (itemId === guildTabardItemId) return guildTabardVendorSubname
   if (currency === 'arena' || currency === 'heroism') return 'former gladiator'
+  if (currency === 'justice') return 'accessory quartermaster'
   if (category === 'enchant') return `enchant ${currency === 'gold' ? 'merchant' : 'quartermaster'}`
   const prefix = category === 'weapon' ? 'weapons' : category
   const suffix = currency === 'gold' ? 'merchant' : 'quartermaster'
@@ -1659,7 +1660,7 @@ const costs = {
     '★★☆☆☆': 2431, //  250
     '★★★☆☆': 2432, //  400
     '★★★★☆': 2380, //  800
-    '★★★★★': 2342, // 3k+
+    '★★★★★': 1757, // 3k+
   },
   justice: { // bg token 29434
     '★☆☆☆☆': 1909, // 10
@@ -1815,6 +1816,12 @@ WHERE LOWER(\`subname\`) LIKE '%merchant%'
     const extendedCost = extendedCostForVendorItem(item)
     return `  (${item.npc}, ${slot}, ${item.itemId}, 0, 0, ${extendedCost}, NULL)`
   })
+  const audiSlot1 = (vendorSlots.get(20205) ?? 0) + 1
+  vendorSlots.set(20205, audiSlot1)
+  vendorItemRows.push(`  (20205, ${audiSlot1}, 40752, 0, 0, 2596, NULL)`)
+  const audiSlot2 = (vendorSlots.get(20205) ?? 0) + 1
+  vendorSlots.set(20205, audiSlot2)
+  vendorItemRows.push(`  (20205, ${audiSlot2}, 40752, 0, 0, 491, NULL)`)
   const goldVendorPrices = [
     ...new Map(
       vendorItems
@@ -1844,6 +1851,19 @@ WHERE LOWER(\`subname\`) LIKE '%merchant%'
         .map((item) => item.itemId),
     ),
   ].sort((a, b) => a - b)
+  const honorEnchantItemIds = [
+    ...new Set(
+      vendorItems
+        .filter((item) => item.currency === 'honor' && item.category === 'enchant')
+        .map((item) => item.itemId),
+    ),
+  ].sort((a, b) => a - b)
+  const honorEnchantSql = honorEnchantItemIds.length
+    ? `-- Make honor-sold enchant scrolls reusable.
+UPDATE \`item_template\`
+SET \`spellcharges_1\` = 0
+WHERE \`entry\` IN (${honorEnchantItemIds.join(', ')});`
+    : '-- No honor-sold enchant scrolls.'
   const vendorItemFlagsSql = vendorItemIds.length
     ? `-- Mark generated vendor items with an extended cost as refundable through item purchase records.
 UPDATE \`item_template\`
@@ -2022,6 +2042,7 @@ UPDATE item_template SET \`name\` = 'Infinite Bandage', \`Quality\` = 2, \`BuyCo
 UPDATE item_template SET \`Quality\` = 3, \`spellcharges_1\` = 0 WHERE (\`entry\` = 4381);
 UPDATE item_template SET stackable = 32 WHERE entry = 6265;
 UPDATE item_template SET \`BuyCount\` = 1, stackable = 1, description = 'Unlimited ammunition, You will never draw a blank.' WHERE entry IN (2519, 2515, 2516, 2512, 8068);
+UPDATE item_template SET \`BuyCount\` = 6 WHERE entry = 40752; -- Emblem of Heroism (6 per purchase)
 UPDATE item_template SET \`FlagsExtra\` = 0 WHERE entry = 25829; -- remove alliance only on greater insigna
 UPDATE item_template SET spellid_1 = 0, spellcooldown_1 = 0, description = 'Infused with healing power far beyond your level.' WHERE entry = 16768;
 
@@ -2086,6 +2107,8 @@ ${vendorItemFlagsSql}
 ${arenaItemSql}
 
 ${arenaClassRestrictionSql}
+
+${honorEnchantSql}
 
 ${
         goldVendorItemIds.length
@@ -2922,7 +2945,7 @@ ORDER BY npc
         satchelItems,
         satchelAlwaysDropItems,
         vendorItems,
-        itemIds,
+        [...itemIds, 29434, 40752],
       ),
     ),
   )

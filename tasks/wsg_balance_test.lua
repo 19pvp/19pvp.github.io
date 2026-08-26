@@ -1535,4 +1535,43 @@ end
 testWsgFlagRepeatState()
 testWsgFlagRepeatState = nil
 
-print("\nwsg_balance_test: ok (All 33 test suites passed cleanly)")
+-- 34. Removing a battleground member must backfill earlier raid subgroups.
+function testWsgRaidSubgroupCompaction()
+    print("[Test 34] WSG raid subgroups stay compact after removals...")
+    local subgroupByGuid = {
+        [3401] = 0,
+        [3402] = 1,
+        [3403] = 1,
+        [3404] = 1,
+        [3405] = 1,
+    }
+    local raidMembers = {}
+    for guid in pairs(subgroupByGuid) do
+        local memberGuid = guid
+        table.insert(raidMembers, { GetGUID = function() return memberGuid end })
+    end
+    local raidGroup = {
+        GetMembers = function() return raidMembers end,
+        GetMemberGroup = function(_, guid) return subgroupByGuid[guid] end,
+        SetMembersGroup = function(_, guid, subgroup)
+            local destinationCount = 0
+            for _, currentSubgroup in pairs(subgroupByGuid) do
+                if currentSubgroup == subgroup then destinationCount = destinationCount + 1 end
+            end
+            assert(destinationCount < 5, "Compaction must only move members into a free subgroup slot")
+            subgroupByGuid[guid] = subgroup
+        end,
+    }
+
+    assert(balance.compactRaidSubgroups(raidGroup) == 4,
+        "Four members must move when subgroup 1 has four players and subgroup 0 has one")
+    for guid, subgroup in pairs(subgroupByGuid) do
+        assert(subgroup == 0, "Member " .. guid .. " must be moved into the first subgroup")
+    end
+    assert(balance.compactRaidSubgroups(raidGroup) == 0, "An already compact raid must not be reshuffled")
+    print("  -> PASSED: WSG raid subgroup gaps are backfilled with the minimum moves.")
+end
+testWsgRaidSubgroupCompaction()
+testWsgRaidSubgroupCompaction = nil
+
+print("\nwsg_balance_test: ok (All 34 test suites passed cleanly)")
