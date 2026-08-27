@@ -8691,6 +8691,13 @@ WHERE entry = 39927;
 
 UPDATE item_template
 SET bonding = 1,
+    description = IF(name <> 'Glyph of Fire Blast', '', description),
+    name = 'Glyph of Fire Blast',
+    Quality = 1
+WHERE entry = 42740;
+
+UPDATE item_template
+SET bonding = 1,
     description = IF(name <> 'Mystic Tome', '', description),
     name = 'Mystic Tome',
     Quality = 2
