@@ -341,7 +341,7 @@ index a21640d..7a56309 100644
      void OnSpellCast(Unit* caster, Spell* spell, SpellInfo const* spellInfo, bool skipCheck);
      void OnSpellCastCancel(Unit* caster, Spell* spell, SpellInfo const* spellInfo, bool bySelf);
 diff --git a/src/LuaEngine/LuaFunctions.cpp b/src/LuaEngine/LuaFunctions.cpp
-index c0acc01..4c977e9 100644
+index c0acc01..f594aea 100644
 --- a/src/LuaEngine/LuaFunctions.cpp
 +++ b/src/LuaEngine/LuaFunctions.cpp
 @@ -107,6 +107,8 @@ luaL_Reg GlobalMethods[] =
@@ -424,7 +424,18 @@ index c0acc01..4c977e9 100644
  
      // Boolean
      { "HasTankSpec", &LuaPlayer::HasTankSpec },
-@@ -1088,6 +1112,7 @@ ALERegister<Aura> AuraMethods[] =
+@@ -641,6 +665,10 @@ ALERegister<Player> PlayerMethods[] =
+     { "HasItem", &LuaPlayer::HasItem },
+     { "Teleport", &LuaPlayer::Teleport },
+     { "AddItem", &LuaPlayer::AddItem },
++    { "LootItem", &LuaPlayer::LootItem },
++    { "CreateItem", &LuaPlayer::CreateItem },
++    { "ReceiveItem", &LuaPlayer::ReceiveItem },
++    { "ReceiveCreatedItem", &LuaPlayer::ReceiveCreatedItem },
+     { "IsInArenaTeam", &LuaPlayer::IsInArenaTeam },
+     { "CanRewardQuest", &LuaPlayer::CanRewardQuest },
+     { "CanCompleteRepeatableQuest", &LuaPlayer::CanCompleteRepeatableQuest },
+@@ -1088,6 +1116,7 @@ ALERegister<Aura> AuraMethods[] =
      { "GetMaxDuration", &LuaAura::GetMaxDuration },
      { "GetAuraId", &LuaAura::GetAuraId },
      { "GetStackAmount", &LuaAura::GetStackAmount },
@@ -432,7 +443,7 @@ index c0acc01..4c977e9 100644
      { "GetOwner", &LuaAura::GetOwner },
  
      // Setters
-@@ -1368,6 +1393,7 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1368,6 +1397,7 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMap", &LuaBattleGround::GetMap },
      { "GetBonusHonorFromKillCount", &LuaBattleGround::GetBonusHonorFromKillCount },
      { "GetEndTime", &LuaBattleGround::GetEndTime },
@@ -440,7 +451,7 @@ index c0acc01..4c977e9 100644
      { "GetFreeSlotsForTeam", &LuaBattleGround::GetFreeSlotsForTeam },
      { "GetInstanceId", &LuaBattleGround::GetInstanceId },
      { "GetMapId", &LuaBattleGround::GetMapId },
-@@ -1380,6 +1406,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
+@@ -1380,6 +1410,10 @@ ALERegister<BattleGround> BattleGroundMethods[] =
      { "GetMinPlayersPerTeam", &LuaBattleGround::GetMinPlayersPerTeam },
      { "GetWinner", &LuaBattleGround::GetWinner },
      { "GetStatus", &LuaBattleGround::GetStatus },
@@ -451,7 +462,7 @@ index c0acc01..4c977e9 100644
  
      { NULL, NULL }
  };
-@@ -1481,6 +1511,7 @@ ALERegister<SpellInfo> SpellInfoMethods[] =
+@@ -1481,6 +1515,7 @@ ALERegister<SpellInfo> SpellInfoMethods[] =
      { "GetEffectMechanicMask", &LuaSpellInfo::GetEffectMechanicMask },
      { "GetSpellMechanicMaskByEffectMask", &LuaSpellInfo::GetSpellMechanicMaskByEffectMask },
      { "GetEffectMechanic", &LuaSpellInfo::GetEffectMechanic },
@@ -1270,7 +1281,7 @@ index 06ddf1d..6c57bbf 100644
      }
  
 diff --git a/src/LuaEngine/methods/PlayerMethods.h b/src/LuaEngine/methods/PlayerMethods.h
-index c39801f..d5e369c 100644
+index c39801f..cfe494d 100644
 --- a/src/LuaEngine/methods/PlayerMethods.h
 +++ b/src/LuaEngine/methods/PlayerMethods.h
 @@ -7,9 +7,20 @@
@@ -1521,7 +1532,76 @@ index c39801f..d5e369c 100644
          return 0;
      }
  
-@@ -5149,7 +5359,7 @@ namespace LuaPlayer
+@@ -3282,14 +3492,7 @@ namespace LuaPlayer
+         return 0;
+     }
+     
+-    /**
+-     * Adds the given amount of the specified item entry to the player.
+-     *
+-     * @param uint32 entry : entry of the item to add
+-     * @param uint32 itemCount = 1 : amount of the item to add
+-     * @return [Item] item : the item that was added or nil
+-     */
+-    int AddItem(lua_State* L, Player* player)
++    int StoreItem(lua_State* L, Player* player, bool received, bool created)
+     {
+         uint32 itemId = ALE::CHECKVAL<uint32>(L, 2);
+         uint32 itemCount = ALE::CHECKVAL<uint32>(L, 3, 1);
+@@ -3305,11 +3508,51 @@ namespace LuaPlayer
+ 
+         Item* item = player->StoreNewItem(dest, itemId, true, Item::GenerateItemRandomPropertyId(itemId));
+         if (item)
+-            player->SendNewItem(item, itemCount, true, false);
++            player->SendNewItem(item, itemCount, received, created);
+         ALE::Push(L, item);
+ 
+         return 1;
+     }
++
++    /**
++     * Adds an item using the backend notification flags.
++     *
++     * @param uint32 entry : entry of the item to add
++     * @param uint32 itemCount = 1 : amount of the item to add
++     * @param bool received = true
++     * @param bool created = false
++     * @return [Item] item : the item that was added or nil
++     */
++    int AddItem(lua_State* L, Player* player)
++    {
++        bool received = ALE::CHECKVAL<bool>(L, 4, true);
++        bool created = ALE::CHECKVAL<bool>(L, 5, false);
++        return StoreItem(L, player, received, created);
++    }
++
++    /** Adds an item with a loot notification. */
++    int LootItem(lua_State* L, Player* player)
++    {
++        return StoreItem(L, player, false, false);
++    }
++
++    /** Adds an item with a creation notification, like the .add command. */
++    int CreateItem(lua_State* L, Player* player)
++    {
++        return StoreItem(L, player, false, true);
++    }
++
++    /** Adds an item with a received-item notification. */
++    int ReceiveItem(lua_State* L, Player* player)
++    {
++        return StoreItem(L, player, true, false);
++    }
++
++    /** Adds an externally-created item. */
++    int ReceiveCreatedItem(lua_State* L, Player* player)
++    {
++        return StoreItem(L, player, true, true);
++    }
+     
+     /**
+      * Removes the given amount of the specified [Item] from the player.
+@@ -5149,7 +5392,7 @@ namespace LuaPlayer
      #endif
          return 1;
      }
@@ -1530,7 +1610,7 @@ index c39801f..d5e369c 100644
      /**
       * Returns the [Player]s spent talent points in each talent tree for the active spec
       *
-@@ -5175,6 +5385,399 @@ namespace LuaPlayer
+@@ -5175,6 +5418,399 @@ namespace LuaPlayer
          ALE::Push(L, player->GetMostPointsTalentTree());
          return 1;
      }
