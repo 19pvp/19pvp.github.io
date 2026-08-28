@@ -839,10 +839,48 @@ index f414e752..b2b981e4 100644
      triggers.push_back(new TriggerNode("timer", { NextAction("bg strategy check", relevance)}));
  }
 diff --git a/src/Ai/Base/Value/CcTargetValue.cpp b/src/Ai/Base/Value/CcTargetValue.cpp
-index 4903a59f..f1fa1d93 100644
+index 4903a59f..a52ba2c3 100644
 --- a/src/Ai/Base/Value/CcTargetValue.cpp
 +++ b/src/Ai/Base/Value/CcTargetValue.cpp
-@@ -35,6 +35,20 @@ public:
+@@ -7,9 +7,37 @@
+ 
+ #include "Action.h"
+ #include "AiObjectContext.h"
++#include "GameTime.h"
+ #include "Group.h"
+ #include "PlayerbotAI.h"
+ #include "ServerFacade.h"
++#include <unordered_map>
++
++namespace
++{
++    std::unordered_map<ObjectGuid, std::unordered_map<ObjectGuid, uint32>> s_lastPolymorphTimes;
++}
++
++bool IsPolymorphOnCooldownForTarget(ObjectGuid botGuid, ObjectGuid targetGuid)
++{
++    uint32 now = GameTime::GetGameTimeMS().count();
++    auto botIt = s_lastPolymorphTimes.find(botGuid);
++    if (botIt != s_lastPolymorphTimes.end())
++    {
++        auto targetIt = botIt->second.find(targetGuid);
++        if (targetIt != botIt->second.end())
++        {
++            if (now - targetIt->second < 30000)
++                return true;
++        }
++    }
++    return false;
++}
++
++void SetPolymorphTargetCooldown(ObjectGuid botGuid, ObjectGuid targetGuid)
++{
++    s_lastPolymorphTimes[botGuid][targetGuid] = GameTime::GetGameTimeMS().count();
++}
+ 
+ class FindTargetForCcStrategy : public FindTargetStrategy
+ {
+@@ -35,6 +63,43 @@ public:
          if (*botAI->GetAiObjectContext()->GetValue<Unit*>("current target") == creature)
              return;
  
@@ -851,11 +889,34 @@ index 4903a59f..f1fa1d93 100644
 +            creature->HasAuraType(SPELL_AURA_MOD_STUN) ||
 +            creature->HasAuraType(SPELL_AURA_MOD_FEAR) ||
 +            botAI->HasAura("cyclone", creature) ||
-+            botAI->HasAura("freezing trap", creature))
++            botAI->HasAura("freezing trap", creature) ||
++            creature->IsPolymorphed())
 +            return;
 +
 +        if (spell == "polymorph")
 +        {
++            // Do not sheep targets with <= 70% HP
++            if (creature->GetHealthPct() <= 70)
++                return;
++
++            // Do not sheep shapeshifted druids (immune)
++            if (creature->GetShapeshiftForm() != FORM_NONE)
++                return;
++
++            // Do not sheep DR immune targets
++            if (creature->GetDiminishing(DIMINISHING_DISORIENT) >= DIMINISHING_LEVEL_IMMUNE)
++                return;
++
++            // Do not sheep targets with active DoTs (breaks CC immediately)
++            if (creature->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE) ||
++                creature->HasAuraType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT) ||
++                creature->HasAuraType(SPELL_AURA_PERIODIC_LEECH))
++                return;
++
++            // 30s cooldown per target
++            if (IsPolymorphOnCooldownForTarget(bot->GetGUID(), creature->GetGUID()))
++                return;
++
 +            result = creature;
 +            return;
 +        }
@@ -863,7 +924,7 @@ index 4903a59f..f1fa1d93 100644
          uint8 health = static_cast<uint8>(creature->GetHealthPct());
          if (health < sPlayerbotAIConfig.mediumHealth)
              return;
-@@ -92,5 +106,22 @@ private:
+@@ -92,5 +157,22 @@ private:
  Unit* CcTargetValue::Calculate()
  {
      FindTargetForCcStrategy strategy(botAI, qualifier);
@@ -887,6 +948,20 @@ index 4903a59f..f1fa1d93 100644
 +
 +    return nullptr;
  }
+diff --git a/src/Ai/Base/Value/CcTargetValue.h b/src/Ai/Base/Value/CcTargetValue.h
+index c487523c..e437a3a2 100644
+--- a/src/Ai/Base/Value/CcTargetValue.h
++++ b/src/Ai/Base/Value/CcTargetValue.h
+@@ -12,6 +12,9 @@
+ class PlayerbotAI;
+ class Unit;
+ 
++bool IsPolymorphOnCooldownForTarget(ObjectGuid botGuid, ObjectGuid targetGuid);
++void SetPolymorphTargetCooldown(ObjectGuid botGuid, ObjectGuid targetGuid);
++
+ class CcTargetValue : public TargetValue, public Qualified
+ {
+ public:
 diff --git a/src/Ai/Base/Value/InvalidTargetValue.cpp b/src/Ai/Base/Value/InvalidTargetValue.cpp
 index 50f7a386..c3c938d3 100644
 --- a/src/Ai/Base/Value/InvalidTargetValue.cpp
@@ -941,6 +1016,33 @@ index 5895ac02..04be2831 100644
  }
  
  void DruidCureStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+diff --git a/src/Ai/Class/Mage/MageActions.h b/src/Ai/Class/Mage/MageActions.h
+index 48ce5079..84249a6b 100644
+--- a/src/Ai/Class/Mage/MageActions.h
++++ b/src/Ai/Class/Mage/MageActions.h
+@@ -6,6 +6,7 @@
+ #ifndef PLAYERBOTS_MAGEACTIONS_H
+ #define PLAYERBOTS_MAGEACTIONS_H
+ 
++#include "CcTargetValue.h"
+ #include "GenericSpellActions.h"
+ #include "SharedDefines.h"
+ #include "UseItemAction.h"
+@@ -222,6 +223,14 @@ class CastPolymorphAction : public CastCrowdControlSpellAction
+ {
+ public:
+     CastPolymorphAction(PlayerbotAI* botAI) : CastCrowdControlSpellAction(botAI, "polymorph") {}
++
++    bool Execute(Event event) override
++    {
++        Unit* target = GetTarget();
++        if (target)
++            SetPolymorphTargetCooldown(bot->GetGUID(), target->GetGUID());
++        return CastCrowdControlSpellAction::Execute(event);
++    }
+ };
+ 
+ class CastSpellstealAction : public CastSpellAction
 diff --git a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp b/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
 index 9277cb65..db42799a 100644
 --- a/src/Ai/Class/Mage/Strategy/GenericMageStrategy.cpp
@@ -1085,7 +1187,7 @@ index 6e3c6cdc..2babef13 100644
  }
  
 diff --git a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp b/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
-index 4addfa05..cba17a38 100644
+index 4addfa05..6f88023f 100644
 --- a/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
 +++ b/src/Ai/Class/Warrior/Strategy/ArmsWarriorStrategy.cpp
 @@ -77,8 +77,6 @@ ArmsWarriorStrategy::ArmsWarriorStrategy(PlayerbotAI* botAI) : GenericWarriorStr
@@ -1097,54 +1199,30 @@ index 4addfa05..cba17a38 100644
          NextAction("sunder armor", ACTION_DEFAULT + 0.05f),
          NextAction("melee", ACTION_DEFAULT)
      };
-@@ -98,72 +96,54 @@ void ArmsWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -96,6 +94,15 @@ void ArmsWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+         )
+     );
  
-     triggers.push_back(
-         new TriggerNode(
--            "battle stance",
--            {
--                NextAction("battle stance", ACTION_HIGH + 10)
--            }
--        )
--    );
--
--    triggers.push_back(
--        new TriggerNode(
--            "battle shout",
--            {
--                NextAction("battle shout", ACTION_HIGH + 9)
--            }
--        )
--    );
--
--    triggers.push_back(
--        new TriggerNode(
--            "rend",
++    triggers.push_back(
++        new TriggerNode(
 +            "disarm",
-             {
--                NextAction("rend", ACTION_HIGH + 8)
++            {
 +                NextAction("disarm", ACTION_HIGH + 11)
-             }
-         )
-     );
++            }
++        )
++    );
++
+     triggers.push_back(
+         new TriggerNode(
+             "battle stance",
+@@ -107,81 +114,81 @@ void ArmsWarriorStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
  
      triggers.push_back(
          new TriggerNode(
--            "rend on attacker",
-+            "battle stance",
-             {
--                NextAction("rend on attacker", ACTION_HIGH + 8)
-+                NextAction("battle stance", ACTION_HIGH + 10)
-             }
-         )
-     );
- 
-     triggers.push_back(
-         new TriggerNode(
--            "mortal strike",
+-            "battle shout",
 +            "hamstring",
              {
--                NextAction("mortal strike", ACTION_HIGH + 3)
+-                NextAction("battle shout", ACTION_HIGH + 9)
 +                NextAction("hamstring", ACTION_HIGH + 9)
              }
          )
@@ -1152,10 +1230,10 @@ index 4addfa05..cba17a38 100644
  
      triggers.push_back(
          new TriggerNode(
--            "target critical health",
+-            "rend",
 +            "battle shout",
              {
--                NextAction("execute", ACTION_HIGH + 5)
+-                NextAction("rend", ACTION_HIGH + 8)
 +                NextAction("battle shout", ACTION_HIGH + 8)
              }
          )
@@ -1163,10 +1241,10 @@ index 4addfa05..cba17a38 100644
  
      triggers.push_back(
          new TriggerNode(
--            "sudden death",
+-            "rend on attacker",
 +            "rend",
              {
--                NextAction("execute", ACTION_HIGH + 5)
+-                NextAction("rend on attacker", ACTION_HIGH + 8)
 +                NextAction("rend", ACTION_HIGH + 7)
              }
          )
@@ -1174,11 +1252,66 @@ index 4addfa05..cba17a38 100644
  
      triggers.push_back(
          new TriggerNode(
--            "hamstring",
+-            "mortal strike",
 +            "rend on attacker",
              {
--                NextAction("piercing howl", ACTION_HIGH)
+-                NextAction("mortal strike", ACTION_HIGH + 3)
 +                NextAction("rend on attacker", ACTION_HIGH + 7)
+             }
+         )
+     );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "target critical health",
++            "overpower",
+             {
+-                NextAction("execute", ACTION_HIGH + 5)
++                NextAction("overpower", ACTION_HIGH + 4)
+             }
+         )
+     );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "sudden death",
++            "taste for blood",
+             {
+-                NextAction("execute", ACTION_HIGH + 5)
++                NextAction("overpower", ACTION_HIGH + 4)
+             }
+         )
+     );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "hamstring",
++            "shield bash on enemy healer",
+             {
+-                NextAction("piercing howl", ACTION_HIGH)
++                NextAction("shield bash on enemy healer", ACTION_INTERRUPT + 2)
+             }
+         )
+     );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "overpower",
++            "shield bash",
+             {
+-                NextAction("overpower", ACTION_HIGH + 4)
++                NextAction("shield bash", ACTION_INTERRUPT + 1)
+             }
+         )
+     );
+ 
+     triggers.push_back(
+         new TriggerNode(
+-            "taste for blood",
++            "shield block",
+             {
+-                NextAction("overpower", ACTION_HIGH + 4)
++                NextAction("shield block", ACTION_HIGH + 3)
              }
          )
      );
@@ -1203,7 +1336,7 @@ index 18781ef3..bb0393da 100644
                                         NextAction("shockwave", ACTION_HIGH + 4),
                                         NextAction("demoralizing shout without life time check", ACTION_HIGH + 1),
 diff --git a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
-index efd7eba2..2746616a 100644
+index efd7eba2..27f5d66c 100644
 --- a/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
 +++ b/src/Ai/Class/Warrior/Strategy/GenericWarriorStrategy.h
 @@ -22,6 +22,7 @@ public:
@@ -1214,6 +1347,15 @@ index efd7eba2..2746616a 100644
  
          // temp
          creators["mortal strike"] = &mortal_strike;
+@@ -159,7 +160,7 @@ private:
+         return new ActionNode(
+             "disarm",
+             /*P*/ { NextAction("defensive stance") },
+-            /*A*/ {},
++            /*A*/ { NextAction("bloodrage") },
+             /*C*/ {}
+         );
+     }
 @@ -213,6 +214,16 @@ private:
              /*C*/ {}
          );
@@ -1513,20 +1655,28 @@ index a1b2217b..430338f1 100644
      std::string GetPullActionName() const override;
  };
 diff --git a/src/Ai/Class/Warrior/WarriorActions.cpp b/src/Ai/Class/Warrior/WarriorActions.cpp
-index 4636f784..5d0d4e94 100644
+index 4636f784..e88d7fbf 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.cpp
 +++ b/src/Ai/Class/Warrior/WarriorActions.cpp
-@@ -17,6 +17,25 @@ constexpr uint32 SPELL_BLESSING_OF_PROTECTION = 41450;
+@@ -17,6 +17,33 @@ constexpr uint32 SPELL_BLESSING_OF_PROTECTION = 41450;
  constexpr uint32 SPELL_SHATTERING_THROW = 64382;
  }
  
-+bool IsValidDisarmTarget(PlayerbotAI* /*botAI*/, Unit* target)
++bool IsValidDisarmTarget(PlayerbotAI* botAI, Unit* target)
 +{
 +    Player* player = target ? target->ToPlayer() : nullptr;
-+    if (!player)
++    if (!player || !player->IsAlive() || botAI->HasAura("disarm", player))
 +        return false;
 +
 +    return player->getClass() == CLASS_HUNTER;
++}
++
++bool CastDisarmAction::isPossible()
++{
++    if (!botAI->HasAura("defensive stance", bot))
++        return botAI->HasSpell(spell) && !bot->HasSpellCooldown(AI_VALUE2(uint32, "spell id", spell));
++
++    return CastDebuffSpellAction::isPossible();
 +}
 +
 +bool CastDisarmAction::isUseful()
@@ -1542,7 +1692,7 @@ index 4636f784..5d0d4e94 100644
  bool CastBerserkerRageAction::isPossible()
  {
      if (botAI->IsInVehicle() && !botAI->IsInVehicle(false, false, true))
-@@ -46,6 +65,27 @@ bool CastBerserkerRageAction::isUseful()
+@@ -46,6 +73,27 @@ bool CastBerserkerRageAction::isUseful()
  
  bool CastSunderArmorAction::isUseful()
  {
@@ -1570,7 +1720,7 @@ index 4636f784..5d0d4e94 100644
      Group* group = bot->GetGroup();
      if (!group)
          return false;
-@@ -71,6 +111,14 @@ bool CastSunderArmorAction::isUseful()
+@@ -71,6 +119,14 @@ bool CastSunderArmorAction::isUseful()
      return !aura || aura->GetStackAmount() < 5 || aura->GetDuration() <= 6000;
  }
  
@@ -1586,10 +1736,19 @@ index 4636f784..5d0d4e94 100644
  {
      Group* group = bot->GetGroup();
 diff --git a/src/Ai/Class/Warrior/WarriorActions.h b/src/Ai/Class/Warrior/WarriorActions.h
-index f1316c2c..97250894 100644
+index f1316c2c..c940a6a9 100644
 --- a/src/Ai/Class/Warrior/WarriorActions.h
 +++ b/src/Ai/Class/Warrior/WarriorActions.h
-@@ -56,7 +56,13 @@ public:
+@@ -12,6 +12,8 @@
+ #include "PlayerbotAI.h"
+ #include "ReachTargetActions.h"
+ 
++bool IsValidDisarmTarget(PlayerbotAI* botAI, Unit* target);
++
+ // stances
+ BUFF_ACTION(CastBattleStanceAction, "battle stance");
+ BUFF_ACTION(CastDefensiveStanceAction, "defensive stance");
+@@ -56,7 +58,13 @@ public:
  
  MELEE_ACTION(CastThunderClapAction, "thunder clap");
  SNARE_ACTION(CastThunderClapSnareAction, "thunder clap");
@@ -1604,7 +1763,7 @@ index f1316c2c..97250894 100644
  MELEE_ACTION(CastOverpowerAction, "overpower");
  MELEE_ACTION(CastMockingBlowAction, "mocking blow");
  // BUFF_ACTION(CastRetaliationAction, "retaliation");
-@@ -112,10 +118,23 @@ MELEE_ACTION(CastShieldBashAction, "shield bash");
+@@ -112,10 +120,24 @@ MELEE_ACTION(CastShieldBashAction, "shield bash");
  ENEMY_HEALER_ACTION(CastShieldBashOnEnemyHealerAction, "shield bash");
  MELEE_ACTION(CastRevengeAction, "revenge");
  BUFF_ACTION(CastShieldBlockAction, "shield block");
@@ -1619,6 +1778,7 @@ index f1316c2c..97250894 100644
 +public:
 +    CastDisarmAction(PlayerbotAI* botAI) : CastDebuffSpellAction(botAI, "disarm", false, 0.0f) {}
 +
++    bool isPossible() override;
 +    bool isUseful() override;
 +};
 +
@@ -1653,11 +1813,102 @@ index 78130772..ec3d01c8 100644
      static Trigger* victory_rush(PlayerbotAI* botAI) { return new VictoryRushTrigger(botAI); }
      static Trigger* death_wish(PlayerbotAI* botAI) { return new DeathWishTrigger(botAI); }
      static Trigger* recklessness(PlayerbotAI* botAI) { return new RecklessnessTrigger(botAI); }
+diff --git a/src/Ai/Class/Warrior/WarriorTriggers.cpp b/src/Ai/Class/Warrior/WarriorTriggers.cpp
+index e875c403..7f8eea69 100644
+--- a/src/Ai/Class/Warrior/WarriorTriggers.cpp
++++ b/src/Ai/Class/Warrior/WarriorTriggers.cpp
+@@ -4,7 +4,10 @@
+  */
+ 
+ #include "WarriorTriggers.h"
++#include "Item.h"
++#include "ItemTemplate.h"
+ #include "Playerbots.h"
++#include "WarriorActions.h"
+ 
+ namespace
+ {
+@@ -16,6 +19,40 @@ constexpr uint32 SPELL_BLESSING_OF_PROTECTION = 41450;
+ constexpr uint32 SPELL_COMMANDING_PRESENCE_RANKS[] = { 12318, 12857, 12858, 12860, 12861 };
+ }
+ 
++bool BattleStanceTrigger::IsActive()
++{
++    if (BuffTrigger::IsActive())
++    {
++        Unit* target = AI_VALUE(Unit*, "current target");
++        if (target && IsValidDisarmTarget(botAI, target) && !botAI->HasAura("disarm", target))
++            return false;
++
++        return true;
++    }
++    return false;
++}
++
++bool ShieldBlockTrigger::IsActive()
++{
++    Item* shield = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
++    if (!shield || shield->GetTemplate()->SubClass != ITEM_SUBCLASS_ARMOR_SHIELD)
++        return false;
++
++    if (!botAI->HasAura("defensive stance", bot))
++        return false;
++
++    return BuffTrigger::IsActive();
++}
++
++bool DisarmDebuffTrigger::IsActive()
++{
++    Unit* target = GetTarget();
++    if (!target || !IsValidDisarmTarget(botAI, target))
++        return false;
++
++    return DebuffTrigger::IsActive();
++}
++
+ bool BloodrageBuffTrigger::IsActive()
+ {
+     return AI_VALUE2(uint8, "health", "self target") >= sPlayerbotAIConfig.mediumHealth &&
 diff --git a/src/Ai/Class/Warrior/WarriorTriggers.h b/src/Ai/Class/Warrior/WarriorTriggers.h
-index 15865744..99b4c15b 100644
+index 15865744..fd1b39e2 100644
 --- a/src/Ai/Class/Warrior/WarriorTriggers.h
 +++ b/src/Ai/Class/Warrior/WarriorTriggers.h
-@@ -39,7 +39,12 @@ BUFF_TRIGGER_A(BloodrageBuffTrigger, "bloodrage");
+@@ -16,12 +16,31 @@ public:
+     bool IsActive() override;
+ };
+ 
+-BUFF_TRIGGER(BattleStanceTrigger, "battle stance");
++class BattleStanceTrigger : public BuffTrigger
++{
++public:
++    BattleStanceTrigger(PlayerbotAI* botAI) : BuffTrigger(botAI, "battle stance") {}
++    bool IsActive() override;
++};
++
+ BUFF_TRIGGER(DefensiveStanceTrigger, "defensive stance");
+ BUFF_TRIGGER(BerserkerStanceTrigger, "berserker stance");
+-BUFF_TRIGGER(ShieldBlockTrigger, "shield block");
++
++class ShieldBlockTrigger : public BuffTrigger
++{
++public:
++    ShieldBlockTrigger(PlayerbotAI* botAI) : BuffTrigger(botAI, "shield block") {}
++    bool IsActive() override;
++};
++
+ BUFF_TRIGGER(CommandingShoutTrigger, "commanding shout");
+-DEBUFF_TRIGGER(DisarmDebuffTrigger, "disarm");
++
++class DisarmDebuffTrigger : public DebuffTrigger
++{
++public:
++    DisarmDebuffTrigger(PlayerbotAI* botAI) : DebuffTrigger(botAI, "disarm", 1, false, 0.0f) {}
++    bool IsActive() override;
++};
+ DEBUFF_TRIGGER(SunderArmorDebuffTrigger, "sunder armor");
+ DEBUFF_TRIGGER(MortalStrikeDebuffTrigger, "mortal strike");
+ // DEBUFF_ENEMY_TRIGGER(RendDebuffOnAttackerTrigger, "rend");
+@@ -39,7 +58,12 @@ BUFF_TRIGGER_A(BloodrageBuffTrigger, "bloodrage");
  CAN_CAST_TRIGGER(VictoryRushTrigger, "victory rush");
  HAS_AURA_TRIGGER(SwordAndBoardTrigger, "sword and board");
  SNARE_TRIGGER(ConcussionBlowTrigger, "concussion blow");
@@ -1671,7 +1922,7 @@ index 15865744..99b4c15b 100644
  SNARE_TRIGGER(MockingBlowTrigger, "mocking blow");
  SNARE_TRIGGER(ThunderClapSnareTrigger, "thunder clap");
  DEBUFF_TRIGGER(ThunderClapTrigger, "thunder clap");
-@@ -67,7 +72,7 @@ HAS_AURA_TRIGGER(TasteForBloodTrigger, "taste for blood");
+@@ -67,7 +91,7 @@ HAS_AURA_TRIGGER(TasteForBloodTrigger, "taste for blood");
  class RendDebuffTrigger : public DebuffTrigger
  {
  public:
