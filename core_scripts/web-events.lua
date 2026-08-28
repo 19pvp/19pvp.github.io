@@ -15,8 +15,17 @@ local classColors = {
 }
 
 local SATCHEL_ITEM_ID = 51999
+local WSG_BADGE_ITEM_ID = 29434
+local ARENA_BADGE_ITEM_ID = 40752
 local WsgState = require("wsg-state")
 local wsgState = WsgState.shared
+
+local function giveBadges(player, itemId, count)
+  local before = player:GetItemCount(itemId, true)
+  local item = player:CreateItem(itemId, count)
+  local total = player:GetItemCount(itemId, true)
+  return math.max(0, total - before), total, item ~= nil
+end
 
 local arenaTeamDefinitions = {
   { type = 2, suffix = " 2v2" },
@@ -279,46 +288,46 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
     ))
 
     if isWsg then
-      for _, participant in pairs(participants) do
-        local isWinner = participant.team == winner
-        local status = WsgState.getParticipationStatus(participant, isWinner)
-        print(string.format(
-          "[WSG Reward Debug] Eligibility { instanceId: %s, player: %s, guidLow: %s, team: %s, winner: %s, deserted: %s, eligible: %s, reason: %s, timePlayed: %.0f, score: %.2f, required: %.2f }",
-          tostring(instanceId),
-          tostring(participant.name),
-          tostring(participant.guidLow),
-          tostring(participant.team),
-          tostring(isWinner),
-          tostring(participant.deserted == true),
-          tostring(status.eligible),
-          tostring(status.reason),
-          status.timePlayed,
-          status.score,
-          status.requiredScore
-        ))
-      end
-
       local rewarded = 0
       local skipped = 0
       WsgState.forEachParticipants(wsgState, instanceId, function(player, participant)
-        if not WsgState.isParticipationEligible(participant, participant.team == winner) then
+        local status = WsgState.getParticipationStatus(participant, participant.team == winner)
+        if not status.eligible then
+          print(string.format(
+            "[Reward] Badges rejected { match: WSG, instanceId: %s, player: %s, guidLow: %s, reason: %s, score: %.2f, required: %.2f, total: %s }",
+            tostring(instanceId), player:GetName(), tostring(player:GetGUIDLow()),
+            tostring(status.reason), status.score, status.requiredScore,
+            tostring(player:GetItemCount(WSG_BADGE_ITEM_ID, true))
+          ))
           skipped = skipped + 1
           return
         end
 
         local satchel = player:AddItem(SATCHEL_ITEM_ID, 1)
         local count = participant.team == winner and 2 or 1
-        local token = player:AddItem(29434, count)
-        print(string.format(
-          "[WSG Reward Debug] Reward delivery { instanceId: %s, player: %s, guidLow: %s, satchelAdded: %s, tokenAdded: %s, tokenCount: %s }",
-          tostring(instanceId), player:GetName(), tostring(player:GetGUIDLow()),
-          tostring(satchel ~= nil), tostring(token ~= nil), tostring(count)
-        ))
-        rewarded = rewarded + 1
+        local badges, total, added = giveBadges(player, WSG_BADGE_ITEM_ID, count)
+        if badges > 0 then
+          print(string.format(
+            "[Reward] Badges granted { match: WSG, instanceId: %s, player: %s, guidLow: %s, count: %s, total: %s, satchelAdded: %s }",
+            tostring(instanceId), player:GetName(), tostring(player:GetGUIDLow()),
+            tostring(badges), tostring(total), tostring(satchel ~= nil)
+          ))
+          rewarded = rewarded + 1
+        else
+          print(string.format(
+            "[Reward] Badges rejected { match: WSG, instanceId: %s, player: %s, guidLow: %s, reason: %s, total: %s, satchelAdded: %s }",
+            tostring(instanceId), player:GetName(), tostring(player:GetGUIDLow()),
+            added and "badge_count_unchanged" or "add_item_failed",
+            tostring(total), tostring(satchel ~= nil)
+          ))
+          skipped = skipped + 1
+        end
       end, function(participant)
+        local status = WsgState.getParticipationStatus(participant, participant.team == winner)
         print(string.format(
-          "[WSG Reward Debug] Reward player unavailable { instanceId: %s, player: %s, guidLow: %s }",
-          tostring(instanceId), tostring(participant.name), tostring(participant.guidLow)
+          "[Reward] Badges rejected { match: WSG, instanceId: %s, player: %s, guidLow: %s, reason: %s }",
+          tostring(instanceId), tostring(participant.name), tostring(participant.guidLow),
+          status.eligible and "player_unavailable" or tostring(status.reason)
         ))
         skipped = skipped + 1
       end)
@@ -328,9 +337,36 @@ RegisterBGEvent(BG_EVENT_ON_END, function (event, bg, bgId, instanceId, winner)
       ))
     elseif mapIsArena then
       WsgState.forEachParticipants(wsgState, instanceId, function(player, participant)
-        if WsgState.isDeserted(participant) then return end
+        if WsgState.isDeserted(participant) then
+          print(string.format(
+            "[Reward] Badges rejected { match: ARENA, instanceId: %s, player: %s, guidLow: %s, reason: deserted, total: %s }",
+            tostring(instanceId), player:GetName(), tostring(player:GetGUIDLow()),
+            tostring(player:GetItemCount(ARENA_BADGE_ITEM_ID, true))
+          ))
+          return
+        end
+
         local count = participant.team == winner and 2 or 1
-        player:AddItem(40752, count)
+        local badges, total, added = giveBadges(player, ARENA_BADGE_ITEM_ID, count)
+        if badges > 0 then
+          print(string.format(
+            "[Reward] Badges granted { match: ARENA, instanceId: %s, player: %s, guidLow: %s, count: %s, total: %s }",
+            tostring(instanceId), player:GetName(), tostring(player:GetGUIDLow()),
+            tostring(badges), tostring(total)
+          ))
+        else
+          print(string.format(
+            "[Reward] Badges rejected { match: ARENA, instanceId: %s, player: %s, guidLow: %s, reason: %s, total: %s }",
+            tostring(instanceId), player:GetName(), tostring(player:GetGUIDLow()),
+            added and "badge_count_unchanged" or "add_item_failed", tostring(total)
+          ))
+        end
+      end, function(participant)
+        print(string.format(
+          "[Reward] Badges rejected { match: ARENA, instanceId: %s, player: %s, guidLow: %s, reason: %s }",
+          tostring(instanceId), tostring(participant.name), tostring(participant.guidLow),
+          WsgState.isDeserted(participant) and "deserted" or "player_unavailable"
+        ))
       end)
     end
 
@@ -363,9 +399,9 @@ RegisterPlayerEvent(PLAYER_EVENT_ON_WHO_REQUEST, function(event, requester, targ
 end)
 
 -- Every 10 seconds in WSG:
--- 3 honor if within 40 yards of friendly flag carrier (or carrying own team's flag)
--- 2 honor if within 40 yards of enemy flag carrier (or carrying enemy flag)
--- 1 honor otherwise
+-- 9 honor if within 40 yards of friendly flag carrier (or carrying own team's flag)
+-- 6 honor if within 40 yards of enemy flag carrier (or carrying enemy flag)
+-- 3 honor otherwise
 CreateLuaEvent(function()
   WsgState.forEachActiveBattlegrounds(wsgState, function(instanceId, players)
     local player = players[1]
@@ -389,17 +425,17 @@ CreateLuaEvent(function()
     end
 
     for _, player in ipairs(players) do
-      local honorAmount = 1
+      local honorAmount = 3
       local pTeam = player:GetBgTeamId()
       for _, carrier in ipairs(flagCarriers) do
         if player:GetDistance(carrier.player) <= 40.0 then
           local isFriendlyFC = (pTeam == 0 and carrier.hasHordeFlag)
             or (pTeam == 1 and carrier.hasAllianceFlag)
           if isFriendlyFC then
-            honorAmount = 3
+            honorAmount = 9
             break
           end
-          honorAmount = math.max(honorAmount, 2)
+          honorAmount = math.max(honorAmount, 6)
         end
       end
       player:ModifyHonorPoints(honorAmount)

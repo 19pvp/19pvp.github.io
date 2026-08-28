@@ -1,8 +1,7 @@
 local WsgState = {}
 
 WsgState.WSG_LATE_JOIN_GRACE_SECONDS = 180
--- Keep the reward gate focused on genuinely inactive players. One point is
--- roughly 1,000 damage or healing, so this is intentionally a low floor.
+-- Keep the reward gate focused on genuinely inactive players; healing and objective play receive extra weight.
 WsgState.WSG_MIN_ACTIVITY_POINTS_PER_MINUTE = 1
 WsgState.WSG_WINNING_TEAM_ACTIVITY_MULTIPLIER = 0.5
 WsgState.WSG_FLAG_REPEAT_WINDOW_MS = 10 * 1000
@@ -201,18 +200,27 @@ function WsgState.updateParticipationMetrics(state, instanceId, guidLow, stats)
     return true
 end
 
+-- Raw metric durations use milliseconds until the match is finalized.
+function WsgState.accumulateFlagCarryTime(stats, startedAt, now, carrying)
+    if not stats or type(now) ~= "number" then return startedAt end
+    if startedAt and now > startedAt then
+        stats.flagCarryTime = (tonumber(stats.flagCarryTime) or 0) + now - startedAt
+    end
+    return carrying and now or nil
+end
+
 function WsgState.getParticipationScore(participation)
     if not participation then return 0 end
 
     return participation.damageDone / 1000
-        + participation.healingDone / 1000
+        + participation.healingDone / 750
         + participation.killingBlows * 10
         + participation.honorableKills * 2
         + participation.successfulInterrupts * 2
         + participation.dispelsOffensive * 2
         + participation.damageOnEFC / 500
-        + participation.healsOnFC / 500
-        + participation.flagCarryTime / 10000
+        + participation.healsOnFC / 200
+        + participation.flagCarryTime / 8
         + participation.flagCaptures * 50
         + participation.flagReturns * 20
 end
